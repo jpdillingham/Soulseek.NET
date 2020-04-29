@@ -30,8 +30,8 @@
 
     public class Startup
     {
-        private static string Username { get; set; }
-        private static string Password { get; set; }
+        public static string Username { get; set; }
+        public static string Password { get; set; }
         private static string WebRoot { get; set; }
         private static int ListenPort { get; set; }
         private static string OutputDirectory { get; set; }
@@ -42,8 +42,8 @@
         private static int ConnectTimeout { get; set; }
         private static int InactivityTimeout { get; set; }
         private static bool EnableSecurity { get; set; }
-        private static string JwtSigningKey { get; set; }
-        private static int JwtTTL { get; set; }
+        public static string JwtSigningKey { get; set; }
+        public static int JwtTTL { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();

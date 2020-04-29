@@ -2,7 +2,12 @@
 {
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Configuration;
+    using Microsoft.IdentityModel.Tokens;
+    using System;
+    using System.Collections.Generic;
+    using System.IdentityModel.Tokens.Jwt;
+    using System.Security.Claims;
+    using System.Text;
     using WebAPI.DTO;
 
     /// <summary>
@@ -15,11 +20,8 @@
     [Consumes("application/json")]
     public class AppController : ControllerBase
     {
-        private IConfiguration Configuration { get; }
-
-        public AppController(IConfiguration configuration)
+        public AppController()
         {
-            Configuration = configuration;
         }
 
         /// <summary>
@@ -29,7 +31,7 @@
         /// <returns></returns>
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult Login([FromBody]Login login)
+        public IActionResult Login([FromBody]LoginRequest login)
         {
             if (login == default)
             {
@@ -41,15 +43,39 @@
                 return BadRequest("Username and/or Password missing or invalid");
             }
 
-            var un = Configuration.GetValue<string>("USERNAME");
-            var pw = Configuration.GetValue<string>("PASSWORD");
-
-            if (login.Username == un && login.Password == pw)
+            if (login.Username == Startup.Username && login.Password == Startup.Password)
             {
-                return Ok("jwt goes here");
+                return Ok(new TokenResponse(GetJwtSecurityToken()));
             }
 
             return Unauthorized();
+        }
+
+        private JwtSecurityToken GetJwtSecurityToken()
+        {
+            var issuedUtc = DateTime.UtcNow;
+            var expiresUtc = DateTime.UtcNow.AddMilliseconds(Startup.JwtTTL);
+
+            var claims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.Name, Startup.Username),
+                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Role, "User"),
+                new Claim("name", Startup.Username),
+                new Claim("iat", ((DateTimeOffset)issuedUtc).ToUnixTimeSeconds().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Startup.JwtSigningKey));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+
+            var token = new JwtSecurityToken(
+                issuer: "slsk-web-example",
+                claims: claims,
+                notBefore: issuedUtc,
+                expires: expiresUtc,
+                signingCredentials: credentials);
+
+            return token;
         }
     }
 }
