@@ -7,7 +7,6 @@
     using System.Collections.Generic;
     using System.IdentityModel.Tokens.Jwt;
     using System.Security.Claims;
-    using System.Text;
     using WebAPI.DTO;
 
     /// <summary>
@@ -65,9 +64,7 @@
                 new Claim("iat", ((DateTimeOffset)issuedUtc).ToUnixTimeSeconds().ToString())
             };
 
-            var keyBytes = Convert.FromBase64String(Startup.JwtSigningKey);
-            var key = new SymmetricSecurityKey(keyBytes);
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+            var credentials = new SigningCredentials(Startup.JwtSigningKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
                 issuer: "slsk-web-example",
