@@ -6,7 +6,6 @@
     using System.Linq;
     using System.Net;
     using System.Reflection;
-    using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -42,12 +41,12 @@
         private static int ConnectTimeout { get; set; }
         private static int InactivityTimeout { get; set; }
         private static bool EnableSecurity { get; set; }
-        public static string JwtSigningKey { get; set; }
         public static int TokenTTL { get; set; }
+
+        public static SymmetricSecurityKey JwtSigningKey { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
-        private RNGCryptoServiceProvider RNG { get; } = new RNGCryptoServiceProvider();
 
         public Startup(IConfiguration configuration)
         {
@@ -65,17 +64,9 @@
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
-            JwtSigningKey = Configuration.GetValue<string>("JWT_SIGNING_KEY", "ie5cSFF1GyIJdNNVs7ltzzBW8AJVwUc7X5rK9NfUwPM=");
             TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000);
 
-            try
-            {
-                Convert.FromBase64String(JwtSigningKey);
-            } 
-            catch
-            {
-                throw new Exception($"JWT_SIGNING_KEY must be a valid base64 string.");
-            }
+            JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
         }
 
         public IConfiguration Configuration { get; }
@@ -98,7 +89,7 @@
                             ValidIssuer = "slsk-web-example",
                             ValidateIssuer = true,
                             ValidateAudience = false,
-                            IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(JwtSigningKey)), // todo: RFC 2898
+                            IssuerSigningKey = JwtSigningKey,
                             ValidateIssuerSigningKey = true,
                         };
                     });
