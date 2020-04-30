@@ -29,21 +29,21 @@
 
     public class Startup
     {
-        public static string Username { get; set; }
-        public static string Password { get; set; }
-        private static string WebRoot { get; set; }
-        private static int ListenPort { get; set; }
-        private static string OutputDirectory { get; set; }
-        private static string SharedDirectory { get; set; }
-        private static bool EnableDistributedNetwork { get; set; } 
-        private static int DistributedChildLimit { get; set; }
-        private static DiagnosticLevel DiagnosticLevel { get; set; }
-        private static int ConnectTimeout { get; set; }
-        private static int InactivityTimeout { get; set; }
-        private static bool EnableSecurity { get; set; }
-        public static int TokenTTL { get; set; }
+        internal static string Username { get; set; }
+        internal static string Password { get; set; }
+        internal static string WebRoot { get; set; }
+        internal static int ListenPort { get; set; }
+        internal static string OutputDirectory { get; set; }
+        internal static string SharedDirectory { get; set; }
+        internal static bool EnableDistributedNetwork { get; set; }
+        internal static int DistributedChildLimit { get; set; }
+        internal static DiagnosticLevel DiagnosticLevel { get; set; }
+        internal static int ConnectTimeout { get; set; }
+        internal static int InactivityTimeout { get; set; }
+        internal static bool EnableSecurity { get; set; }
+        internal static int TokenTTL { get; set; }
 
-        public static SymmetricSecurityKey JwtSigningKey { get; set; }
+        internal static SymmetricSecurityKey JwtSigningKey { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
