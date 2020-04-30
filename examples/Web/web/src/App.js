@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import { Route, Link, Switch } from "react-router-dom";
+import { tokenKey, tokenPassthroughValue } from './config';
+import api from './api';
 
 import './App.css';
 import Search from './Search';
@@ -23,7 +25,24 @@ const initialState = {
 class App extends Component {
     state = initialState;
 
-    login = (username, password) => {
+    componentDidMount = async () => {
+        var res = await api.get('/session');
+
+        if (res.status === 200) {
+            this.setState({ token: tokenPassthroughValue }, () => localStorage.setItem(tokenKey, this.state.token));
+        }
+    }
+
+    setToken = (storage, token) => {
+        this.setState({ token }, () => storage.setItem(tokenKey, JSON.stringify(token)));
+    }
+
+    removeToken = (storage) => {
+        this.setState({ token: undefined }, () => storage.removeItem(tokenKey));
+    }
+
+    login = (username, password, rememberMe) => {
+        console.log(username,password, rememberMe);
         this.setState({ token: 'foo' }, () => {
             localStorage.setItem('token', 'foo');
         });
@@ -70,7 +89,7 @@ class App extends Component {
                             <Icon name='upload'/>Uploads
                         </Menu.Item>
                     </Link>
-                    <Modal
+                    {token !== tokenPassthroughValue && <Modal
                         trigger={
                             <Menu.Item position='right'>
                                 <Icon name='sign-out'/>Log Out
@@ -81,7 +100,7 @@ class App extends Component {
                         header={<Header icon='sign-out' content='Confirm Log Out' />}
                         content='Are you sure you want to log out?'
                         actions={['Cancel', { key: 'done', content: 'Log Out', negative: true, onClick: this.logout }]}
-                    />
+                    />}
                 </Sidebar>
                 <Sidebar.Pusher className='app-content'>
                     <Switch>
