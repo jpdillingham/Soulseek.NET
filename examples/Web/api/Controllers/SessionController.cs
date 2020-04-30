@@ -24,6 +24,22 @@
         }
 
         /// <summary>
+        ///     Checks whether security is enabled.  Returns 200 if disabled, 401 if enabled.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Enabled()
+        {
+            if (Startup.EnableSecurity)
+            {
+                return Unauthorized();
+            }
+
+            return Ok();
+        }
+
+        /// <summary>
         ///     Logs in.
         /// </summary>
         /// <param name="login"></param>
