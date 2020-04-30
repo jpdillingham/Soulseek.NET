@@ -125,3 +125,7 @@ body {
     width: 1200px !important;
     margin: auto !important;
 }
+
+.login-button {
+    margin-top: 50px !important;
+}

@@ -5,6 +5,7 @@ import './App.css';
 import Search from './Search';
 import Browse from './Browse/Browse';
 import Transfers from './Transfers';
+import LoginForm from './LoginForm';
 
 import { 
     Sidebar,
@@ -22,6 +23,8 @@ const logout = (event, data) => {
 class App extends Component {
     render = () => {
         return (
+            <>
+            {true ? <LoginForm/> : 
             <Sidebar.Pushable as={Segment} className='app'>
                 <Sidebar 
                     as={Menu} 
@@ -73,6 +76,7 @@ class App extends Component {
                     </Switch>
                 </Sidebar.Pusher>
             </Sidebar.Pushable>
+            }</>
         )
     }
 }
