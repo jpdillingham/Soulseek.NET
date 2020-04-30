@@ -11,7 +11,13 @@ import {
     Segment,
     Menu,
     Icon,
+    Modal,
+    Header
 } from 'semantic-ui-react';
+
+const logout = (event, data) => {
+    console.log('log out', event, data)
+}
 
 class App extends Component {
     render = () => {
@@ -46,6 +52,17 @@ class App extends Component {
                             <Icon name='upload'/>Uploads
                         </Menu.Item>
                     </Link>
+                    <Modal
+                        trigger={
+                            <Menu.Item position='right'>
+                                <Icon name='sign-out'/>Log Out
+                            </Menu.Item>
+                        }
+                        size='mini'
+                        header={<Header icon='sign-out' content='Confirm Log Out' />}
+                        content='Are you sure you want to log out?'
+                        actions={['Cancel', { key: 'done', content: 'Log Out', negative: true, onClick: logout }]}
+                    />
                 </Sidebar>
                 <Sidebar.Pusher className='app-content'>
                     <Switch>
