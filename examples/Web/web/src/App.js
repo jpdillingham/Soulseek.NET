@@ -16,15 +16,30 @@ import {
     Header
 } from 'semantic-ui-react';
 
-const logout = (event, data) => {
-    console.log('log out', event, data)
-}
+const initialState = {
+    token: undefined
+};
 
 class App extends Component {
+    state = initialState;
+
+    login = (username, password) => {
+        this.setState({ token: 'foo' }, () => {
+            localStorage.setItem('token', 'foo');
+        });
+    }
+    
+    logout = (event, data) => {
+        localStorage.removeItem('token');
+        this.setState(initialState);
+    }
+
     render = () => {
+        const { token } = this.state;
+
         return (
             <>
-            {true ? <LoginForm/> : 
+            {!token ? <LoginForm onLoginAttempt={this.login}/> : 
             <Sidebar.Pushable as={Segment} className='app'>
                 <Sidebar 
                     as={Menu} 
@@ -61,10 +76,11 @@ class App extends Component {
                                 <Icon name='sign-out'/>Log Out
                             </Menu.Item>
                         }
+                        centered
                         size='mini'
                         header={<Header icon='sign-out' content='Confirm Log Out' />}
                         content='Are you sure you want to log out?'
-                        actions={['Cancel', { key: 'done', content: 'Log Out', negative: true, onClick: logout }]}
+                        actions={['Cancel', { key: 'done', content: 'Log Out', negative: true, onClick: this.logout }]}
                     />
                 </Sidebar>
                 <Sidebar.Pusher className='app-content'>
