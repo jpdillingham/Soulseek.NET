@@ -17,9 +17,9 @@
     [ApiController]
     [Produces("application/json")]
     [Consumes("application/json")]
-    public class AppController : ControllerBase
+    public class SessionController : ControllerBase
     {
-        public AppController()
+        public SessionController()
         {
         }
 
