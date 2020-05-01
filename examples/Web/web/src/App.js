@@ -19,17 +19,28 @@ import {
 } from 'semantic-ui-react';
 
 const initialState = {
-    token: undefined
+    token: undefined,
+    login: {
+        initialized: false,
+        pending: false,
+        error: undefined
+    }
 };
 
 class App extends Component {
     state = initialState;
 
     componentDidMount = async () => {
-        var res = await api.get('/session');
-
-        if (res.status === 200) {
-            this.setState({ token: tokenPassthroughValue }, () => localStorage.setItem(tokenKey, this.state.token));
+        try {
+            await api.get('/session');
+            this.setState({ 
+                token: tokenPassthroughValue, 
+                login: { ...this.state.login, initialized: true} 
+            }, () => localStorage.setItem(tokenKey, this.state.token));
+        } catch {
+            this.setState({
+                login: { ...this.state.login, initialized: true} 
+            })
         }
     }
 
@@ -42,23 +53,33 @@ class App extends Component {
     }
 
     login = (username, password, rememberMe) => {
-        console.log(username,password, rememberMe);
-        this.setState({ token: 'foo' }, () => {
-            localStorage.setItem('token', 'foo');
+        this.setState({ login: { pending: true, error: undefined }}, async () => {
+            try {
+                const response = await api.post('/session', { username, password });
+                this.setToken(rememberMe ? localStorage : sessionStorage, response.data);
+            } catch (error) {
+                this.setState({ login: { pending: false, error }});
+            }
         });
     }
     
     logout = (event, data) => {
         localStorage.removeItem('token');
-        this.setState(initialState);
+        this.setState({ ...initialState, initialized: true });
     }
 
     render = () => {
-        const { token } = this.state;
+        const { token, login } = this.state;
 
         return (
             <>
-            {!token ? <LoginForm onLoginAttempt={this.login}/> : 
+            {!token ? 
+            <LoginForm 
+                onLoginAttempt={this.login} 
+                initialized={login.initialized}
+                loading={login.pending} 
+                error={login.error}
+            /> : 
             <Sidebar.Pushable as={Segment} className='app'>
                 <Sidebar 
                     as={Menu} 

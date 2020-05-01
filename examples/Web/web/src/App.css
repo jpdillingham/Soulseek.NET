@@ -129,3 +129,7 @@ body {
 .login-button {
     margin-top: 0px !important;
 }
+
+.login-failure {
+    text-align: left;
+}
