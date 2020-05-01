@@ -53,7 +53,7 @@ class App extends Component {
     }
 
     login = (username, password, rememberMe) => {
-        this.setState({ login: { pending: true, error: undefined }}, async () => {
+        this.setState({ login: { ...this.state.login, pending: true, error: undefined }}, async () => {
             try {
                 const response = await api.post('/session', { username, password });
                 this.setToken(rememberMe ? localStorage : sessionStorage, response.data);
@@ -65,7 +65,7 @@ class App extends Component {
     
     logout = (event, data) => {
         localStorage.removeItem('token');
-        this.setState({ ...initialState, initialized: true });
+        this.setState({ ...initialState, login: { ...initialState.login, initialized: true }});
     }
 
     render = () => {
