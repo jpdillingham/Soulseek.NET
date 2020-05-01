@@ -31,20 +31,27 @@ class App extends Component {
     state = initialState;
 
     componentDidMount = async () => {
-        try {
-            await api.get('/session');
-            this.setState({ 
-                token: tokenPassthroughValue, 
-                login: { ...this.state.login, initialized: true} 
-            }, () => localStorage.setItem(tokenKey, this.state.token));
-        } catch {
-            this.setState({
-                login: { ...this.state.login, initialized: true} 
-            })
+        const { login } = this.state;
+
+        const response = await api.get('/session/enabled');
+        const securityEnabled = response.data;
+
+        if (securityEnabled) {
+            this.loadToken();
+        } else {
+            this.setToken(localStorage, tokenPassthroughValue)
         }
+
+        this.setState({ login: { ...login, initialized: true } })
+    }
+
+    loadToken = () => {
+        const token = JSON.parse(sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey));
+        this.setState({ token });
     }
 
     setToken = (storage, token) => {
+        console.log(storage, token);
         this.setState({ token }, () => storage.setItem(tokenKey, JSON.stringify(token)));
     }
 
@@ -56,15 +63,15 @@ class App extends Component {
         this.setState({ login: { ...this.state.login, pending: true, error: undefined }}, async () => {
             try {
                 const response = await api.post('/session', { username, password });
-                this.setToken(rememberMe ? localStorage : sessionStorage, response.data);
+                this.setToken(rememberMe ? localStorage : sessionStorage, response.data.token);
             } catch (error) {
                 this.setState({ login: { pending: false, error }});
             }
         });
     }
     
-    logout = (event, data) => {
-        localStorage.removeItem('token');
+    logout = () => {
+        localStorage.removeItem(tokenKey);
         this.setState({ ...initialState, login: { ...initialState.login, initialized: true }});
     }
 
