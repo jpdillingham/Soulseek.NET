@@ -28,15 +28,11 @@
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Route("enabled")]
         [AllowAnonymous]
         public IActionResult Enabled()
         {
-            if (Startup.EnableSecurity)
-            {
-                return Unauthorized();
-            }
-
-            return Ok();
+            return Ok(Startup.EnableSecurity);
         }
 
         /// <summary>
