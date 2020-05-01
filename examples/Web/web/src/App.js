@@ -65,7 +65,7 @@ class App extends Component {
                 const response = await api.post('/session', { username, password });
                 this.setToken(rememberMe ? localStorage : sessionStorage, response.data.token);
             } catch (error) {
-                this.setState({ login: { pending: false, error }});
+                this.setState({ login: { ...this.state.login, pending: false, error }});
             }
         });
     }
