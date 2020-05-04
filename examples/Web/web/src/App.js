@@ -51,7 +51,6 @@ class App extends Component {
     }
 
     setToken = (storage, token) => {
-        console.log(storage, token);
         this.setState({ token }, () => storage.setItem(tokenKey, JSON.stringify(token)));
     }
 
