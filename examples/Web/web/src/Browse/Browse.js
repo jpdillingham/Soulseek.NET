@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 import './Browse.css';
-import { baseUrl } from '../config';
 
 import DirectoryTree from './DirectoryTree';
 
@@ -34,7 +33,7 @@ class Browse extends Component {
     let username = this.inputtext.inputRef.current.value;
 
     this.setState({ username , browseState: 'pending', browseError: undefined }, () => {
-      axios.get(baseUrl + `/user/${this.state.username}/browse`)
+      api.get(`/user/${this.state.username}/browse`)
         .then(response => this.setState({ tree: this.getDirectoryTree(response.data) }))
         .then(() => this.setState({ browseState: 'complete', browseError: undefined }, () => {
           this.saveState();
@@ -78,7 +77,7 @@ class Browse extends Component {
 
   fetchStatus = () => {
     if (this.state.browseState === 'pending') {
-      axios.get(baseUrl + `/user/${this.state.username}/browse/status`)
+      api.get(`/user/${this.state.username}/browse/status`)
         .then(response => this.setState({
           browseStatus: response.data
         }));

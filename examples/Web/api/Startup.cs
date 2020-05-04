@@ -8,6 +8,7 @@
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Mvc;
@@ -16,27 +17,33 @@
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.FileProviders;
+    using Microsoft.IdentityModel.Tokens;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Swashbuckle.AspNetCore.Swagger;
+    using WebAPI.Security;
     using WebAPI.Trackers;
 
     public class Startup
     {
-        private static string Username { get; set; }
-        private static string Password { get; set; }
-        private static string WebRoot { get; set; }
-        private static int ListenPort { get; set; }
-        private static string OutputDirectory { get; set; }
-        private static string SharedDirectory { get; set; }
-        private static bool EnableDistributedNetwork { get; set; } 
-        private static int DistributedChildLimit { get; set; }
-        private static DiagnosticLevel DiagnosticLevel { get; set; }
-        private static int ConnectTimeout { get; set; }
-        private static int InactivityTimeout { get; set; }
+        internal static string Username { get; set; }
+        internal static string Password { get; set; }
+        internal static string WebRoot { get; set; }
+        internal static int ListenPort { get; set; }
+        internal static string OutputDirectory { get; set; }
+        internal static string SharedDirectory { get; set; }
+        internal static bool EnableDistributedNetwork { get; set; }
+        internal static int DistributedChildLimit { get; set; }
+        internal static DiagnosticLevel DiagnosticLevel { get; set; }
+        internal static int ConnectTimeout { get; set; }
+        internal static int InactivityTimeout { get; set; }
+        internal static bool EnableSecurity { get; set; }
+        internal static int TokenTTL { get; set; }
+
+        internal static SymmetricSecurityKey JwtSigningKey { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
@@ -56,6 +63,10 @@
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
+            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
+            TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000);
+
+            JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
         }
 
         public IConfiguration Configuration { get; }
@@ -63,6 +74,34 @@
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+
+            if (EnableSecurity)
+            {
+                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
+                    {
+                        options.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ClockSkew = TimeSpan.FromMinutes(5),
+                            RequireSignedTokens = true,
+                            RequireExpirationTime = true,
+                            ValidateLifetime = true,
+                            ValidIssuer = "slsk-web-example",
+                            ValidateIssuer = true,
+                            ValidateAudience = false,
+                            IssuerSigningKey = JwtSigningKey,
+                            ValidateIssuerSigningKey = true,
+                        };
+                    });
+            }
+            else
+            {
+                services.AddAuthentication(PassthroughAuthentication.AuthenticationScheme)
+                    .AddScheme<PassthroughAuthenticationOptions, PassthroughAuthenticationHandler>(PassthroughAuthentication.AuthenticationScheme, options =>
+                    {
+                        options.Username = Username;
+                    });
+            }
 
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
@@ -118,6 +157,7 @@
 
             app.UseFileServer(fileServerOptions);
 
+            app.UseAuthentication();
             app.UseMvc();
 
             app.UseSwagger(options =>
@@ -191,7 +231,7 @@
 
             // bind transfer events.  see TransferStateChangedEventArgs and TransferProgressEventArgs.
             Client.TransferStateChanged += (e, args) =>
-                Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}");
+                Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}{(args.Transfer.State.HasFlag(TransferStates.Completed) ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%)" : string.Empty)}");
             Client.TransferProgressUpdated += (e, args) =>
             {
                 // this is really verbose.

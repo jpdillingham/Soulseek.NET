@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import api from '../api';
 
-import { baseUrl } from '../config';
 import { formatBytes } from '../util';
 
-import FileList from '../FileList'
+import FileList from '../Shared/FileList'
 
 import { 
   Button, 
@@ -44,7 +43,7 @@ class Directory extends Component {
   }
 
   downloadOne = (username, file) => {
-    return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
+    return api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
   }
 
   render = () => {

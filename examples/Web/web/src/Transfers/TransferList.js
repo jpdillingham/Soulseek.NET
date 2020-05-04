@@ -4,7 +4,7 @@ import {
     Checkbox
 } from 'semantic-ui-react';
 
-import { formatBytes, getFileName } from './util';
+import { formatBytes, getFileName } from '../util';
 
 import { 
     Header, 
