@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
-import axios from 'axios';
-
-import { baseUrl } from '../config';
+import api from '../api';
 
 import Response from './Response';
 
@@ -45,7 +43,7 @@ class Search extends Component {
         let searchPhrase = this.inputtext.inputRef.current.value;
 
         this.setState({ searchPhrase: searchPhrase, searchState: 'pending' }, () => {
-            axios.post(baseUrl + '/searches', JSON.stringify({ searchText: searchPhrase }), { 
+            api.post('/searches', JSON.stringify({ searchText: searchPhrase }), { 
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
             .then(response => this.setState({ results: response.data }))
@@ -95,7 +93,7 @@ class Search extends Component {
 
     fetchStatus = () => {
         if (this.state.searchState === 'pending') {
-            axios.get(baseUrl + '/searches/' + encodeURIComponent(this.state.searchPhrase))
+            api.get('/searches/' + encodeURIComponent(this.state.searchPhrase))
             .then(response => this.setState({
                 searchStatus: response.data
             }));

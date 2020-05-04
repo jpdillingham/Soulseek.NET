@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import api from '../api';
 
-import { baseUrl } from '../config';
-import { formatBytes, getDirectoryName, downloadFile, getFileName } from '../util';
+import { formatBytes, getDirectoryName } from '../util';
 
 import FileList from '../Shared/FileList'
 
@@ -34,30 +33,16 @@ class Response extends Component {
         this.setState({ tree: this.state.tree, downloadRequest: undefined, downloadError: '' })
     }
 
-    download = (username, files, toBrowser = false) => {
+    download = (username, files) => {
         this.setState({ downloadRequest: 'inProgress' }, () => {
-            Promise.all(files.map(f => this.downloadOne(username, f, toBrowser)))
+            Promise.all(files.map(f => this.downloadOne(username, f)))
             .then(() => this.setState({ downloadRequest: 'complete' }))
             .catch(err => this.setState({ downloadRequest: 'error', downloadError: err.response }))
         });
     }
 
-    downloadOne = (username, file, toBrowser) => {
-        if (toBrowser) {
-            return axios.request({
-                method: 'GET',
-                url: `${baseUrl}/files/${username}/${encodeURIComponent(file.filename)}`,
-                responseType: 'arraybuffer',
-                responseEncoding: 'binary'
-            })
-            .then((response) => { 
-                if (toBrowser) { 
-                    downloadFile(response.data, getFileName(file.filename))
-                }
-            });
-        }
-
-        return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
+    downloadOne = (username, file) => {
+        return api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
     }
 
     render = () => {
