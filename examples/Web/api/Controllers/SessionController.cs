@@ -10,7 +10,7 @@
     using WebAPI.DTO;
 
     /// <summary>
-    ///     Application
+    ///     Session
     /// </summary>
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1")]
@@ -24,12 +24,14 @@
         }
 
         /// <summary>
-        ///     Checks whether security is enabled.  Returns 200 if disabled, 401 if enabled.
+        ///     Checks whether security is enabled.
         /// </summary>
         /// <returns></returns>
+        /// <response code="200">True if security is enabled, false otherwise.</response>
         [HttpGet]
         [Route("enabled")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(bool), 200)]
         public IActionResult Enabled()
         {
             return Ok(Startup.EnableSecurity);
@@ -40,8 +42,16 @@
         /// </summary>
         /// <param name="login"></param>
         /// <returns></returns>
+        /// <response code="200">Login was successful.</response>
+        /// <response code="400">Bad request.</response>
+        /// <response code="401">Login failed.</response>
         [HttpPost]
+        [Route("")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(TokenResponse), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(typeof(string), 500)]
         public IActionResult Login([FromBody]LoginRequest login)
         {
             if (login == default)
