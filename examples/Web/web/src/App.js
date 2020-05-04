@@ -4,9 +4,9 @@ import { tokenKey, tokenPassthroughValue } from './config';
 import api from './api';
 
 import './App.css';
-import Search from './Search';
+import Search from './Search/Search';
 import Browse from './Browse/Browse';
-import Transfers from './Transfers';
+import Transfers from './Transfers/Transfers';
 import LoginForm from './LoginForm';
 
 import { 

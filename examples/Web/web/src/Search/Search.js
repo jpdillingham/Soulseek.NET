@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import { baseUrl } from './config';
+import { baseUrl } from '../config';
 
 import Response from './Response';
 

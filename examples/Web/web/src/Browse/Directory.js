@@ -4,7 +4,7 @@ import axios from 'axios';
 import { baseUrl } from '../config';
 import { formatBytes } from '../util';
 
-import FileList from '../FileList'
+import FileList from '../Shared/FileList'
 
 import { 
   Button, 

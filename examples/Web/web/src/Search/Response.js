@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import { baseUrl } from './config';
-import { formatBytes, getDirectoryName, downloadFile, getFileName } from './util';
+import { baseUrl } from '../config';
+import { formatBytes, getDirectoryName, downloadFile, getFileName } from '../util';
 
-import FileList from './FileList'
+import FileList from '../Shared/FileList'
 
 import { 
     Button, 
