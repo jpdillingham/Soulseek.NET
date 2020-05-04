@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import api from '../api';
-import { baseUrl } from '../config';
 
 import {
     Card,
