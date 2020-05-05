@@ -114,6 +114,8 @@ docker run -i \
 
 With this configuration the application will listen on port 50000 and will connect to the distributed network, allowing up to 10 child connections.  The application shouldn't have any trouble connecting provided you've forwarded port 50000 properly, and will receive and respond to distributed search requests.
 
+For convenience, two scripts, `run` and `start`, have been included in `examples/Web/bin` for running the example interactively and as a daemon, respectively.
+
 ## Running without Docker
 
 The example application is split into two projects; a .NET Core 2.2 WebAPI and a React application bootstrapped with create-react-app.  If you'd like to run these outside of Docker you'll need to start both applications; `dotnet run` for the API and `yarn|npm start` for the React application.  You can connect to http://localhost:3000, or the API serves Swagger UI at http://localhost:5000/swagger.
