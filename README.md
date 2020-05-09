@@ -77,7 +77,7 @@ It's important to note that there are currently no controls over uploads; anythi
 
 ## Running with Docker
 
-A Docker image containing the application can be pulled from [jpdillingham/slsk-web-example](https://hub.docker.com/repository/docker/jpdillingham/slsk-web-example).
+A Docker image containing the application can be pulled from [jpdillingham/slsk-web-example](https://hub.docker.com/r/jpdillingham/slsk-web-example).
 
 A minimal `run` would look like:
 
