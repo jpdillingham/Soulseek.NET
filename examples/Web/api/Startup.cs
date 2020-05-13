@@ -35,6 +35,7 @@
         internal static int ListenPort { get; set; }
         internal static string OutputDirectory { get; set; }
         internal static string SharedDirectory { get; set; }
+        internal static long SharedCacheTTL { get; set; }
         internal static bool EnableDistributedNetwork { get; set; }
         internal static int DistributedChildLimit { get; set; }
         internal static DiagnosticLevel DiagnosticLevel { get; set; }
@@ -47,6 +48,7 @@
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
+        private ISharedFileCache SharedFileCache { get; set; }
 
         public Startup(IConfiguration configuration)
         {
@@ -58,15 +60,18 @@
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT", 50000);
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
-            EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", false);
+            SharedCacheTTL = Configuration.GetValue<long>("SHARED_CACHE_TTL", 900000); // 15 minutes
+            EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", true);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
-            TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000);
+            TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
+
+            SharedFileCache = new SharedFileCache(SharedDirectory, SharedCacheTTL);
         }
 
         public IConfiguration Configuration { get; }
@@ -385,12 +390,6 @@
         {
             var defaultResponse = Task.FromResult<SearchResponse>(null);
 
-            // sanitize the query string.  there's probably more to it than this.
-            var queryText = query.Query
-                .Replace("/", " ")
-                .Replace("\\", " ")
-                .Replace(":", " ");
-
             // some bots continually query for very common strings.  blacklist known names here.
             var blacklist = new[] { "Lola45", "Lolo51", "rajah" };
             if (blacklist.Contains(username))
@@ -399,30 +398,12 @@
             }
 
             // some bots and perhaps users search for very short terms.  only respond to queries >= 3 characters.  sorry, U2 fans.
-            if (queryText.Length < 3)
+            if (query.Query.Length < 3)
             {
                 return defaultResponse;
             }
 
-            var results = new List<Soulseek.File>();
-
-            // add all files from any directory matching the search query
-            // to be done properly this needs to be recursively applied, but that's outside of the scope of this example.
-            results.AddRange(System.IO.Directory
-                .GetDirectories(SharedDirectory, $"*{queryText}*", SearchOption.AllDirectories)
-                .SelectMany(dir => System.IO.Directory.GetFiles(dir, "*")
-                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))));
-
-            // add all files matching the query, regardless of directory
-            results.AddRange(System.IO.Directory
-                .GetFiles(SharedDirectory, $"{queryText}", SearchOption.AllDirectories)
-                .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0)));
-
-            // we may have added some files twice, so dedupe entries
-            results = results
-                .GroupBy(f => f.Filename)
-                .Select(group => group.First())
-                .ToList();
+            var results = SharedFileCache.Search(query);
 
             if (results.Count() > 0)
             {
