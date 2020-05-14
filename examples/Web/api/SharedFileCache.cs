@@ -1,9 +1,9 @@
 ﻿namespace WebAPI
 {
+    using Microsoft.Data.Sqlite;
     using Soulseek;
     using System;
     using System.Collections.Generic;
-    using System.Data.SQLite;
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
@@ -21,7 +21,7 @@
             TTL = ttl;
         }
 
-        private SQLiteConnection SQLite { get; set; }
+        private SqliteConnection SQLite { get; set; }
         private Dictionary<string, Soulseek.File> Files { get; set; }
         private long TTL { get; }
         private string Directory { get; }
@@ -29,12 +29,10 @@
 
         private void CreateTable()
         {
-            SQLite = new SQLiteConnection("Data Source=:memory:");
+            SQLite = new SqliteConnection("Data Source=:memory:");
             SQLite.Open();
-            SQLite.EnableExtensions(true);
-            SQLite.LoadExtension("SQLite.Interop.dll", "sqlite3_fts5_init");
 
-            using (var cmd = new SQLiteCommand("CREATE VIRTUAL TABLE files USING fts5(filename)", SQLite))
+            using (var cmd = new SqliteCommand("CREATE VIRTUAL TABLE files USING fts5(filename)", SQLite))
             {
                 cmd.ExecuteNonQuery();
             }
@@ -46,7 +44,7 @@
 
             try
             {
-                using (var cmd = new SQLiteCommand(query, SQLite))
+                using (var cmd = new SqliteCommand(query, SQLite))
                 {
                     var results = new List<string>();
                     var reader = cmd.ExecuteReader();
@@ -68,7 +66,7 @@
 
         private void InsertFile(string filename)
         {
-            using (var cmd = new SQLiteCommand($"INSERT INTO files(filename) VALUES('{filename.Replace("'", "''")}')", SQLite))
+            using (var cmd = new SqliteCommand($"INSERT INTO files(filename) VALUES('{filename.Replace("'", "''")}')", SQLite))
             {
                 cmd.ExecuteNonQuery();
             }
