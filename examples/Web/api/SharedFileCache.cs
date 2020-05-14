@@ -1,5 +1,6 @@
 ﻿namespace WebAPI
 {
+    using Microsoft.Data.Sqlite;
     using Soulseek;
     using System;
     using System.Collections.Generic;
@@ -9,9 +10,6 @@
 
     public interface ISharedFileCache
     {
-        string Directory { get; }
-        IEnumerable<Soulseek.File> Files { get; }
-        long TTL { get; }
         IEnumerable<Soulseek.File> Search(SearchQuery query);
     }
 
@@ -23,20 +21,74 @@
             TTL = ttl;
         }
 
-        public IEnumerable<Soulseek.File> Files { get; private set; }
-        public long TTL { get; }
-        public string Directory { get; }
+        private SqliteConnection SQLite { get; set; }
+        private Dictionary<string, Soulseek.File> Files { get; set; }
+        private long TTL { get; }
+        private string Directory { get; }
         private DateTime? LastFill { get; set; }
 
-        private void Fill()
+        private void CreateTable()
+        {
+            SQLite = new SqliteConnection("Data Source=:memory:");
+            SQLite.Open();
+
+            using (var cmd = new SqliteCommand("CREATE VIRTUAL TABLE files USING fts5(filename)", SQLite))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private IEnumerable<Soulseek.File> QueryTable(string text)
+        {
+            var query = $"SELECT * FROM files WHERE files MATCH '\"{text.Replace("'", "''")}\"'";
+
+            try
+            {
+                using (var cmd = new SqliteCommand(query, SQLite))
+                {
+                    var results = new List<string>();
+                    var reader = cmd.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        results.Add(reader.GetString(0));
+                    }
+
+                    return results.Select(r => Files[r.Replace("''", "'")]);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(query);
+                return Enumerable.Empty<Soulseek.File>();
+            }
+        }
+
+        private void InsertFile(string filename)
+        {
+            using (var cmd = new SqliteCommand($"INSERT INTO files(filename) VALUES('{filename.Replace("'", "''")}')", SQLite))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void FillTable()
         {
             var sw = new Stopwatch();
             sw.Start();
 
             Console.WriteLine($"[SHARED FILE CACHE]: Refreshing...");
 
+            CreateTable();
+
             Files = System.IO.Directory.GetFiles(Directory, "*", SearchOption.AllDirectories)
-                .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0));
+                .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))
+                .ToDictionary(f => f.Filename, f => f);
+
+            foreach (var file in Files)
+            {
+                InsertFile(file.Key);
+            }
 
             sw.Stop();
 
@@ -48,7 +100,7 @@
         {
             if (!LastFill.HasValue || LastFill.Value.AddMilliseconds(TTL) < DateTime.UtcNow)
             {
-                Fill();
+                FillTable();
             }
 
             // sanitize the query string.  there's probably more to it than this.
@@ -57,10 +109,7 @@
                 .Replace("\\", " ")
                 .Replace(":", " ");
 
-            var words = queryText.Split(' ');
-
-            return Files.Where(file =>
-                words.All(word => file.Filename.Contains(word, StringComparison.InvariantCultureIgnoreCase)));
+            return QueryTable(queryText);
         }
     }
 }
