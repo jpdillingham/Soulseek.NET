@@ -7,32 +7,98 @@
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
+    using System.Threading;
 
-    public interface ISharedFileCache
-    {
-        IEnumerable<Soulseek.File> Search(SearchQuery query);
-    }
-
+    /// <summary>
+    ///     Caches shared files.
+    /// </summary>
     public class SharedFileCache : ISharedFileCache
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SharedFileCache"/> class.
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="ttl"></param>
         public SharedFileCache(string directory, long ttl)
         {
             Directory = directory;
             TTL = ttl;
         }
 
-        private SqliteConnection SQLite { get; set; }
+        public string Directory { get; }
         private Dictionary<string, Soulseek.File> Files { get; set; }
-        private long TTL { get; }
-        private string Directory { get; }
-        private DateTime? LastFill { get; set; }
+        public DateTime? LastFill { get; set; }
+        private SqliteConnection SQLite { get; set; }
+        private ReaderWriterLockSlim SyncRoot { get; } = new ReaderWriterLockSlim();
+        public long TTL { get; }
+
+        /// <summary>
+        ///     Scans the configured <see cref="Directory"/> and fills the cache.
+        /// </summary>
+        public void Fill()
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+
+            Console.WriteLine($"[SHARED FILE CACHE]: Refreshing...");
+
+            SyncRoot.EnterWriteLock();
+
+            try
+            {
+                CreateTable();
+
+                Files = System.IO.Directory.GetFiles(Directory, "*", SearchOption.AllDirectories)
+                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))
+                    .ToDictionary(f => f.Filename, f => f);
+
+                // potentially optimize with multi-valued insert
+                // https://stackoverflow.com/questions/16055566/insert-multiple-rows-in-sqlite
+                foreach (var file in Files)
+                {
+                    InsertFilename(file.Key);
+                }
+            }
+            finally
+            {
+                SyncRoot.ExitWriteLock();
+            }
+
+            sw.Stop();
+
+            Console.WriteLine($"[SHARED FILE CACHE]: Refreshed in {sw.ElapsedMilliseconds}ms.  Found {Files.Count()} files.");
+            LastFill = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        ///     Searches the cache for files matching the specified <paramref name="query"/>.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public IEnumerable<Soulseek.File> Search(SearchQuery query)
+        {
+            if (!LastFill.HasValue || LastFill.Value.AddMilliseconds(TTL) < DateTime.UtcNow)
+            {
+                Fill();
+            }
+
+            return QueryTable(query.Query);
+        }
 
         private void CreateTable()
         {
             SQLite = new SqliteConnection("Data Source=:memory:");
             SQLite.Open();
 
-            using (var cmd = new SqliteCommand("CREATE VIRTUAL TABLE files USING fts5(filename)", SQLite))
+            using (var cmd = new SqliteCommand("CREATE VIRTUAL TABLE cache USING fts5(filename)", SQLite))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void InsertFilename(string filename)
+        {
+            using (var cmd = new SqliteCommand($"INSERT INTO cache(filename) VALUES('{filename.Replace("'", "''")}')", SQLite))
             {
                 cmd.ExecuteNonQuery();
             }
@@ -40,7 +106,16 @@
 
         private IEnumerable<Soulseek.File> QueryTable(string text)
         {
-            var query = $"SELECT * FROM files WHERE files MATCH '\"{text.Replace("'", "''")}\"'";
+            // sanitize the query string. there's probably more to it than this.
+            text = text
+                .Replace("/", " ")
+                .Replace("\\", " ")
+                .Replace(":", " ")
+                .Replace("\"", " ");
+
+            var query = $"SELECT * FROM cache WHERE cache MATCH '\"{text.Replace("'", "''")}\"'";
+
+            SyncRoot.EnterReadLock();
 
             try
             {
@@ -59,57 +134,14 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine(query);
+                // temporary error trap to refine substitution rules
+                Console.WriteLine($"[MALFORMED QUERY]: {query} ({ex.Message})");
                 return Enumerable.Empty<Soulseek.File>();
             }
-        }
-
-        private void InsertFile(string filename)
-        {
-            using (var cmd = new SqliteCommand($"INSERT INTO files(filename) VALUES('{filename.Replace("'", "''")}')", SQLite))
+            finally
             {
-                cmd.ExecuteNonQuery();
+                SyncRoot.ExitReadLock();
             }
-        }
-
-        private void FillTable()
-        {
-            var sw = new Stopwatch();
-            sw.Start();
-
-            Console.WriteLine($"[SHARED FILE CACHE]: Refreshing...");
-
-            CreateTable();
-
-            Files = System.IO.Directory.GetFiles(Directory, "*", SearchOption.AllDirectories)
-                .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))
-                .ToDictionary(f => f.Filename, f => f);
-
-            foreach (var file in Files)
-            {
-                InsertFile(file.Key);
-            }
-
-            sw.Stop();
-
-            Console.WriteLine($"[SHARED FILE CACHE]: Refreshed in {sw.ElapsedMilliseconds}ms.  Found {Files.Count()} files.");
-            LastFill = DateTime.UtcNow;
-        }
-
-        public IEnumerable<Soulseek.File> Search(SearchQuery query)
-        {
-            if (!LastFill.HasValue || LastFill.Value.AddMilliseconds(TTL) < DateTime.UtcNow)
-            {
-                FillTable();
-            }
-
-            // sanitize the query string.  there's probably more to it than this.
-            var queryText = query.Query
-                .Replace("/", " ")
-                .Replace("\\", " ")
-                .Replace(":", " ");
-
-            return QueryTable(queryText);
         }
     }
 }

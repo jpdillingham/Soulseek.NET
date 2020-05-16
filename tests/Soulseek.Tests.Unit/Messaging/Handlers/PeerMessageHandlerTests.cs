@@ -101,8 +101,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Throws download wait on PeerUploadFailed message"), AutoData]
-        public void Throws_Download_Wait_On_PeerUploadFailed_Message(string username, IPEndPoint endpoint, string filename)
+        [Theory(DisplayName = "Does not throw download wait on PeerUploadFailed message"), AutoData]
+        public void Does_Not_Throw_Download_Wait_On_PeerUploadFailed_Message(string username, IPEndPoint endpoint, string filename)
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            mocks.Waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<TransferException>()), Times.Once);
+            mocks.Waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<TransferException>()), Times.Never);
         }
 
         [Trait("Category", "Message")]
