@@ -252,7 +252,6 @@ namespace Soulseek.Messaging.Handlers
                         if (download != null)
                         {
                             SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename), new TransferException(msg));
-                            SoulseekClient.Waiter.Throw(download.WaitKey, new TransferException(msg));
                         }
 
                         Diagnostic.Debug(msg);
