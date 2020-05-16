@@ -17,10 +17,14 @@
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     config.AddEnvironmentVariables(prefix: "SLSK_");
+                    config.AddJsonFile("config.json", optional: true, reloadOnChange: false);
                 })
                 .ConfigureLogging((context, logging) =>
                 {
-                    logging.ClearProviders();
+                    if (!System.Diagnostics.Debugger.IsAttached)
+                    {
+                        logging.ClearProviders();
+                    }
                 })
                 .UseStartup<Startup>();
     }

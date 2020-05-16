@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
-import axios from 'axios';
-import { baseUrl } from './config';
+import api from '../api';
 
 import {
     Card,
@@ -52,16 +51,16 @@ class TransferGroup extends Component {
     isStateRemovable = (state) => state.includes('Completed');
 
     retryAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`)));
+        await Promise.all(selected.map(file => api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`)));
     }
 
     cancelAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => axios.delete(`${baseUrl}/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}`)));
+        await Promise.all(selected.map(file => api.delete(`/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}`)));
     }
 
     removeAll = async (direction, username, selected) => {
         await Promise.all(selected.map(file => 
-                axios.delete(`${baseUrl}/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}?remove=true`)
+                api.delete(`/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}?remove=true`)
                     .then(() => this.removeFileSelection(file))));
     }
     

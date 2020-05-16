@@ -125,3 +125,11 @@ body {
     width: 1200px !important;
     margin: auto !important;
 }
+
+.login-button {
+    margin-top: 0px !important;
+}
+
+.login-failure {
+    text-align: left;
+}

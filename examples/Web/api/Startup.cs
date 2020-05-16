@@ -6,7 +6,6 @@
     using System.Linq;
     using System.Net;
     using System.Reflection;
-    using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,26 +24,31 @@
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Swashbuckle.AspNetCore.Swagger;
+    using WebAPI.Security;
     using WebAPI.Trackers;
 
     public class Startup
     {
-        private static string Username { get; set; }
-        private static string Password { get; set; }
-        private static string WebRoot { get; set; }
-        private static int ListenPort { get; set; }
-        private static string OutputDirectory { get; set; }
-        private static string SharedDirectory { get; set; }
-        private static bool EnableDistributedNetwork { get; set; } 
-        private static int DistributedChildLimit { get; set; }
-        private static DiagnosticLevel DiagnosticLevel { get; set; }
-        private static int ConnectTimeout { get; set; }
-        private static int InactivityTimeout { get; set; }
-        private static string JwtSigningKey { get; set; }
+        internal static string Username { get; set; }
+        internal static string Password { get; set; }
+        internal static string WebRoot { get; set; }
+        internal static int ListenPort { get; set; }
+        internal static string OutputDirectory { get; set; }
+        internal static string SharedDirectory { get; set; }
+        internal static long SharedCacheTTL { get; set; }
+        internal static bool EnableDistributedNetwork { get; set; }
+        internal static int DistributedChildLimit { get; set; }
+        internal static DiagnosticLevel DiagnosticLevel { get; set; }
+        internal static int ConnectTimeout { get; set; }
+        internal static int InactivityTimeout { get; set; }
+        internal static bool EnableSecurity { get; set; }
+        internal static int TokenTTL { get; set; }
+
+        internal static SymmetricSecurityKey JwtSigningKey { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
-        private RNGCryptoServiceProvider RNG { get; } = new RNGCryptoServiceProvider();
+        private ISharedFileCache SharedFileCache { get; set; }
 
         public Startup(IConfiguration configuration)
         {
@@ -56,21 +60,18 @@
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT", 50000);
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
-            EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", false);
+            SharedCacheTTL = Configuration.GetValue<long>("SHARED_CACHE_TTL", 900000); // 15 minutes
+            EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", true);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
-            DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Debug);
+            DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
-            JwtSigningKey = Configuration.GetValue<string>("JWT_SIGNING_KEY", RNG.GenerateRandomJwtSigningKey());
+            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
+            TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
 
-            try
-            {
-                Convert.FromBase64String(JwtSigningKey);
-            } 
-            catch
-            {
-                throw new Exception($"JWT_SIGNING_KEY must be a valid base64 string.");
-            }
+            JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
+
+            SharedFileCache = new SharedFileCache(SharedDirectory, SharedCacheTTL);
         }
 
         public IConfiguration Configuration { get; }
@@ -79,22 +80,33 @@
         {
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
-
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
+            if (EnableSecurity)
+            {
+                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
                     {
-                        ClockSkew = TimeSpan.FromMinutes(5),
-                        RequireSignedTokens = true,
-                        RequireExpirationTime = true,
-                        ValidateLifetime = true,
-                        ValidIssuer = "slsk-web-example",
-                        ValidateIssuer = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(JwtSigningKey)), // todo: RFC 2898
-                        ValidateIssuerSigningKey = true,
-                    };
-                });
+                        options.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ClockSkew = TimeSpan.FromMinutes(5),
+                            RequireSignedTokens = true,
+                            RequireExpirationTime = true,
+                            ValidateLifetime = true,
+                            ValidIssuer = "slsk-web-example",
+                            ValidateIssuer = true,
+                            ValidateAudience = false,
+                            IssuerSigningKey = JwtSigningKey,
+                            ValidateIssuerSigningKey = true,
+                        };
+                    });
+            }
+            else
+            {
+                services.AddAuthentication(PassthroughAuthentication.AuthenticationScheme)
+                    .AddScheme<PassthroughAuthenticationOptions, PassthroughAuthenticationHandler>(PassthroughAuthentication.AuthenticationScheme, options =>
+                    {
+                        options.Username = Username;
+                    });
+            }
 
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
@@ -150,6 +162,7 @@
 
             app.UseFileServer(fileServerOptions);
 
+            app.UseAuthentication();
             app.UseMvc();
 
             app.UseSwagger(options =>
@@ -377,12 +390,6 @@
         {
             var defaultResponse = Task.FromResult<SearchResponse>(null);
 
-            // sanitize the query string.  there's probably more to it than this.
-            var queryText = query.Query
-                .Replace("/", " ")
-                .Replace("\\", " ")
-                .Replace(":", " ");
-
             // some bots continually query for very common strings.  blacklist known names here.
             var blacklist = new[] { "Lola45", "Lolo51", "rajah" };
             if (blacklist.Contains(username))
@@ -391,30 +398,12 @@
             }
 
             // some bots and perhaps users search for very short terms.  only respond to queries >= 3 characters.  sorry, U2 fans.
-            if (queryText.Length < 3)
+            if (query.Query.Length < 3)
             {
                 return defaultResponse;
             }
 
-            var results = new List<Soulseek.File>();
-
-            // add all files from any directory matching the search query
-            // to be done properly this needs to be recursively applied, but that's outside of the scope of this example.
-            results.AddRange(System.IO.Directory
-                .GetDirectories(SharedDirectory, $"*{queryText}*", SearchOption.AllDirectories)
-                .SelectMany(dir => System.IO.Directory.GetFiles(dir, "*")
-                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))));
-
-            // add all files matching the query, regardless of directory
-            results.AddRange(System.IO.Directory
-                .GetFiles(SharedDirectory, $"{queryText}", SearchOption.AllDirectories)
-                .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0)));
-
-            // we may have added some files twice, so dedupe entries
-            results = results
-                .GroupBy(f => f.Filename)
-                .Select(group => group.First())
-                .ToList();
+            var results = SharedFileCache.Search(query);
 
             if (results.Count() > 0)
             {

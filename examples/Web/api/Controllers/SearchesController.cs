@@ -5,6 +5,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using WebAPI.DTO;
@@ -43,6 +44,7 @@
         /// <response code="400">The specified <paramref name="request"/> was malformed.</response>
         /// <response code="500">The search terminated abnormally.</response>
         [HttpPost("")]
+        [Authorize]
         [ProducesResponseType(typeof(IEnumerable<SearchResponse>), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(typeof(string), 500)]
@@ -76,6 +78,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("")]
+        [Authorize]
         [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
         public IActionResult Get()
         {
@@ -90,6 +93,7 @@
         /// <response code="200">The request completed successfully.</response>
         /// <response code="404">A matching search was not found.</response>
         [HttpGet("{searchText}")]
+        [Authorize]
         [ProducesResponseType(typeof(Search), 200)]
         [ProducesResponseType(404)]
         public IActionResult GetBySearchText([FromRoute]string searchText)
@@ -112,6 +116,7 @@
         /// <response code="200">The request completed successfully.</response>
         /// <response code="404">A matching search was not found.</response>
         [HttpGet("{token:int}")]
+        [Authorize]
         [ProducesResponseType(typeof(Search), 200)]
         [ProducesResponseType(404)]
         public IActionResult GetByToken([FromRoute]int token)

@@ -239,7 +239,7 @@ namespace Soulseek
         Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously connects the client to default server, but does not log in.
+        ///     Asynchronously connects the client to the default server, but does not log in.
         /// </summary>
         /// <remarks>
         ///     To fully establish a connection, <see cref="LoginAsync(string, string, CancellationToken?)"/> must be invoked.

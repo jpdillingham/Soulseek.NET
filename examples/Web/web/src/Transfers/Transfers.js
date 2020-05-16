@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import api from '../api';
 
-import { baseUrl } from './config';
 import TransferGroup from './TransferGroup';
 
 class Transfers extends Component {
@@ -19,7 +18,7 @@ class Transfers extends Component {
 
     fetch = () => {
         this.setState({ fetchState: 'pending' }, () => {
-            axios.get(baseUrl + `/transfers/${this.props.direction}s`)
+            api.get(`/transfers/${this.props.direction}s`)
             .then(response => this.setState({ 
                 fetchState: 'complete', downloads: response.data
             }))

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { formatSeconds, formatBytes, getFileName } from './util';
+import { formatSeconds, formatBytes, getFileName } from '../util';
 
 import { 
     Header, 

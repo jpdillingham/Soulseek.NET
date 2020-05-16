@@ -1,5 +1,6 @@
 ﻿namespace WebAPI.Controllers
 {
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
     using Soulseek;
@@ -49,6 +50,7 @@
         /// <response code="204">The download was cancelled successfully.</response>
         /// <response code="404">The specified download was not found.</response>
         [HttpDelete("downloads/{username}/{filename}")]
+        [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
@@ -66,6 +68,7 @@
         /// <response code="204">The upload was cancelled successfully.</response>
         /// <response code="404">The specified upload was not found.</response>
         [HttpDelete("uploads/{username}/{filename}")]
+        [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
         public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
@@ -84,6 +87,7 @@
         /// <response code="403">The download was rejected.</response>
         /// <response code="500">An unexpected error was encountered.</response>
         [HttpPost("downloads/{username}/{filename}")]
+        [Authorize]
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(string), 403)]
         [ProducesResponseType(typeof(string), 500)]
@@ -139,6 +143,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads")]
+        [Authorize]
         [ProducesResponseType(200)]
         public IActionResult GetDownloads()
         {
@@ -154,6 +159,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads/{username}")]
+        [Authorize]
         [ProducesResponseType(200)]
         public IActionResult GetDownloads([FromRoute, Required]string username)
         {
@@ -171,6 +177,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads/{username}/{filename}")]
+        [Authorize]
         [ProducesResponseType(typeof(Transfer), 200)]
         public IActionResult GetDownloads([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
@@ -188,6 +195,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads/{username}/{filename}/position")]
+        [Authorize]
         [ProducesResponseType(typeof(int), 200)]
         public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
@@ -200,6 +208,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("uploads")]
+        [Authorize]
         [ProducesResponseType(200)]
         public IActionResult GetUploads()
         {
@@ -215,6 +224,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("uploads/{username}")]
+        [Authorize]
         [ProducesResponseType(200)]
         public IActionResult GetUploads([FromRoute, Required]string username)
         {
@@ -232,6 +242,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("uploads/{username}/{filename}")]
+        [Authorize]
         [ProducesResponseType(200)]
         public IActionResult GetUploads([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {

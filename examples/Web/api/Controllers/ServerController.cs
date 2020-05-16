@@ -1,5 +1,6 @@
 ﻿namespace WebAPI.Controllers
 {
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using System.Threading.Tasks;
@@ -28,6 +29,7 @@
         /// <param name="message"></param>
         /// <returns></returns>
         [HttpDelete]
+        [Authorize]
         public IActionResult Disconnect([FromBody]string message)
         {
             Client.Disconnect(message);
@@ -40,6 +42,7 @@
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> Connect([FromBody]ConnectRequest req)
         {
             var addr = !string.IsNullOrEmpty(req.Address);
