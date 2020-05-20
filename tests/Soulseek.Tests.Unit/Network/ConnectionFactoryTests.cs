@@ -36,6 +36,15 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(-1, c.Options.InactivityTimeout);
         }
 
+        [Trait("Category", "GetTransferConnection")]
+        [Theory(DisplayName = "GetTransferConnection uses default options if not specified"), AutoData]
+        internal void GetTransferConneciton_Uses_Default_Options_If_Not_Specified(IPEndPoint endpoint)
+        {
+            var c = new ConnectionFactory().GetTransferConnection(endpoint);
+
+            Assert.NotNull(c.Options);
+        }
+
         [Trait("Category", "GetServerConnection")]
         [Theory(DisplayName = "GetServerConnection returns the expected connection"), AutoData]
         internal void GetServerConneciton_Returns_The_Expected_Connection(IPEndPoint endpoint, ConnectionOptions options)
@@ -69,6 +78,19 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(-1, c.Options.InactivityTimeout);
         }
 
+        [Trait("Category", "GetServerConnection")]
+        [Theory(DisplayName = "GetServerConnection uses default options if not specified"), AutoData]
+        internal void GetServerConneciton_Uses_Default_Options_If_Not_Specified(IPEndPoint endpoint)
+        {
+            EventHandler connected = (s, a) => { };
+            EventHandler<ConnectionDisconnectedEventArgs> disconnected = (s, a) => { };
+            EventHandler<MessageReadEventArgs> messageRead = (s, a) => { };
+
+            var c = new ConnectionFactory().GetServerConnection(endpoint, connected, disconnected, messageRead);
+
+            Assert.NotNull(c.Options);
+        }
+
         [Trait("Category", "GetMessageConnection")]
         [Theory(DisplayName = "GetMessageConnection returns the expected connection"), AutoData]
         internal void GetMessageConneciton_Returns_The_Expected_Connection(string username, IPEndPoint endpoint, ConnectionOptions options)
@@ -82,6 +104,15 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(options.WriteBufferSize, c.Options.WriteBufferSize);
             Assert.Equal(options.ConnectTimeout, c.Options.ConnectTimeout);
             Assert.Equal(options.InactivityTimeout, c.Options.InactivityTimeout);
+        }
+
+        [Trait("Category", "GetMessageConnection")]
+        [Theory(DisplayName = "GetMessageConnection uses default options if not specified"), AutoData]
+        internal void GetMessageConneciton_Uses_Default_Options_If_Not_Specified(string username, IPEndPoint endpoint)
+        {
+            var c = new ConnectionFactory().GetMessageConnection(username, endpoint);
+
+            Assert.NotNull(c.Options);
         }
     }
 }
