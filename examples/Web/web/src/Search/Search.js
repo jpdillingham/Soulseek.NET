@@ -136,7 +136,7 @@ class Search extends Component {
                         loading={pending}
                         disabled={pending}
                         className='search-input'
-                        placeholder="Enter search phrase..."
+                        placeholder="Search phrase"
                         action={!pending && (searchState === 'idle' ? { icon: 'search', onClick: this.search } : { icon: 'x', color: 'red', onClick: this.clear })} 
                     />
                 </Segment>
