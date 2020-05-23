@@ -1,6 +1,5 @@
 .browse-results {
-  width: 1200px !important;
-  margin: auto !important;
+  margin: unset !important;
 }
 
 .browse-error {

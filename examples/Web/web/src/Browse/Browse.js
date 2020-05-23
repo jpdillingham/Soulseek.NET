@@ -123,7 +123,7 @@ class Browse extends Component {
     const files = (selectedDirectory.files || []).map(f => ({ ...f, filename: `${directoryName}${this.sep(directoryName)}${f.filename}`}));
 
     return (
-      <div>
+      <div className='search-container'>
         <Segment className='search-segment' raised>
           <Input 
             size='big'
@@ -131,8 +131,8 @@ class Browse extends Component {
             loading={pending}
             disabled={pending}
             className='search-input'
-            placeholder="Enter username to browse..."
-            action={!pending && (browseState === 'idle' ? { content: 'Browse', onClick: this.browse } : { content: 'Clear Results', color: 'red', onClick: this.clear })} 
+            placeholder="Username"
+            action={!pending && (browseState === 'idle' ? { icon: 'search', onClick: this.browse } : { icon: 'x', color: 'red', onClick: this.clear })} 
           />
         </Segment>
         {pending ? 

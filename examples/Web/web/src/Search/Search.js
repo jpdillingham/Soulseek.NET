@@ -128,7 +128,7 @@ class Search extends Component {
         const hiddenCount = results.length - sortedAndFilteredResults.length;
 
         return (
-            <div>
+            <div className='search-container'>
                 <Segment className='search-segment' raised>
                     <Input 
                         size='big'
@@ -136,8 +136,8 @@ class Search extends Component {
                         loading={pending}
                         disabled={pending}
                         className='search-input'
-                        placeholder="Enter search phrase..."
-                        action={!pending && (searchState === 'idle' ? { content: 'Search', onClick: this.search } : { content: 'Clear Results', color: 'red', onClick: this.clear })} 
+                        placeholder="Search phrase"
+                        action={!pending && (searchState === 'idle' ? { icon: 'search', onClick: this.search } : { icon: 'x', color: 'red', onClick: this.clear })} 
                     />
                 </Segment>
                 {pending ? 
@@ -154,7 +154,7 @@ class Search extends Component {
                         {results && results.length > 0 && <Segment className='search-options' raised>
                             <Dropdown
                                 button
-                                className='icon'
+                                className='search-options-sort icon'
                                 floating
                                 labeled
                                 icon='sort'

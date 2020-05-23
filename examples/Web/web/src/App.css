@@ -21,30 +21,53 @@ body {
 }
 
 .result-card {
-    width: 1200px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    width: 100% !important;
 }
 
 .result-meta {
     margin-top: 5px;
 }
 
-.search-segment {
-    width: 1200px !important;
+.search-container {
+    padding-left: 15px;
+    padding-right: 15px;
+    max-width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
+}
+
+.search-segment {
     margin-top: 15px !important;
 }
 
 .search-options {
-    width: 1200px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
 }
 
-.search-options-hide-no-slots {
-    margin-left: 20px;
+@media only screen and (max-width: 767px) {
+    .search-options-hide-no-slots {
+        margin-left: 0px;
+        margin-top: 20px;
+    }
+}
+
+@media only screen and (min-width: 768px) {
+    .search-options-hide-no-slots {
+        margin-left: 20px;
+    }
+    .transferlist-progress {
+        max-width: 300px;
+        width: 300px;
+    }
+}
+
+@media only screen and (max-width: 767px) {
+    .search-options-sort {
+        width: 100%;
+    }
+
+    .transferlist-progress {
+        width: 100%;
+    }
 }
 
 .search-input {
@@ -64,8 +87,6 @@ body {
 }
 
 .filelist-filename {
-    width: 900px;
-    min-width: 900px;
     word-wrap: break-word !important;
 }
 
@@ -93,12 +114,11 @@ body {
 
 .transfer-segment {
     margin-top: 16px;
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 .transfer-placeholder {
-    width: 1200px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
     font-weight: 100;
     text-align: center;
     margin-top: 50px !important;
@@ -109,20 +129,13 @@ body {
     min-width: 150px;
 }
 
-.transferlist-progress {
-    width: 300px;
-    max-width: 300px;
-}
-
 .transferlist-filename {
-    width: 600px;
-    min-width: 300px;
     word-wrap: break-word !important;
 }
 
 .showmore-button {
     padding: 20px !important;
-    width: 1200px !important;
+    max-width: 1200px !important;
     margin: auto !important;
 }
 
