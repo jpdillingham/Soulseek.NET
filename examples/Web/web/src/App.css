@@ -21,26 +21,26 @@ body {
 }
 
 .result-card {
-    width: 1200px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    width: 100% !important;
 }
 
 .result-meta {
     margin-top: 5px;
 }
 
-.search-segment {
-    width: 1200px !important;
+.search-container {
+    padding-left: 15px;
+    padding-right: 15px;
+    max-width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
+}
+
+.search-segment {
     margin-top: 15px !important;
 }
 
 .search-options {
-    width: 1200px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
 }
 
 .search-options-hide-no-slots {
@@ -64,8 +64,6 @@ body {
 }
 
 .filelist-filename {
-    width: 900px;
-    min-width: 900px;
     word-wrap: break-word !important;
 }
 
