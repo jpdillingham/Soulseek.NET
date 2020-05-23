@@ -43,8 +43,24 @@ body {
 .search-options {
 }
 
-.search-options-hide-no-slots {
-    margin-left: 20px;
+@media only screen and (max-width: 767px) {
+    .search-options-hide-no-slots {
+        margin-left: 0px;
+        margin-top: 20px;
+    }
+}
+
+@media only screen and (min-width: 768px) {
+    .search-options-hide-no-slots {
+        margin-left: 20px;
+    }
+}
+
+
+@media only screen and (max-width: 767px) {
+    .search-options-sort {
+        width: 100%;
+    }
 }
 
 .search-input {
@@ -64,6 +80,8 @@ body {
 }
 
 .filelist-filename {
+    /* width: 900px;
+    min-width: 900px; */
     word-wrap: break-word !important;
 }
 

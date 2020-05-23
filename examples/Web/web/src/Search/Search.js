@@ -154,7 +154,7 @@ class Search extends Component {
                         {results && results.length > 0 && <Segment className='search-options' raised>
                             <Dropdown
                                 button
-                                className='icon'
+                                className='search-options-sort icon'
                                 floating
                                 labeled
                                 icon='sort'
