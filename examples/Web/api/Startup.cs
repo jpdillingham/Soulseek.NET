@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Net;
     using System.Reflection;
+    using System.Text.Json.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,12 +19,10 @@
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.FileProviders;
     using Microsoft.IdentityModel.Tokens;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
+    using Microsoft.OpenApi.Models;
     using Soulseek;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
-    using Swashbuckle.AspNetCore.Swagger;
     using WebAPI.Security;
     using WebAPI.Trackers;
 
@@ -66,7 +65,7 @@
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
-            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
+            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", false);
             TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
@@ -108,15 +107,18 @@
                     });
             }
 
-            services.AddMvc()
+            services.AddMvc(options =>
+            {
+                options.EnableEndpointRouting = false;
+            })
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
                 .AddJsonOptions(options =>
                 {
-                    options.SerializerSettings.Converters.Add(new StringEnumConverter());
-                    options.SerializerSettings.Converters.Add(new IPAddressConverter());
-                    options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                    options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    options.JsonSerializerOptions.IgnoreNullValues = true;
                 });
+
+            services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddApiVersioning(options => options.ReportApiVersions = true);
             services.AddVersionedApiExplorer(options =>
@@ -127,9 +129,14 @@
 
             services.AddSwaggerGen(options =>
             {
-                services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>()
-                    .ApiVersionDescriptions.ToList()
-                        .ForEach(description => options.SwaggerDoc(description.GroupName, new Info { Title = "Soulseek.NET Example API", Version = description.GroupName }));
+                options.DescribeAllParametersInCamelCase();
+                options.SwaggerDoc("v1",
+                    new OpenApiInfo
+                    {
+                        Title = "Soulseek.NET Example API",
+                        Version = "v1"
+                    }
+                 );
 
                 options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml"));
             });
@@ -165,22 +172,7 @@
             app.UseAuthentication();
             app.UseMvc();
 
-            app.UseSwagger(options =>
-            {
-                // use camelCasing for routes and properties
-                options.PreSerializeFilters.Add((document, request) =>
-                {
-                    string camelCase(string key) =>
-                        string.Join('/', key.Split('/').Select(x => x.Contains("{") || x.Length < 2 ? x : char.ToLowerInvariant(x[0]) + x.Substring(1)));
-
-                    document.Paths = document.Paths.ToDictionary(p => camelCase(p.Key), p => p.Value);
-                    document.Paths.ToList()
-                        .ForEach(path => typeof(PathItem).GetProperties().Where(p => p.PropertyType == typeof(Operation)).ToList()
-                            .ForEach(operation => ((Operation)operation.GetValue(path.Value, null))?.Parameters.ToList()
-                                .ForEach(prop => prop.Name = camelCase(prop.Name))));
-                });
-            });
-
+            app.UseSwagger();
             app.UseSwaggerUI(options => provider.ApiVersionDescriptions.ToList()
                 .ForEach(description => options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName)));
 
@@ -421,24 +413,6 @@
             // if no results, either return null or an instance of SearchResponse with a fileList of length 0
             // in either case, no response will be sent to the requestor.
             return Task.FromResult<SearchResponse>(null);
-        }
-
-        class IPAddressConverter : JsonConverter
-        {
-            public override bool CanConvert(Type objectType)
-            {
-                return (objectType == typeof(IPAddress));
-            }
-
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-            {
-                writer.WriteValue(value.ToString());
-            }
-
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-            {
-                return IPAddress.Parse((string)reader.Value);
-            }
         }
 
         class UserEndPointCache : IUserEndPointCache
