@@ -2,13 +2,13 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: mcr.microsoft.com/dotnet/core/sdk:2.2.204-stretch
+      - image: mcr.microsoft.com/dotnet/core/sdk:3.1
     steps:
       - checkout
       - run: find .
       - run: apt-get update
       - run: apt-get install jq -y
-      - run: apt-get install  openjdk-11-jdk-headless -y
+      - run: apt-get install openjdk-11-jre-headless -y
       - run: echo 'export PATH=$HOME/.dotnet/tools:$PATH' >> $BASH_ENV
       - run: dotnet tool install --global dotnet-sonarscanner --version 4.6.0
       - run: bash ./bin/ci
