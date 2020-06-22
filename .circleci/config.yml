@@ -8,7 +8,7 @@ jobs:
       - run: find .
       - run: apt-get update
       - run: apt-get install jq -y
-      - run: apt-get install openjdk-11-jre -y
+      - run: apt-get install  openjdk-11-jdk-headless -y
       - run: echo 'export PATH=$HOME/.dotnet/tools:$PATH' >> $BASH_ENV
       - run: dotnet tool install --global dotnet-sonarscanner --version 4.6.0
       - run: bash ./bin/ci
