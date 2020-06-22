@@ -125,7 +125,8 @@ class Browse extends Component {
     return (
       <div className='search-container'>
         <Segment className='search-segment' raised>
-          <Input 
+          <Input
+            input={<input placeholder="Search phrase" type="search" data-lpignore="true"></input>}
             size='big'
             ref={input => this.inputtext = input}
             loading={pending}

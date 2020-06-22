@@ -51,7 +51,7 @@ class App extends Component {
     }
 
     setToken = (storage, token) => {
-        this.setState({ token }, () => storage.setItem(tokenKey, JSON.stringify(token)));
+        storage.setItem(tokenKey, JSON.stringify(token))
     }
 
     removeToken = (storage) => {
@@ -63,6 +63,7 @@ class App extends Component {
             try {
                 const response = await api.post('/session', { username, password });
                 this.setToken(rememberMe ? localStorage : sessionStorage, response.data.token);
+                window.location.reload();
             } catch (error) {
                 this.setState({ login: { ...this.state.login, pending: false, error }});
             }
