@@ -81,7 +81,7 @@ namespace Soulseek
         /// <returns>The hash code of this instance.</returns>
         public override int GetHashCode()
         {
-            return string.IsNullOrEmpty(Token) ? 0 : Token.GetHashCode();
+            return string.IsNullOrEmpty(Token) ? 0 : Token.GetHashCode(StringComparison.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
