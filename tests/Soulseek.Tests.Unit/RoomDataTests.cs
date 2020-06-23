@@ -17,7 +17,6 @@ namespace Soulseek.Tests.Unit
 
     public class RoomDataTests
     {
-
         [Trait("Category", "RoomData")]
         [Theory(DisplayName = "RoomData uses empty list if one is omitted"), AutoData]
         public void RoomData_Users_Uses_Empty_List_If_One_Is_Omitted(string roomName)

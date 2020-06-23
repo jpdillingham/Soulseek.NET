@@ -180,6 +180,9 @@ namespace Soulseek
                 recordLock.ExitReadLock();
             }
 
+            // defer registration to prevent the wait from being dispositioned prior to being successfully queued
+            // this is a concern if we are given a timeout of 0, or a cancellation token which is already cancelled
+            wait.Register();
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
         }
 
@@ -237,21 +240,22 @@ namespace Soulseek
 
                     try
                     {
-                        // clean up entries in the Waits and Locks dictionaries if the corresponding ConcurrentQueue is empty. this is
-                        // tricky, because we don't want to remove a record if another thread is in the process of enqueueing a new wait.
+                        // clean up entries in the Waits and Locks dictionaries if the corresponding ConcurrentQueue is empty.
+                        // this is tricky, because we don't want to remove a record if another thread is in the process of
+                        // enqueueing a new wait.
                         if (queue.IsEmpty)
                         {
-                            // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits before
-                            // we can delete the dictionary record. it's ok and expected that Wait() might add this record back to the
-                            // dictionary as soon as this unblocks; we're preventing new waits from being discarded if they are added
-                            // by another thread just prior to the TryRemove() operation below.
+                            // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits
+                            // before we can delete the dictionary record. it's ok and expected that Wait() might add this record
+                            // back to the dictionary as soon as this unblocks; we're preventing new waits from being discarded if
+                            // they are added by another thread just prior to the TryRemove() operation below.
                             recordLock.EnterWriteLock();
 
                             try
                             {
-                                // check the queue again to ensure Wait() didn't enqueue anything between the last check and when we
-                                // entered the write lock. this is guarateed to be safe since we now have exclusive access to the
-                                // record and it should be impossible to remove a record containing a non-empty queue
+                                // check the queue again to ensure Wait() didn't enqueue anything between the last check and when
+                                // we entered the write lock. this is guarateed to be safe since we now have exclusive access to
+                                // the record and it should be impossible to remove a record containing a non-empty queue
                                 if (queue.IsEmpty)
                                 {
                                     Waits.TryRemove(key, out _);
@@ -289,11 +293,9 @@ namespace Soulseek
             {
                 TaskCompletionSource = taskCompletionSource;
                 Timeout = timeout;
-
-                CancellationTokenRegistration = cancellationToken.Register(() => cancelAction());
-
-                TimeoutTokenSource = new CancellationTokenSource(timeout);
-                TimeoutTokenRegistration = TimeoutTokenSource.Token.Register(() => timeoutAction());
+                CancelAction = cancelAction;
+                TimeoutAction = timeoutAction;
+                CancellationToken = cancellationToken;
             }
 
             /// <summary>
@@ -306,8 +308,11 @@ namespace Soulseek
             /// </summary>
             public int Timeout { get; }
 
+            private Action CancelAction { get; set; }
+            private CancellationToken CancellationToken { get; set; }
             private CancellationTokenRegistration CancellationTokenRegistration { get; set; }
             private bool Disposed { get; set; }
+            private Action TimeoutAction { get; set; }
             private CancellationTokenRegistration TimeoutTokenRegistration { get; set; }
             private CancellationTokenSource TimeoutTokenSource { get; set; }
 
@@ -318,6 +323,17 @@ namespace Soulseek
             {
                 Dispose(true);
                 GC.SuppressFinalize(this);
+            }
+
+            /// <summary>
+            ///     Register cancellation and timeout actions.
+            /// </summary>
+            public void Register()
+            {
+                CancellationTokenRegistration = CancellationToken.Register(() => CancelAction());
+
+                TimeoutTokenSource = new CancellationTokenSource(Timeout);
+                TimeoutTokenRegistration = TimeoutTokenSource.Token.Register(() => TimeoutAction());
             }
 
             /// <summary>
