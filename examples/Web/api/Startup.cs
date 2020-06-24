@@ -6,6 +6,8 @@
     using System.Linq;
     using System.Net;
     using System.Reflection;
+    using System.Text.Json;
+    using System.Text.Json.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,13 +19,12 @@
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.FileProviders;
+    using Microsoft.Extensions.Hosting;
     using Microsoft.IdentityModel.Tokens;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
+    using Microsoft.OpenApi.Models;
     using Soulseek;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
-    using Swashbuckle.AspNetCore.Swagger;
     using WebAPI.Security;
     using WebAPI.Trackers;
 
@@ -108,15 +109,19 @@
                     });
             }
 
-            services.AddMvc()
+            services.AddMvc(options =>
+            {
+                options.EnableEndpointRouting = false;
+            })
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
                 .AddJsonOptions(options =>
                 {
-                    options.SerializerSettings.Converters.Add(new StringEnumConverter());
-                    options.SerializerSettings.Converters.Add(new IPAddressConverter());
-                    options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                    options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                    options.JsonSerializerOptions.Converters.Add(new IPAddressConverter());
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    options.JsonSerializerOptions.IgnoreNullValues = true;
                 });
+
+            services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddApiVersioning(options => options.ReportApiVersions = true);
             services.AddVersionedApiExplorer(options =>
@@ -127,9 +132,14 @@
 
             services.AddSwaggerGen(options =>
             {
-                services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>()
-                    .ApiVersionDescriptions.ToList()
-                        .ForEach(description => options.SwaggerDoc(description.GroupName, new Info { Title = "Soulseek.NET Example API", Version = description.GroupName }));
+                options.DescribeAllParametersInCamelCase();
+                options.SwaggerDoc("v1",
+                    new OpenApiInfo
+                    {
+                        Title = "Soulseek.NET Example API",
+                        Version = "v1"
+                    }
+                 );
 
                 options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml"));
             });
@@ -140,7 +150,7 @@
             services.AddSingleton<IBrowseTracker, BrowseTracker>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker)
         {
             if (!env.IsDevelopment())
             {
@@ -165,22 +175,7 @@
             app.UseAuthentication();
             app.UseMvc();
 
-            app.UseSwagger(options =>
-            {
-                // use camelCasing for routes and properties
-                options.PreSerializeFilters.Add((document, request) =>
-                {
-                    string camelCase(string key) =>
-                        string.Join('/', key.Split('/').Select(x => x.Contains("{") || x.Length < 2 ? x : char.ToLowerInvariant(x[0]) + x.Substring(1)));
-
-                    document.Paths = document.Paths.ToDictionary(p => camelCase(p.Key), p => p.Value);
-                    document.Paths.ToList()
-                        .ForEach(path => typeof(PathItem).GetProperties().Where(p => p.PropertyType == typeof(Operation)).ToList()
-                            .ForEach(operation => ((Operation)operation.GetValue(path.Value, null))?.Parameters.ToList()
-                                .ForEach(prop => prop.Name = camelCase(prop.Name))));
-                });
-            });
-
+            app.UseSwagger();
             app.UseSwaggerUI(options => provider.ApiVersionDescriptions.ToList()
                 .ForEach(description => options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName)));
 
@@ -423,22 +418,23 @@
             return Task.FromResult<SearchResponse>(null);
         }
 
-        class IPAddressConverter : JsonConverter
+        class IPAddressConverter : JsonConverter<IPAddress>
         {
-            public override bool CanConvert(Type objectType)
-            {
-                return (objectType == typeof(IPAddress));
-            }
+            public override bool CanConvert(Type objectType) =>(objectType == typeof(IPAddress));
 
-            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-            {
-                writer.WriteValue(value.ToString());
-            }
+            public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => IPAddress.Parse(reader.GetString());
 
-            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-            {
-                return IPAddress.Parse((string)reader.Value);
-            }
+            public override void Write(Utf8JsonWriter writer, IPAddress value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToString());
+
+            //public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            //{
+            //    writer.WriteValue(value.ToString());
+            //}
+
+            //public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            //{
+            //    return IPAddress.Parse((string)reader.Value);
+            //}
         }
 
         class UserEndPointCache : IUserEndPointCache

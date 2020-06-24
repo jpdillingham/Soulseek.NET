@@ -538,7 +538,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask)
-                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+                .Callback<byte[], CancellationToken?>((b, c) => actualBytes = b);
             conn.Setup(m => m.ReadAsync(4, null))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 

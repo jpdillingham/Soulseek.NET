@@ -1784,7 +1784,7 @@ namespace Soulseek
                 throw new ChangePasswordException($"Failed to change password: {ex.Message}", ex);
             }
 
-            if (!response.Equals(password, StringComparison.InvariantCultureIgnoreCase))
+            if (!response.Equals(password, StringComparison.CurrentCulture))
             {
                 throw new ChangePasswordException($"The response from the server doesn't match the specified password; the change likely failed");
             }
