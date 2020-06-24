@@ -85,8 +85,8 @@ namespace Soulseek.Network.Tcp
         /// <returns>The hash code of this instance.</returns>
         public override int GetHashCode()
         {
-            var u = Username?.GetHashCode() ?? 0;
-            var i = IPEndPoint?.Address?.ToString().GetHashCode() ?? 0;
+            var u = Username?.GetHashCode(StringComparison.InvariantCulture) ?? 0;
+            var i = IPEndPoint?.Address?.ToString().GetHashCode(StringComparison.InvariantCulture) ?? 0;
             return u ^ i ^ IPEndPoint?.Port.GetHashCode() ?? 0;
         }
     }

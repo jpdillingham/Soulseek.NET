@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Net;
     using System.Reflection;
+    using System.Text.Json;
     using System.Text.Json.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
@@ -18,6 +19,7 @@
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.FileProviders;
+    using Microsoft.Extensions.Hosting;
     using Microsoft.IdentityModel.Tokens;
     using Microsoft.OpenApi.Models;
     using Soulseek;
@@ -65,7 +67,7 @@
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
-            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", false);
+            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
             TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
@@ -114,6 +116,7 @@
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
                 .AddJsonOptions(options =>
                 {
+                    options.JsonSerializerOptions.Converters.Add(new IPAddressConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     options.JsonSerializerOptions.IgnoreNullValues = true;
                 });
@@ -147,7 +150,7 @@
             services.AddSingleton<IBrowseTracker, BrowseTracker>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker)
         {
             if (!env.IsDevelopment())
             {
@@ -413,6 +416,25 @@
             // if no results, either return null or an instance of SearchResponse with a fileList of length 0
             // in either case, no response will be sent to the requestor.
             return Task.FromResult<SearchResponse>(null);
+        }
+
+        class IPAddressConverter : JsonConverter<IPAddress>
+        {
+            public override bool CanConvert(Type objectType) =>(objectType == typeof(IPAddress));
+
+            public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => IPAddress.Parse(reader.GetString());
+
+            public override void Write(Utf8JsonWriter writer, IPAddress value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToString());
+
+            //public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            //{
+            //    writer.WriteValue(value.ToString());
+            //}
+
+            //public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            //{
+            //    return IPAddress.Parse((string)reader.Value);
+            //}
         }
 
         class UserEndPointCache : IUserEndPointCache

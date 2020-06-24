@@ -147,7 +147,7 @@ namespace Soulseek
         {
             var firstToken = tokens.FirstOrDefault(token => prefixes.Any(prefix => token.StartsWith(prefix, IgnoreCase)));
 
-            if (firstToken != default && firstToken.Contains(":") && int.TryParse(firstToken.Split(':')[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
+            if (firstToken != default && firstToken.Contains(":", IgnoreCase) && int.TryParse(firstToken.Split(':')[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
             {
                 return value;
             }
