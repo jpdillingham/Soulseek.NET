@@ -92,5 +92,71 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(i.RemoteToken, t.RemoteToken);
             Assert.Equal(i.IPEndPoint, t.IPEndPoint);
         }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "ElapsedTime returns null if StartTime is null")]
+        internal void ElapsedTime_Returns_Null_If_StartTime_Is_Null()
+        {
+            var i = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new Transfer(i);
+
+            Assert.Null(d.ElapsedTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "ElapsedTime is not null if StartTime is not null")]
+        internal void ElapsedTime_Is_Not_Null_If_StartTime_Is_Not_Null()
+        {
+            var i = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            var s = new DateTime(2019, 4, 25);
+
+            i.SetProperty("StartTime", s);
+
+            var d = new Transfer(i);
+
+            Assert.NotNull(d.ElapsedTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "ElapsedTime returns elapsed time between StartTime and EndTime")]
+        internal void ElapsedTime_Returns_Elapsed_Time_Between_StartTime_And_EndTime()
+        {
+            var i = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            var s = new DateTime(2019, 4, 25);
+            var e = new DateTime(2019, 4, 26);
+
+            i.SetProperty("StartTime", s);
+            i.SetProperty("EndTime", e);
+
+            var d = new Transfer(i);
+
+            Assert.Equal(e - s, d.ElapsedTime);
+        }
+
+        [Trait("Category", "PercentComplete")]
+        [Fact(DisplayName = "PercentComplete returns 0 if Size is 0")]
+        internal void PercentComplete_Returns_0_If_Size_Is_0()
+        {
+            var i = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0)
+            {
+                Size = 0,
+            };
+
+            var d = new Transfer(i);
+
+            Assert.Equal(0, d.PercentComplete);
+        }
+
+        [Trait("Category", "RemainingTime")]
+        [Fact(DisplayName = "RemainingTime returns null if AverageSpeed is null")]
+        internal void RemainingTime_Returns_Null_If_AverageSpeed_Is_Null()
+        {
+            var i = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new Transfer(i);
+
+            Assert.Null(d.RemainingTime);
+        }
     }
 }
