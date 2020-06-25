@@ -57,9 +57,7 @@ namespace Soulseek.Network.Tcp
         /// <returns>A value indicating whether the specified ConnectionKey is equal to this instance.</returns>
         public bool Equals(ConnectionKey other)
         {
-            return Username == other.Username &&
-                IPEndPoint?.Address?.ToString() == other.IPEndPoint?.Address?.ToString() &&
-                IPEndPoint?.Port == other.IPEndPoint?.Port;
+            return GetHashCode() == other?.GetHashCode();
         }
 
         /// <summary>
@@ -85,9 +83,10 @@ namespace Soulseek.Network.Tcp
         /// <returns>The hash code of this instance.</returns>
         public override int GetHashCode()
         {
-            var u = Username?.GetHashCode(StringComparison.InvariantCulture) ?? 0;
-            var i = IPEndPoint?.Address?.ToString().GetHashCode(StringComparison.InvariantCulture) ?? 0;
-            return u ^ i ^ IPEndPoint?.Port.GetHashCode() ?? 0;
+            var u = (Username ?? string.Empty).GetHashCode(StringComparison.InvariantCulture);
+            var i = (IPEndPoint?.Address.ToString() ?? string.Empty).GetHashCode(StringComparison.InvariantCulture);
+            var p = (IPEndPoint?.Port.GetHashCode() ?? -1).GetHashCode();
+            return u ^ i ^ p;
         }
     }
 }
