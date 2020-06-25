@@ -12,6 +12,7 @@
 
 namespace Soulseek.Tests.Unit
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -34,6 +35,9 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(options, s.Options);
 
             Assert.Equal(SearchStates.None, s.State);
+
+            Assert.Equal(0, s.FileCount);
+            Assert.Equal(0, s.ResponseCount);
 
             s.Dispose();
         }
@@ -473,6 +477,21 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(filename, addResponse.Files.ToList()[0].Filename);
 
             s.Dispose();
+        }
+
+        [Trait("Category", "Cancel")]
+        [Fact(DisplayName = "Cancel cancels")]
+        public async Task Cancel_Cancels()
+        {
+            using (var s = new SearchInternal("foo", 1))
+            {
+                s.Cancel();
+
+                var ex = await Record.ExceptionAsync(() => s.WaitForCompletion(CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
         }
     }
 }

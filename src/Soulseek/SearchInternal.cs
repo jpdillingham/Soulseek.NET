@@ -88,7 +88,7 @@ namespace Soulseek
 
         private bool Disposed { get; set; } = false;
         private SystemTimer SearchTimeoutTimer { get; set; }
-        private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
+        private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>();
 
         /// <summary>
         ///     Cancels the search.
