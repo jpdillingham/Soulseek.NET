@@ -141,7 +141,7 @@ namespace Soulseek.Tests.Unit
         {
             var i = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0)
             {
-                Size = 0
+                Size = 0,
             };
 
             var d = new Transfer(i);
