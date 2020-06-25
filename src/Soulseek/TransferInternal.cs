@@ -75,7 +75,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current duration of the transfer, if it has been started.
         /// </summary>
-        public TimeSpan? ElapsedTime => StartTime == null ? default(TimeSpan) : (EndTime ?? DateTime.Now) - StartTime;
+        public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.Now) - StartTime.Value);
 
         /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
@@ -105,7 +105,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.
         /// </summary>
-        public TimeSpan? RemainingTime => AverageSpeed == 0 ? default : TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
+        public TimeSpan? RemainingTime => AverageSpeed == 0 ? null : (TimeSpan?)TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
 
         /// <summary>
         ///     Gets or sets the remote unique token for the transfer.

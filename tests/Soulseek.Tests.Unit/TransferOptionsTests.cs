@@ -22,7 +22,7 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
-        public void Instantiates_With_Defaults(
+        public void Instantiates_Given_Data(
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, CancellationToken, Task> governor,
@@ -41,6 +41,22 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(governor, o.Governor);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with given data")]
+        public async Task Instantiates_With_Defaults()
+        {
+            var o = new TransferOptions();
+
+            Assert.False(o.DisposeInputStreamOnCompletion);
+            Assert.False(o.DisposeOutputStreamOnCompletion);
+
+            var ex = await Record.ExceptionAsync(() => o.Governor(null, CancellationToken.None));
+            Assert.Null(ex);
+
+            Assert.Null(o.StateChanged);
+            Assert.Null(o.ProgressUpdated);
         }
     }
 }

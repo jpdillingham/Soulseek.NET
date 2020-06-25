@@ -13,6 +13,9 @@
 namespace Soulseek.Tests.Unit
 {
     using System;
+    using System.Linq;
+    using System.Net;
+    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Soulseek.Diagnostics;
     using Xunit;
@@ -22,28 +25,54 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiation(
+            int listenPort,
+            bool enableDistributedNetwork,
+            bool acceptDistributedChildren,
+            int distributedChildLimit,
+            bool deduplicateSearchRequests,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages,
+            bool autoAcknowledgePrivilegeNotifications,
             DiagnosticLevel minimumDiagnosticLevel,
             int startingToken,
             ConnectionOptions serverConnectionOptions,
             ConnectionOptions peerConnectionOptions,
-            ConnectionOptions transferConnectionOptions)
+            ConnectionOptions transferConnectionOptions,
+            ConnectionOptions incomingConnectionOptions,
+            ConnectionOptions distributedConnectionOptions)
         {
             var o = new SoulseekClientOptions(
+                listenPort: listenPort,
+                userEndPointCache: null,
+                enableDistributedNetwork: enableDistributedNetwork,
+                acceptDistributedChildren: acceptDistributedChildren,
+                distributedChildLimit: distributedChildLimit,
+                deduplicateSearchRequests: deduplicateSearchRequests,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications: autoAcknowledgePrivilegeNotifications,
                 minimumDiagnosticLevel: minimumDiagnosticLevel,
                 startingToken: startingToken,
                 serverConnectionOptions: serverConnectionOptions,
                 peerConnectionOptions: peerConnectionOptions,
-                transferConnectionOptions: transferConnectionOptions);
+                transferConnectionOptions: transferConnectionOptions,
+                incomingConnectionOptions: incomingConnectionOptions,
+                distributedConnectionOptions: distributedConnectionOptions);
 
+            Assert.Equal(listenPort, o.ListenPort);
+            Assert.Null(o.UserEndPointCache);
+            Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
+            Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
+            Assert.Equal(distributedChildLimit, o.DistributedChildLimit);
+            Assert.Equal(deduplicateSearchRequests, o.DeduplicateSearchRequests);
             Assert.Equal(messageTimeout, o.MessageTimeout);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
+            Assert.Equal(autoAcknowledgePrivilegeNotifications, o.AutoAcknowledgePrivilegeNotifications);
             Assert.Equal(minimumDiagnosticLevel, o.MinimumDiagnosticLevel);
             Assert.Equal(startingToken, o.StartingToken);
             Assert.Equal(peerConnectionOptions, o.PeerConnectionOptions);
+            Assert.Equal(incomingConnectionOptions, o.IncomingConnectionOptions);
+            Assert.Equal(distributedConnectionOptions, o.DistributedConnectionOptions);
 
             Assert.Equal(serverConnectionOptions.ReadBufferSize, o.ServerConnectionOptions.ReadBufferSize);
             Assert.Equal(serverConnectionOptions.WriteBufferSize, o.ServerConnectionOptions.WriteBufferSize);
@@ -73,6 +102,36 @@ namespace Soulseek.Tests.Unit
             Assert.NotNull(o.ServerConnectionOptions);
             Assert.NotNull(o.PeerConnectionOptions);
             Assert.NotNull(o.TransferConnectionOptions);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with default delegates"), AutoData]
+        public async Task Instantiation_Default_Delegates(
+            int messageTimeout,
+            bool autoAcknowledgePrivateMessages,
+            DiagnosticLevel minimumDiagnosticLevel,
+            int startingToken)
+        {
+            var o = new SoulseekClientOptions(
+                messageTimeout: messageTimeout,
+                autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
+                minimumDiagnosticLevel: minimumDiagnosticLevel,
+                startingToken: startingToken);
+
+            var ip = new IPEndPoint(IPAddress.None, 1);
+
+            Assert.Equal(Enumerable.Empty<Directory>(), await o.BrowseResponseResolver(string.Empty, ip));
+
+            var ex = await Record.ExceptionAsync(() => o.EnqueueDownloadAction(string.Empty, ip, string.Empty));
+            Assert.Null(ex);
+
+            var placeInQueue = await o.PlaceInQueueResponseResolver(string.Empty, ip, string.Empty);
+            Assert.Null(placeInQueue);
+
+            Assert.IsType<UserInfo>(await o.UserInfoResponseResolver(string.Empty, ip));
+
+            Assert.Null(o.SearchResponseResolver);
+            Assert.Null(o.DirectoryContentsResponseResolver);
         }
 
         [Trait("Category", "Instantiation")]
