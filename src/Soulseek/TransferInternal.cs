@@ -75,7 +75,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current duration of the transfer, if it has been started.
         /// </summary>
-        public TimeSpan? ElapsedTime => StartTime == null ? null : (EndTime ?? DateTime.Now) - StartTime;
+        public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.Now) - StartTime.Value);
 
         /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.

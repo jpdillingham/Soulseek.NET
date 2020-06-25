@@ -117,20 +117,37 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "State")]
-        [Fact(DisplayName = "ElapsedTime works")]
-        internal void ElapsedTime_Works()
+        [Fact(DisplayName = "ElapsedTime returns null if StartTime is null")]
+        internal void ElapsedTime_Returns_Null_If_StartTime_Is_Null()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            Assert.Null(d.ElapsedTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "ElapsedTime is not null if StartTime is not null")]
+        internal void ElapsedTime_Is_Not_Null_If_StartTime_Is_Not_Null()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            var s = new DateTime(2019, 4, 25);
+
+            d.SetProperty("StartTime", s);
+
+            Assert.NotNull(d.ElapsedTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "ElapsedTime returns elapsed time between StartTime and EndTime")]
+        internal void ElapsedTime_Returns_Elapsed_Time_Between_StartTime_And_EndTime()
         {
             var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             var s = new DateTime(2019, 4, 25);
             var e = new DateTime(2019, 4, 26);
 
-            Assert.Null(d.ElapsedTime);
-
             d.SetProperty("StartTime", s);
-
-            Assert.NotNull(d.ElapsedTime);
-
             d.SetProperty("EndTime", e);
 
             Assert.Equal(e - s, d.ElapsedTime);
