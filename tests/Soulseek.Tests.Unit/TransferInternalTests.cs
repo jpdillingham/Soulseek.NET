@@ -46,13 +46,14 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(0, d.AverageSpeed);
             Assert.Equal(0, d.BytesTransferred);
             Assert.Equal(0, d.BytesRemaining);
-            Assert.Equal(default(TimeSpan), d.ElapsedTime);
-            Assert.Equal(default(TimeSpan), d.RemainingTime);
+            Assert.Null(d.ElapsedTime);
+            Assert.Null(d.RemainingTime);
             Assert.Null(d.StartTime);
             Assert.Null(d.EndTime);
             Assert.Equal(0, d.PercentComplete);
             Assert.Null(d.RemoteToken);
             Assert.Equal(options, d.Options);
+            Assert.Equal(0, d.StartOffset);
         }
 
         [Trait("Category", "Properties")]
@@ -101,18 +102,18 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(s1);
             Assert.Null(e1);
-            Assert.Equal(default(TimeSpan), et1);
-            Assert.Equal(default(TimeSpan), rt1);
+            Assert.Null(et1);
+            Assert.Null(rt1);
 
             Assert.NotNull(s2);
             Assert.Null(e2);
-            Assert.NotEqual(default(TimeSpan), et2);
-            Assert.Equal(default(TimeSpan), rt2);
+            Assert.NotNull(et2);
+            Assert.Null(rt2);
 
             Assert.NotNull(d.StartTime);
             Assert.NotNull(d.EndTime);
-            Assert.NotEqual(default(TimeSpan), d.ElapsedTime);
-            Assert.Equal(default(TimeSpan), d.RemainingTime);
+            Assert.NotNull(d.ElapsedTime);
+            Assert.Null(d.RemainingTime);
         }
 
         [Trait("Category", "State")]
@@ -124,11 +125,11 @@ namespace Soulseek.Tests.Unit
             var s = new DateTime(2019, 4, 25);
             var e = new DateTime(2019, 4, 26);
 
-            Assert.Equal(default(TimeSpan), d.ElapsedTime);
+            Assert.Null(d.ElapsedTime);
 
             d.SetProperty("StartTime", s);
 
-            Assert.NotEqual(default(TimeSpan), d.ElapsedTime);
+            Assert.NotNull(d.ElapsedTime);
 
             d.SetProperty("EndTime", e);
 
@@ -141,7 +142,7 @@ namespace Soulseek.Tests.Unit
         {
             var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
-            Assert.Equal(default(TimeSpan), d.RemainingTime);
+            Assert.Null(d.RemainingTime);
 
             d.SetProperty("AverageSpeed", 1);
             d.SetProperty("Size", 2);
