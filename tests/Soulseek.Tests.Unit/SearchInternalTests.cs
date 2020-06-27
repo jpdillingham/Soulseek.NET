@@ -257,7 +257,7 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "TryAddResponse")]
-        [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
+        [Theory(DisplayName = "TryAddResponse swallows exceptions"), AutoData]
         public void TryAddResponse_Swallows_Exceptions(string username, int token, byte code, string filename, int size, string extension)
         {
             var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
@@ -305,6 +305,51 @@ namespace Soulseek.Tests.Unit
                     filterResponses: true,
                     minimumResponseFileCount: 1,
                     fileFilter: (f) => false);
+
+            var s = new SearchInternal("foo", token, options)
+            {
+                State = SearchStates.InProgress,
+            };
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchResponse)
+                .WriteString(username)
+                .WriteInteger(token) // token
+                .WriteInteger(1) // file count
+                .WriteByte(code) // code
+                .WriteString(filename) // filename
+                .WriteLong(size) // size
+                .WriteString(extension) // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(1) // free upload slots
+                .WriteInteger(1) // upload speed
+                .WriteLong(0) // queue length
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+            reader.Seek(username.Length + 12); // seek to the start of the file list
+
+            s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
+
+            s.Dispose();
+        }
+
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse ignores response ResponseFilter returns false"), AutoData]
+        public void TryAddResponse_Ignores_Response_When_ResponseFilter_Returns_False(string username, int token, byte code, string filename, int size, string extension)
+        {
+            var options = new SearchOptions(
+                    filterResponses: true,
+                    minimumResponseFileCount: 1,
+                    responseFilter: (r) => false);
 
             var s = new SearchInternal("foo", token, options)
             {
