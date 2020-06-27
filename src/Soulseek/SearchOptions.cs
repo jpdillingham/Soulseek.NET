@@ -62,10 +62,10 @@ namespace Soulseek
             MinimumPeerFreeUploadSlots = minimumPeerFreeUploadSlots;
             MaximumPeerQueueLength = maximumPeerQueueLength;
             MinimumPeerUploadSpeed = minimumPeerUploadSpeed;
-            StateChanged = stateChanged;
-            ResponseReceived = responseReceived;
             ResponseFilter = responseFilter;
             FileFilter = fileFilter;
+            StateChanged = stateChanged;
+            ResponseReceived = responseReceived;
         }
 
         /// <summary>
