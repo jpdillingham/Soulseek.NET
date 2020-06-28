@@ -2567,6 +2567,37 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct or indirect transfer connection"))));
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Diagnostic raises DiagnosticGenerated")]
+        internal void Diagnostic_Raises_DiagnosticGenerated()
+        {
+            using (var client = new SoulseekClient())
+            using (var manager = new PeerConnectionManager(client))
+            {
+                bool fired = false;
+                manager.DiagnosticGenerated += (o, e) => fired = true;
+
+                var diag = manager.GetProperty<IDiagnosticFactory>("Diagnostic");
+                diag.Info("test");
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Diagnostic does not throw if DiagnosticGenerated not subscribed")]
+        internal void Diagnostic_Does_Not_Throw_If_DiagnosticGenerated_Not_Subscribed()
+        {
+            using (var client = new SoulseekClient())
+            using (var manager = new PeerConnectionManager(client))
+            {
+                var diag = manager.GetProperty<IDiagnosticFactory>("Diagnostic");
+                var ex = Record.Exception(() => diag.Info("test"));
+
+                Assert.Null(ex);
+            }
+        }
+
         private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
