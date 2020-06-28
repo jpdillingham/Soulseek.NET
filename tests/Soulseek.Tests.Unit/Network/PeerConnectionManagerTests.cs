@@ -95,10 +95,34 @@ namespace Soulseek.Tests.Unit.Network
             var conn = new Mock<IMessageConnection>();
 
             using (manager)
-            using (var semaphore = new SemaphoreSlim(1))
             {
                 var peer = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
                 peer.GetOrAdd("foo", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
+
+                manager.SetProperty("MessageConnectionDictionary", peer);
+
+                var solicitations = new ConcurrentDictionary<int, string>();
+                solicitations.TryAdd(1, "bar");
+
+                manager.SetProperty("PendingSolicitationDictionary", solicitations);
+
+                manager.RemoveAndDisposeAll();
+
+                Assert.Empty(manager.PendingSolicitations);
+                Assert.Empty(manager.MessageConnections);
+            }
+        }
+
+        [Trait("Category", "RemoveAndDisposeAll")]
+        [Fact(DisplayName = "RemoveAndDisposeAll does not throw on null values")]
+        public void RemoveAndDisposeAll_Does_Not_Throw_On_Null_Values()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                var peer = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+                peer.GetOrAdd("foo", new Lazy<Task<IMessageConnection>>(() => Task.FromResult<IMessageConnection>(null)));
 
                 manager.SetProperty("MessageConnectionDictionary", peer);
 
@@ -1728,6 +1752,38 @@ namespace Soulseek.Tests.Unit.Network
                 using (var existingConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
                 {
                     Assert.Equal(conn.Object, existingConn);
+                }
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync updates PendingInboundDirectConnectionDictionary if key exists"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Updates_PendingInboundDirectConnectionDictionary_If_Key_Exists(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            var ct = new CancellationTokenSource(99999);
+            var dict = new ConcurrentDictionary<string, CancellationTokenSource>();
+            dict.GetOrAdd(username, ct);
+
+            using (manager)
+            {
+                manager.SetProperty("PendingInboundIndirectConnectionDictionary", dict);
+
+                using (var newConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
+                {
+                    Assert.Equal(conn.Object, newConn);
                 }
             }
         }
