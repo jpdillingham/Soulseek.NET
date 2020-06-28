@@ -45,6 +45,32 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(0, c.MessageConnections.Count);
         }
 
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if no SoulseekClient given")]
+        public void Throws_If_SoulseekClient_Given()
+        {
+            var ex = Record.Exception(() => _ = new PeerConnectionManager(null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentNullException>(ex);
+            Assert.Equal("soulseekClient", ((ArgumentNullException)ex).ParamName);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Ensures Diagnostic given null")]
+        public void Ensures_Diagnostic_Given_Null()
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                PeerConnectionManager c = default;
+
+                var ex = Record.Exception(() => c = new PeerConnectionManager(client));
+
+                Assert.Null(ex);
+                Assert.NotNull(c.GetProperty<IDiagnosticFactory>("Diagnostic"));
+            }
+        }
+
         [Trait("Category", "Dispose")]
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
