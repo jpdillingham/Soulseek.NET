@@ -380,6 +380,38 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Trait("Category", "WaitForDisconnect")]
+        [Theory(DisplayName = "WaitForDisconnect waits for disconnect"), AutoData]
+        public async Task WaitForDisconnect_Waits_For_Disconnect(IPEndPoint endpoint, string message)
+        {
+            using (var c = new Connection(endpoint))
+            {
+                c.SetProperty("State", ConnectionState.Connected);
+                c.Disconnect(message);
+
+                var actualMessage = await c.WaitForDisconnect();
+
+                Assert.Equal(message, actualMessage);
+            }
+        }
+
+        [Trait("Category", "WaitForDisconnect")]
+        [Theory(DisplayName = "WaitForDisconnect throws OperationCanceledException when cancelled"), AutoData]
+        public async Task WaitForDisconnect_Throws_OperationCanceledException_When_Canceled(IPEndPoint endpoint, string message)
+        {
+            using (var c = new Connection(endpoint))
+            {
+                c.SetProperty("State", ConnectionState.Connected);
+
+                var ct = new CancellationToken(canceled: true);
+
+                var ex = await Record.ExceptionAsync(() => c.WaitForDisconnect(ct));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
         [Trait("Category", "Watchdog")]
         [Theory(DisplayName = "Watchdog disconnects when TcpClient disconnects"), AutoData]
         public async Task Watchdog_Disconnects_When_TcpClient_Disconnects(IPEndPoint endpoint)
