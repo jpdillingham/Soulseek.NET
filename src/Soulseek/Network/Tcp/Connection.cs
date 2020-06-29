@@ -393,7 +393,7 @@ namespace Soulseek.Network.Tcp
         public Task<string> WaitForDisconnect(CancellationToken? cancellationToken = null)
         {
             cancellationToken?.Register(() =>
-                DisconnectTaskCompletionSource.SetException(new OperationCanceledException("Operation cancelled")));
+                Disconnect(exception: new OperationCanceledException("Operation cancelled")));
 
             return DisconnectTaskCompletionSource.Task;
         }
