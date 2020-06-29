@@ -173,6 +173,8 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         protected DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
+        private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>();
+
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
         /// </summary>
@@ -383,6 +385,16 @@ namespace Soulseek.Network.Tcp
         }
 
         /// <summary>
+        ///     Waits for the connection to disconnect, returning the message or throwing the Exception which caused the disconnect.
+        /// </summary>
+        /// <returns>The message describing the reason for the disconnect.</returns>
+        /// <exception cref="Exception">Thrown when the connection is disconnected as the result of an Exception.</exception>
+        public Task<string> WaitForDisconnect()
+        {
+            return DisconnectTaskCompletionSource.Task;
+        }
+
+        /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
         /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
@@ -489,6 +501,15 @@ namespace Soulseek.Network.Tcp
             {
                 Interlocked.CompareExchange(ref Disconnected, null, null)?
                     .Invoke(this, new ConnectionDisconnectedEventArgs(message, exception));
+
+                if (exception != null)
+                {
+                    DisconnectTaskCompletionSource.SetException(exception);
+                }
+                else
+                {
+                    DisconnectTaskCompletionSource.SetResult(message);
+                }
             }
         }
 
