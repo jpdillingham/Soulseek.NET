@@ -110,6 +110,28 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Disconnect")]
+        [Theory(DisplayName = "Disconnects on inactivity"), AutoData]
+        public async Task Disconnects_On_Inactivity(IPEndPoint endpoint)
+        {
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(inactivityTimeout: 1)))
+                {
+                    await c.ConnectAsync();
+
+                    var ex = await Record.ExceptionAsync(() => c.WaitForDisconnect());
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<TimeoutException>(ex);
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+                }
+            }
+        }
+
+        [Trait("Category", "Disconnect")]
         [Theory(DisplayName = "Disconnects when disconnected without throwing"), AutoData]
         public void Disconnects_When_Not_Connected_Without_Throwing(IPEndPoint endpoint)
         {
