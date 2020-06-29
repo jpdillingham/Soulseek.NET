@@ -387,10 +387,14 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Waits for the connection to disconnect, returning the message or throwing the Exception which caused the disconnect.
         /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The message describing the reason for the disconnect.</returns>
         /// <exception cref="Exception">Thrown when the connection is disconnected as the result of an Exception.</exception>
-        public Task<string> WaitForDisconnect()
+        public Task<string> WaitForDisconnect(CancellationToken? cancellationToken = null)
         {
+            cancellationToken?.Register(() =>
+                DisconnectTaskCompletionSource.SetException(new OperationCanceledException("Operation cancelled")));
+
             return DisconnectTaskCompletionSource.Task;
         }
 
