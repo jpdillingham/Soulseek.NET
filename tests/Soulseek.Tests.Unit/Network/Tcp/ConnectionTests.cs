@@ -97,6 +97,47 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with null InactivityTimer if timeout is <= 0 and TcpClient is connected"), AutoData]
+        public void Instantiates_With_Null_InactivityTimer_If_Timeout_Is_LEQ_0_And_TcpClient_Is_Connected(IPEndPoint endpoint)
+        {
+            var options = new ConnectionOptions(1, 1, 1, inactivityTimeout: -1);
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: options))
+                {
+                    Assert.Null(c.GetProperty<System.Timers.Timer>("InactivityTimer"));
+                }
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with started InactivityTimer if timeout is > 0 and TcpClient is connected"), AutoData]
+        public void Instantiates_With_Started_InactivityTimer_If_Timeout_Is_GT_0_And_TcpClient_Is_Connected(IPEndPoint endpoint)
+        {
+            var options = new ConnectionOptions(1, 1, 1, inactivityTimeout: 1);
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: options))
+                {
+                    var timer = c.GetProperty<System.Timers.Timer>("InactivityTimer");
+
+                    Assert.NotNull(timer);
+                    Assert.True(timer.Enabled);
+                }
+            }
+        }
+
         [Trait("Category", "Dispose")]
         [Theory(DisplayName = "Disposes without throwing"), AutoData]
         public void Disposes_Without_Throwing(IPEndPoint endpoint)
@@ -397,7 +438,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
         [Trait("Category", "WaitForDisconnect")]
         [Theory(DisplayName = "WaitForDisconnect throws OperationCanceledException when cancelled"), AutoData]
-        public async Task WaitForDisconnect_Throws_OperationCanceledException_When_Canceled(IPEndPoint endpoint, string message)
+        public async Task WaitForDisconnect_Throws_OperationCanceledException_When_Canceled(IPEndPoint endpoint)
         {
             using (var c = new Connection(endpoint))
             {
