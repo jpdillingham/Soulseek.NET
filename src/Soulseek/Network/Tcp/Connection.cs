@@ -270,7 +270,7 @@ namespace Soulseek.Network.Tcp
                 ChangeState(ConnectionState.Disconnecting, message);
 
                 InactivityTimer?.Stop();
-                WatchdogTimer?.Stop();
+                WatchdogTimer.Stop();
                 Stream?.Close();
                 TcpClient?.Close();
 
@@ -529,7 +529,7 @@ namespace Soulseek.Network.Tcp
                 {
                     Disconnect("Connection is being disposed", new ObjectDisposedException(GetType().Name));
                     InactivityTimer?.Dispose();
-                    WatchdogTimer?.Dispose();
+                    WatchdogTimer.Dispose();
                     Stream?.Dispose();
                     TcpClient?.Dispose();
                 }
