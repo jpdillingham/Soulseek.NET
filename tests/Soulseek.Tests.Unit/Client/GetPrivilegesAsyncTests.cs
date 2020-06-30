@@ -35,7 +35,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", state);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetPrivilegesAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPrivilegesAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -54,7 +54,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetPrivilegesAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPrivilegesAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -73,7 +73,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetPrivilegesAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPrivilegesAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -92,7 +92,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetPrivilegesAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPrivilegesAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<PrivilegeCheckException>(ex);

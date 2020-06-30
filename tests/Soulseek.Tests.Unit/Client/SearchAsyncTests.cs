@@ -35,7 +35,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText("foo"), token: 0, cancellationToken: CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText("foo"), token: 0, cancellationToken: CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -49,7 +49,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText("foo"), (r) => { }, token: 0, cancellationToken: CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText("foo"), (r) => { }, token: 0, cancellationToken: CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -65,7 +65,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText("foo"), token: 0));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText("foo"), token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText("foo"), (r) => { }, token: 0));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText("foo"), (r) => { }, token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -100,7 +100,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText(search), token: 0));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText(search), token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -116,7 +116,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(null, token: 0));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(null, token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentNullException>(ex);
@@ -135,7 +135,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText(search), (r) => { }, token: 0));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText(search), (r) => { }, token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -151,7 +151,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(null, (r) => { }, token: 0));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(null, (r) => { }, token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentNullException>(ex);
@@ -167,7 +167,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText("foo"), responseReceived: null));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText("foo"), responseReceived: null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentNullException>(ex);
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit.Client
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                     s.SetProperty("Searches", dict);
 
-                    var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText(text), token: token));
+                    var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText(text), token: token));
 
                     Assert.NotNull(ex);
                     Assert.IsType<DuplicateTokenException>(ex);
@@ -211,7 +211,7 @@ namespace Soulseek.Tests.Unit.Client
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                     s.SetProperty("Searches", dict);
 
-                    var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(SearchQuery.FromText(text), (r) => { }, token: token));
+                    var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText(text), (r) => { }, token: token));
 
                     Assert.NotNull(ex);
                     Assert.IsType<DuplicateTokenException>(ex);
@@ -340,7 +340,7 @@ namespace Soulseek.Tests.Unit.Client
 
                     cts.Cancel();
 
-                    await Record.ExceptionAsync(async () => await task); // swallow the cancellation exception
+                    await Record.ExceptionAsync(() => task); // swallow the cancellation exception
 
                     Assert.Single(active);
                     Assert.Contains(active, kvp => kvp.Key == token);
@@ -367,7 +367,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 cts.Cancel();
 
-                await Record.ExceptionAsync(async () => await task); // swallow the cancellation exception
+                await Record.ExceptionAsync(() => task); // swallow the cancellation exception
 
                 Assert.Single(active);
                 Assert.Contains(active, kvp => kvp.Value.SearchText == searchText);
@@ -522,7 +522,7 @@ namespace Soulseek.Tests.Unit.Client
                 searches.FirstOrDefault(r => r.Key == token).Value.ResponseReceived.Invoke(response);
 
                 cts.Cancel();
-                await Record.ExceptionAsync(async () => await task); // swallow the cancellation exception
+                await Record.ExceptionAsync(() => task); // swallow the cancellation exception
 
                 Assert.True(fired);
             }

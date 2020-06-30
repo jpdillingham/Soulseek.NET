@@ -100,7 +100,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 c.SetProperty("State", ConnectionState.Disconnected);
 
-                var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
+                var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -119,7 +119,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 c.SetProperty("State", ConnectionState.Disconnecting);
 
-                var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
+                var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -179,7 +179,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 using (var c = new MessageConnection(endpoint, tcpClient: tcpMock.Object))
                 {
-                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
 
                     Assert.NotNull(ex);
                     Assert.IsType<ConnectionWriteException>(ex);
@@ -312,7 +312,7 @@ namespace Soulseek.Tests.Unit.Network
                 {
                     var a = c.ReadingContinuously;
 
-                    await Record.ExceptionAsync(async () => await c.InvokeMethod<Task>("ReadContinuouslyAsync"));
+                    await Record.ExceptionAsync(() => c.InvokeMethod<Task>("ReadContinuouslyAsync"));
 
                     Assert.False(a);
                     Assert.True(b);

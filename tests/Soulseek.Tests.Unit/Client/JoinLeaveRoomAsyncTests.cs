@@ -32,7 +32,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -47,7 +47,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -65,7 +65,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -111,7 +111,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<RoomJoinException>(ex);
@@ -131,7 +131,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -150,7 +150,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -163,7 +163,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -178,7 +178,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -196,7 +196,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -238,7 +238,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<RoomLeaveException>(ex);
@@ -258,7 +258,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -277,7 +277,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

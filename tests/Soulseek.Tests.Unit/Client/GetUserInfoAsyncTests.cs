@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.GetUserInfoAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", state);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync("a"));
+                var ex = await Record.ExceptionAsync(() => s.GetUserInfoAsync("a"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);

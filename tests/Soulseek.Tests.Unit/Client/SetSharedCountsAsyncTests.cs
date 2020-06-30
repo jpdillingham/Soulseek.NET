@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(0, 0));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(0, 0));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(-1, 0));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(-1, 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -75,7 +75,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(0, -1));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, -1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -95,7 +95,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(0, 0));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, 0));
 
                 Assert.Null(ex);
             }
@@ -113,7 +113,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(0, 0));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SharedCountsException>(ex);
@@ -133,7 +133,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(0, 0, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, 0, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -152,7 +152,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetSharedCountsAsync(0, 0, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, 0, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

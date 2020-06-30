@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.PingServerAsync());
+                var ex = await Record.ExceptionAsync(() => s.PingServerAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.PingServerAsync());
+                var ex = await Record.ExceptionAsync(() => s.PingServerAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -67,7 +67,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.PingServerAsync());
+                var ex = await Record.ExceptionAsync(() => s.PingServerAsync());
 
                 Assert.Null(ex);
             }
@@ -85,7 +85,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.PingServerAsync(CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.PingServerAsync(CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<PingException>(ex);
@@ -105,7 +105,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.PingServerAsync(CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.PingServerAsync(CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -128,7 +128,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.PingServerAsync(CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.PingServerAsync(CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -147,7 +147,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.PingServerAsync(CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.PingServerAsync(CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
