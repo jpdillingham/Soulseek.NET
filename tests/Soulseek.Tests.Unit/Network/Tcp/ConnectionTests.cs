@@ -851,6 +851,39 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write raises DataWritten event"), AutoData]
+        public async Task Write_Raises_DataWritten_Event(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    var eventArgs = new List<ConnectionDataEventArgs>();
+
+                    c.DataWritten += (sender, e) => eventArgs.Add(e);
+
+                    await c.WriteAsync(new byte[] { 0x0 });
+
+                    Assert.Single(eventArgs);
+                    Assert.Equal(1, eventArgs[0].CurrentLength);
+                    Assert.Equal(1, eventArgs[0].TotalLength);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
+                }
+            }
+        }
+
         [Trait("Category", "Read")]
         [Theory(DisplayName = "Read throws if TcpClient is not connected"), AutoData]
         public async Task Read_Throws_If_TcpClient_Is_Not_Connected(IPEndPoint endpoint)
