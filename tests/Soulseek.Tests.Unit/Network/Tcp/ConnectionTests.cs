@@ -20,6 +20,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
+    using Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.Interfaces;
     using Moq;
     using Soulseek.Exceptions;
     using Soulseek.Network.Tcp;
@@ -798,6 +799,89 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write passes CancellationToken"), AutoData]
+        public async Task Write_Passes_CancellationToken(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                var cancellationToken = CancellationToken.None;
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    await c.WriteAsync(new byte[] { 0x0, 0x1 }, cancellationToken);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write stream passes CancellationToken"), AutoData]
+        public async Task Write_Stream_Passes_CancellationToken(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(1));
+
+            var t = new Mock<ITcpClient>();
+
+            var data = new byte[] { 0x0, 0x1 };
+
+            using (var stream = new MemoryStream(data))
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                var cancellationToken = CancellationToken.None;
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    await c.WriteAsync(1, stream, (ct) => Task.CompletedTask, cancellationToken);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write stream does not throw null governor"), AutoData]
+        public async Task Write_Stream_Handles_Null_Governor(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(1));
+
+            var t = new Mock<ITcpClient>();
+
+            var data = new byte[] { 0x0, 0x1 };
+
+            using (var stream = new MemoryStream(data))
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(1, stream, governor: null));
+
+                    Assert.Null(ex);
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
         [Theory(DisplayName = "Write resets LastActivityTime"), AutoData]
         public async Task Write_Resets_LastActivityTime(IPEndPoint endpoint)
         {
@@ -1163,8 +1247,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
-        [Theory(DisplayName = "Read to stream handles null governor"), AutoData]
-        public async Task Read_To_Stream_Handles_Null_Governor(IPEndPoint endpoint)
+        [Theory(DisplayName = "Read to stream does not throw given null governor"), AutoData]
+        public async Task Read_To_Stream_Does_Not_Throw_Given_Governor(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -1181,8 +1265,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    await c.ReadAsync(1, outputStream: stream, governor: null);
+                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(1, outputStream: stream, governor: null));
 
+                    Assert.Null(ex);
                     s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
