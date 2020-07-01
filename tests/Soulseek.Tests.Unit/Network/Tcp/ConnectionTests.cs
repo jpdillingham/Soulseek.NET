@@ -1083,6 +1083,33 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read passes given CancellationToken"), AutoData]
+        public async Task Read_Passes_Given_CancellationToken(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            var cancellationToken = CancellationToken.None;
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    await c.ReadAsync(1, cancellationToken);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
         [Theory(DisplayName = "Read loops over Stream.ReadAsync on partial read"), AutoData]
         public async Task Read_Loops_Over_Stream_ReadAsync_On_Partial_Read(IPEndPoint endpoint)
         {
@@ -1103,6 +1130,60 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     await c.ReadAsync(3);
 
                     s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream passes CancellationToken"), AutoData]
+        public async Task Read_To_Stream_Passes_CancellationToken(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            var cancellationToken = CancellationToken.None;
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    await c.ReadAsync(1, stream, (ct) => Task.CompletedTask, cancellationToken);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream handles null governor"), AutoData]
+        public async Task Read_To_Stream_Handles_Null_Governor(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    await c.ReadAsync(1, outputStream: stream, governor: null);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
