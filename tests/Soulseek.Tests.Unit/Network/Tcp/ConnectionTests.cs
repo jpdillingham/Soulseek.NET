@@ -914,7 +914,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(2));
+                .Returns(Task.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
