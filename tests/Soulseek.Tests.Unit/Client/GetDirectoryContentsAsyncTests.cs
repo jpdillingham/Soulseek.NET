@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetDirectoryContentsAsync(username, "foo"));
+                var ex = await Record.ExceptionAsync(() => s.GetDirectoryContentsAsync(username, "foo"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetDirectoryContentsAsync("foo", directory));
+                var ex = await Record.ExceptionAsync(() => s.GetDirectoryContentsAsync("foo", directory));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -75,7 +75,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", state);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetDirectoryContentsAsync("a", "b"));
+                var ex = await Record.ExceptionAsync(() => s.GetDirectoryContentsAsync("a", "b"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);

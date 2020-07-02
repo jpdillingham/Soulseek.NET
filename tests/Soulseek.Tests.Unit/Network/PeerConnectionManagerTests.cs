@@ -45,6 +45,32 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(0, c.MessageConnections.Count);
         }
 
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if no SoulseekClient given")]
+        public void Throws_If_SoulseekClient_Given()
+        {
+            var ex = Record.Exception(() => _ = new PeerConnectionManager(null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentNullException>(ex);
+            Assert.Equal("soulseekClient", ((ArgumentNullException)ex).ParamName);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Ensures Diagnostic given null")]
+        public void Ensures_Diagnostic_Given_Null()
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                PeerConnectionManager c = default;
+
+                var ex = Record.Exception(() => c = new PeerConnectionManager(client));
+
+                Assert.Null(ex);
+                Assert.NotNull(c.GetProperty<IDiagnosticFactory>("Diagnostic"));
+            }
+        }
+
         [Trait("Category", "Dispose")]
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
@@ -69,10 +95,34 @@ namespace Soulseek.Tests.Unit.Network
             var conn = new Mock<IMessageConnection>();
 
             using (manager)
-            using (var semaphore = new SemaphoreSlim(1))
             {
                 var peer = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
                 peer.GetOrAdd("foo", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
+
+                manager.SetProperty("MessageConnectionDictionary", peer);
+
+                var solicitations = new ConcurrentDictionary<int, string>();
+                solicitations.TryAdd(1, "bar");
+
+                manager.SetProperty("PendingSolicitationDictionary", solicitations);
+
+                manager.RemoveAndDisposeAll();
+
+                Assert.Empty(manager.PendingSolicitations);
+                Assert.Empty(manager.MessageConnections);
+            }
+        }
+
+        [Trait("Category", "RemoveAndDisposeAll")]
+        [Fact(DisplayName = "RemoveAndDisposeAll does not throw on null values")]
+        public void RemoveAndDisposeAll_Does_Not_Throw_On_Null_Values()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                var peer = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+                peer.GetOrAdd("foo", new Lazy<Task<IMessageConnection>>(() => Task.FromResult<IMessageConnection>(null)));
 
                 manager.SetProperty("MessageConnectionDictionary", peer);
 
@@ -135,7 +185,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -167,7 +217,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -582,7 +632,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(ctpr));
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -590,6 +640,35 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync adds diagnostic on disconnect"), AutoData]
+        internal async Task GetTransferConnectionAsync_Adds_Diagnostic_On_Disconnect(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("disconnect")))
+                .Throws(expectedException);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedException, ex.InnerException);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Transfer connection") && s.ContainsInsensitive("disconnected"))));
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
@@ -633,7 +712,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(ctpr));
+                await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(ctpr));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish an inbound indirect transfer connection"))), Times.Once);
@@ -656,7 +735,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", endpoint, token, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", endpoint, token, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.Equal(expectedException, ex);
@@ -683,6 +762,29 @@ namespace Soulseek.Tests.Unit.Network
             {
                 Assert.Equal(conn.Object, newConn);
             }
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync adds diagnostic on disconnect"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Adds_Diagnostic_On_Disconnect(IPEndPoint endpoint, int token)
+        {
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("disconnected")))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", endpoint, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Transfer connection") && s.ContainsInsensitive("disconnected"))));
         }
 
         [Trait("Category", "GetTransferOutboundDirectAsync")]
@@ -728,7 +830,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", endpoint, token, CancellationToken.None));
+                await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", endpoint, token, CancellationToken.None));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct transfer connection"))), Times.Once);
@@ -779,7 +881,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.Equal(expectedException, ex);
@@ -890,10 +992,38 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None));
+                await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish an indirect transfer connection"))), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync adds diagnostic on disconnect"), AutoData]
+        internal async Task GetTransferConnectionOutboundIndirectAsync_Adds_Diagnostic_On_Disconnect(IPEndPoint endpoint, string username, int token)
+        {
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("established"))))
+                .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("disconnected")));
+
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("disconnected"))), Times.Once);
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
@@ -999,7 +1129,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -1073,7 +1203,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
+                await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct or indirect transfer connection"))), Times.Once);
@@ -1112,7 +1242,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
+                await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to negotiate transfer connection"))), Times.Once);
@@ -1344,7 +1474,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, endpoint, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, endpoint, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.Equal(expectedEx, ex);
@@ -1389,7 +1519,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, endpoint, CancellationToken.None));
+                await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, endpoint, CancellationToken.None));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct message connection"))), Times.Once);
@@ -1444,7 +1574,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.Equal(expectedException, ex);
@@ -1595,7 +1725,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None));
+                await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish an indirect message connection"))), Times.Once);
@@ -1622,6 +1752,38 @@ namespace Soulseek.Tests.Unit.Network
                 using (var existingConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
                 {
                     Assert.Equal(conn.Object, existingConn);
+                }
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync updates PendingInboundDirectConnectionDictionary if key exists"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Updates_PendingInboundDirectConnectionDictionary_If_Key_Exists(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            var ct = new CancellationTokenSource(99999);
+            var dict = new ConcurrentDictionary<string, CancellationTokenSource>();
+            dict.GetOrAdd(username, ct);
+
+            using (manager)
+            {
+                manager.SetProperty("PendingInboundIndirectConnectionDictionary", dict);
+
+                using (var newConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
+                {
+                    Assert.Equal(conn.Object, newConn);
                 }
             }
         }
@@ -1670,7 +1832,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(ctpr));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -1700,7 +1862,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(ctpr));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -2049,7 +2211,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -2229,7 +2391,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -2267,7 +2429,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -2299,7 +2461,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -2333,7 +2495,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -2365,7 +2527,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, dendpoint, CancellationToken.None));
 
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
 
@@ -2539,6 +2701,37 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct or indirect transfer connection"))));
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Diagnostic raises DiagnosticGenerated")]
+        internal void Diagnostic_Raises_DiagnosticGenerated()
+        {
+            using (var client = new SoulseekClient())
+            using (var manager = new PeerConnectionManager(client))
+            {
+                bool fired = false;
+                manager.DiagnosticGenerated += (o, e) => fired = true;
+
+                var diag = manager.GetProperty<IDiagnosticFactory>("Diagnostic");
+                diag.Info("test");
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Diagnostic does not throw if DiagnosticGenerated not subscribed")]
+        internal void Diagnostic_Does_Not_Throw_If_DiagnosticGenerated_Not_Subscribed()
+        {
+            using (var client = new SoulseekClient())
+            using (var manager = new PeerConnectionManager(client))
+            {
+                var diag = manager.GetProperty<IDiagnosticFactory>("Diagnostic");
+                var ex = Record.Exception(() => diag.Info("test"));
+
+                Assert.Null(ex);
+            }
         }
 
         private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)

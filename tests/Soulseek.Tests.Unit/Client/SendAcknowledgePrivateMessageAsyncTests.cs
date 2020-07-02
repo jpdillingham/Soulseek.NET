@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(-1));
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(-1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -42,7 +42,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(1));
 
                 Assert.Null(ex);
             }
@@ -94,7 +94,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<PrivateMessageException>(ex);
@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -133,7 +133,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -146,7 +146,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync("foo", "bar"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -161,7 +161,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync("foo", "bar"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -182,7 +182,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync(username, message));
+                var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync(username, message));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -201,7 +201,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync("foo", "bar"));
 
                 Assert.Null(ex);
             }
@@ -219,7 +219,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync("foo", "bar"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<PrivateMessageException>(ex);
@@ -239,7 +239,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync("foo", "bar"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -258,7 +258,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync("foo", "bar"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

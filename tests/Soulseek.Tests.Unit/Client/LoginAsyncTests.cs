@@ -24,6 +24,13 @@ namespace Soulseek.Tests.Unit.Client
 
     public class LoginAsyncTests
     {
+        private static readonly Random RNG = new Random();
+
+        private static int GetPort()
+        {
+            return 50000 + RNG.Next(1, 9999);
+        }
+
         [Trait("Category", "LoginAsync")]
         [Fact(DisplayName = "LoginAsync throws ArgumentException on null username")]
         public async Task LoginAsync_Throws_ArgumentException_On_Null_Username()
@@ -32,7 +39,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(null, Guid.NewGuid().ToString()));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync(null, Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -53,7 +60,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(username, password));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync(username, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -68,7 +75,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync("a", "b"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -83,7 +90,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Disconnected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync("a", "b"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -113,8 +120,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync sets listen port on success if set"), AutoData]
-        public async Task LoginAsync_Sets_Listen_Port_On_Success_If_Set(string user, string password, int port)
+        public async Task LoginAsync_Sets_Listen_Port_On_Success_If_Set(string user, string password)
         {
+            var port = GetPort();
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
@@ -137,8 +146,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync writes HaveNoParent on success if enabled"), AutoData]
-        public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password, int port)
+        public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password)
         {
+            var port = GetPort();
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
@@ -158,8 +169,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync does not write HaveNoParent on success if disabled"), AutoData]
-        public async Task LoginAsync_Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password, int port)
+        public async Task LoginAsync_Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password)
         {
+            var port = GetPort();
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
@@ -191,7 +204,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<LoginRejectedException>(ex);
@@ -214,7 +227,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -235,7 +248,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -256,7 +269,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<LoginException>(ex);

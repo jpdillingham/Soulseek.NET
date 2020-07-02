@@ -38,7 +38,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", outputStream: null));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", outputStream: null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentNullException>(ex);
@@ -54,7 +54,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -72,7 +72,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, "filename"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, "filename", stream));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -105,7 +105,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", filename));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", filename));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -164,7 +164,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -179,7 +179,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -195,7 +195,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -212,7 +212,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -233,7 +233,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("Downloads", queued);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", 0, 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", 0, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTokenException>(ex);
@@ -255,7 +255,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("Downloads", queued);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream, 0, 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", stream, 0, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTokenException>(ex);
@@ -276,7 +276,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("Downloads", queued);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, filename, 0, 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, 0, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
@@ -298,7 +298,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("Downloads", queued);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, filename, stream, 0, 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream, 0, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
@@ -326,7 +326,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<UserOfflineException>(ex);
@@ -355,7 +355,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -385,7 +385,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -420,7 +420,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -452,7 +452,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -485,7 +485,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -519,7 +519,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -567,7 +567,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -608,7 +608,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -1257,7 +1257,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -1320,7 +1320,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -1353,7 +1353,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -1409,7 +1409,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -1465,7 +1465,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -1519,7 +1519,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

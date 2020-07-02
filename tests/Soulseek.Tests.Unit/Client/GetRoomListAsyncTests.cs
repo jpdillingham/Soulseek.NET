@@ -32,7 +32,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.GetRoomListAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetRoomListAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -47,7 +47,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetRoomListAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetRoomListAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -91,7 +91,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetRoomListAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetRoomListAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<RoomListException>(ex);
@@ -111,7 +111,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetRoomListAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetRoomListAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -130,7 +130,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.GetRoomListAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetRoomListAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

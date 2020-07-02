@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -50,7 +50,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync("foo"));
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync("foo"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -66,7 +66,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync("foo"));
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync("foo"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);

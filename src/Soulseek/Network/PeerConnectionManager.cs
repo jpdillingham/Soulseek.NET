@@ -46,7 +46,7 @@ namespace Soulseek.Network
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
-                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+                new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         /// <summary>

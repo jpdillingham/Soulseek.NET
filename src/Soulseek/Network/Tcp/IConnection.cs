@@ -152,6 +152,14 @@ namespace Soulseek.Network.Tcp
         Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Waits for the connection to disconnect, returning the message or throwing the Exception which caused the disconnect.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The message describing the reason for the disconnect.</returns>
+        /// <exception cref="Exception">Thrown when the connection is disconnected as the result of an Exception.</exception>
+        Task<string> WaitForDisconnect(CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
         /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>

@@ -88,7 +88,7 @@ namespace Soulseek
 
         private bool Disposed { get; set; } = false;
         private SystemTimer SearchTimeoutTimer { get; set; }
-        private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
+        private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>();
 
         /// <summary>
         ///     Cancels the search.
@@ -127,18 +127,35 @@ namespace Soulseek
         {
             // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
             // the slim response for fitness prior to extracting the file list from it for performance reasons.
-            if (!Disposed && State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
+            if (!Disposed && State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token)
             {
-                // extract the file list from the response and filter it
-                var fullResponse = SearchResponseFactory.FromSlimResponse(slimResponse);
-                var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-
-                fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
-
-                // ensure the filtered file count still meets the response criteria
-                if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || !(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
+                // apply basic filters on the slim response
+                if (!SlimResponseMeetsOptionCriteria(slimResponse))
                 {
                     return;
+                }
+
+                // extract the file list from the response
+                var fullResponse = SearchResponseFactory.FromSlimResponse(slimResponse);
+
+                if (Options.FilterResponses)
+                {
+                    // apply custom filter
+                    if (!(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
+                    {
+                        return;
+                    }
+
+                    // apply individual file filter
+                    var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+
+                    fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
+
+                    // ensure the filtered file count still meets the response criteria
+                    if (fullResponse.FileCount < Options.MinimumResponseFileCount)
+                    {
+                        return;
+                    }
                 }
 
                 Interlocked.Increment(ref responseCount);

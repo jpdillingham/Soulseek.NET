@@ -93,7 +93,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -108,7 +108,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(username, password));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -138,7 +138,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -164,7 +164,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -190,7 +190,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -216,7 +216,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -231,7 +231,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(serverConnection: c.Object))
             {
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
 
                 Assert.Null(ex);
             }
@@ -255,7 +255,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
 
                 Assert.Null(ex);
             }
@@ -285,7 +285,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: waiter.Object))
             {
-                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
 
                 Assert.Null(ex);
             }
