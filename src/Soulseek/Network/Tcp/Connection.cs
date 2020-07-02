@@ -561,7 +561,7 @@ namespace Soulseek.Network.Tcp
                     await governor(cancellationToken).ConfigureAwait(false);
 
                     var bytesRemaining = length - totalBytesRead;
-                    var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : (int)bytesRemaining; // cast to int is safe because of the check against buffer length.
+                    var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining; // cast to int is safe because of the check against buffer length.
 
                     var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
@@ -624,7 +624,7 @@ namespace Soulseek.Network.Tcp
 
                     var bytesRemaining = length - totalBytesWritten;
 
-                    var bytesToRead = bytesRemaining > inputBuffer.Length ? inputBuffer.Length : (int)bytesRemaining;
+                    var bytesToRead = bytesRemaining >= inputBuffer.Length ? inputBuffer.Length : (int)bytesRemaining;
                     var bytesRead = await inputStream.ReadAsync(inputBuffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
                     await Stream.WriteAsync(inputBuffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
