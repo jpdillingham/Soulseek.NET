@@ -113,8 +113,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync sets listen port on success if set"), AutoData]
-        public async Task LoginAsync_Sets_Listen_Port_On_Success_If_Set(string user, string password, int port)
+        public async Task LoginAsync_Sets_Listen_Port_On_Success_If_Set(string user, string password)
         {
+            var port = 50000;
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
@@ -137,8 +139,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync writes HaveNoParent on success if enabled"), AutoData]
-        public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password, int port)
+        public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password)
         {
+            var port = 50000;
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
@@ -158,8 +162,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync does not write HaveNoParent on success if disabled"), AutoData]
-        public async Task LoginAsync_Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password, int port)
+        public async Task LoginAsync_Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password)
         {
+            var port = 50000;
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
