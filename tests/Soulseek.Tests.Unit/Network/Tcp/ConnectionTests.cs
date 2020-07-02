@@ -926,13 +926,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 t.Setup(m => m.Connected).Returns(true);
                 t.Setup(m => m.GetStream()).Returns(s.Object);
 
-                var cancellationToken = CancellationToken.None;
-
                 using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(writeBufferSize: 5)))
                 {
-                    await c.WriteAsync(10, stream, (ct) => Task.CompletedTask, cancellationToken);
+                    await c.WriteAsync(10, stream, (ct) => Task.CompletedTask);
 
-                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Exactly(2));
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
                 }
             }
         }
