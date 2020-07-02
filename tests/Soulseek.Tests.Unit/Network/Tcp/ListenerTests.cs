@@ -12,17 +12,25 @@
 
 namespace Soulseek.Tests.Unit.Network.Tcp
 {
+    using System;
     using AutoFixture.Xunit2;
     using Soulseek.Network.Tcp;
     using Xunit;
 
     public class ListenerTests
     {
+        private static readonly Random RNG = new Random();
+
+        private static int GetPort()
+        {
+            return 50000 + RNG.Next(1, 9999);
+        }
+
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates properly"), AutoData]
         public void Instantiates_Properly(ConnectionOptions options)
         {
-            var port = 50000;
+            var port = GetPort();
 
             var l = new Listener(port, options);
 
@@ -36,7 +44,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Start starts listening"), AutoData]
         public void Start_Starts_Listening(ConnectionOptions options)
         {
-            var port = 50000;
+            var port = GetPort();
 
             var l = new Listener(port, options);
 
@@ -52,7 +60,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Stop stops listening"), AutoData]
         public void Stop_Stops_Listening(ConnectionOptions options)
         {
-            var port = 50000;
+            var port = GetPort();
 
             var l = new Listener(port, options);
 

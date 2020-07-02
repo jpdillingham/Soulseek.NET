@@ -24,6 +24,13 @@ namespace Soulseek.Tests.Unit.Client
 
     public class LoginAsyncTests
     {
+        private static readonly Random RNG = new Random();
+
+        private static int GetPort()
+        {
+            return 50000 + RNG.Next(1, 9999);
+        }
+
         [Trait("Category", "LoginAsync")]
         [Fact(DisplayName = "LoginAsync throws ArgumentException on null username")]
         public async Task LoginAsync_Throws_ArgumentException_On_Null_Username()
@@ -115,7 +122,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "LoginAsync sets listen port on success if set"), AutoData]
         public async Task LoginAsync_Sets_Listen_Port_On_Success_If_Set(string user, string password)
         {
-            var port = 50000;
+            var port = GetPort();
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -141,7 +148,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "LoginAsync writes HaveNoParent on success if enabled"), AutoData]
         public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password)
         {
-            var port = 50000;
+            var port = GetPort();
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -164,7 +171,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "LoginAsync does not write HaveNoParent on success if disabled"), AutoData]
         public async Task LoginAsync_Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password)
         {
-            var port = 50000;
+            var port = GetPort();
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
