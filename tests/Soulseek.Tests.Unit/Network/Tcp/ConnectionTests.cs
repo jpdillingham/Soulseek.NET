@@ -917,7 +917,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             var t = new Mock<ITcpClient>();
 
-            var data = new byte[] { 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0 };
+            var data = new byte[] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 
             using (var stream = new MemoryStream(data))
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
@@ -930,7 +930,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 {
                     await c.WriteAsync(10, stream, (ct) => Task.CompletedTask);
 
-                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), 5, It.IsAny<CancellationToken>()), Times.Exactly(2));
                 }
             }
         }
