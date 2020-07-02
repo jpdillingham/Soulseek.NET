@@ -43,11 +43,6 @@ namespace Soulseek.Network.Tcp
             TcpClient.Client.ReceiveBufferSize = Options.ReadBufferSize;
             TcpClient.Client.SendBufferSize = Options.WriteBufferSize;
 
-            if (TcpClient.Client.ReceiveBufferSize != Options.ReadBufferSize)
-            {
-                throw new Exception($"what the fuck {TcpClient.Client.ReceiveBufferSize} {Options.ReadBufferSize}");
-            }
-
             if (Options.InactivityTimeout > 0)
             {
                 InactivityTimer = new SystemTimer()
@@ -556,7 +551,7 @@ namespace Soulseek.Network.Tcp
         {
             ResetInactivityTime();
 
-            var buffer = new byte[TcpClient.Client.ReceiveBufferSize];
+            var buffer = new byte[Options.ReadBufferSize];
             var totalBytesRead = 0;
 
             try
@@ -618,7 +613,7 @@ namespace Soulseek.Network.Tcp
         {
             ResetInactivityTime();
 
-            var inputBuffer = new byte[TcpClient.Client.SendBufferSize];
+            var inputBuffer = new byte[Options.WriteBufferSize];
             var totalBytesWritten = 0;
 
             try
