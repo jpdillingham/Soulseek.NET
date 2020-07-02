@@ -43,6 +43,11 @@ namespace Soulseek.Network.Tcp
             TcpClient.Client.ReceiveBufferSize = Options.ReadBufferSize;
             TcpClient.Client.SendBufferSize = Options.WriteBufferSize;
 
+            if (TcpClient.Client.ReceiveBufferSize != Options.ReadBufferSize)
+            {
+                throw new Exception($"what the fuck {TcpClient.Client.ReceiveBufferSize} {Options.ReadBufferSize}");
+            }
+
             if (Options.InactivityTimeout > 0)
             {
                 InactivityTimer = new SystemTimer()
