@@ -1332,7 +1332,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 10));
+                .Returns(Task.Run(() => 5));
 
             var t = new Mock<ITcpClient>();
 
@@ -1343,11 +1343,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 t.Setup(m => m.Connected).Returns(true);
                 t.Setup(m => m.GetStream()).Returns(s.Object);
 
-                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(readBufferSize: 10)))
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(readBufferSize: 5)))
                 {
-                    await c.ReadAsync(20, stream, (ct) => Task.CompletedTask);
+                    await c.ReadAsync(10, stream, (ct) => Task.CompletedTask);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), 5, It.IsAny<CancellationToken>()), Times.Exactly(2));
                 }
             }
         }

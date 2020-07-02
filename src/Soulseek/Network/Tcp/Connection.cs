@@ -613,7 +613,6 @@ namespace Soulseek.Network.Tcp
         {
             ResetInactivityTime();
 
-            var sendBufferSize = TcpClient.Client.SendBufferSize;
             var inputBuffer = new byte[TcpClient.Client.SendBufferSize];
             var totalBytesWritten = 0;
 
@@ -625,7 +624,7 @@ namespace Soulseek.Network.Tcp
 
                     var bytesRemaining = length - totalBytesWritten;
 
-                    var bytesToRead = bytesRemaining > sendBufferSize ? sendBufferSize : (int)bytesRemaining;
+                    var bytesToRead = bytesRemaining > inputBuffer.Length ? inputBuffer.Length : (int)bytesRemaining;
                     var bytesRead = await inputStream.ReadAsync(inputBuffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
                     await Stream.WriteAsync(inputBuffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
