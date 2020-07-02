@@ -913,11 +913,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(1));
+                .Returns(Task.FromResult(5));
 
             var t = new Mock<ITcpClient>();
 
-            var data = new byte[] { 0x0, 0x1 };
+            var data = new byte[] { 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0 };
 
             using (var stream = new MemoryStream(data))
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
@@ -928,9 +928,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 var cancellationToken = CancellationToken.None;
 
-                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(writeBufferSize: 1)))
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(writeBufferSize: 5)))
                 {
-                    await c.WriteAsync(2, stream, (ct) => Task.CompletedTask, cancellationToken);
+                    await c.WriteAsync(10, stream, (ct) => Task.CompletedTask, cancellationToken);
 
                     s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Exactly(2));
                 }
