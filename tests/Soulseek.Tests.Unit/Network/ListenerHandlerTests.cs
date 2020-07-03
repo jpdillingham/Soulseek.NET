@@ -28,6 +28,32 @@ namespace Soulseek.Tests.Unit.Network
 
     public class ListenerHandlerTests
     {
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiation throws given null SoulseekClient")]
+        public void Instantiation_Throws_Given_Null_SoulseekClient()
+        {
+            var ex = Record.Exception(() => new ListenerHandler(null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentNullException>(ex);
+            Assert.Equal("soulseekClient", ((ArgumentNullException)ex).ParamName);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Ensures Diagnostic given null")]
+        public void Ensures_Diagnostic_Given_Null()
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                ListenerHandler l = default;
+
+                var ex = Record.Exception(() => l = new ListenerHandler(client));
+
+                Assert.Null(ex);
+                Assert.NotNull(l.GetProperty<IDiagnosticFactory>("Diagnostic"));
+            }
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on connection"), AutoData]
         public void Creates_Diagnostic_On_Connection(IPEndPoint endpoint)
