@@ -88,6 +88,66 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "Connected")]
+        [Theory(DisplayName = "Connected handler of server connection starts reading"), AutoData]
+        public async Task Connected_Handler_Of_Server_Connection_Starts_Reading(IPEndPoint endpoint)
+        {
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<int>(new Exception()));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                using (var c = new MessageConnection(endpoint, tcpClient: tcpMock.Object))
+                {
+                    await c.ConnectAsync();
+
+                    // because the reading takes place in a separate task,
+                    // and we need it to fail so it doesn't keep looping,
+                    // and because ReadingContinuously is set to false when it fails,
+                    // the best way to make sure this is actually starting the reading is to
+                    // check the stream after a delay.
+                    await Task.Delay(500);
+                    streamMock.Verify(s => s.Close(), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Connected")]
+        [Theory(DisplayName = "Connected handler of peer connection starts reading"), AutoData]
+        public async Task Connected_Handler_Of_Peer_Connection_Starts_Reading(string username, IPEndPoint endpoint)
+        {
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<int>(new Exception()));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
+                {
+                    await c.ConnectAsync();
+
+                    // because the reading takes place in a separate task,
+                    // and we need it to fail so it doesn't keep looping,
+                    // and because ReadingContinuously is set to false when it fails,
+                    // the best way to make sure this is actually starting the reading is to
+                    // check the stream after a delay.
+                    await Task.Delay(500);
+                    streamMock.Verify(s => s.Close(), Times.Once);
+                }
+            }
+        }
+
         [Trait("Category", "WriteAsync")]
         [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
         public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPEndPoint endpoint)
@@ -336,7 +396,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadContinuously")]
         [Theory(DisplayName = "ReadContinuously changes as expected"), AutoData]
-        public async Task ReadContinuously_Returns_Expected_Values(string username, IPEndPoint endpoint)
+        public async Task ReadContinuously_Changes_As_Expected(string username, IPEndPoint endpoint)
         {
             bool b = false;
 
@@ -372,7 +432,7 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "ReadContinuously")]
-        [Theory(DisplayName = "ReadContinuously changes as expected"), AutoData]
+        [Theory(DisplayName = "ReadContinuously returns if already reading"), AutoData]
         public async Task ReadContinuously_Returns_If_Already_Reading(string username, IPEndPoint endpoint)
         {
             var streamMock = new Mock<INetworkStream>();
