@@ -190,9 +190,9 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        [Trait("Category", "ReadContinuouslyAsync")]
-        [Theory(DisplayName = "ReadContinuouslyAsync raises MessageRead on read"), AutoData]
-        public void ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPEndPoint endpoint)
+        [Trait("Category", "ReadContinuously")]
+        [Theory(DisplayName = "ReadContinuously raises MessageRead on read"), AutoData]
+        public void ReadContinuously_Raises_MessageRead_On_Read(string username, IPEndPoint endpoint)
         {
             int callCount = 0;
 
@@ -238,9 +238,9 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        [Trait("Category", "ReadContinuouslyAsync")]
-        [Theory(DisplayName = "ReadContinuouslyAsync raises MessageCodeReceived on read"), AutoData]
-        public void ReadContinuouslyAsync_Raises_MessageCodeRecieved_On_Read(string username, IPEndPoint endpoint, int code)
+        [Trait("Category", "ReadContinuously")]
+        [Theory(DisplayName = "ReadContinuously raises MessageDataRead on read"), AutoData]
+        public void ReadContinuously_Raises_MessageDataRead_On_Read(string username, IPEndPoint endpoint, int code)
         {
             int callCount = 0;
 
@@ -286,9 +286,57 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        [Trait("Category", "ReadingContinuously")]
-        [Theory(DisplayName = "ReadingContinuously changes as expected"), AutoData]
-        public async Task ReadingContinuously_Returns_Expected_Values(string username, IPEndPoint endpoint)
+        [Trait("Category", "ReadContinuously")]
+        [Theory(DisplayName = "ReadContinuously raises MessageReceived on read"), AutoData]
+        public void ReadContinuously_Raises_MessageReceived_On_Read(string username, IPEndPoint endpoint, int code)
+        {
+            int callCount = 0;
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+                {
+                    if (callCount % 2 == 0)
+                    {
+                        var data = BitConverter.GetBytes(4);
+                        Array.Copy(data, bytes, data.Length);
+                    }
+                    else if (callCount % 2 == 1)
+                    {
+                        var data = BitConverter.GetBytes(code);
+                        Array.Copy(data, bytes, data.Length);
+                    }
+
+                    callCount++;
+                })
+                .Returns(Task.Run(() => 4));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                byte[] readMessage = null;
+
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
+                {
+                    c.StartReadingContinuously();
+
+                    c.MessageReceived += (sender, e) => readMessage = e.Code;
+
+                    Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+
+                    Assert.Equal(code, BitConverter.ToInt32(readMessage));
+                }
+            }
+        }
+
+        [Trait("Category", "ReadContinuously")]
+        [Theory(DisplayName = "ReadContinuously changes as expected"), AutoData]
+        public async Task ReadContinuously_Returns_Expected_Values(string username, IPEndPoint endpoint)
         {
             bool b = false;
 
@@ -323,9 +371,9 @@ namespace Soulseek.Tests.Unit.Network
             streamMock.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Trait("Category", "ReadingContinuously")]
-        [Theory(DisplayName = "ReadingContinuously changes as expected"), AutoData]
-        public async Task ReadingContinuously_Returns_If_Already_Reading(string username, IPEndPoint endpoint)
+        [Trait("Category", "ReadContinuously")]
+        [Theory(DisplayName = "ReadContinuously changes as expected"), AutoData]
+        public async Task ReadContinuously_Returns_If_Already_Reading(string username, IPEndPoint endpoint)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
