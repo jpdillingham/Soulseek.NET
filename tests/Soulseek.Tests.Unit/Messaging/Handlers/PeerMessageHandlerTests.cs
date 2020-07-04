@@ -32,6 +32,17 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
     public class PeerMessageHandlerTests
     {
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiation throws given null SoulseekClient")]
+        public void Instantiation_Throws_Given_Null_SoulseekClient()
+        {
+            var ex = Record.Exception(() => new PeerMessageHandler(null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentNullException>(ex);
+            Assert.Equal("soulseekClient", ((ArgumentNullException)ex).ParamName);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on message"), AutoData]
         public void Creates_Diagnostic_On_Message(string username, IPEndPoint endpoint)
