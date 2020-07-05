@@ -219,7 +219,7 @@ namespace Soulseek.Messaging.Handlers
 
             if (searchResponse != null)
             {
-                if (searchResponse.FileCount > 0)
+                if (searchResponse.Files.Count > 0)
                 {
                     try
                     {
