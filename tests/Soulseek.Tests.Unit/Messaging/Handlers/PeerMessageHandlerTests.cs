@@ -64,6 +64,40 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains(messages, m => m.IndexOf("peer message received", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                DiagnosticEventArgs args = default;
+
+                PeerMessageHandler l = new PeerMessageHandler(client);
+                l.DiagnosticGenerated += (sender, e) => args = e;
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+                diagnostic.Info(message);
+
+                Assert.Equal(message, args.Message);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
+        public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                PeerMessageHandler l = new PeerMessageHandler(client);
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+
+                var ex = Record.Exception(() => diagnostic.Info(message));
+
+                Assert.Null(ex);
+            }
+        }
+
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates diagnostic on PeerUploadFailed message"), AutoData]
         public void Creates_Diagnostic_On_PeerUploadFailed_Message(string username, IPEndPoint endpoint)

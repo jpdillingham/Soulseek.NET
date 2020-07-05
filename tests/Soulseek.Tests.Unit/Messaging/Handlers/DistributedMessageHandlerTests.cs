@@ -113,6 +113,40 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Single(diagnostics);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                DiagnosticEventArgs args = default;
+
+                DistributedMessageHandler l = new DistributedMessageHandler(client);
+                l.DiagnosticGenerated += (sender, e) => args = e;
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+                diagnostic.Info(message);
+
+                Assert.Equal(message, args.Message);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
+        public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                DistributedMessageHandler l = new DistributedMessageHandler(client);
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+
+                var ex = Record.Exception(() => diagnostic.Info(message));
+
+                Assert.Null(ex);
+            }
+        }
+
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Sets BranchLevel on message from parent"), AutoData]
         public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPEndPoint ipEndPoint, int level, Guid id)

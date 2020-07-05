@@ -80,6 +80,40 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains("Unhandled", msg, StringComparison.InvariantCultureIgnoreCase);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                DiagnosticEventArgs args = default;
+
+                ServerMessageHandler l = new ServerMessageHandler(client);
+                l.DiagnosticGenerated += (sender, e) => args = e;
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+                diagnostic.Info(message);
+
+                Assert.Equal(message, args.Message);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
+        public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                ServerMessageHandler l = new ServerMessageHandler(client);
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+
+                var ex = Record.Exception(() => diagnostic.Info(message));
+
+                Assert.Null(ex);
+            }
+        }
+
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerGetPeerAddress"), AutoData]
         public void Handles_ServerGetPeerAddress(string username, IPAddress ip, int port)
