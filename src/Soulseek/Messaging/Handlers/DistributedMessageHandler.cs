@@ -217,25 +217,22 @@ namespace Soulseek.Messaging.Handlers
                 return;
             }
 
-            if (searchResponse != null)
+            if (searchResponse?.FileCount > 0)
             {
-                if (searchResponse.Files.Count > 0)
+                try
                 {
-                    try
-                    {
-                        Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
+                    Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
 
-                        var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
+                    var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
 
-                        var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None).ConfigureAwait(false);
-                        await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+                    var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None).ConfigureAwait(false);
+                    await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
-                        Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {username} for query '{query}' with token {token}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Diagnostic.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
-                    }
+                    Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {username} for query '{query}' with token {token}");
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
                 }
             }
         }
