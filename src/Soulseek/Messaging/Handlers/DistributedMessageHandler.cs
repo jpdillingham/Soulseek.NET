@@ -217,7 +217,7 @@ namespace Soulseek.Messaging.Handlers
                 return;
             }
 
-            if (searchResponse?.FileCount > 0)
+            if (searchResponse != null && searchResponse.FileCount > 0)
             {
                 try
                 {
