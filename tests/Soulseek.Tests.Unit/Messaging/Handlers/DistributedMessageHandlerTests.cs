@@ -453,8 +453,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
 
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(response.ToByteArray())), null), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -482,7 +481,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
@@ -512,7 +510,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
