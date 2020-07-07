@@ -49,7 +49,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the number of allowed concurrent child connections.
         /// </summary>
-        int ConcurrentChildLimit { get; }
+        int ChildLimit { get; }
 
         /// <summary>
         ///     Gets a value indicating whether a parent connection is established.

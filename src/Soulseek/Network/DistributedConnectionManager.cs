@@ -48,14 +48,10 @@ namespace Soulseek.Network
         {
             SoulseekClient = soulseekClient;
 
-            AcceptChildren = SoulseekClient?.Options?.AcceptDistributedChildren ?? new SoulseekClientOptions().AcceptDistributedChildren;
-            ConcurrentChildLimit = SoulseekClient?.Options?.DistributedChildLimit
-                ?? new SoulseekClientOptions().DistributedChildLimit;
-
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
-                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+                new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
             WatchdogTimer = new SystemTimer()
             {
@@ -92,7 +88,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => AcceptChildren && HasParent && ChildConnectionDictionary.Count < ConcurrentChildLimit;
+        public bool CanAcceptChildren => AcceptChildren && HasParent && ChildConnectionDictionary.Count < ChildLimit;
 
         /// <summary>
         ///     Gets the current list of child connections.
@@ -104,7 +100,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the number of allowed concurrent child connections.
         /// </summary>
-        public int ConcurrentChildLimit { get; }
+        public int ChildLimit => SoulseekClient.Options.DistributedChildLimit;
 
         /// <summary>
         ///     Gets a value indicating whether a parent connection is established.
@@ -122,7 +118,7 @@ namespace Soulseek.Network
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
-        private bool AcceptChildren { get; }
+        private bool AcceptChildren => SoulseekClient.Options.AcceptDistributedChildren;
         private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set; } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
@@ -147,7 +143,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Child connection from {r.Username} ({r.IPEndPoint}) for token {r.Token} rejected: limit of {ConcurrentChildLimit} reached");
+                Diagnostic.Debug($"Child connection from {r.Username} ({r.IPEndPoint}) for token {r.Token} rejected: limit of {ChildLimit} reached");
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
@@ -221,7 +217,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) rejected: limit of {ConcurrentChildLimit} concurrent connections reached.");
+                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) rejected: limit of {ChildLimit} concurrent connections reached.");
                 c.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
