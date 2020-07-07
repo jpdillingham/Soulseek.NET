@@ -198,11 +198,11 @@ namespace Soulseek.Messaging.Handlers
             }
         }
 
-        private async Task TrySendSearchResults(string username, int token, string query)
+        private async Task<bool> TrySendSearchResults(string username, int token, string query)
         {
             if (SoulseekClient.Options.SearchResponseResolver == default)
             {
-                return;
+                return false;
             }
 
             SearchResponse searchResponse = null;
@@ -214,27 +214,38 @@ namespace Soulseek.Messaging.Handlers
             catch (Exception ex)
             {
                 Diagnostic.Warning($"Error resolving search response for query '{query}' requested by {username} with token {token}: {ex.Message}", ex);
-                return;
+                return false;
             }
 
-            if (searchResponse?.FileCount > 0)
+            if (searchResponse == null)
             {
-                try
-                {
-                    Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
-
-                    var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
-
-                    var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None).ConfigureAwait(false);
-                    await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
-
-                    Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {username} for query '{query}' with token {token}");
-                }
-                catch (Exception ex)
-                {
-                    Diagnostic.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
-                }
+                return false;
             }
+
+            if (searchResponse.FileCount <= 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
+
+                var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
+
+                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None).ConfigureAwait(false);
+                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+
+                Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {username} for query '{query}' with token {token}");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
+            }
+
+            return false;
         }
     }
 }

@@ -32,6 +32,17 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
     public class DistributedMessageHandlerTests
     {
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiation throws given null SoulseekClient")]
+        public void Instantiation_Throws_Given_Null_SoulseekClient()
+        {
+            var ex = Record.Exception(() => new DistributedMessageHandler(null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentNullException>(ex);
+            Assert.Equal("soulseekClient", ((ArgumentNullException)ex).ParamName);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Fact(DisplayName = "Creates diagnostic on message")]
         public void Creates_Diagnostic_On_Message()
@@ -100,6 +111,40 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .ToList();
 
             Assert.Single(diagnostics);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                DiagnosticEventArgs args = default;
+
+                DistributedMessageHandler l = new DistributedMessageHandler(client);
+                l.DiagnosticGenerated += (sender, e) => args = e;
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+                diagnostic.Info(message);
+
+                Assert.Equal(message, args.Message);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
+        public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                DistributedMessageHandler l = new DistributedMessageHandler(client);
+
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+
+                var ex = Record.Exception(() => diagnostic.Info(message));
+
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -408,8 +453,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
 
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(response.ToByteArray())), null), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -437,7 +481,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
@@ -446,6 +489,37 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
         {
             var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            Func<string, int, SearchQuery, Task<SearchResponse>> resolver = (u, t, q) => Task.FromResult(response);
+
+            var options = new SoulseekClientOptions(searchResponseResolver: resolver);
+            var (handler, mocks) = GetFixture(options);
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
+
+            peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest if result contains negative files"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_Negative_Files(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, -1, 0, 0, 0, new List<File>());
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
@@ -467,7 +541,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
