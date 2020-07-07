@@ -227,10 +227,10 @@ namespace Soulseek.Messaging.Handlers
                 return false;
             }
 
-            if (searchResponse.FileCount > 0)
-            {
-                return false; //wtf
-            }
+            //if (searchResponse.FileCount > 0)
+            //{
+            //    return false; //wtf
+            //}
 
             try
             {
