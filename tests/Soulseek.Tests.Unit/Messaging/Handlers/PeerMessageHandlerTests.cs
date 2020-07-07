@@ -146,14 +146,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Does not throw download wait on PeerUploadFailed message"), AutoData]
-        public void Does_Not_Throw_Download_Wait_On_PeerUploadFailed_Message(string username, IPEndPoint endpoint, string filename)
+        [Theory(DisplayName = "Does not throw TransferRequest wait on PeerUploadFailed message with no tracked downloads"), AutoData]
+        public void Does_Not_Throw_TransferRequest_Wait_On_PeerUploadFailed_Message_With_No_Tracked_Downloads(string username, IPEndPoint endpoint, string filename)
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
             var dict = new ConcurrentDictionary<int, TransferInternal>();
-            var download = new TransferInternal(TransferDirection.Download, username, filename, 0);
-            dict.TryAdd(0, download);
 
             mocks.Client.Setup(m => m.Downloads)
                 .Returns(dict);
@@ -168,7 +166,32 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            mocks.Waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<TransferException>()), Times.Never);
+            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<TransferException>()), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw TransferRequest wait on PeerUploadFailed message with untracked download"), AutoData]
+        public void Does_Not_Throw_TransferRequest_Wait_On_PeerUploadFailed_Message_With_No_Untracked_Download(string username, IPEndPoint endpoint, string filename)
+        {
+            var (handler, mocks) = GetFixture(username, endpoint);
+
+            var dict = new ConcurrentDictionary<int, TransferInternal>();
+            dict.TryAdd(0, new TransferInternal(TransferDirection.Download, "not-username", filename, 0));
+
+            mocks.Client.Setup(m => m.Downloads)
+                .Returns(dict);
+
+            mocks.PeerConnection.Setup(m => m.Username)
+                .Returns(username);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.UploadFailed)
+                .WriteString(filename)
+                .Build();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<TransferException>()), Times.Never);
         }
 
         [Trait("Category", "Message")]
