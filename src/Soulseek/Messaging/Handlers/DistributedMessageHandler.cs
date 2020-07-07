@@ -217,27 +217,15 @@ namespace Soulseek.Messaging.Handlers
                 return false;
             }
 
-            var bail = false;
-
             if (searchResponse == null)
-            {
-                bail = true;
-            }
-
-            if (searchResponse.FileCount <= 0)
-            {
-                bail = true;
-            }
-
-            if (bail)
             {
                 return false;
             }
 
-            //if (searchResponse.FileCount > 0)
-            //{
-            //    return false; //wtf
-            //}
+            if (searchResponse.FileCount <= 0)
+            {
+                return false;
+            }
 
             try
             {
