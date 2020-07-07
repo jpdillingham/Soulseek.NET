@@ -217,12 +217,19 @@ namespace Soulseek.Messaging.Handlers
                 return false;
             }
 
+            var bail = false;
+
             if (searchResponse == null)
             {
-                return false;
+                bail = true;
             }
 
             if (searchResponse.FileCount <= 0)
+            {
+                bail = true;
+            }
+
+            if (bail)
             {
                 return false;
             }
