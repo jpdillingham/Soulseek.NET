@@ -227,6 +227,11 @@ namespace Soulseek.Messaging.Handlers
                 return false;
             }
 
+            if (searchResponse.FileCount > 0)
+            {
+                return false; //wtf
+            }
+
             try
             {
                 Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
