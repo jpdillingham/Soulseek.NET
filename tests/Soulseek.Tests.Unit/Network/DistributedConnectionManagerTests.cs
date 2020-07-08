@@ -19,7 +19,6 @@ namespace Soulseek.Tests.Unit.Network
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using System.Timers;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
@@ -86,6 +85,63 @@ namespace Soulseek.Tests.Unit.Network
                     c.SetProperty("ParentConnection", parent.Object);
 
                     Assert.True(c.CanAcceptChildren);
+                }
+            }
+        }
+
+        [Trait("Category", "HasParent")]
+        [Fact(DisplayName = "HasParent returns false if parent is null")]
+        public void HasParent_Returns_False_If_Parent_Is_Null()
+        {
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
+                acceptDistributedChildren: false,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    Assert.False(c.HasParent);
+                }
+            }
+        }
+
+        [Trait("Category", "HasParent")]
+        [Fact(DisplayName = "HasParent returns false parent is not connected")]
+        public void HasParent_Returns_False_If_Parent_Is_Not_Connected()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Disconnected);
+
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
+                acceptDistributedChildren: false,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    c.SetProperty("ParentConnection", conn.Object);
+
+                    Assert.False(c.HasParent);
+                }
+            }
+        }
+
+        [Trait("Category", "HasParent")]
+        [Fact(DisplayName = "HasParent returns returns true if parent is connected")]
+        public void HasParent_Returns_True_If_Parent_Is_Connected()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
+                acceptDistributedChildren: false,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    c.SetProperty("ParentConnection", conn.Object);
+
+                    Assert.True(c.HasParent);
                 }
             }
         }
@@ -214,6 +270,26 @@ namespace Soulseek.Tests.Unit.Network
 
             c2.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
             c2.Verify(m => m.Dispose(), Times.AtLeastOnce);
+        }
+
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync does not throw if connection is null"), AutoData]
+        public async Task BroadcastMessageAsync_Does_Not_Throw_If_Connection_Is_Null(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
+            dict.TryAdd("c2", new Lazy<Task<IMessageConnection>>(() => Task.FromResult<IMessageConnection>(null)));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.BroadcastMessageAsync(bytes, CancellationToken.None));
+
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "ParentConnection_Disconnected")]
