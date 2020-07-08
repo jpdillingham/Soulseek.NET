@@ -348,3 +348,6 @@ opencover.xml
 /examples/Console/data
 examples/Web/web/src/data.js
 /examples/Web/api/wwwroot
+
+/tests/coverage.*
+/tests/opencover.*
