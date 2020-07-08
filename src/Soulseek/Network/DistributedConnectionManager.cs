@@ -99,7 +99,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether a parent connection is established.
         /// </summary>
-        public bool HasParent => ParentConnection != null && ParentConnection?.State == ConnectionState.Connected;
+        public bool HasParent => ParentConnection?.State == ConnectionState.Connected;
 
         /// <summary>
         ///     Gets the current parent connection.
@@ -373,11 +373,12 @@ namespace Soulseek.Network
         {
             var tasks = ChildConnectionDictionary.Values.Select(async c =>
             {
-                IMessageConnection connection = default;
+                IMessageConnection connection = null;
 
                 try
                 {
-                    await (await c.Value.ConfigureAwait(false)).WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+                    connection = await c.Value.ConfigureAwait(false);
+                    await connection.WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
