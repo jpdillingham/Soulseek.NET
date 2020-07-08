@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit.Network
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Timers;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
@@ -2488,6 +2489,20 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to handle message from parent candidate")), It.IsAny<Exception>()));
+        }
+
+        [Trait("Category", "Watchdog")]
+        [Fact(DisplayName = "Watchdog produces warning when no parent connected")]
+        internal void Watchdog_Produces_Warning_When_No_Parent_Connected()
+        {
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.InvokeMethod("WatchdogTimer_Elapsed", null, null);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning("No distributed parent connected.  Requesting a list of candidates.", null), Times.Once);
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)

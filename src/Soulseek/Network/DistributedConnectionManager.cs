@@ -21,6 +21,7 @@ namespace Soulseek.Network
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Timers;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
@@ -60,14 +61,7 @@ namespace Soulseek.Network
                 Interval = 300000,
             };
 
-            WatchdogTimer.Elapsed += (sender, e) =>
-            {
-                if (!HasParent)
-                {
-                    Diagnostic.Warning($"No distributed parent connected.  Requesting a list of candidates.");
-                    _ = UpdateStatusAsync();
-                }
-            };
+            WatchdogTimer.Elapsed += WatchdogTimer_Elapsed;
         }
 
         /// <summary>
@@ -806,6 +800,15 @@ namespace Soulseek.Network
             finally
             {
                 connection.MessageRead -= WaitForParentCandidateConnection_MessageRead;
+            }
+        }
+
+        private void WatchdogTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (!HasParent)
+            {
+                Diagnostic.Warning("No distributed parent connected.  Requesting a list of candidates.");
+                _ = UpdateStatusAsync();
             }
         }
     }
