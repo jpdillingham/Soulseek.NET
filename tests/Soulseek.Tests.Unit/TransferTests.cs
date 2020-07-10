@@ -83,7 +83,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(i.Filename, t.Filename);
             Assert.Equal(i.Token, t.Token);
             Assert.Equal(i.State, t.State);
-            Assert.Equal(i.Size, t.Size);
+            Assert.Equal(0, t.Size);
             Assert.Equal(i.StartOffset, t.StartOffset);
             Assert.Equal(i.BytesTransferred, t.BytesTransferred);
             Assert.Equal(i.AverageSpeed, t.AverageSpeed);
