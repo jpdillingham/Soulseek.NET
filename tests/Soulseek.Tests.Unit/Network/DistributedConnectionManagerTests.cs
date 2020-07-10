@@ -47,7 +47,7 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(string.Empty, c.BranchRoot);
             Assert.False(c.CanAcceptChildren);
             Assert.Empty(c.Children);
-            Assert.Equal(new SoulseekClientOptions().DistributedChildLimit, c.ConcurrentChildLimit);
+            Assert.Equal(new SoulseekClientOptions().DistributedChildLimit, c.ChildLimit);
             Assert.False(c.HasParent);
             Assert.Equal((string.Empty, default(IPEndPoint)), c.Parent);
             Assert.Empty(c.PendingSolicitations);
@@ -86,6 +86,98 @@ namespace Soulseek.Tests.Unit.Network
 
                     Assert.True(c.CanAcceptChildren);
                 }
+            }
+        }
+
+        [Trait("Category", "HasParent")]
+        [Fact(DisplayName = "HasParent returns false if parent is null")]
+        public void HasParent_Returns_False_If_Parent_Is_Null()
+        {
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
+                acceptDistributedChildren: false,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    Assert.False(c.HasParent);
+                }
+            }
+        }
+
+        [Trait("Category", "HasParent")]
+        [Fact(DisplayName = "HasParent returns false parent is not connected")]
+        public void HasParent_Returns_False_If_Parent_Is_Not_Connected()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Disconnected);
+
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
+                acceptDistributedChildren: false,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    c.SetProperty("ParentConnection", conn.Object);
+
+                    Assert.False(c.HasParent);
+                }
+            }
+        }
+
+        [Trait("Category", "HasParent")]
+        [Fact(DisplayName = "HasParent returns returns true if parent is connected")]
+        public void HasParent_Returns_True_If_Parent_Is_Connected()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
+                acceptDistributedChildren: false,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    c.SetProperty("ParentConnection", conn.Object);
+
+                    Assert.True(c.HasParent);
+                }
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            {
+                DiagnosticEventArgs args = default;
+
+                using (var l = new DistributedConnectionManager(client))
+                {
+                    l.DiagnosticGenerated += (sender, e) => args = e;
+
+                    var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+                    diagnostic.Info(message);
+
+                    Assert.Equal(message, args.Message);
+                }
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
+        public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
+        {
+            using (var client = new SoulseekClient(options: null))
+            using (var l = new DistributedConnectionManager(client))
+            {
+                var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
+
+                var ex = Record.Exception(() => diagnostic.Info(message));
+
+                Assert.Null(ex);
             }
         }
 
@@ -178,6 +270,26 @@ namespace Soulseek.Tests.Unit.Network
 
             c2.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
             c2.Verify(m => m.Dispose(), Times.AtLeastOnce);
+        }
+
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync does not throw if connection is null"), AutoData]
+        public async Task BroadcastMessageAsync_Does_Not_Throw_If_Connection_Is_Null(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
+            dict.TryAdd("c2", new Lazy<Task<IMessageConnection>>(() => Task.FromResult<IMessageConnection>(null)));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.BroadcastMessageAsync(bytes, CancellationToken.None));
+
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "ParentConnection_Disconnected")]
@@ -2453,6 +2565,20 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to handle message from parent candidate")), It.IsAny<Exception>()));
+        }
+
+        [Trait("Category", "Watchdog")]
+        [Fact(DisplayName = "Watchdog produces warning when no parent connected")]
+        internal void Watchdog_Produces_Warning_When_No_Parent_Connected()
+        {
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.InvokeMethod("WatchdogTimer_Elapsed", null, null);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning("No distributed parent connected.  Requesting a list of candidates.", null), Times.Once);
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
