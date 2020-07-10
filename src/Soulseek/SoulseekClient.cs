@@ -659,6 +659,11 @@ namespace Soulseek
                 throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
+            if (size.HasValue && size.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
+            }
+
             if (startOffset < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
@@ -734,6 +739,11 @@ namespace Soulseek
             if (string.IsNullOrWhiteSpace(filename))
             {
                 throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (size.HasValue && size.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
             }
 
             if (startOffset < 0)
