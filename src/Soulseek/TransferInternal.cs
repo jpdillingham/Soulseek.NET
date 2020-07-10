@@ -54,7 +54,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of remaining bytes to be transferred.
         /// </summary>
-        public long BytesRemaining => Size - BytesTransferred;
+        public long BytesRemaining => (Size ?? 0) - BytesTransferred;
 
         /// <summary>
         ///     Gets the total number of bytes transferred.
@@ -115,7 +115,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the size of the file to be transferred, in bytes.
         /// </summary>
-        public long Size { get; set; }
+        public long? Size { get; set; }
 
         /// <summary>
         ///     Gets or sets the start offset of the transfer, in bytes.
