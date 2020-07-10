@@ -619,8 +619,13 @@ namespace Soulseek
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
         ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
+        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
@@ -642,7 +647,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -664,7 +669,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
             }
 
-            token = token ?? GetNextToken();
+            token ??= GetNextToken();
 
             if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
             {
@@ -676,9 +681,9 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
             }
 
-            options = options ?? new TransferOptions();
+            options ??= new TransferOptions();
 
-            return DownloadToByteArrayAsync(username, filename, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -686,9 +691,14 @@ namespace Soulseek
         ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>
         ///     to the specified <paramref name="outputStream"/>.
         /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
+        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
@@ -714,7 +724,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        public Task DownloadAsync(string username, string filename, Stream outputStream, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task DownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -746,7 +756,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
             }
 
-            token = token ?? GetNextToken();
+            token ??= GetNextToken();
 
             if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
             {
@@ -758,9 +768,9 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
             }
 
-            options = options ?? new TransferOptions();
+            options ??= new TransferOptions();
 
-            return DownloadToStreamAsync(username, filename, outputStream, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1845,7 +1855,7 @@ namespace Soulseek
         {
             if (State != SoulseekClientStates.Disconnected)
             {
-                message = message ?? exception?.Message ?? "Client disconnected";
+                message ??= exception?.Message ?? "Client disconnected";
 
                 if (ServerConnection != default)
                 {
@@ -1869,7 +1879,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
@@ -1880,18 +1890,18 @@ namespace Soulseek
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
-            using (var memoryStream = new MemoryStream())
-            {
-                await DownloadToStreamAsync(username, filename, memoryStream, startOffset, token, options, cancellationToken).ConfigureAwait(false);
-                return memoryStream.ToArray();
-            }
+            using var memoryStream = new MemoryStream();
+
+            await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
+            return memoryStream.ToArray();
         }
 
-        private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new TransferInternal(TransferDirection.Download, username, filename, token, options)
             {
                 StartOffset = startOffset,
+                Size = size,
             };
 
             Downloads.TryAdd(download.Token, download);
@@ -1943,7 +1953,9 @@ namespace Soulseek
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
                     UpdateState(TransferStates.Initializing);
 
-                    download.Size = transferRequestAcknowledgement.FileSize;
+                    // if size wasn't supplied, use the size provided by the remote client.  for files over 4gb, the value provided
+                    // by the remote client will erroneously be reported as zero and the transfer will fail.
+                    download.Size ??= transferRequestAcknowledgement.FileSize;
 
                     // prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
@@ -1965,7 +1977,9 @@ namespace Soulseek
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
-                    download.Size = transferStartRequest.FileSize;
+                    // if size wasn't supplied, use the size provided by the remote client.  for files over 4gb, the value provided
+                    // by the remote client will erroneously be reported as zero and the transfer will fail.
+                    download.Size ??= transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
 
                     UpdateState(TransferStates.Initializing);
@@ -1984,7 +1998,7 @@ namespace Soulseek
                         .AwaitTransferConnectionAsync(download.Username, download.Filename, download.RemoteToken.Value, cancellationToken);
 
                     // initiate the connection
-                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                     download.Connection = await connectionTask.ConfigureAwait(false);
                 }
@@ -2021,7 +2035,7 @@ namespace Soulseek
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(startOffset);
 
-                    await download.Connection.ReadAsync(download.Size - startOffset, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
+                    await download.Connection.ReadAsync(download.Size ?? 0 - startOffset, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
 
                     download.State = TransferStates.Succeeded;
 
