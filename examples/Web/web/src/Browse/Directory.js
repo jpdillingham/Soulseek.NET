@@ -43,7 +43,7 @@ class Directory extends Component {
   }
 
   downloadOne = (username, file) => {
-    return api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
+    return api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}?size=${file.size}`);
   }
 
   render = () => {
