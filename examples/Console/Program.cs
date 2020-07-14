@@ -127,7 +127,7 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, 0, index++, new TransferOptions(stateChanged: (e) =>
+                    var bytes = await client.DownloadAsync(username, file, startOffset: 0, token: index++, options: new TransferOptions(stateChanged: (e) =>
                     {
                         var key = (e.Transfer.Username, e.Transfer.Filename, e.Transfer.Token);
                         var progress = Downloads.GetOrAdd(key, (e.Transfer.State, null, new ProgressBar(10)));
@@ -159,8 +159,11 @@
                         var size = $"{e.Transfer.BytesTransferred.ToMB()}/{e.Transfer.Size.ToMB()}".PadLeft(15);
                         var percent = $"({e.Transfer.PercentComplete.ToString("N0").PadLeft(3)}%)";
 
-                        Console.Write($"\r {progress.Spinner}  {fn}  {size}  {percent}  [{status}]  {progress.ProgressBar} {e.Transfer.AverageSpeed.ToMB()}/s {e.Transfer.ElapsedTime.Value.ToString(@"m\:ss")} / {e.Transfer.RemainingTime.Value.ToString(@"m\:ss")}");
+                        var elapsed = e.Transfer.ElapsedTime.HasValue ? e.Transfer.ElapsedTime.Value.ToString(@"m\:ss") : "--:--";
+                        var remaining = e.Transfer.RemainingTime.HasValue ? e.Transfer.RemainingTime.Value.ToString(@"m\:ss") : "--:--";
 
+                        Console.Write($"\r {progress.Spinner}  {fn}  {size}  {percent}  [{status}]  {progress.ProgressBar} {e.Transfer.AverageSpeed.ToMB()}/s {elapsed} / {remaining}");
+ 
                     })).ConfigureAwait(false);
 
                     // GetDirectoryName() and GetFileName() only work when the path separator is the same as the current OS' DirectorySeparatorChar.

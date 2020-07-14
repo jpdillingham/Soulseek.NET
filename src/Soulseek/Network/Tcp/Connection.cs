@@ -552,7 +552,7 @@ namespace Soulseek.Network.Tcp
             ResetInactivityTime();
 
             var buffer = new byte[Options.ReadBufferSize];
-            var totalBytesRead = 0;
+            long totalBytesRead = 0;
 
             try
             {

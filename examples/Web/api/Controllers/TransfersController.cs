@@ -81,6 +81,7 @@
         /// </summary>
         /// <param name="username">The username of the download source.</param>
         /// <param name="filename">The download filename.</param>
+        /// <param name="size">The file size, in bytes.</param>
         /// <param name="token">The optional unique download token.</param>
         /// <returns></returns>
         /// <response code="201">The download was successfully enqueued.</response>
@@ -91,7 +92,7 @@
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(string), 403)]
         [ProducesResponseType(typeof(string), 500)]
-        public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
+        public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]long? size, [FromQuery]int? token)
         {
             filename = Uri.UnescapeDataString(filename);
 
@@ -100,7 +101,7 @@
 
             var cts = new CancellationTokenSource();
 
-            var downloadTask = Client.DownloadAsync(username, filename, stream, 0, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
+            var downloadTask = Client.DownloadAsync(username, filename, stream, size, 0, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
             {
                 Tracker.AddOrUpdate(e, cts);
 

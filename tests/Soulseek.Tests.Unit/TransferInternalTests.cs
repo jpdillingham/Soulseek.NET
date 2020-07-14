@@ -41,7 +41,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.Connection);
             Assert.Null(d.IPEndPoint);
             Assert.Null(d.RemoteToken);
-            Assert.Equal(0, d.Size);
+            Assert.Null(d.Size);
             Assert.Equal(TransferStates.None, d.State);
             Assert.Equal(0, d.AverageSpeed);
             Assert.Equal(0, d.BytesTransferred);
@@ -162,7 +162,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.RemainingTime);
 
             d.SetProperty("AverageSpeed", 1);
-            d.SetProperty("Size", 2);
+            d.SetProperty("Size", 2L);
             d.SetProperty("BytesTransferred", 1);
 
             Assert.Equal(TimeSpan.FromSeconds(1), d.RemainingTime);
@@ -176,7 +176,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(0, d.PercentComplete);
 
-            d.SetProperty("Size", 100);
+            d.SetProperty("Size", 100L);
             d.SetProperty("BytesTransferred", 50);
 
             Assert.Equal(50, d.PercentComplete);
