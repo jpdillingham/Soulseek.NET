@@ -19,7 +19,7 @@ const subtree = (root, selectedDirectoryName, onSelect) => {
                   <List.Header 
                     className='browse-folderlist-header'
                     onClick={(event) => onSelect(event, d)}
-                    style={{ color: selected ? '#0E6EB8' : 'black' }}
+                    style={{ color: selected ? '#0E6EB8' : 'black', fontWeight: selected ? 700 : 400 }}
                   >
                     {d.directoryName.split('\\').pop().split('/').pop()}
                   </List.Header>
