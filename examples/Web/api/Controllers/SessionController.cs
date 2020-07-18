@@ -38,6 +38,25 @@
         }
 
         /// <summary>
+        ///     Checks whether the provided authentication is valid.
+        /// </summary>
+        /// <remarks>
+        ///     This is a no-op provided so that the application can test for an expired token on load.
+        /// </remarks>
+        /// <returns></returns>
+        /// <response code="200">The authentication is valid.</response>
+        /// <response code="403">The authentication is is invalid.</response>
+        [HttpGet]
+        [Route("")]
+        [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        public IActionResult Check()
+        {
+            return Ok();
+        }
+
+        /// <summary>
         ///     Logs in.
         /// </summary>
         /// <param name="login"></param>

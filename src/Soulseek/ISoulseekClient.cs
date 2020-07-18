@@ -327,8 +327,13 @@ namespace Soulseek
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
         ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
+        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
@@ -350,16 +355,21 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
         ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>
         ///     to the specified <paramref name="outputStream"/>.
         /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
+        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
@@ -385,7 +395,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        Task DownloadAsync(string username, string filename, Stream outputStream, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task DownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.

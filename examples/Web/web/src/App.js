@@ -43,6 +43,15 @@ class App extends Component {
         }
 
         this.setState({ login: { ...login, initialized: true } })
+        await this.checkToken();
+    }
+
+    checkToken = async () => {
+        try {
+            await api.get('/session');
+        } catch (error) {
+            this.logout();
+        }
     }
 
     loadToken = () => {
@@ -52,10 +61,6 @@ class App extends Component {
 
     setToken = (storage, token) => {
         storage.setItem(tokenKey, JSON.stringify(token))
-    }
-
-    removeToken = (storage) => {
-        this.setState({ token: undefined }, () => storage.removeItem(tokenKey));
     }
 
     login = (username, password, rememberMe) => {
@@ -72,7 +77,13 @@ class App extends Component {
     
     logout = () => {
         localStorage.removeItem(tokenKey);
+        sessionStorage.removeItem(tokenKey);
         this.setState({ ...initialState, login: { ...initialState.login, initialized: true }});
+    }
+
+    withSessionCheck = (component) => {
+        this.checkToken(); // async, runs in the background
+        return { ...component };
     }
 
     render = () => {
@@ -87,7 +98,7 @@ class App extends Component {
                 loading={login.pending} 
                 error={login.error}
             /> : 
-            <Sidebar.Pushable as={Segment} className='app'>
+            login.initialized && <Sidebar.Pushable as={Segment} className='app'>
                 <Sidebar 
                     as={Menu} 
                     animation='overlay' 
@@ -132,10 +143,10 @@ class App extends Component {
                 </Sidebar>
                 <Sidebar.Pusher className='app-content'>
                     <Switch>
-                        <Route exact path='/' component={Search}/>
-                        <Route path='/browse/' component={Browse}/>
-                        <Route path='/downloads/' render={(props) => <Transfers {...props} direction='download'/>}/>
-                        <Route path='/uploads/' render={(props) => <Transfers {...props} direction='upload'/>}/>
+                        <Route exact path='/' render={(props) => this.withSessionCheck(<Search {...props}/>)}/>
+                        <Route path='/browse/' render={(props) => this.withSessionCheck(<Browse {...props}/>)}/>
+                        <Route path='/downloads/' render={(props) => this.withSessionCheck(<Transfers {...props} direction='download'/>)}/>
+                        <Route path='/uploads/' render={(props) => this.withSessionCheck(<Transfers {...props} direction='upload'/>)}/>
                     </Switch>
                 </Sidebar.Pusher>
             </Sidebar.Pushable>

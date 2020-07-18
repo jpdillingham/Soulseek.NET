@@ -54,7 +54,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of remaining bytes to be transferred.
         /// </summary>
-        public long BytesRemaining => Size - BytesTransferred;
+        public long BytesRemaining => (Size ?? 0) - BytesTransferred;
 
         /// <summary>
         ///     Gets the total number of bytes transferred.
@@ -100,7 +100,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
-        public double PercentComplete => Size == 0 ? 0 : (BytesTransferred / (double)Size) * 100;
+        public double PercentComplete => Size.HasValue ? (BytesTransferred / (double)Size) * 100 : 0;
 
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.
@@ -115,7 +115,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the size of the file to be transferred, in bytes.
         /// </summary>
-        public long Size { get; set; }
+        public long? Size { get; set; }
 
         /// <summary>
         ///     Gets or sets the start offset of the transfer, in bytes.

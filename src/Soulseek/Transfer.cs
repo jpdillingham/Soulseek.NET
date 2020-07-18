@@ -82,7 +82,7 @@ namespace Soulseek
                 transferInternal.Filename,
                 transferInternal.Token,
                 transferInternal.State,
-                transferInternal.Size,
+                transferInternal.Size ?? 0,
                 transferInternal.StartOffset,
                 transferInternal.BytesTransferred,
                 transferInternal.AverageSpeed,
