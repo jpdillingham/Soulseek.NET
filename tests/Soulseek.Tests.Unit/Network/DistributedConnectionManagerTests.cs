@@ -1053,6 +1053,32 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync writes null parent IP if parent IPEndPoint is null")]
+        internal async Task UpdateStatusAsync_Writes_Null_Parent_IP_If_Parent_IPEndPoint_Is_Null()
+        {
+            var expectedPayload = Convert.FromBase64String("BAAAAEkAAAAIAAAAfgAAAAAAAAAIAAAAfwAAAAAAAAAIAAAAgQAAAAAAAAAFAAAAZAAAAAEFAAAARwAAAAA=");
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", null);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.IPEndPoint)
+                .Returns<IPEndPoint>(null);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
         [Fact(DisplayName = "UpdateStatusAsync writes payload to server")]
         internal async Task UpdateStatusAsync_Writes_Payload_To_Server()
         {
