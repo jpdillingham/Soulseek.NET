@@ -315,6 +315,47 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "ParentConnection_Disconnected")]
+        [Theory(DisplayName = "ParentConnection_Disconnected produces expected diagnostics"), AutoData]
+        public void ParentConnection_Disconnected_Produces_Expected_Diagnostics(string username, IPEndPoint endpoint, string message)
+        {
+            var c = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", new Mock<IMessageConnection>().Object);
+                manager.SetProperty("BranchLevel", 1);
+                manager.SetProperty("BranchRoot", "foo");
+
+                manager.InvokeMethod("ParentConnection_Disconnected", c.Object, new ConnectionDisconnectedEventArgs(message));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("parent connection") && s.ContainsInsensitive("disconnected") && s.ContainsInsensitive("type:"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("parent connection") && s.ContainsInsensitive("disconnected"))), Times.Once);
+        }
+
+        [Trait("Category", "ParentConnection_Disconnected")]
+        [Theory(DisplayName = "ParentConnection_Disconnected produces expected diagnostic when message is empty"), AutoData]
+        public void ParentConnection_Disconnected_Produces_Expected_Diagnostic_When_Message_Is_Empty(string username, IPEndPoint endpoint)
+        {
+            var c = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", new Mock<IMessageConnection>().Object);
+                manager.SetProperty("BranchLevel", 1);
+                manager.SetProperty("BranchRoot", "foo");
+
+                manager.InvokeMethod("ParentConnection_Disconnected", c.Object, new ConnectionDisconnectedEventArgs(null));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("parent connection") && s.ContainsInsensitive("disconnected."))), Times.Once);
+        }
+
+        [Trait("Category", "ParentConnection_Disconnected")]
         [Theory(DisplayName = "ParentConnection_Disconnected does not throw if AddParentConnectionAsync throws"), AutoData]
         public void ParentConnection_Disconnected_Does_Not_Throw_If_AddParentConnectionAsync_Throws(string username, IPEndPoint endpoint, string message)
         {
