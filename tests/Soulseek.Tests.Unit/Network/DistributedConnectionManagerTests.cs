@@ -2648,6 +2648,36 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Warning("No distributed parent connected.  Requesting a list of candidates.", null), Times.Once);
         }
 
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for peer")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Peer()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(new byte[] { 0x5, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0 }));
+            }
+        }
+
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for server")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Server()
+        {
+            var (manager, _) = GetFixture();
+
+            var expected = new byte[] { 0x8, 0x0, 0x0, 0x0, 0x7E, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+            using (manager)
+            {
+                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(expected));
+            }
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
