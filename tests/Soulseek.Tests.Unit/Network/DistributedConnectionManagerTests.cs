@@ -2678,6 +2678,58 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for server when root is established")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Server_When_Root_Is_Established()
+        {
+            var (manager, _) = GetFixture();
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var expected = new List<byte>();
+
+            expected.AddRange(new BranchLevelCommand(1).ToByteArray());
+            expected.AddRange(new BranchRootCommand("a").ToByteArray());
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                manager.SetProperty("BranchRoot", "a");
+
+                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(expected.ToArray()));
+            }
+        }
+
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for peer when root is established")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Peer_When_Root_Is_Established()
+        {
+            var (manager, _) = GetFixture();
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var expected = new List<byte>();
+
+            expected.AddRange(new DistributedBranchLevel(1).ToByteArray());
+            expected.AddRange(new DistributedBranchRoot("a").ToByteArray());
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                manager.SetProperty("BranchRoot", "a");
+
+                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(expected.ToArray()));
+            }
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
