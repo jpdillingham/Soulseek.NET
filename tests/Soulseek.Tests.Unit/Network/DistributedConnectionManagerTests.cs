@@ -315,6 +315,47 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "ParentConnection_Disconnected")]
+        [Theory(DisplayName = "ParentConnection_Disconnected produces expected diagnostics"), AutoData]
+        public void ParentConnection_Disconnected_Produces_Expected_Diagnostics(string username, IPEndPoint endpoint, string message)
+        {
+            var c = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", new Mock<IMessageConnection>().Object);
+                manager.SetProperty("BranchLevel", 1);
+                manager.SetProperty("BranchRoot", "foo");
+
+                manager.InvokeMethod("ParentConnection_Disconnected", c.Object, new ConnectionDisconnectedEventArgs(message));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("parent connection") && s.ContainsInsensitive("disconnected") && s.ContainsInsensitive("type:"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("parent connection") && s.ContainsInsensitive("disconnected"))), Times.Once);
+        }
+
+        [Trait("Category", "ParentConnection_Disconnected")]
+        [Theory(DisplayName = "ParentConnection_Disconnected produces expected diagnostic when message is empty"), AutoData]
+        public void ParentConnection_Disconnected_Produces_Expected_Diagnostic_When_Message_Is_Empty(string username, IPEndPoint endpoint)
+        {
+            var c = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", new Mock<IMessageConnection>().Object);
+                manager.SetProperty("BranchLevel", 1);
+                manager.SetProperty("BranchRoot", "foo");
+
+                manager.InvokeMethod("ParentConnection_Disconnected", c.Object, new ConnectionDisconnectedEventArgs(null));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("parent connection") && s.ContainsInsensitive("disconnected."))), Times.Once);
+        }
+
+        [Trait("Category", "ParentConnection_Disconnected")]
         [Theory(DisplayName = "ParentConnection_Disconnected does not throw if AddParentConnectionAsync throws"), AutoData]
         public void ParentConnection_Disconnected_Does_Not_Throw_If_AddParentConnectionAsync_Throws(string username, IPEndPoint endpoint, string message)
         {
@@ -1050,6 +1091,32 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync writes null parent IP if parent IPEndPoint is null")]
+        internal async Task UpdateStatusAsync_Writes_Null_Parent_IP_If_Parent_IPEndPoint_Is_Null()
+        {
+            var expectedPayload = Convert.FromBase64String("BAAAAEkAAAAIAAAAfgAAAAAAAAAIAAAAfwAAAAAAAAAIAAAAgQAAAAAAAAAFAAAAZAAAAAEFAAAARwAAAAA=");
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", null);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.IPEndPoint)
+                .Returns<IPEndPoint>(null);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -2579,6 +2646,108 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Warning("No distributed parent connected.  Requesting a list of candidates.", null), Times.Once);
+        }
+
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for peer")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Peer()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(new byte[] { 0x5, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0 }));
+            }
+        }
+
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for server")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Server()
+        {
+            var (manager, _) = GetFixture();
+
+            var expected = new byte[] { 0x8, 0x0, 0x0, 0x0, 0x7E, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+            using (manager)
+            {
+                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(expected));
+            }
+        }
+
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for server when root is established")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Server_When_Root_Is_Established()
+        {
+            var (manager, _) = GetFixture();
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var expected = new List<byte>();
+
+            expected.AddRange(new BranchLevelCommand(1).ToByteArray());
+            expected.AddRange(new BranchRootCommand("a").ToByteArray());
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                manager.SetProperty("BranchRoot", "a");
+
+                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(expected.ToArray()));
+            }
+        }
+
+        [Trait("Category", "GetBranchInformation")]
+        [Fact(DisplayName = "GetBranchInformation returns expected info for peer when root is established")]
+        internal void GetBranchInformation_Returns_Expected_Info_For_Peer_When_Root_Is_Established()
+        {
+            var (manager, _) = GetFixture();
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var expected = new List<byte>();
+
+            expected.AddRange(new DistributedBranchLevel(1).ToByteArray());
+            expected.AddRange(new DistributedBranchRoot("a").ToByteArray());
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                manager.SetProperty("BranchRoot", "a");
+
+                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(expected.ToArray()));
+            }
+        }
+
+        [Trait("Category", "ChildConnection_Disconnected")]
+        [Fact(DisplayName = "ChildConnection_Disconnected produces expected diagnostic given null message")]
+        internal void ChildConnection_Disconnected_Does_Not_Throw_Given_Null_Message()
+        {
+            var (manager, mocks) = GetFixture();
+
+            var child = new Mock<IMessageConnection>();
+            child.Setup(m => m.Username)
+                .Returns("username");
+
+            var args = new ConnectionDisconnectedEventArgs(null);
+
+            using (manager)
+            {
+                manager.InvokeMethod("ChildConnection_Disconnected", child.Object, args);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("disconnected."))), Times.Once);
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)

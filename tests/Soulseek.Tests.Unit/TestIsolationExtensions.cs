@@ -73,6 +73,50 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        public static void InvokeGenericMethod(this object target, string methodName, Type typeArgument, params object[] args)
+        {
+            InvokeGenericMethod(target, methodName, typeArgument, Flags, args);
+        }
+
+        public static void InvokeGenericMethod(this object target, string methodName, Type typeArgument, BindingFlags bindingFlags, params object[] args)
+        {
+            var type = target.GetType();
+
+            try
+            {
+                var method = GetMethod(type, methodName, bindingFlags);
+                var generic = method.MakeGenericMethod(typeArgument);
+
+                generic.Invoke(target, args);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to invoke method '{methodName}<{typeArgument.Name}>' on target Type {type.Name}.  See inner Exception for details.", ex);
+            }
+        }
+
+        public static TResult InvokeGenericMethod<TArg, TResult>(this object target, string methodName, params object[] args)
+        {
+            return InvokeGenericMethod<TArg, TResult>(target, methodName, Flags, args);
+        }
+
+        public static TResult InvokeGenericMethod<TArg, TResult>(this object target, string methodName, BindingFlags bindingFlags, params object[] args)
+        {
+            var type = target.GetType();
+
+            try
+            {
+                var method = GetMethod(type, methodName, bindingFlags);
+                var generic = method.MakeGenericMethod(typeof(TArg));
+
+                return (TResult)generic.Invoke(target, args);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to invoke method '{methodName}<{typeof(TArg).Name}>' on target Type {type.Name}.  See inner Exception for details.", ex);
+            }
+        }
+
         public static void InvokeMethod(this object target, string methodName, params object[] args)
         {
             InvokeMethod(target, methodName, Flags, args);
