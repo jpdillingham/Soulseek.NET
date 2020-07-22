@@ -2730,6 +2730,26 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "ChildConnection_Disconnected")]
+        [Fact(DisplayName = "ChildConnection_Disconnected produces expected diagnostic given null message")]
+        internal void ChildConnection_Disconnected_Does_Not_Throw_Given_Null_Message()
+        {
+            var (manager, mocks) = GetFixture();
+
+            var child = new Mock<IMessageConnection>();
+            child.Setup(m => m.Username)
+                .Returns("username");
+
+            var args = new ConnectionDisconnectedEventArgs(null);
+
+            using (manager)
+            {
+                manager.InvokeMethod("ChildConnection_Disconnected", child.Object, args);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("disconnected."))), Times.Once);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
