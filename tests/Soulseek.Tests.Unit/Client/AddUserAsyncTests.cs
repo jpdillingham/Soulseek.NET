@@ -87,6 +87,30 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "AddUserAsync")]
+        [Theory(DisplayName = "AddUserAsync uses given CancellationToken"), AutoData]
+        public async Task AddUserAsync_Uses_Given_CancellationToken(string username, UserData userData, CancellationToken cancellationToken)
+        {
+            var result = new AddUserResponse(username, true, userData);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.AddUserAsync(username, cancellationToken);
+            }
+
+            serverConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "AddUserAsync")]
         [Theory(DisplayName = "AddUserAsync throws UserNotFoundException when exists is false"), AutoData]
         public async Task AddUserAsync_Throws_UserNotFoundException_When_Exists_Is_False(string username, UserData userData)
         {
