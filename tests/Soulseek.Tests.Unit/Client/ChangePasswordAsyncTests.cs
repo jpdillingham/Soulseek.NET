@@ -84,6 +84,28 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ChangePasswordAsync")]
+        [Theory(DisplayName = "ChangePasswordAsync uses given CancellationToken"), AutoData]
+        public async Task ChangePasswordAsync_Uses_Given_CancellationToken(string password, CancellationToken cancellationToken)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<string>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(password));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.ChangePasswordAsync(password, cancellationToken);
+            }
+
+            serverConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "ChangePasswordAsync")]
         [Theory(DisplayName = "ChangePasswordAsync throws on mismatching confirmation"), AutoData]
         public async Task ChangePasswordAsync_Throws_On_Mismatching_Confirmation(string password)
         {
