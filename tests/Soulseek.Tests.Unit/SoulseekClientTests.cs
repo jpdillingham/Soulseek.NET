@@ -85,6 +85,30 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "Port")]
+        [Theory(DisplayName = "Port returns IPEndPoint port if not null"), AutoData]
+        public void Port_Returns_IPEndPoint_Port_If_Not_Null(IPAddress ip, int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("IPEndPoint", new IPEndPoint(ip, port));
+
+                Assert.Equal(port, s.Port);
+            }
+        }
+
+        [Trait("Category", "IPAddress")]
+        [Theory(DisplayName = "IPAddress returns IPEndPoint address if not null"), AutoData]
+        public void IPAddress_Returns_IPEndPoint_Address_If_Not_Null(IPAddress ip, int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("IPEndPoint", new IPEndPoint(ip, port));
+
+                Assert.Equal(ip, s.IPAddress);
+            }
+        }
+
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect fails if connected")]
         public async Task Connect_Fails_If_Connected()
