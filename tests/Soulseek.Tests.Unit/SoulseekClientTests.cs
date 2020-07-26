@@ -85,6 +85,30 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "Port")]
+        [Theory(DisplayName = "Port returns IPEndPoint port if not null"), AutoData]
+        public void Port_Returns_IPEndPoint_Port_If_Not_Null(IPAddress ip, int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("IPEndPoint", new IPEndPoint(ip, port));
+
+                Assert.Equal(port, s.Port);
+            }
+        }
+
+        [Trait("Category", "IPAddress")]
+        [Theory(DisplayName = "IPAddress returns IPEndPoint address if not null"), AutoData]
+        public void IPAddress_Returns_IPEndPoint_Address_If_Not_Null(IPAddress ip, int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("IPEndPoint", new IPEndPoint(ip, port));
+
+                Assert.Equal(ip, s.IPAddress);
+            }
+        }
+
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect fails if connected")]
         public async Task Connect_Fails_If_Connected()
@@ -224,6 +248,30 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect uses given CancellationToken"), AutoData]
+        public async Task Connect_Uses_Given_CancellationToken(CancellationToken cancellationToken)
+        {
+            var c = new Mock<IMessageConnection>();
+            
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
+            {
+                await s.ConnectAsync(cancellationToken);
+            }
+
+            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect succeeds when TcpConnection succeeds")]
         public async Task Connect_Succeeds_When_TcpConnection_Succeeds()
         {
@@ -262,6 +310,30 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect address uses given CancellationToken"), AutoData]
+        public async Task Connect_Address_Uses_Given_CancellationToken(IPEndPoint endpoint, CancellationToken cancellationToken)
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
+            {
+                await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, cancellationToken);
+            }
+
+            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect address credentials succeeds when TcpConnection succeeds"), AutoData]
         public async Task Connect_Address_Credentials_Succeeds_When_TcpConnection_Succeeds(IPEndPoint endpoint, string username, string password)
         {
@@ -291,6 +363,36 @@ namespace Soulseek.Tests.Unit
             }
 
             waiter.Verify(m => m.Wait<LoginResponse>(key, It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect address login uses given CancellationToken"), AutoData]
+        public async Task Connect_Address_Login_Uses_Given_CancellationToken(IPEndPoint endpoint, string username, string password, CancellationToken cancellationToken)
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            var key = new WaitKey(MessageCode.Server.Login);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(key, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(succeeded: true, string.Empty)));
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: waiter.Object))
+            {
+                await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password, cancellationToken);
+            }
+
+            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
         }
 
         [Trait("Category", "Connect")]
@@ -458,6 +560,34 @@ namespace Soulseek.Tests.Unit
             }
 
             c.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()));
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect login uses given CancellationToken"), AutoData]
+        public async Task Connect_Login_Uses_Given_CancellationToken(string username, string password, CancellationToken cancellationToken)
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var w = new Mock<IWaiter>();
+            w.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: w.Object))
+            {
+                await s.ConnectAsync(username, password, cancellationToken);
+            }
+
+            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
         }
 
         [Trait("Category", "Disconnect")]
