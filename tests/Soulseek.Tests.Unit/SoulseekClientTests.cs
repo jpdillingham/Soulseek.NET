@@ -1050,5 +1050,91 @@ namespace Soulseek.Tests.Unit
                 Assert.Null(ex);
             }
         }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when PeerConnectionManager raises")]
+        public void Raises_DiagnosticGenerated_When_PeerConnectionManager_Raises()
+        {
+            var mock = new Mock<IPeerConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(peerConnectionManager: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when PeerConnectionManager raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_PeerConnectionManager_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IPeerConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(peerConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when DistributedConnectionManager raises")]
+        public void Raises_DiagnosticGenerated_When_DistributedConnectionManager_Raises()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when DistributedConnectionManager raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_DistributedConnectionManager_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
     }
 }
