@@ -923,8 +923,8 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Event")]
-        [Fact(DisplayName = "Raises DiagnosticGenerated when listener raises")]
-        public void Raises_DiagnosticGenerated_When_Listener_Raises()
+        [Fact(DisplayName = "Raises DiagnosticGenerated when ListenerHandler raises")]
+        public void Raises_DiagnosticGenerated_When_ListenerHandler_Raises()
         {
             var mock = new Mock<IListenerHandler>();
             var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
@@ -951,13 +951,56 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Event")]
-        [Fact(DisplayName = "Does not throw when listener raises if diagnostic handler not bound")]
-        public void Does_Not_Throw_When_Listener_Raises_If_Diagnostic_Handler_Not_Bound()
+        [Fact(DisplayName = "Does not throw when ListenerHandler raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_ListenerHandler_Raises_If_Diagnostic_Handler_Not_Bound()
         {
             var mock = new Mock<IListenerHandler>();
             var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
 
             using (var s = new SoulseekClient(listenerHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when PeerMessageHandler raises")]
+        public void Raises_DiagnosticGenerated_When_PeerMessageHandler_Raises()
+        {
+            var mock = new Mock<IPeerMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(peerMessageHandler: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when PeerMessageHandler raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_PeerMessageHandler_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IPeerMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(peerMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
