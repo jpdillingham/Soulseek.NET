@@ -1007,5 +1007,48 @@ namespace Soulseek.Tests.Unit
                 Assert.Null(ex);
             }
         }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when DistributedMessageHandler raises")]
+        public void Raises_DiagnosticGenerated_When_DistributedMessageHandler_Raises()
+        {
+            var mock = new Mock<IDistributedMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(distributedMessageHandler: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when DistributedMessageHandler raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_DistributedMessageHandler_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IDistributedMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(distributedMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
     }
 }
