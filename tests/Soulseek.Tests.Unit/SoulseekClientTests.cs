@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
@@ -919,6 +920,49 @@ namespace Soulseek.Tests.Unit
             }
 
             handlerMock.Verify(m => m.HandleMessageRead(It.IsAny<object>(), args), Times.Once);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when listener raises")]
+        public void Raises_DiagnosticGenerated_When_Listener_Raises()
+        {
+            var mock = new Mock<IListenerHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(listenerHandler: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when listener raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_Listener_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IListenerHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(listenerHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
         }
     }
 }
