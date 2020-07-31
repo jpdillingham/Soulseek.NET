@@ -1136,5 +1136,104 @@ namespace Soulseek.Tests.Unit
                 Assert.Null(ex);
             }
         }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserStatusChanged fires when handler raises"), AutoData]
+        public void UserStatusChanged_Fires_When_Handler_Raises(string username, UserPresence presense, bool privileged)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserStatusChangedEventArgs(username, presense, privileged);
+            UserStatusChangedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.UserStatusChanged += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.UserStatusChanged += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserStatusChanged does not throw if event not bound"), AutoData]
+        public void UserStatusChanged_Does_Not_Throw_If_Event_Not_Bound(string username, UserPresence presense, bool privileged)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserStatusChangedEventArgs(username, presense, privileged);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.UserStatusChanged += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivateMessageReceived fires when handler raises"), AutoData]
+        public void PrivateMessageReceived_Fires_When_Handler_Raises(int id, DateTime timestamp, string username, string message, bool isAdmin)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivateMessageReceivedEventArgs(id, timestamp, username, message, isAdmin);
+            PrivateMessageReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.PrivateMessageReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.PrivateMessageReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivateMessageReceived does not throw if event not bound"), AutoData]
+        public void PrivateMessageReceived_Does_Not_Throw_If_Event_Not_Bound(int id, DateTime timestamp, string username, string message, bool isAdmin)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivateMessageReceivedEventArgs(id, timestamp, username, message, isAdmin);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.PrivateMessageReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivilegedUserListReceived fires when handler raises"), AutoData]
+        public void PrivilegedUserListReceived_Fires_When_Handler_Raises(string[] usernames)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivilegedUserListReceivedEventArgs(usernames);
+            PrivilegedUserListReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.PrivilegedUserListReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.PrivilegedUserListReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivilegedUserListReceived does not throw if event not bound"), AutoData]
+        public void PrivilegedUserListReceived_Does_Not_Throw_If_Event_Not_Bound(string[] usernames)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivilegedUserListReceivedEventArgs(usernames);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.PrivilegedUserListReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
     }
 }
