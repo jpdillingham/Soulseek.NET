@@ -1876,12 +1876,12 @@ namespace Soulseek
 
                 DistributedConnectionManager?.RemoveAndDisposeAll();
 
-                Searches?.Values.ToList().ForEach(search =>
+                Searches.Values.ToList().ForEach(search =>
                 {
                     search.Cancel();
                 });
 
-                Searches?.RemoveAndDisposeAll();
+                Searches.RemoveAndDisposeAll();
 
                 Username = null;
 

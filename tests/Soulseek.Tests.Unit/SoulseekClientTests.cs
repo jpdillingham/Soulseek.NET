@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
@@ -252,7 +253,7 @@ namespace Soulseek.Tests.Unit
         public async Task Connect_Uses_Given_CancellationToken(CancellationToken cancellationToken)
         {
             var c = new Mock<IMessageConnection>();
-            
+
             var factory = new Mock<IConnectionFactory>();
             factory.Setup(m => m.GetServerConnection(
                 It.IsAny<IPEndPoint>(),
@@ -906,6 +907,22 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "GlobalMessageRecieved")]
+        [Theory(DisplayName = "Does not throw when GlobalMessageRecieved and no handler bound"), AutoData]
+        public void Does_Not_Throw_When_GlobalMessageReceived_And_No_Handler_Bound(string msg)
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            {
+                GlobalMessageReceivedEventArgs args = default;
+
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.GlobalMessageReceived += null, new GlobalMessageReceivedEventArgs(msg)));
+
+                Assert.Null(ex);
+            }
+        }
+
         [Trait("Category", "MessageRead")]
         [Fact(DisplayName = "MessageRead invokes HandleMessageRead")]
         public void MessageRead_Invokes_HandleMessageRead()
@@ -919,6 +936,549 @@ namespace Soulseek.Tests.Unit
             }
 
             handlerMock.Verify(m => m.HandleMessageRead(It.IsAny<object>(), args), Times.Once);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when ListenerHandler raises")]
+        public void Raises_DiagnosticGenerated_When_ListenerHandler_Raises()
+        {
+            var mock = new Mock<IListenerHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(listenerHandler: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when ListenerHandler raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_ListenerHandler_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IListenerHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(listenerHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when PeerMessageHandler raises")]
+        public void Raises_DiagnosticGenerated_When_PeerMessageHandler_Raises()
+        {
+            var mock = new Mock<IPeerMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(peerMessageHandler: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when PeerMessageHandler raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_PeerMessageHandler_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IPeerMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(peerMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when DistributedMessageHandler raises")]
+        public void Raises_DiagnosticGenerated_When_DistributedMessageHandler_Raises()
+        {
+            var mock = new Mock<IDistributedMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(distributedMessageHandler: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when DistributedMessageHandler raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_DistributedMessageHandler_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IDistributedMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(distributedMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when PeerConnectionManager raises")]
+        public void Raises_DiagnosticGenerated_When_PeerConnectionManager_Raises()
+        {
+            var mock = new Mock<IPeerConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(peerConnectionManager: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when PeerConnectionManager raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_PeerConnectionManager_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IPeerConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(peerConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated when DistributedConnectionManager raises")]
+        public void Raises_DiagnosticGenerated_When_DistributedConnectionManager_Raises()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            object raiser = null;
+            DiagnosticEventArgs raisedArgs = null;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) =>
+                {
+                    raiser = sender;
+                    raisedArgs = args;
+                };
+
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+            }
+
+            Assert.NotNull(raiser);
+            Assert.Equal(mock.Object, raiser);
+
+            Assert.NotNull(raisedArgs);
+            Assert.Equal(expectedArgs, raisedArgs);
+        }
+
+        [Trait("Category", "Event")]
+        [Fact(DisplayName = "Does not throw when DistributedConnectionManager raises if diagnostic handler not bound")]
+        public void Does_Not_Throw_When_DistributedConnectionManager_Raises_If_Diagnostic_Handler_Not_Bound()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserStatusChanged fires when handler raises"), AutoData]
+        public void UserStatusChanged_Fires_When_Handler_Raises(string username, UserPresence presense, bool privileged)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserStatusChangedEventArgs(username, presense, privileged);
+            UserStatusChangedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.UserStatusChanged += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.UserStatusChanged += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserStatusChanged does not throw if event not bound"), AutoData]
+        public void UserStatusChanged_Does_Not_Throw_If_Event_Not_Bound(string username, UserPresence presense, bool privileged)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserStatusChangedEventArgs(username, presense, privileged);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.UserStatusChanged += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivateMessageReceived fires when handler raises"), AutoData]
+        public void PrivateMessageReceived_Fires_When_Handler_Raises(int id, DateTime timestamp, string username, string message, bool isAdmin)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivateMessageReceivedEventArgs(id, timestamp, username, message, isAdmin);
+            PrivateMessageReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.PrivateMessageReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.PrivateMessageReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivateMessageReceived does not throw if event not bound"), AutoData]
+        public void PrivateMessageReceived_Does_Not_Throw_If_Event_Not_Bound(int id, DateTime timestamp, string username, string message, bool isAdmin)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivateMessageReceivedEventArgs(id, timestamp, username, message, isAdmin);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.PrivateMessageReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivilegedUserListReceived fires when handler raises"), AutoData]
+        public void PrivilegedUserListReceived_Fires_When_Handler_Raises(string[] usernames)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivilegedUserListReceivedEventArgs(usernames);
+            PrivilegedUserListReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.PrivilegedUserListReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.PrivilegedUserListReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivilegedUserListReceived does not throw if event not bound"), AutoData]
+        public void PrivilegedUserListReceived_Does_Not_Throw_If_Event_Not_Bound(string[] usernames)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivilegedUserListReceivedEventArgs(usernames);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.PrivilegedUserListReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivilegeNotificationReceived fires when handler raises"), AutoData]
+        public void PrivilegeNotificationReceived_Fires_When_Handler_Raises(string username, int id)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivilegeNotificationReceivedEventArgs(username, id);
+            PrivilegeNotificationReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.PrivilegeNotificationReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.PrivilegeNotificationReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PrivilegeNotificationReceived does not throw if event not bound"), AutoData]
+        public void PrivilegeNotificationReceived_Does_Not_Throw_If_Event_Not_Bound(string username, int id)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PrivilegeNotificationReceivedEventArgs(username, id);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.PrivilegeNotificationReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomMessageReceived fires when handler raises"), AutoData]
+        public void RoomMessageReceived_Fires_When_Handler_Raises(string roomName, string username, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomMessageReceivedEventArgs(roomName, username, message);
+            RoomMessageReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.RoomMessageReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.RoomMessageReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomMessageReceived does not throw if event not bound"), AutoData]
+        public void RoomMessageReceived_Does_Not_Throw_If_Event_Not_Bound(string roomName, string username, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomMessageReceivedEventArgs(roomName, username, message);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RoomMessageReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomJoined fires when handler raises"), AutoData]
+        public void RoomJoined_Fires_When_Handler_Raises(string roomName, string username, string message, UserData userData)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomJoinedEventArgs(roomName, username, userData);
+            RoomJoinedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.RoomJoined += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.RoomJoined += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomJoined does not throw if event not bound"), AutoData]
+        public void RoomJoined_Does_Not_Throw_If_Event_Not_Bound(string roomName, string username, UserData userData)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomJoinedEventArgs(roomName, username, userData);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RoomJoined += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomLeft fires when handler raises"), AutoData]
+        public void RoomLeft_Fires_When_Handler_Raises(string roomName, string username, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomLeftEventArgs(roomName, username);
+            RoomLeftEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.RoomLeft += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.RoomLeft += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomLeft does not throw if event not bound"), AutoData]
+        public void RoomLeft_Does_Not_Throw_If_Event_Not_Bound(string roomName, string username)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomLeftEventArgs(roomName, username);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RoomLeft += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomListReceived fires when handler raises"), AutoData]
+        public void RoomListReceived_Fires_When_Handler_Raises(Room[] rooms)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomListReceivedEventArgs(rooms);
+            RoomListReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.RoomListReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.RoomListReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomListReceived does not throw if event not bound"), AutoData]
+        public void RoomListReceived_Does_Not_Throw_If_Event_Not_Bound(Room[] rooms)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomListReceivedEventArgs(rooms);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RoomListReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DiagnosticGenerated fires when handler raises"), AutoData]
+        public void DiagnosticGenerated_Fires_When_Handler_Raises(DiagnosticLevel level, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(level, message);
+            DiagnosticEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "ServerMessageHandler DiagnosticGenerated does not throw if event not bound"), AutoData]
+        public void ServerMessageHandler_DiagnosticGenerated_Does_Not_Throw_If_Event_Not_Bound(DiagnosticLevel level, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new DiagnosticEventArgs(level, message);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Diagnostic does not throw if event not bound"), AutoData]
+        public void Diagnostic_Does_Not_Throw_If_Event_Not_Bound(string message)
+        {
+            using (var s = new SoulseekClient())
+            {
+                DiagnosticFactory d = s.GetProperty<DiagnosticFactory>("Diagnostic");
+
+                var ex = Record.Exception(() => d.Info(message));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Diagnostic raises DiagnosticGenerated"), AutoData]
+        public void Diagnostic_Raises_DiagnosticGenerated(string message)
+        {
+            string actualMessage = null;
+
+            using (var s = new SoulseekClient())
+            {
+                s.DiagnosticGenerated += (sender, m) => actualMessage = m.Message;
+                DiagnosticFactory d = s.GetProperty<DiagnosticFactory>("Diagnostic");
+
+                d.Info(message);
+
+                Assert.Equal(message, actualMessage);
+            }
         }
     }
 }

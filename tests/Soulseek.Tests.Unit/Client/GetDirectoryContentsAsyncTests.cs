@@ -245,5 +245,83 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(result, dir);
             }
         }
+
+        [Trait("Category", "GetDirectoryContentsAsync")]
+        [Theory(DisplayName = "GetDirectoryContentsAsync uses given token"), AutoData]
+        public async Task GetDirectoryContentsAsync_Uses_Given_Token(string username, string directory, int token)
+        {
+            var result = new Directory(directory);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<Directory>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var conn = new Mock<IMessageConnection>();
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var dir = await s.GetDirectoryContentsAsync(username, directory, token);
+
+                Assert.Equal(result, dir);
+            }
+
+            conn.Verify(
+                m =>
+                m.WriteAsync(
+                    It.Is<byte[]>(b => b.Matches(new FolderContentsRequest(token, directory).ToByteArray())),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Trait("Category", "GetDirectoryContentsAsync")]
+        [Theory(DisplayName = "GetDirectoryContentsAsync uses given CancellationToken"), AutoData]
+        public async Task GetDirectoryContentsAsync_Uses_Given_CancellationToken(string username, string directory, CancellationToken cancellationToken)
+        {
+            var result = new Directory(directory);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<Directory>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var conn = new Mock<IMessageConnection>();
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var dir = await s.GetDirectoryContentsAsync(username, directory, cancellationToken: cancellationToken);
+
+                Assert.Equal(result, dir);
+            }
+
+            serverConn.Verify(
+                m =>
+                m.WriteAsync(
+                    It.IsAny<byte[]>(),
+                    cancellationToken),
+                Times.Once);
+        }
     }
 }
