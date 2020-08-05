@@ -84,12 +84,41 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
+        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws TransferNotFoundException when downloads from username not found"), AutoData]
+        public async Task GetDownloadPlaceInQueueAsync_Throws_TransferNotFoundException_When_Downloads_From_Username_Not_Found(string username, string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var transfer = new TransferInternal(TransferDirection.Download, "different", filename, 1);
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+
+                dict.TryAdd(1, transfer);
+
+                s.SetProperty("Downloads", dict);
+
+                var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TransferNotFoundException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetDownloadPlaceInQueueAsync")]
         [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws TransferNotFoundException when download not found"), AutoData]
         public async Task GetDownloadPlaceInQueueAsync_Throws_TransferNotFoundException_When_Download_Not_Found(string username, string filename)
         {
             using (var s = new SoulseekClient())
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var transfer = new TransferInternal(TransferDirection.Download, username, "different", 1);
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+
+                dict.TryAdd(1, transfer);
+
+                s.SetProperty("Downloads", dict);
 
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 
@@ -135,6 +164,47 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(placeInQueue, place);
             }
+        }
+
+        [Trait("Category", "GetDownloadPlaceInQueueAsync")]
+        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync uses given CancellationToken"), AutoData]
+        public async Task GetDownloadPlaceInQueueAsync_Uses_Given_CancellationToken(string username, string filename, int placeInQueue, CancellationToken cancellationToken)
+        {
+            var result = new PlaceInQueueResponse(filename, placeInQueue);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
+
+                s.SetProperty("Downloads", dict);
+
+                var place = await s.GetDownloadPlaceInQueueAsync(username, filename, cancellationToken: cancellationToken);
+
+                Assert.Equal(placeInQueue, place);
+            }
+
+            waiter.Verify(m => m.Wait<PlaceInQueueResponse>(It.IsAny<WaitKey>(), null, cancellationToken), Times.Once);
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
