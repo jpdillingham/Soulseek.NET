@@ -63,7 +63,7 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserStatusAsync")]
-        [Theory(DisplayName = "GetPeerInfoAsync returns expected info"), AutoData]
+        [Theory(DisplayName = "GetUserStatusAsync returns expected info"), AutoData]
         public async Task GetUserStatusAsync_Returns_Expected_Info(string username, UserPresence presence, bool privileged)
         {
             var result = new UserStatusResponse(username, presence, privileged);
@@ -85,6 +85,31 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(result.Status, status.Presence);
                 Assert.Equal(result.IsPrivileged, status.IsPrivileged);
             }
+        }
+
+        [Trait("Category", "GetUserStatusAsync")]
+        [Theory(DisplayName = "GetUserStatusAsync uses given CancellationToken"), AutoData]
+        public async Task GetUserStatusAsync_Uses_Given_CancellationToken(string username, UserPresence presence, bool privileged)
+        {
+            var cancellationToken = new CancellationToken();
+            var result = new UserStatusResponse(username, presence, privileged);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.GetUserStatusAsync(username, cancellationToken);
+            }
+
+            serverConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken));
         }
 
         [Trait("Category", "GetUserStatusAsync")]
