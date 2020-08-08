@@ -77,6 +77,7 @@ namespace Soulseek.Messaging.Handlers
                 {
                     case MessageCode.Peer.SearchResponse:
                         var searchResponse = SearchResponseSlim.FromByteArray(message);
+
                         if (SoulseekClient.Searches.TryGetValue(searchResponse.Token, out var search))
                         {
                             search.TryAddResponse(searchResponse);
@@ -86,9 +87,10 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.BrowseResponse:
                         var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, connection.Username);
+
                         try
                         {
-                            SoulseekClient.Waiter.Complete(browseWaitKey, BrowseResponse.FromByteArray(message));
+                            SoulseekClient.Waiter.Complete(browseWaitKey, BrowseResponseFactory.FromByteArray(message));
                         }
                         catch (Exception ex)
                         {
@@ -118,7 +120,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.BrowseRequest:
-                        IEnumerable<Directory> browseResponse;
+                        BrowseResponse browseResponse;
 
                         try
                         {
@@ -132,9 +134,7 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Failed to resolve browse response: {ex.Message}", ex);
                         }
 
-                        var browseResponseMessage = new BrowseResponse(browseResponse.Count(), browseResponse);
-
-                        await connection.WriteAsync(browseResponseMessage.ToByteArray()).ConfigureAwait(false);
+                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
                         break;
 
                     case MessageCode.Peer.FolderContentsRequest:
