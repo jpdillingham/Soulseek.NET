@@ -120,7 +120,8 @@ namespace Soulseek.Tests.Unit
 
             var ip = new IPEndPoint(IPAddress.None, 1);
 
-            Assert.Equal(Enumerable.Empty<Directory>(), await o.BrowseResponseResolver(string.Empty, ip));
+            Assert.Equal(Enumerable.Empty<Directory>(), (await o.BrowseResponseResolver(string.Empty, ip)).Directories);
+            Assert.Equal(Enumerable.Empty<Directory>(), (await o.BrowseResponseResolver(string.Empty, ip)).LockedDirectories);
 
             var ex = await Record.ExceptionAsync(() => o.EnqueueDownloadAction(string.Empty, ip, string.Empty));
             Assert.Null(ex);

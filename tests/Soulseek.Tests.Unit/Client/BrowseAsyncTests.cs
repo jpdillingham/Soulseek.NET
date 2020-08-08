@@ -106,7 +106,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var result = await s.BrowseAsync(username);
 
-                Assert.Equal(response.Directories, result);
+                Assert.Equal(response, result);
             }
         }
 

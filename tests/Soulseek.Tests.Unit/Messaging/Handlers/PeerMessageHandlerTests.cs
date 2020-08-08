@@ -477,7 +477,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             };
 
             var response = new BrowseResponse(2, dirs);
-            var options = new SoulseekClientOptions(browseResponseResolver: (u, i) => Task.FromResult(dirs));
+            var options = new SoulseekClientOptions(browseResponseResolver: (u, i) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);
 
