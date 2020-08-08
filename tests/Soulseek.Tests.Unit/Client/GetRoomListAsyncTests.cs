@@ -80,6 +80,33 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetRoomListAsync")]
+        [Theory(DisplayName = "GetRoomListAsync uses given CancellationToken"), AutoData]
+        public async Task GetRoomListAsync_Uses_Given_CancellationToken(IReadOnlyCollection<Room> rooms, CancellationToken cancellationToken)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var key = new WaitKey(MessageCode.Server.RoomList);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<IReadOnlyCollection<Room>>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(rooms));
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                IReadOnlyCollection<Room> response;
+
+                response = await s.GetRoomListAsync(cancellationToken);
+
+                Assert.Equal(rooms, response);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "GetRoomListAsync")]
         [Fact(DisplayName = "GetRoomListAsync throws RoomListException when write throws")]
         public async Task GetRoomListAsync_Throws_RoomListException_When_Write_Throws()
         {

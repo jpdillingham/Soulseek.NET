@@ -1643,13 +1643,13 @@ namespace Soulseek
                     Disconnect("Client is being disposed", new ObjectDisposedException(GetType().Name));
                     Listener?.Stop();
 
-                    PeerConnectionManager?.RemoveAndDisposeAll();
-                    PeerConnectionManager?.Dispose();
+                    PeerConnectionManager.RemoveAndDisposeAll();
+                    PeerConnectionManager.Dispose();
 
-                    DistributedConnectionManager?.Dispose();
+                    DistributedConnectionManager.Dispose();
 
-                    Waiter?.CancelAll();
-                    Waiter?.Dispose();
+                    Waiter.CancelAll();
+                    Waiter.Dispose();
 
                     ServerConnection?.Dispose();
                 }
@@ -1876,12 +1876,12 @@ namespace Soulseek
 
                 DistributedConnectionManager?.RemoveAndDisposeAll();
 
-                Searches?.Values.ToList().ForEach(search =>
+                Searches.Values.ToList().ForEach(search =>
                 {
                     search.Cancel();
                 });
 
-                Searches?.RemoveAndDisposeAll();
+                Searches.RemoveAndDisposeAll();
 
                 Username = null;
 

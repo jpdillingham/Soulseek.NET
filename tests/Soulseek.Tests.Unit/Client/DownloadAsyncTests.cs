@@ -250,8 +250,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DuplicateTokenException when token used")]
-        public async Task DownloadAsync_Throws_DuplicateTokenException_When_Token_Used()
+        [Fact(DisplayName = "DownloadAsync throws DuplicateTokenException when token used by download")]
+        public async Task DownloadAsync_Throws_DuplicateTokenException_When_Token_Used_by_Download()
         {
             using (var s = new SoulseekClient())
             {
@@ -271,8 +271,29 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync stream throws DuplicateTokenException when token used")]
-        public async Task DownloadAsync_Stream_Throws_DuplicateTokenException_When_Token_Used()
+        [Fact(DisplayName = "DownloadAsync throws DuplicateTokenException when token used by upload")]
+        public async Task DownloadAsync_Throws_DuplicateTokenException_When_Token_Used_By_Upload()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(1, new TransferInternal(TransferDirection.Upload, "foo", "bar", 1));
+
+                s.SetProperty("Uploads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTokenException>(ex);
+                Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws DuplicateTokenException when token used by download")]
+        public async Task DownloadAsync_Stream_Throws_DuplicateTokenException_When_Token_Used_By_Download()
         {
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
@@ -283,6 +304,28 @@ namespace Soulseek.Tests.Unit.Client
                 queued.TryAdd(1, new TransferInternal(TransferDirection.Download, "foo", "bar", 1));
 
                 s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", stream, token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTokenException>(ex);
+                Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws DuplicateTokenException when token used by upload")]
+        public async Task DownloadAsync_Stream_Throws_DuplicateTokenException_When_Token_Used_By_Upload()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(1, new TransferInternal(TransferDirection.Upload, "foo", "bar", 1));
+
+                s.SetProperty("Uploads", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", stream, token: 1));
 
@@ -314,6 +357,46 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync does not throw DuplicateTransferException when an existing download matches only the username"), AutoData]
+        public async Task DownloadAsync_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Download_Matches_Only_The_Username(string username, string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Download, username, "different", 0));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync does not throw DuplicateTransferException when an existing download matches only the filename"), AutoData]
+        public async Task DownloadAsync_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Download_Matches_Only_The_Filename(string username, string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Download, "different", filename, 0));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Theory(DisplayName = "DownloadAsync stream throws DuplicateTransferException when an existing download matches the username and filename"), AutoData]
         public async Task DownloadAsync_Stream_Throws_DuplicateTransferException_When_An_Existing_Download_Matches_The_Username_And_Filename(string username, string filename)
         {
@@ -333,6 +416,116 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<DuplicateTransferException>(ex);
                 Assert.Contains($"An active or queued download of {filename} from {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
             }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream does not throw DuplicateTransferException when an existing download matches only the username"), AutoData]
+        public async Task DownloadAsync_Stream_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Download_Matches_Only_The_Username(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Download, username, "different", 0));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream, token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream does not throw DuplicateTransferException when an existing download matches only the filename"), AutoData]
+        public async Task DownloadAsync_Stream_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Download_Matches_Only_The_Filename(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Download, "different", filename, 0));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream, token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream substitutes CancellationToken given null"), AutoData]
+        public async Task DownloadAsync_Stream_Substitutes_CancellationToken_Given_Null(string username, string filename)
+        {
+            var conn = new Mock<IMessageConnection>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream));
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None), Times.Once);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream uses given CancellationToken"), AutoData]
+        public async Task DownloadAsync_Stream_Uses_Given_CancellationToken(string username, string filename)
+        {
+            var cancellationToken = new CancellationToken();
+            var conn = new Mock<IMessageConnection>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream, cancellationToken: cancellationToken));
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync substitutes CancellationToken given null"), AutoData]
+        public async Task DownloadAsync_Substitutes_CancellationToken_Given_Null(string username, string filename)
+        {
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename));
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None), Times.Once);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync uses given CancellationToken"), AutoData]
+        public async Task DownloadAsync_Uses_Given_CancellationToken(string username, string filename)
+        {
+            var cancellationToken = new CancellationToken();
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, cancellationToken: cancellationToken));
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "DownloadAsync")]
