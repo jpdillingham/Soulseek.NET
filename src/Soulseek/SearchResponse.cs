@@ -18,7 +18,7 @@ namespace Soulseek
     /// <summary>
     ///     A response to a file search.
     /// </summary>
-    public class SearchResponse
+    public sealed class SearchResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
