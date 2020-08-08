@@ -12,6 +12,7 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Soulseek.Exceptions;
@@ -67,6 +68,21 @@ namespace Soulseek.Messaging.Messages
             for (int i = 0; i < directoryCount; i++)
             {
                 directoryList.Add(reader.ReadDirectory());
+            }
+
+            if (reader.HasMoreData)
+            {
+                _ = reader.ReadInteger();
+
+                if (reader.HasMoreData)
+                {
+                    directoryCount = reader.ReadInteger();
+
+                    for (int i = 0; i < directoryCount; i++)
+                    {
+                        directoryList.Add(reader.ReadDirectory());
+                    }
+                }
             }
 
             return new BrowseResponse(directoryCount, directoryList);
