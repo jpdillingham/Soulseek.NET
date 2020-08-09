@@ -13,6 +13,8 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
+    using System.Linq;
+    using Soulseek.Exceptions;
 
     /// <summary>
     ///     Factory for search response messages. This class helps keep message abstractions from leaking into the public API via
@@ -27,19 +29,35 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static SearchResponse FromByteArray(byte[] bytes)
         {
-            var slim = SearchResponseSlim.FromByteArray(bytes);
-            return FromSlimResponse(slim);
-        }
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
+            var code = reader.ReadCode();
 
-        /// <summary>
-        ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="slimResponse"/>.
-        /// </summary>
-        /// <param name="slimResponse">The slim response from which to parse.</param>
-        /// <returns>The parsed instance.</returns>
-        public static SearchResponse FromSlimResponse(SearchResponseSlim slimResponse)
-        {
-            var files = ParseFiles(slimResponse.MessageReader, slimResponse.FileCount);
-            return new SearchResponse(slimResponse.Username, slimResponse.Token, files.Count, slimResponse.FreeUploadSlots, slimResponse.UploadSpeed, slimResponse.QueueLength, files);
+            if (code != MessageCode.Peer.SearchResponse)
+            {
+                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.Peer.SearchResponse}, received: {(int)code}");
+            }
+
+            reader.Decompress();
+
+            var username = reader.ReadString();
+            var token = reader.ReadInteger();
+            var fileCount = reader.ReadInteger();
+
+            var fileList = ParseFiles(reader, fileCount);
+
+            var freeUploadSlots = reader.ReadByte();
+            var uploadSpeed = reader.ReadInteger();
+            var queueLength = reader.ReadLong();
+
+            IEnumerable<File> lockedFileList = Enumerable.Empty<File>();
+
+            if (reader.HasMoreData)
+            {
+                var count = reader.ReadInteger();
+                lockedFileList = ParseFiles(reader, count);
+            }
+
+            return new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, fileList, lockedFileList);
         }
 
         /// <summary>
