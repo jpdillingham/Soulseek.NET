@@ -47,7 +47,7 @@ class Directory extends Component {
   }
 
   render = () => {
-    let { username, name, marginTop } = this.props;
+    let { username, name, locked, marginTop } = this.props;
     let { files, downloadRequest, downloadError } = this.state;
 
     let selectedFiles = files
@@ -60,7 +60,8 @@ class Directory extends Component {
         <Card.Content>
           <div style={{marginTop: marginTop || 0}}>
             <FileList 
-              directoryName={name} 
+              directoryName={name}
+              locked={locked}
               files={files}
               disabled={downloadRequest === 'inProgress'}
               onSelectionChange={this.onFileSelectionChange}
