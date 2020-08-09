@@ -11,7 +11,7 @@ import {
 } from 'semantic-ui-react';
 
 const FileList = ({ directoryName, files, locked, onSelectionChange, disabled }) => (
-  <div>
+  <div style={{opacity: locked ? 0.5 : 1}}>
     <Header 
       size='small' 
       className='filelist-header'
