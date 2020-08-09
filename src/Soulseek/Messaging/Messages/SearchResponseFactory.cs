@@ -43,7 +43,7 @@ namespace Soulseek.Messaging.Messages
             var token = reader.ReadInteger();
             var fileCount = reader.ReadInteger();
 
-            var fileList = ParseFiles(reader, fileCount);
+            var fileList = reader.ReadFiles(fileCount);
 
             var freeUploadSlots = reader.ReadByte();
             var uploadSpeed = reader.ReadInteger();
@@ -54,7 +54,7 @@ namespace Soulseek.Messaging.Messages
             if (reader.HasMoreData)
             {
                 var count = reader.ReadInteger();
-                lockedFileList = ParseFiles(reader, count);
+                lockedFileList = reader.ReadFiles(count);
             }
 
             return new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, fileList, lockedFileList);
@@ -75,19 +75,7 @@ namespace Soulseek.Messaging.Messages
 
             foreach (var file in searchResponse.Files)
             {
-                builder
-                    .WriteByte((byte)file.Code)
-                    .WriteString(file.Filename)
-                    .WriteLong(file.Size)
-                    .WriteString(file.Extension)
-                    .WriteInteger(file.AttributeCount);
-
-                foreach (var attribute in file.Attributes)
-                {
-                    builder
-                        .WriteInteger((int)attribute.Type)
-                        .WriteInteger(attribute.Value);
-                }
+                builder.WriteFile(file);
             }
 
             builder
@@ -95,54 +83,15 @@ namespace Soulseek.Messaging.Messages
                 .WriteInteger(searchResponse.UploadSpeed)
                 .WriteLong(searchResponse.QueueLength);
 
-            builder.Compress();
-            return builder.Build();
-        }
+            builder.WriteInteger(searchResponse.LockedFileCount);
 
-        /// <summary>
-        ///     Parses the list of files contained within the <paramref name="reader"/>.
-        /// </summary>
-        /// <remarks>
-        ///     Requires that the provided MessageReader has been "rewound" to the start of the file list, which is equal to the
-        ///     length of the username plus 12.
-        /// </remarks>
-        /// <param name="reader">The reader from which to parse the file list.</param>
-        /// <param name="count">The expected number of files.</param>
-        /// <returns>The list of parsed files.</returns>
-        private static IReadOnlyCollection<File> ParseFiles(MessageReader<MessageCode.Peer> reader, int count)
-        {
-            var files = new List<File>();
-
-            for (int i = 0; i < count; i++)
+            foreach (var file in searchResponse.LockedFiles)
             {
-                var file = new File(
-                    code: reader.ReadByte(),
-                    filename: reader.ReadString(),
-                    size: reader.ReadLong(),
-                    extension: reader.ReadString(),
-                    attributeCount: reader.ReadInteger());
-
-                var attributeList = new List<FileAttribute>();
-
-                for (int j = 0; j < file.AttributeCount; j++)
-                {
-                    var attribute = new FileAttribute(
-                        type: (FileAttributeType)reader.ReadInteger(),
-                        value: reader.ReadInteger());
-
-                    attributeList.Add(attribute);
-                }
-
-                files.Add(new File(
-                    code: file.Code,
-                    filename: file.Filename,
-                    size: file.Size,
-                    extension: file.Extension,
-                    attributeCount: file.AttributeCount,
-                    attributeList: attributeList));
+                builder.WriteFile(file);
             }
 
-            return files.AsReadOnly();
+            builder.Compress();
+            return builder.Build();
         }
     }
 }
