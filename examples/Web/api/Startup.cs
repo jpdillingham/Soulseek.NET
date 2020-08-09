@@ -297,14 +297,22 @@
         /// <param name="username">The username of the requesting user.</param>
         /// <param name="endpoint">The IP endpoint of the requesting user.</param>
         /// <returns>A Task resolving an IEnumerable of Soulseek.Directory.</returns>
-        private Task<IEnumerable<Soulseek.Directory>> BrowseResponseResolver(string username, IPEndPoint endpoint)
+        private Task<BrowseResponse> BrowseResponseResolver(string username, IPEndPoint endpoint)
         {
-            var result = System.IO.Directory
+            var directories = System.IO.Directory
                 .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
                 .Select(dir => new Soulseek.Directory(dir, System.IO.Directory.GetFiles(dir)
                     .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0))));
 
-            return Task.FromResult(result);
+            var locked = new List<Soulseek.Directory>() {
+                new Soulseek.Directory("locked", new List<Soulseek.File>()
+                {
+                    new Soulseek.File(1, "one.mp3", 50, ".mp3", 0),
+                    new Soulseek.File(1, "two.mp3", 50, ".mp3", 0)
+                }) 
+            };
+
+            return Task.FromResult(new BrowseResponse(directories, locked));
         }
 
         /// <summary>
