@@ -10,13 +10,13 @@ import {
     Checkbox
 } from 'semantic-ui-react';
 
-const FileList = ({ directoryName, files, onSelectionChange, disabled }) => (
+const FileList = ({ directoryName, files, locked, onSelectionChange, disabled }) => (
   <div>
     <Header 
       size='small' 
       className='filelist-header'
     >
-      <Icon name='folder'/>{directoryName}
+      <Icon name={locked ? 'lock' : 'folder'}/>{directoryName}
     </Header>
     {files && files.length > 0 && <List>
       <List.Item>
@@ -48,7 +48,7 @@ const FileList = ({ directoryName, files, onSelectionChange, disabled }) => (
                     disabled={disabled}
                   />
                 </Table.Cell>
-                <Table.Cell className='filelist-filename'>{getFileName(f.filename)}</Table.Cell>
+                <Table.Cell className='filelist-filename'>{locked ? <Icon name='lock'/> : ''}{getFileName(f.filename)}</Table.Cell>
                 <Table.Cell className='filelist-size'>{formatBytes(f.size)}</Table.Cell>
                 <Table.Cell className='filelist-bitrate'>{f.bitRate}</Table.Cell>
                 <Table.Cell className='filelist-length'>{formatSeconds(f.length)}</Table.Cell>
