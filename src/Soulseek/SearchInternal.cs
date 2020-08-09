@@ -16,7 +16,6 @@ namespace Soulseek
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Messaging.Messages;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
@@ -119,49 +118,44 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified
+        ///     Adds the specified <paramref name="response"/> to the list of responses after applying the filters specified
         ///     in the search options.
         /// </summary>
-        /// <param name="slimResponse">The response to add.</param>
-        public void TryAddResponse(SearchResponseSlim slimResponse)
+        /// <param name="response">The response to add.</param>
+        public void TryAddResponse(SearchResponse response)
         {
-            // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
-            // the slim response for fitness prior to extracting the file list from it for performance reasons.
-            if (!Disposed && State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token)
+            if (!Disposed && State.HasFlag(SearchStates.InProgress) && response.Token == Token)
             {
-                // apply basic filters on the slim response
-                if (!SlimResponseMeetsOptionCriteria(slimResponse))
+                if (!ResponseMeetsOptionCriteria(response))
                 {
                     return;
                 }
 
-                // extract the file list from the response
-                var fullResponse = SearchResponseFactory.FromSlimResponse(slimResponse);
-
                 if (Options.FilterResponses)
                 {
-                    // apply custom filter
-                    if (!(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
+                    // apply custom filter, if one was provided
+                    if (!(Options.ResponseFilter?.Invoke(response) ?? true))
                     {
                         return;
                     }
 
-                    // apply individual file filter
-                    var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+                    // apply individual file filter, if one was provided
+                    var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+                    var filteredLockedFiles = response.LockedFiles.Where(f => Options.FileFilter?.Invoke(f) ?? true);
 
-                    fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
+                    response = new SearchResponse(response, filteredFiles, filteredLockedFiles);
 
                     // ensure the filtered file count still meets the response criteria
-                    if (fullResponse.FileCount < Options.MinimumResponseFileCount)
+                    if (response.FileCount + response.LockedFileCount < Options.MinimumResponseFileCount)
                     {
                         return;
                     }
                 }
 
                 Interlocked.Increment(ref responseCount);
-                Interlocked.Add(ref fileCount, fullResponse.Files.Count);
+                Interlocked.Add(ref fileCount, response.Files.Count);
 
-                ResponseReceived?.Invoke(fullResponse);
+                ResponseReceived?.Invoke(response);
                 SearchTimeoutTimer.Reset();
 
                 if (responseCount >= Options.ResponseLimit)
@@ -208,7 +202,7 @@ namespace Soulseek
             }
         }
 
-        private bool SlimResponseMeetsOptionCriteria(SearchResponseSlim response)
+        private bool ResponseMeetsOptionCriteria(SearchResponse response)
         {
             if (Options.FilterResponses && (
                     response.FileCount < Options.MinimumResponseFileCount ||
