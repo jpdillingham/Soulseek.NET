@@ -40,7 +40,6 @@ namespace Soulseek.Messaging.Messages
 
             var directoryCount = reader.ReadInteger();
             var directoryList = new List<Directory>();
-            var lockedDirectoryCount = 0;
             var lockedDirectoryList = new List<Directory>();
 
             for (int i = 0; i < directoryCount; i++)
@@ -54,9 +53,9 @@ namespace Soulseek.Messaging.Messages
 
                 if (reader.HasMoreData)
                 {
-                    lockedDirectoryCount = reader.ReadInteger();
+                    var lockedDirectoryCount = reader.ReadInteger();
 
-                    for (int i = 0; i < directoryCount; i++)
+                    for (int i = 0; i < lockedDirectoryCount; i++)
                     {
                         lockedDirectoryList.Add(reader.ReadDirectory());
                     }
