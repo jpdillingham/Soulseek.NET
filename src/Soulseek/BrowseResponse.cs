@@ -35,21 +35,6 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="BrowseResponse"/> class.
-        /// </summary>
-        /// <param name="directoryCount">The directory count.</param>
-        /// <param name="directoryList">The optional directory list.</param>
-        /// <param name="lockedDirectoryCount">The optional locked directory count.</param>
-        /// <param name="lockedDirectoryList">The optional locked directory list.</param>
-        internal BrowseResponse(int directoryCount = 0, IEnumerable<Directory> directoryList = null, int lockedDirectoryCount = 0, IEnumerable<Directory> lockedDirectoryList = null)
-        {
-            DirectoryCount = directoryCount;
-            DirectoryList = directoryList ?? Enumerable.Empty<Directory>();
-            LockedDirectoryCount = lockedDirectoryCount;
-            LockedDirectoryList = lockedDirectoryList ?? Enumerable.Empty<Directory>();
-        }
-
-        /// <summary>
         ///     Gets the list of directories.
         /// </summary>
         public IReadOnlyCollection<Directory> Directories => DirectoryList.ToList().AsReadOnly();

@@ -63,7 +63,7 @@ namespace Soulseek.Messaging.Messages
                 }
             }
 
-            return new BrowseResponse(directoryCount, directoryList, lockedDirectoryCount, lockedDirectoryList);
+            return new BrowseResponse(directoryList, lockedDirectoryList);
         }
 
         /// <summary>
