@@ -12,7 +12,12 @@ import {
     Label
 } from 'semantic-ui-react';
 
-const buildTree = (files) => {
+const buildTree = (response) => {
+    let { files, lockedFiles } = response;
+
+    lockedFiles = lockedFiles.map(file => ({ ...file, locked: true }));
+    files = files.concat(lockedFiles);
+
     return files.reduce((dict, file) => {
         let dir = getDirectoryName(file.filename);
         let selectable = { selected: false, ...file };
@@ -23,7 +28,7 @@ const buildTree = (files) => {
 
 class Response extends Component {
     state = { 
-        tree: buildTree(this.props.response.files), 
+        tree: buildTree(this.props.response), 
         downloadRequest: undefined, 
         downloadError: '' 
     }
@@ -68,7 +73,8 @@ class Response extends Component {
                     {Object.keys(tree).map((dir, i) => 
                         <FileList 
                             key={i}
-                            directoryName={dir} 
+                            directoryName={dir}
+                            locked={tree[dir].find(file => file.locked)}
                             files={tree[dir]}
                             disabled={downloadRequest === 'inProgress'}
                             onSelectionChange={this.onFileSelectionChange}
