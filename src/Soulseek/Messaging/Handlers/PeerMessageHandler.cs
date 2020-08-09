@@ -76,7 +76,7 @@ namespace Soulseek.Messaging.Handlers
                 switch (code)
                 {
                     case MessageCode.Peer.SearchResponse:
-                        var searchResponse = SearchResponseSlim.FromByteArray(message);
+                        var searchResponse = SearchResponseFactory.FromByteArray(message);
 
                         if (SoulseekClient.Searches.TryGetValue(searchResponse.Token, out var search))
                         {
