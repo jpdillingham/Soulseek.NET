@@ -9,7 +9,7 @@ const subtree = (root, selectedDirectoryName, onSelect) => {
       const selected = d.directoryName === selectedDirectoryName;
       return (
         <List key={index} className='browse-folderlist-list'>
-          <List.Item>
+          <List.Item style={{opacity: d.locked ? 0.5 : 1}}>
               <List.Icon 
                 className='browse-folderlist-icon'
                 name={d.locked === true ? 'lock' : selected ? 'folder open' : 'folder'}
