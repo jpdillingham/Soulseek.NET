@@ -24,6 +24,7 @@ namespace Soulseek
     internal class SearchInternal : IDisposable
     {
         private int fileCount = 0;
+        private int lockedFileCount = 0;
         private int responseCount = 0;
 
         /// <summary>
@@ -54,6 +55,11 @@ namespace Soulseek
         ///     Gets the total number of files contained within received responses.
         /// </summary>
         public int FileCount => fileCount;
+
+        /// <summary>
+        ///     Gets the total number of locked files contained within received responses.
+        /// </summary>
+        public int LockedFileCount => lockedFileCount;
 
         /// <summary>
         ///     Gets the options for the search.
@@ -153,7 +159,8 @@ namespace Soulseek
                 }
 
                 Interlocked.Increment(ref responseCount);
-                Interlocked.Add(ref fileCount, response.FileCount + response.LockedFileCount);
+                Interlocked.Add(ref fileCount, response.FileCount);
+                Interlocked.Add(ref lockedFileCount, response.LockedFileCount);
 
                 ResponseReceived?.Invoke(response);
                 SearchTimeoutTimer.Reset();
