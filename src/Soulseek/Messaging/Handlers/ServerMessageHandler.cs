@@ -332,7 +332,7 @@ namespace Soulseek.Messaging.Handlers
                         {
                             searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
 
-                            if (searchResponse != null && searchResponse.FileCount > 0)
+                            if (searchResponse != null && searchResponse.FileCount + searchResponse.LockedFileCount > 0)
                             {
                                 var endpoint = await SoulseekClient.GetUserEndPointAsync(searchRequest.Username).ConfigureAwait(false);
 
