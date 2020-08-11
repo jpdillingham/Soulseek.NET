@@ -153,7 +153,7 @@ namespace Soulseek
                 }
 
                 Interlocked.Increment(ref responseCount);
-                Interlocked.Add(ref fileCount, response.Files.Count);
+                Interlocked.Add(ref fileCount, response.FileCount + response.LockedFileCount);
 
                 ResponseReceived?.Invoke(response);
                 SearchTimeoutTimer.Reset();
@@ -205,7 +205,7 @@ namespace Soulseek
         private bool ResponseMeetsOptionCriteria(SearchResponse response)
         {
             if (Options.FilterResponses && (
-                    response.FileCount < Options.MinimumResponseFileCount ||
+                    response.FileCount + response.LockedFileCount < Options.MinimumResponseFileCount ||
                     response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
                     response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
                     response.QueueLength >= Options.MaximumPeerQueueLength))
