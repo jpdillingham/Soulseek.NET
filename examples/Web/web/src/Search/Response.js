@@ -14,9 +14,7 @@ import {
 
 const buildTree = (response) => {
     let { files, lockedFiles } = response;
-
-    lockedFiles = lockedFiles.map(file => ({ ...file, locked: true }));
-    files = files.concat(lockedFiles);
+    files = files.concat(lockedFiles.map(file => ({ ...file, locked: true })));
 
     return files.reduce((dict, file) => {
         let dir = getDirectoryName(file.filename);
