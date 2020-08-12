@@ -35,10 +35,9 @@ class Browse extends Component {
     this.setState({ username , browseState: 'pending', browseError: undefined }, () => {
       api.get(`/user/${this.state.username}/browse`)
         .then(response => {
-          const { directories, lockedDirectories } = response.data;
-          const allDirectories = directories.concat(lockedDirectories.map(d => ({ ...d, locked: true })));
-
-          this.setState({ tree: this.getDirectoryTree(allDirectories) });
+          let { directories, lockedDirectories } = response.data;
+          directories = directories.concat(lockedDirectories.map(d => ({ ...d, locked: true })));
+          this.setState({ tree: this.getDirectoryTree(directories) });
         })
         .then(() => this.setState({ browseState: 'complete', browseError: undefined }, () => {
           this.saveState();
