@@ -251,7 +251,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 new Directory("dir2", 2, list),
             };
 
-            var r = new BrowseResponse(2, dirs);
+            var r = new BrowseResponse(dirs);
 
             var bytes = r.ToByteArray();
 

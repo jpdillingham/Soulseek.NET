@@ -27,7 +27,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Given_Data(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
         {
-            var r = new SearchResponse(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength);
+            var list = new List<File>();
+            var locked = new List<File>();
+
+            var r = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list, locked);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(token, r.Token);
@@ -35,13 +38,15 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
             Assert.Equal(uploadSpeed, r.UploadSpeed);
             Assert.Equal(queueLength, r.QueueLength);
+            Assert.Equal(list, r.Files);
+            Assert.Equal(locked, r.LockedFiles);
         }
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given response and list, replacing filecount with list length"), AutoData]
         public void Instantiates_With_Given_Response_And_List(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength)
         {
-            var r1 = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength);
+            var r1 = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, null);
 
             var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext", 0) });
 
@@ -342,7 +347,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
-            var s = new SearchResponse(username, token, 2, freeUploadSlots, uploadSpeed, queueLength, list);
+            var s = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list);
             var m = s.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(m);

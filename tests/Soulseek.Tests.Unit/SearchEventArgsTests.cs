@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using System;
+    using System.Collections.Generic;
     using AutoFixture.Xunit2;
     using Xunit;
 
@@ -42,7 +43,7 @@ namespace Soulseek.Tests.Unit
 
             using (var search = new SearchInternal(searchText, token, new SearchOptions()))
             {
-                var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
+                var response = new SearchResponse("foo", 1, 1, 1, 1, new List<File>());
 
                 var s = new Search(search);
                 var e = new SearchResponseReceivedEventArgs(response, s);

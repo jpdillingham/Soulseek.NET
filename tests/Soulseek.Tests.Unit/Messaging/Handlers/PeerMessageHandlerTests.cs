@@ -476,7 +476,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 new Directory("2", 2, files),
             };
 
-            var response = new BrowseResponse(2, dirs);
+            var response = new BrowseResponse(dirs);
             var options = new SoulseekClientOptions(browseResponseResolver: (u, i) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);
@@ -842,7 +842,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
-            var request = new BrowseResponse(0, Enumerable.Empty<Directory>());
+            var request = new BrowseResponse(Enumerable.Empty<Directory>());
             var message = request.ToByteArray();
             var args = new MessageReceivedEventArgs(message.Length, message.Skip(4).Take(4).ToArray());
 
@@ -857,7 +857,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
-            var request = new BrowseResponse(0, Enumerable.Empty<Directory>());
+            var request = new BrowseResponse(Enumerable.Empty<Directory>());
             var message = request.ToByteArray();
             var args = new MessageReceivedEventArgs(message.Length, message.Skip(4).Take(4).ToArray());
 

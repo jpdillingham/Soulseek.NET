@@ -78,7 +78,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "BrowseAsync returns expected response on success"), AutoData]
         public async Task BrowseAsync_Returns_Expected_Response_On_Success(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories)
         {
-            var response = new BrowseResponse(directories.Count, directories);
+            var response = new BrowseResponse(directories);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "BrowseAsync uses given CancellationToken"), AutoData]
         public async Task BrowseAsync_Uses_Given_CancellationToken(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories, CancellationToken cancellationToken)
         {
-            var response = new BrowseResponse(directories.Count, directories);
+            var response = new BrowseResponse(directories);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
@@ -150,7 +150,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "BrowseAsync raises BrowseProgressUpdated event at least twice"), AutoData]
         public async Task BrowseAsync_Raises_BrowseProgressUpdated_Event_At_Least_Twice(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories, int length)
         {
-            var response = new BrowseResponse(directories.Count, directories);
+            var response = new BrowseResponse(directories);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
@@ -192,7 +192,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "BrowseAsync invokes ProgressUpdated Action at least twice"), AutoData]
         public async Task BrowseAsync_Invokes_ProgressUpdated_Action_At_Least_Twice(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories, int length)
         {
-            var response = new BrowseResponse(directories.Count, directories);
+            var response = new BrowseResponse(directories);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))

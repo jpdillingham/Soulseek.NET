@@ -12,7 +12,6 @@
 
 namespace Soulseek.Tests.Unit
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Xunit;
@@ -24,11 +23,10 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Instantiates with given data")]
         public void Instantiates_With_Given_Data()
         {
-            var num = new Random().Next();
-            var a = new BrowseResponse(num);
+            var list = new List<Directory>();
+            var a = new BrowseResponse(list);
 
-            Assert.Equal(num, a.DirectoryCount);
-            Assert.Empty(a.Directories);
+            Assert.Equal(list, a.Directories);
         }
 
         [Trait("Category", "Instantiation")]
@@ -36,14 +34,12 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Instantiates with the given directory list")]
         public void Instantiates_With_The_Given_Directory_List()
         {
-            var num = new Random().Next();
-
             var dir = new Directory("foo", 1);
             var list = new List<Directory>(new[] { dir });
 
-            var a = new BrowseResponse(num, list);
+            var a = new BrowseResponse(list);
 
-            Assert.Equal(num, a.DirectoryCount);
+            Assert.Equal(list.Count, a.DirectoryCount);
             Assert.Single(a.Directories);
             Assert.Equal(dir, a.Directories.ToList()[0]);
         }
