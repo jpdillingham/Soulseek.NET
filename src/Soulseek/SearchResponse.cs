@@ -63,25 +63,25 @@ namespace Soulseek
         public int FileCount { get; }
 
         /// <summary>
+        ///     Gets the list of files.
+        /// </summary>
+        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
+
+        /// <summary>
+        ///     Gets the number of free upload slots for the peer.
+        /// </summary>
+        public int FreeUploadSlots { get; }
+
+        /// <summary>
         ///     Gets the number of files contained within the result, as counted by the original response from the peer and prior
         ///     to filtering. For the filtered count, check the length of <see cref="LockedFiles"/>.
         /// </summary>
         public int LockedFileCount { get; }
 
         /// <summary>
-        ///     Gets the list of files.
-        /// </summary>
-        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
-
-        /// <summary>
         ///     Gets the list of locked files.
         /// </summary>
         public IReadOnlyCollection<File> LockedFiles => LockedFileList.ToList().AsReadOnly();
-
-        /// <summary>
-        ///     Gets the number of free upload slots for the peer.
-        /// </summary>
-        public int FreeUploadSlots { get; }
 
         /// <summary>
         ///     Gets the length of the peer's upload queue.
