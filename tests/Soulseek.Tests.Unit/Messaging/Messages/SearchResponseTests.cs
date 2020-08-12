@@ -25,20 +25,28 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
-        public void Instantiates_With_Given_Data(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
+        public void Instantiates_With_Given_Data(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength, File file)
         {
-            var list = new List<File>();
+            var list = new List<File>()
+            {
+                file,
+            };
+
             var locked = new List<File>();
 
             var r = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list, locked);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(token, r.Token);
-            Assert.Equal(fileCount, r.FileCount);
             Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
             Assert.Equal(uploadSpeed, r.UploadSpeed);
             Assert.Equal(queueLength, r.QueueLength);
+
+            Assert.Equal(1, r.FileCount);
             Assert.Equal(list, r.Files);
+            Assert.Single(r.Files);
+            Assert.Equal(file, r.Files.First());
+
             Assert.Equal(locked, r.LockedFiles);
         }
 

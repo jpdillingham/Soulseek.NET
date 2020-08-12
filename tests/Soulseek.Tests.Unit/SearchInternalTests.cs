@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: false));
             var response = new SearchResponse("u", 1, 1, 1, 1, null);
 
-            var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
             Assert.True(filter);
 
@@ -93,7 +93,7 @@ namespace Soulseek.Tests.Unit
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: option));
             var response = new SearchResponse("u", 1, actual, 1, 1, null);
 
-            var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
 
@@ -110,7 +110,7 @@ namespace Soulseek.Tests.Unit
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumPeerFreeUploadSlots: option));
             var response = new SearchResponse("u", 1, 1, actual, 1, null);
 
-            var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
 
@@ -127,7 +127,7 @@ namespace Soulseek.Tests.Unit
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumPeerUploadSpeed: option));
             var response = new SearchResponse("u", 1, 1, 1, actual, null);
 
-            var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
 
@@ -144,7 +144,7 @@ namespace Soulseek.Tests.Unit
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, maximumPeerQueueLength: option));
             var response = new SearchResponse("u", 1, 1, 1, actual, null);
 
-            var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
 
