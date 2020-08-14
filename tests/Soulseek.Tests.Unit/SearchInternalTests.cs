@@ -14,9 +14,11 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
@@ -90,8 +92,11 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, true)]
         public void Response_Filter_Respects_MinimumResponseFileCount_Option(int actual, int option, bool expected)
         {
+            var fixture = new Fixture();
+            var file = fixture.Create<File>();
+
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: option));
-            var response = new SearchResponse("u", 1, actual, 1, 1, null);
+            var response = new SearchResponse("u", 1, 1, 1, 1, DuplicateFile(file, actual));
 
             var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
@@ -107,8 +112,11 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, true)]
         public void Response_Filter_Respects_MinimumPeerFreeUploadSlots_Option(int actual, int option, bool expected)
         {
+            var fixture = new Fixture();
+            var file = fixture.Create<File>();
+
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumPeerFreeUploadSlots: option));
-            var response = new SearchResponse("u", 1, 1, actual, 1, null);
+            var response = new SearchResponse("u", 1, actual, 1, 1, DuplicateFile(file, 1));
 
             var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
@@ -124,8 +132,11 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, true)]
         public void Response_Filter_Respects_MinimumPeerUploadSpeed_Option(int actual, int option, bool expected)
         {
+            var fixture = new Fixture();
+            var file = fixture.Create<File>();
+
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumPeerUploadSpeed: option));
-            var response = new SearchResponse("u", 1, 1, 1, actual, null);
+            var response = new SearchResponse("u", 1, 1, actual, 1, DuplicateFile(file, 1));
 
             var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
@@ -141,8 +152,11 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, false)]
         public void Response_Filter_Respects_MaximumPeerQueueLength_Option(int actual, int option, bool expected)
         {
+            var fixture = new Fixture();
+            var file = fixture.Create<File>();
+
             var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, maximumPeerQueueLength: option));
-            var response = new SearchResponse("u", 1, 1, 1, actual, null);
+            var response = new SearchResponse("u", 1, 1, 1, actual, DuplicateFile(file, 1));
 
             var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
 
@@ -210,7 +224,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "TryAddResponse")]
         [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
-        public void TryAddResponse_Adds_Response(string username, int token, byte code, string filename, int size, string extension)
+        public void TryAddResponse_Adds_Response(string username, int token, File file)
         {
             var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
@@ -222,13 +236,7 @@ namespace Soulseek.Tests.Unit
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
-                .WriteByte(code) // code
-                .WriteString(filename) // filename
-                .WriteLong(size) // size
-                .WriteString(extension) // extension
-                .WriteInteger(1) // attribute count
-                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
-                .WriteInteger(4) // attribute[0].value
+                .WriteFile(file)
                 .WriteByte(1) // free upload slots
                 .WriteInteger(1) // upload speed
                 .WriteLong(0) // queue length
@@ -241,7 +249,7 @@ namespace Soulseek.Tests.Unit
             var responses = new List<SearchResponse>();
             s.ResponseReceived = (r) => responses.Add(r);
 
-            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, null));
+            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, new List<File>() { file }));
 
             Assert.Single(responses);
 
@@ -250,15 +258,15 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(1, response.FileCount);
             Assert.Equal(username, response.Username);
-            Assert.Equal(filename, files[0].Filename);
-            Assert.Equal(size, files[0].Size);
+            Assert.Equal(file.Filename, files[0].Filename);
+            Assert.Equal(file.Size, files[0].Size);
 
             s.Dispose();
         }
 
         [Trait("Category", "TryAddResponse")]
         [Theory(DisplayName = "TryAddResponse swallows exceptions"), AutoData]
-        public void TryAddResponse_Swallows_Exceptions(string username, int token, byte code, string filename, int size, string extension)
+        public void TryAddResponse_Swallows_Exceptions(string username, int token, File file)
         {
             var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
@@ -270,13 +278,7 @@ namespace Soulseek.Tests.Unit
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
-                .WriteByte(code) // code
-                .WriteString(filename) // filename
-                .WriteLong(size) // size
-                .WriteString(extension) // extension
-                .WriteInteger(1) // attribute count
-                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
-                .WriteInteger(4) // attribute[0].value
+                .WriteFile(file)
                 .WriteByte(1) // free upload slots
                 .WriteInteger(1) // upload speed
                 .WriteLong(0) // queue length
@@ -289,7 +291,7 @@ namespace Soulseek.Tests.Unit
             var invoked = false;
             s.ResponseReceived += (r) => invoked = true;
 
-            var ex = Record.Exception(() => s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, null)));
+            var ex = Record.Exception(() => s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, new List<File>() { file })));
 
             Assert.Null(ex);
             Assert.True(invoked);
@@ -389,7 +391,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "TryAddResponse")]
         [Theory(DisplayName = "TryAddResponse completes search and invokes completed event when file limit reached"), AutoData]
-        public async Task TryAddResponse_Completes_Search_And_Invokes_Completed_Event_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
+        public async Task TryAddResponse_Completes_Search_And_Invokes_Completed_Event_When_File_Limit_Reached(string username, int token, File file)
         {
             var options = new SearchOptions(
                     filterResponses: false,
@@ -406,13 +408,7 @@ namespace Soulseek.Tests.Unit
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
-                .WriteByte(code) // code
-                .WriteString(filename) // filename
-                .WriteLong(size) // size
-                .WriteString(extension) // extension
-                .WriteInteger(1) // attribute count
-                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
-                .WriteInteger(4) // attribute[0].value
+                .WriteFile(file)
                 .WriteByte(1) // free upload slots
                 .WriteInteger(1) // upload speed
                 .WriteLong(0) // queue length
@@ -424,7 +420,7 @@ namespace Soulseek.Tests.Unit
 
             var task = s.WaitForCompletion(CancellationToken.None);
 
-            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, null));
+            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, new List<File>() { file }));
 
             await task;
 
@@ -484,7 +480,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "TryAddResponse")]
         [Theory(DisplayName = "TryAddResponse invokes response received event"), AutoData]
-        public void TryAddResponse_Invokes_Response_Received_Event_Handler(string username, int token, byte code, string filename, int size, string extension)
+        public void TryAddResponse_Invokes_Response_Received_Event_Handler(string username, int token, File file)
         {
             SearchResponse addResponse = null;
 
@@ -500,13 +496,7 @@ namespace Soulseek.Tests.Unit
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
-                .WriteByte(code) // code
-                .WriteString(filename) // filename
-                .WriteLong(size) // size
-                .WriteString(extension) // extension
-                .WriteInteger(1) // attribute count
-                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
-                .WriteInteger(4) // attribute[0].value
+                .WriteFile(file)
                 .WriteByte(1) // free upload slots
                 .WriteInteger(1) // upload speed
                 .WriteLong(0) // queue length
@@ -516,10 +506,10 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, null));
+            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, new List<File>() { file }));
 
             Assert.NotNull(addResponse);
-            Assert.Equal(filename, addResponse.Files.ToList()[0].Filename);
+            Assert.Equal(file.Filename, addResponse.Files.ToList()[0].Filename);
 
             s.Dispose();
         }
@@ -537,6 +527,18 @@ namespace Soulseek.Tests.Unit
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
             }
+        }
+
+        private List<File> DuplicateFile(File file, int count)
+        {
+            var list = new List<File>();
+
+            for (int i = 0; i < count; i++)
+            {
+                list.Add(file);
+            }
+
+            return list;
         }
     }
 }
