@@ -20,13 +20,15 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "Instantiates with given data")]
-        public void Instantiates_With_Given_Data()
+        [Fact(DisplayName = "Instantiates with no data")]
+        public void Instantiates_With_No_Data()
         {
-            var list = new List<Directory>();
-            var a = new BrowseResponse(list);
+            var a = new BrowseResponse();
 
-            Assert.Equal(list, a.Directories);
+            Assert.Empty(a.Directories);
+            Assert.Equal(0, a.DirectoryCount);
+            Assert.Empty(a.LockedDirectories);
+            Assert.Equal(0, a.LockedDirectoryCount);
         }
 
         [Trait("Category", "Instantiation")]
@@ -42,6 +44,21 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(list.Count, a.DirectoryCount);
             Assert.Single(a.Directories);
             Assert.Equal(dir, a.Directories.ToList()[0]);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "Instantiates with the given locked directory list")]
+        public void Instantiates_With_The_Given_Locked_Directory_List()
+        {
+            var dir = new Directory("foo", 1);
+            var list = new List<Directory>(new[] { dir });
+
+            var a = new BrowseResponse(lockedDirectoryList: list);
+
+            Assert.Equal(list.Count, a.LockedDirectoryCount);
+            Assert.Single(a.LockedDirectories);
+            Assert.Equal(dir, a.LockedDirectories.ToList()[0]);
         }
     }
 }
