@@ -235,6 +235,79 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse handles locked files"), AutoData]
+        public void Parse_Handles_Locked_Files(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchResponse)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteInteger(2) // file count
+                .WriteByte(0x2) // code
+                .WriteString("filename") // filename
+                .WriteLong(3) // size
+                .WriteString("ext") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(0x20) // code
+                .WriteString("filename2") // filename
+                .WriteLong(30) // size
+                .WriteString("ext2") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitRate) // attribute[0].type
+                .WriteInteger(40) // attribute[0].value
+                .WriteByte(freeUploadSlots)
+                .WriteInteger(uploadSpeed)
+                .WriteLong(queueLength)
+                .WriteInteger(1) // locked file count
+                .WriteByte(0x30) // code
+                .WriteString("filename3") // filename
+                .WriteLong(40) // size
+                .WriteString("ext3") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitRate) // attribute[0].type
+                .WriteInteger(50) // attribute[0].value
+                .Compress()
+                .Build();
+
+            var r = SearchResponseFactory.FromByteArray(msg);
+
+            Assert.Equal(2, r.Files.Count);
+
+            var file = r.Files.ToList();
+
+            Assert.Equal(0x2, file[0].Code);
+            Assert.Equal("filename", file[0].Filename);
+            Assert.Equal(3, file[0].Size);
+            Assert.Equal("ext", file[0].Extension);
+            Assert.Equal(1, file[0].AttributeCount);
+            Assert.Single(file[0].Attributes);
+            Assert.Equal(FileAttributeType.BitDepth, file[0].Attributes.ToList()[0].Type);
+            Assert.Equal(4, file[0].Attributes.ToList()[0].Value);
+
+            Assert.Equal(0x20, file[1].Code);
+            Assert.Equal("filename2", file[1].Filename);
+            Assert.Equal(30, file[1].Size);
+            Assert.Equal("ext2", file[1].Extension);
+            Assert.Equal(1, file[1].AttributeCount);
+            Assert.Single(file[1].Attributes);
+            Assert.Equal(FileAttributeType.BitRate, file[1].Attributes.ToList()[0].Type);
+            Assert.Equal(40, file[1].Attributes.ToList()[0].Value);
+
+            var locked = r.LockedFiles.ToList();
+
+            Assert.Equal(0x30, locked[0].Code);
+            Assert.Equal("filename3", locked[0].Filename);
+            Assert.Equal(40, locked[0].Size);
+            Assert.Equal("ext3", locked[0].Extension);
+            Assert.Equal(1, locked[0].AttributeCount);
+            Assert.Single(locked[0].Attributes);
+            Assert.Equal(FileAttributeType.BitRate, locked[0].Attributes.ToList()[0].Type);
+            Assert.Equal(50, locked[0].Attributes.ToList()[0].Value);
+        }
+
+        [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse handles empty attributes"), AutoData]
         public void Parse_Handles_Empty_Attributes(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
@@ -330,6 +403,61 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(1, reader.ReadInteger()); // attribute count
 
             Assert.Equal(FileAttributeType.BitDepth, (FileAttributeType)reader.ReadInteger());
+            Assert.Equal(1, reader.ReadInteger());
+
+            // file 2
+            Assert.Equal(2, reader.ReadByte()); // code
+            Assert.Equal("2", reader.ReadString()); // name
+            Assert.Equal(2, reader.ReadLong()); // length
+            Assert.Equal(".2", reader.ReadString()); // ext
+            Assert.Equal(1, reader.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitRate, (FileAttributeType)reader.ReadInteger());
+            Assert.Equal(2, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray handles locked files"), AutoData]
+        public void ToByteArray_Handles_Locked_Files(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var list = new List<File>()
+            {
+                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+            };
+
+            var locked = new List<File>()
+            {
+                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+            };
+
+            var s = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list, locked);
+            var m = s.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(m);
+            reader.Decompress();
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.SearchResponse, code);
+
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(1, reader.ReadInteger());
+
+            // file 1
+            Assert.Equal(1, reader.ReadByte()); // code
+            Assert.Equal("1", reader.ReadString()); // name
+            Assert.Equal(1, reader.ReadLong()); // length
+            Assert.Equal(".1", reader.ReadString()); // ext
+            Assert.Equal(1, reader.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitDepth, (FileAttributeType)reader.ReadInteger());
+            Assert.Equal(1, reader.ReadInteger());
+
+            Assert.Equal(freeUploadSlots, reader.ReadByte()); // code
+            Assert.Equal(uploadSpeed, reader.ReadInteger()); // upload speed
+            Assert.Equal(queueLength, reader.ReadLong()); // queue length
+
+            // locked file count
             Assert.Equal(1, reader.ReadInteger());
 
             // file 2
