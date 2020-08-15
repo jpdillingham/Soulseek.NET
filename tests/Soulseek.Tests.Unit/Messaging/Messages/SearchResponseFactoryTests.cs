@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="SearchResponseFactoryTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -21,54 +21,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class SearchResponseTests
+    public class SearchResponseFactoryTests
     {
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with given data"), AutoData]
-        public void Instantiates_With_Given_Data(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength, File file)
-        {
-            var list = new List<File>()
-            {
-                file,
-            };
-
-            var locked = new List<File>();
-
-            var r = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list, locked);
-
-            Assert.Equal(username, r.Username);
-            Assert.Equal(token, r.Token);
-            Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
-            Assert.Equal(uploadSpeed, r.UploadSpeed);
-            Assert.Equal(queueLength, r.QueueLength);
-
-            Assert.Equal(1, r.FileCount);
-            Assert.Equal(list, r.Files);
-            Assert.Single(r.Files);
-            Assert.Equal(file, r.Files.First());
-
-            Assert.Equal(locked, r.LockedFiles);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with given response and list, replacing filecount with list length"), AutoData]
-        public void Instantiates_With_Given_Response_And_List(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength)
-        {
-            var r1 = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, null);
-
-            var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext", 0) });
-
-            Assert.Empty(r1.Files);
-            Assert.Single(r2.Files);
-
-            Assert.Equal(r1.Username, r2.Username);
-            Assert.Equal(r1.Token, r2.Token);
-            Assert.Equal(1, r2.FileCount);
-            Assert.Equal(r1.FreeUploadSlots, r2.FreeUploadSlots);
-            Assert.Equal(r1.UploadSpeed, r2.UploadSpeed);
-            Assert.Equal(r1.QueueLength, r2.QueueLength);
-        }
-
         [Trait("Category", "Parse")]
         [Fact(DisplayName = "Parse throws MessageException on code mismatch")]
         public void Parse_Throws_MessageException_On_Code_Mismatch()
