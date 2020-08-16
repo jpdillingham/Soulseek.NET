@@ -174,6 +174,74 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "Parse handles a response with only locked files")]
+        public void Parse_Handles_Response_With_Only_Locked_Files()
+        {
+            var dirs = new List<Directory>();
+
+            for (int i = 0; i < 5; i++)
+            {
+                dirs.Add(GetRandomDirectory(i));
+            }
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseResponse)
+                .WriteInteger(0) // 0 unlocked files
+                .WriteInteger(0) // unknown
+                .WriteInteger(dirs.Count);
+
+            foreach (var dir in dirs)
+            {
+                BuildDirectory(builder, dir);
+            }
+
+            var msg = builder
+                .Compress()
+                .Build();
+
+            BrowseResponse r = default;
+
+            var ex = Record.Exception(() => r = BrowseResponseFactory.FromByteArray(msg));
+
+            Assert.Null(ex);
+
+            Assert.Equal(0, r.DirectoryCount);
+
+            Assert.Equal(dirs.Count, r.LockedDirectoryCount);
+            Assert.Equal(dirs.Count, r.LockedDirectories.Count);
+
+            var msgDirs = r.LockedDirectories.ToList();
+
+            for (int i = 0; i < msgDirs.Count; i++)
+            {
+                Assert.Equal(dirs[i].DirectoryName, msgDirs[i].DirectoryName);
+                Assert.Equal(dirs[i].FileCount, msgDirs[i].FileCount);
+
+                var files = dirs[i].Files.ToList();
+                var msgFiles = msgDirs[i].Files.ToList();
+
+                for (int j = 0; j < msgDirs[i].FileCount; j++)
+                {
+                    Assert.Equal(files[j].Code, msgFiles[j].Code);
+                    Assert.Equal(files[j].Filename, msgFiles[j].Filename);
+                    Assert.Equal(files[j].Size, msgFiles[j].Size);
+                    Assert.Equal(files[j].Extension, msgFiles[j].Extension);
+                    Assert.Equal(files[j].AttributeCount, msgFiles[j].AttributeCount);
+
+                    var attr = files[j].Attributes.ToList();
+                    var msgAttr = files[j].Attributes.ToList();
+
+                    for (int k = 0; k < msgFiles[j].AttributeCount; k++)
+                    {
+                        Assert.Equal(attr[k].Type, msgAttr[k].Type);
+                        Assert.Equal(attr[k].Value, msgAttr[k].Value);
+                    }
+                }
+            }
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
         [Fact(DisplayName = "Parse handles a complete response")]
         public void Parse_Handles_A_Complete_Response()
         {
@@ -193,6 +261,15 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 BuildDirectory(builder, dir);
             }
 
+            builder
+                .WriteInteger(0) // unknown
+                .WriteInteger(dirs.Count);
+
+            foreach (var dir in dirs)
+            {
+                BuildDirectory(builder, dir);
+            }
+
             var msg = builder
                 .Compress()
                 .Build();
@@ -204,8 +281,39 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Null(ex);
             Assert.Equal(dirs.Count, r.DirectoryCount);
             Assert.Equal(dirs.Count, r.Directories.Count);
+            Assert.Equal(dirs.Count, r.LockedDirectoryCount);
+            Assert.Equal(dirs.Count, r.LockedDirectories.Count);
 
             var msgDirs = r.Directories.ToList();
+
+            for (int i = 0; i < msgDirs.Count; i++)
+            {
+                Assert.Equal(dirs[i].DirectoryName, msgDirs[i].DirectoryName);
+                Assert.Equal(dirs[i].FileCount, msgDirs[i].FileCount);
+
+                var files = dirs[i].Files.ToList();
+                var msgFiles = msgDirs[i].Files.ToList();
+
+                for (int j = 0; j < msgDirs[i].FileCount; j++)
+                {
+                    Assert.Equal(files[j].Code, msgFiles[j].Code);
+                    Assert.Equal(files[j].Filename, msgFiles[j].Filename);
+                    Assert.Equal(files[j].Size, msgFiles[j].Size);
+                    Assert.Equal(files[j].Extension, msgFiles[j].Extension);
+                    Assert.Equal(files[j].AttributeCount, msgFiles[j].AttributeCount);
+
+                    var attr = files[j].Attributes.ToList();
+                    var msgAttr = files[j].Attributes.ToList();
+
+                    for (int k = 0; k < msgFiles[j].AttributeCount; k++)
+                    {
+                        Assert.Equal(attr[k].Type, msgAttr[k].Type);
+                        Assert.Equal(attr[k].Value, msgAttr[k].Value);
+                    }
+                }
+            }
+
+            msgDirs = r.LockedDirectories.ToList();
 
             for (int i = 0; i < msgDirs.Count; i++)
             {
@@ -260,6 +368,58 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Peer.BrowseResponse, m.ReadCode());
             Assert.Equal(2, m.ReadInteger());
+
+            // dir 1
+            Assert.Equal("dir1", m.ReadString());
+            Assert.Equal(2, m.ReadInteger());
+
+            // file 1
+            Assert.Equal(1, m.ReadByte()); // code
+            Assert.Equal("1", m.ReadString()); // name
+            Assert.Equal(1, m.ReadLong()); // length
+            Assert.Equal(".1", m.ReadString()); // ext
+            Assert.Equal(1, m.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitDepth, (FileAttributeType)m.ReadInteger());
+            Assert.Equal(1, m.ReadInteger());
+
+            // file 2
+            Assert.Equal(2, m.ReadByte()); // code
+            Assert.Equal("2", m.ReadString()); // name
+            Assert.Equal(2, m.ReadLong()); // length
+            Assert.Equal(".2", m.ReadString()); // ext
+            Assert.Equal(1, m.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitRate, (FileAttributeType)m.ReadInteger());
+            Assert.Equal(2, m.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Fact(DisplayName = "ToByteArray returns the expected data when only locked files given")]
+        public void ToByteArray_Returns_Expected_Data_When_Only_Locked_Files_Given()
+        {
+            var list = new List<File>()
+            {
+                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+            };
+
+            var dirs = new List<Directory>()
+            {
+                new Directory("dir1", 2, list),
+            };
+
+            var r = new BrowseResponse(lockedDirectoryList: dirs);
+
+            var bytes = r.ToByteArray();
+
+            var m = new MessageReader<MessageCode.Peer>(bytes);
+            m.Decompress();
+
+            Assert.Equal(MessageCode.Peer.BrowseResponse, m.ReadCode());
+            Assert.Equal(0, m.ReadInteger());
+            Assert.Equal(0, m.ReadInteger()); // unknown
+            Assert.Equal(1, m.ReadInteger()); // locked directory count
 
             // dir 1
             Assert.Equal("dir1", m.ReadString());
