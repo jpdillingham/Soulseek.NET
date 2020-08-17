@@ -14,14 +14,12 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging;
-    using Soulseek.Messaging.Messages;
     using Xunit;
 
     public class SearchInternalTests
@@ -39,6 +37,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(SearchStates.None, s.State);
 
             Assert.Equal(0, s.FileCount);
+            Assert.Equal(0, s.LockedFileCount);
             Assert.Equal(0, s.ResponseCount);
 
             s.Dispose();
@@ -223,6 +222,69 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "TryAddResponse")]
+        [Fact(DisplayName = "TryAddResponse ignores response when custom response filter returns false")]
+        public void TryAddResponse_Ignores_Response_When_Custom_Response_Filter_Returns_False()
+        {
+            bool Filter(SearchResponse response) => false;
+
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 0, responseFilter: Filter))
+            {
+                State = SearchStates.InProgress,
+            };
+
+            s.TryAddResponse(new SearchResponse("bar", 42, 1, 1, 1, null));
+
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
+
+            s.Dispose();
+        }
+
+        [Trait("Category", "TryAddResponse")]
+        [Fact(DisplayName = "TryAddResponse ignores response when custom file filter removes all files")]
+        public void TryAddResponse_Ignores_Response_When_Custom_File_Filter_Removes_All_Files()
+        {
+            bool Filter(File file) => false;
+
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1, fileFilter: Filter))
+            {
+                State = SearchStates.InProgress,
+            };
+
+            s.TryAddResponse(new SearchResponse("bar", 42, 1, 1, 1, new List<File>() { new File(1, "a", 1, "b", 0) }));
+
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
+
+            s.Dispose();
+        }
+
+        [Trait("Category", "TryAddResponse")]
+        [Fact(DisplayName = "TryAddResponse ignores response when custom file filter removes locked files")]
+        public void TryAddResponse_Ignores_Response_When_Custom_File_Filter_Removes_Locked_Files()
+        {
+            bool Filter(File file) => false;
+
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1, fileFilter: Filter))
+            {
+                State = SearchStates.InProgress,
+            };
+
+            s.TryAddResponse(new SearchResponse("bar", 42, 1, 1, 1, null, lockedFileList: new List<File>() { new File(1, "a", 1, "b", 0) }));
+
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
+
+            s.Dispose();
+        }
+
+        [Trait("Category", "TryAddResponse")]
         [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
         public void TryAddResponse_Adds_Response(string username, int token, File file)
         {
@@ -249,7 +311,7 @@ namespace Soulseek.Tests.Unit
             var responses = new List<SearchResponse>();
             s.ResponseReceived = (r) => responses.Add(r);
 
-            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, new List<File>() { file }));
+            s.TryAddResponse(new SearchResponse(username, token, 1, 1, 1, new List<File>() { file }, new List<File>() { file }));
 
             Assert.Single(responses);
 
