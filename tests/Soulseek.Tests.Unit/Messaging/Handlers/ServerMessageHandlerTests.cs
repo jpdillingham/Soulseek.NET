@@ -1153,7 +1153,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
         public void Responds_To_SearchRequest(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
@@ -1212,7 +1212,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Doesn't respond to SearchRequest if result contains no files"), AutoData]
         public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            var response = new SearchResponse("foo", token, 0, 1, 1, new List<File>());
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
@@ -1242,7 +1242,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Doesn't respond to SearchRequest if it came from the local user"), AutoData]
         public void Doesnt_Respond_To_SearchRequest_If_It_Came_From_The_Local_User(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            var response = new SearchResponse("foo", token, 0, 1, 1, new List<File>());
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 

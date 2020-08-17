@@ -103,6 +103,41 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync uses given CancellationToken"), AutoData]
+        public async Task GetUserInfoAsync_Uses_Given_CancellationToken(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        {
+            var cancellationToken = new CancellationToken();
+            var result = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserInfo>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.GetUserInfoAsync(username, cancellationToken);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "GetUserInfoAsync")]
         [Theory(DisplayName = "GetUserInfoAsync throws TimeoutException on timeout"), AutoData]
         public async Task GetUserInfoAsync_Throws_TimeoutException_On_Timeout(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {

@@ -19,15 +19,16 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with expected data"), AutoData]
-        public void Instantiates_With_Expected_Data(string searchText, int token, SearchStates state, int responseCount, int fileCount)
+        public void Instantiates_With_Expected_Data(string searchText, int token, SearchStates state, int responseCount, int fileCount, int lockedFileCount)
         {
-            var s = new Search(searchText, token, state, responseCount, fileCount);
+            var s = new Search(searchText, token, state, responseCount, fileCount, lockedFileCount);
 
             Assert.Equal(searchText, s.SearchText);
             Assert.Equal(token, s.Token);
             Assert.Equal(state, s.State);
             Assert.Equal(responseCount, s.ResponseCount);
             Assert.Equal(fileCount, s.FileCount);
+            Assert.Equal(lockedFileCount, s.LockedFileCount);
         }
 
         [Trait("Category", "Instantiation")]
@@ -41,6 +42,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(i.State, s.State);
             Assert.Equal(i.ResponseCount, s.ResponseCount);
             Assert.Equal(i.FileCount, s.FileCount);
+            Assert.Equal(i.LockedFileCount, s.LockedFileCount);
         }
     }
 }

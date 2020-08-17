@@ -100,6 +100,37 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync uses given CancellationToken"), AutoData]
+        public async Task JoinRoomAsync_Uses_Given_CancellationToken(string roomName)
+        {
+            var cancellationToken = new CancellationToken();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var expectedResponse = new RoomData(roomName, 0, Enumerable.Empty<UserData>(), false, null, null, null);
+
+            var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<RoomData>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(expectedResponse));
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                RoomData response;
+
+                response = await s.JoinRoomAsync(roomName, cancellationToken);
+
+                Assert.Equal(expectedResponse, response);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "JoinRoomAsync")]
         [Theory(DisplayName = "JoinRoomAsync throws RoomJoinException when write throws"), AutoData]
         public async Task JoinRoomAsync_Throws_RoomJoinException_When_Write_Throws(string roomName)
         {
@@ -224,6 +255,33 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Null(ex);
             }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync uses given CancellationToken"), AutoData]
+        public async Task LeaveRoomAsync_Uses_Given_CancellationToken(string roomName)
+        {
+            var cancellationToken = new CancellationToken();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var key = new WaitKey(MessageCode.Server.LeaveRoom, roomName);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName, cancellationToken));
+
+                Assert.Null(ex);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "LeaveRoomAsync")]

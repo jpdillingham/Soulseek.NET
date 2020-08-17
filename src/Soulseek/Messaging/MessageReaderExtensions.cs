@@ -57,6 +57,24 @@ namespace Soulseek.Messaging
         }
 
         /// <summary>
+        ///     Reads a list of <paramref name="count"/> files from the <paramref name="reader"/>.
+        /// </summary>
+        /// <param name="reader">The reader from which to read the list of files.</param>
+        /// <param name="count">The number of files to read.</param>
+        /// <returns>The list of files.</returns>
+        internal static IReadOnlyCollection<File> ReadFiles(this MessageReader<MessageCode.Peer> reader, int count)
+        {
+            var files = new List<File>();
+
+            for (int i = 0; i < count; i++)
+            {
+                files.Add(reader.ReadFile());
+            }
+
+            return files.AsReadOnly();
+        }
+
+        /// <summary>
         ///     Reads a directory from the <paramref name="reader"/>.
         /// </summary>
         /// <param name="reader">The reader from which to read the directory.</param>

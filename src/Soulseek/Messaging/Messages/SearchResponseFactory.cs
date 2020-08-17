@@ -13,6 +13,8 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
+    using System.Linq;
+    using Soulseek.Exceptions;
 
     /// <summary>
     ///     Factory for search response messages. This class helps keep message abstractions from leaking into the public API via
@@ -27,19 +29,35 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static SearchResponse FromByteArray(byte[] bytes)
         {
-            var slim = SearchResponseSlim.FromByteArray(bytes);
-            return FromSlimResponse(slim);
-        }
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
+            var code = reader.ReadCode();
 
-        /// <summary>
-        ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="slimResponse"/>.
-        /// </summary>
-        /// <param name="slimResponse">The slim response from which to parse.</param>
-        /// <returns>The parsed instance.</returns>
-        public static SearchResponse FromSlimResponse(SearchResponseSlim slimResponse)
-        {
-            var files = ParseFiles(slimResponse.MessageReader, slimResponse.FileCount);
-            return new SearchResponse(slimResponse.Username, slimResponse.Token, files.Count, slimResponse.FreeUploadSlots, slimResponse.UploadSpeed, slimResponse.QueueLength, files);
+            if (code != MessageCode.Peer.SearchResponse)
+            {
+                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.Peer.SearchResponse}, received: {(int)code}");
+            }
+
+            reader.Decompress();
+
+            var username = reader.ReadString();
+            var token = reader.ReadInteger();
+            var fileCount = reader.ReadInteger();
+
+            var fileList = reader.ReadFiles(fileCount);
+
+            var freeUploadSlots = reader.ReadByte();
+            var uploadSpeed = reader.ReadInteger();
+            var queueLength = reader.ReadLong();
+
+            IEnumerable<File> lockedFileList = Enumerable.Empty<File>();
+
+            if (reader.HasMoreData)
+            {
+                var count = reader.ReadInteger();
+                lockedFileList = reader.ReadFiles(count);
+            }
+
+            return new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, fileList, lockedFileList);
         }
 
         /// <summary>
@@ -57,19 +75,7 @@ namespace Soulseek.Messaging.Messages
 
             foreach (var file in searchResponse.Files)
             {
-                builder
-                    .WriteByte((byte)file.Code)
-                    .WriteString(file.Filename)
-                    .WriteLong(file.Size)
-                    .WriteString(file.Extension)
-                    .WriteInteger(file.AttributeCount);
-
-                foreach (var attribute in file.Attributes)
-                {
-                    builder
-                        .WriteInteger((int)attribute.Type)
-                        .WriteInteger(attribute.Value);
-                }
+                builder.WriteFile(file);
             }
 
             builder
@@ -77,54 +83,15 @@ namespace Soulseek.Messaging.Messages
                 .WriteInteger(searchResponse.UploadSpeed)
                 .WriteLong(searchResponse.QueueLength);
 
-            builder.Compress();
-            return builder.Build();
-        }
+            builder.WriteInteger(searchResponse.LockedFileCount);
 
-        /// <summary>
-        ///     Parses the list of files contained within the <paramref name="reader"/>.
-        /// </summary>
-        /// <remarks>
-        ///     Requires that the provided MessageReader has been "rewound" to the start of the file list, which is equal to the
-        ///     length of the username plus 12.
-        /// </remarks>
-        /// <param name="reader">The reader from which to parse the file list.</param>
-        /// <param name="count">The expected number of files.</param>
-        /// <returns>The list of parsed files.</returns>
-        private static IReadOnlyCollection<File> ParseFiles(MessageReader<MessageCode.Peer> reader, int count)
-        {
-            var files = new List<File>();
-
-            for (int i = 0; i < count; i++)
+            foreach (var file in searchResponse.LockedFiles)
             {
-                var file = new File(
-                    code: reader.ReadByte(),
-                    filename: reader.ReadString(),
-                    size: reader.ReadLong(),
-                    extension: reader.ReadString(),
-                    attributeCount: reader.ReadInteger());
-
-                var attributeList = new List<FileAttribute>();
-
-                for (int j = 0; j < file.AttributeCount; j++)
-                {
-                    var attribute = new FileAttribute(
-                        type: (FileAttributeType)reader.ReadInteger(),
-                        value: reader.ReadInteger());
-
-                    attributeList.Add(attribute);
-                }
-
-                files.Add(new File(
-                    code: file.Code,
-                    filename: file.Filename,
-                    size: file.Size,
-                    extension: file.Extension,
-                    attributeCount: file.AttributeCount,
-                    attributeList: attributeList));
+                builder.WriteFile(file);
             }
 
-            return files.AsReadOnly();
+            builder.Compress();
+            return builder.Build();
         }
     }
 }

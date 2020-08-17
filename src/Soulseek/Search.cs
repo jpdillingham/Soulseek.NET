@@ -26,13 +26,15 @@ namespace Soulseek
         /// <param name="state">The state of the search.</param>
         /// <param name="responseCount">The current number of responses received.</param>
         /// <param name="fileCount">The total number of files contained within received responses.</param>
-        public Search(string searchText, int token, SearchStates state, int responseCount, int fileCount)
+        /// <param name="lockedFileCount">The total number of locked files contained within received responses.</param>
+        public Search(string searchText, int token, SearchStates state, int responseCount, int fileCount, int lockedFileCount)
         {
             SearchText = searchText;
             Token = token;
             State = state;
             ResponseCount = responseCount;
             FileCount = fileCount;
+            LockedFileCount = lockedFileCount;
         }
 
         /// <summary>
@@ -45,7 +47,8 @@ namespace Soulseek
                 searchInternal.Token,
                 searchInternal.State,
                 searchInternal.ResponseCount,
-                searchInternal.FileCount)
+                searchInternal.FileCount,
+                searchInternal.LockedFileCount)
         {
         }
 
@@ -53,6 +56,11 @@ namespace Soulseek
         ///     Gets the total number of files contained within received responses.
         /// </summary>
         public int FileCount { get; }
+
+        /// <summary>
+        ///     Gets the total number of locked files contained within received responses.
+        /// </summary>
+        public int LockedFileCount { get; }
 
         /// <summary>
         ///     Gets the current number of responses received.

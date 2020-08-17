@@ -159,5 +159,29 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Null(ex);
             }
         }
+
+        [Trait("Category", "GrantUserPrivilegesAsync")]
+        [Theory(DisplayName = "GrantUserPrivilegesAsync uses given CancellationToken"), AutoData]
+        public async Task GrantUserPrivilegesAsync_Uses_Given_CancellationToken(string username, int days)
+        {
+            var cancellationToken = new CancellationToken();
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken))
+                .Returns(Task.CompletedTask);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait(It.Is<WaitKey>(k => k == new WaitKey(MessageCode.Server.GivePrivileges)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient(serverConnection: serverConn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.GrantUserPrivilegesAsync(username, days, cancellationToken);
+            }
+
+            serverConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
     }
 }

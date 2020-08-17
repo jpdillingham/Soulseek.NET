@@ -13,7 +13,6 @@
 namespace Soulseek
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
@@ -26,8 +25,8 @@ namespace Soulseek
     /// </summary>
     public class SoulseekClientOptions
     {
-        private readonly Func<string, IPEndPoint, Task<IEnumerable<Directory>>> defaultBrowseResponse =
-            (u, i) => Task.FromResult(Enumerable.Empty<Directory>());
+        private readonly Func<string, IPEndPoint, Task<BrowseResponse>> defaultBrowseResponse =
+            (u, i) => Task.FromResult(new BrowseResponse(Enumerable.Empty<Directory>()));
 
         private readonly Func<string, IPEndPoint, string, Task> defaultEnqueueDownloadAction =
             (u, i, f) => Task.CompletedTask;
@@ -102,7 +101,7 @@ namespace Soulseek
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
             Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
-            Func<string, IPEndPoint, Task<IEnumerable<Directory>>> browseResponseResolver = null,
+            Func<string, IPEndPoint, Task<BrowseResponse>> browseResponseResolver = null,
             Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
@@ -163,7 +162,7 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the response for an incoming browse request. (Default = a response with no files
         ///     or directories).
         /// </summary>
-        public Func<string, IPEndPoint, Task<IEnumerable<Directory>>> BrowseResponseResolver { get; }
+        public Func<string, IPEndPoint, Task<BrowseResponse>> BrowseResponseResolver { get; }
 
         /// <summary>
         ///     Gets a value indicating whether duplicated distributed search requests should be discarded. (Default = discard duplicates).

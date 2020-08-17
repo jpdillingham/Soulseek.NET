@@ -401,7 +401,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<BrowseResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1643,13 +1643,13 @@ namespace Soulseek
                     Disconnect("Client is being disposed", new ObjectDisposedException(GetType().Name));
                     Listener?.Stop();
 
-                    PeerConnectionManager?.RemoveAndDisposeAll();
-                    PeerConnectionManager?.Dispose();
+                    PeerConnectionManager.RemoveAndDisposeAll();
+                    PeerConnectionManager.Dispose();
 
-                    DistributedConnectionManager?.Dispose();
+                    DistributedConnectionManager.Dispose();
 
-                    Waiter?.CancelAll();
-                    Waiter?.Dispose();
+                    Waiter.CancelAll();
+                    Waiter.Dispose();
 
                     ServerConnection?.Dispose();
                 }
@@ -1704,7 +1704,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<IReadOnlyCollection<Directory>> BrowseInternalAsync(string username, BrowseOptions options, CancellationToken cancellationToken)
+        private async Task<BrowseResponse> BrowseInternalAsync(string username, BrowseOptions options, CancellationToken cancellationToken)
         {
             var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
             bool completionEventFired = false;
@@ -1778,7 +1778,7 @@ namespace Soulseek
                     UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs?.Code, responseLength.Value, responseLength.Value));
                 }
 
-                return response.Directories;
+                return response;
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {

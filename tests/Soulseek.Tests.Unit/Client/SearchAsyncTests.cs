@@ -504,7 +504,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1, responseReceived: (e) => fired = true);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+            var response = new SearchResponse("username", token, 1, 1, 1, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
@@ -534,7 +534,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+            var response = new SearchResponse("username", token, 1, 1, 1, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))

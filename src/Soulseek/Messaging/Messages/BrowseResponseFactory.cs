@@ -1,4 +1,4 @@
-﻿// <copyright file="BrowseResponse.cs" company="JP Dillingham">
+﻿// <copyright file="BrowseResponseFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,39 +13,16 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    using System.Linq;
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     The response to a peer browse request.
+    ///     Factory for search response messages. This class helps keep message abstractions from leaking into the public API via
+    ///     <see cref="SearchResponse"/>, which is a public class.
     /// </summary>
-    internal sealed class BrowseResponse
+    internal static class BrowseResponseFactory
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="BrowseResponse"/> class.
-        /// </summary>
-        /// <param name="directoryCount">The optional directory count.</param>
-        /// <param name="directoryList">The optional directory list.</param>
-        public BrowseResponse(int directoryCount, IEnumerable<Directory> directoryList = null)
-        {
-            DirectoryCount = directoryCount;
-            DirectoryList = directoryList ?? Enumerable.Empty<Directory>();
-        }
-
-        /// <summary>
-        ///     Gets the list of directories.
-        /// </summary>
-        public IReadOnlyCollection<Directory> Directories => DirectoryList.ToList().AsReadOnly();
-
-        /// <summary>
-        ///     Gets the number of directories.
-        /// </summary>
-        public int DirectoryCount { get; }
-
-        private IEnumerable<Directory> DirectoryList { get; }
-
-        /// <summary>
-        ///     Creates a new instance of <see cref="BrowseResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
@@ -63,26 +40,51 @@ namespace Soulseek.Messaging.Messages
 
             var directoryCount = reader.ReadInteger();
             var directoryList = new List<Directory>();
+            var lockedDirectoryList = new List<Directory>();
 
             for (int i = 0; i < directoryCount; i++)
             {
                 directoryList.Add(reader.ReadDirectory());
             }
 
-            return new BrowseResponse(directoryCount, directoryList);
+            if (reader.HasMoreData)
+            {
+                _ = reader.ReadInteger();
+
+                if (reader.HasMoreData)
+                {
+                    var lockedDirectoryCount = reader.ReadInteger();
+
+                    for (int i = 0; i < lockedDirectoryCount; i++)
+                    {
+                        lockedDirectoryList.Add(reader.ReadDirectory());
+                    }
+                }
+            }
+
+            return new BrowseResponse(directoryList, lockedDirectoryList);
         }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
         /// </summary>
+        /// <param name="browseResponse">The instance from which to construct the byte array.</param>
         /// <returns>The constructed byte array.</returns>
-        public byte[] ToByteArray()
+        public static byte[] ToByteArray(this BrowseResponse browseResponse)
         {
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseResponse)
-                .WriteInteger(DirectoryCount);
+                .WriteInteger(browseResponse.DirectoryCount);
 
-            foreach (var directory in Directories)
+            foreach (var directory in browseResponse.Directories)
+            {
+                builder.WriteDirectory(directory);
+            }
+
+            builder.WriteInteger(0);
+            builder.WriteInteger(browseResponse.LockedDirectoryCount);
+
+            foreach (var directory in browseResponse.LockedDirectories)
             {
                 builder.WriteDirectory(directory);
             }

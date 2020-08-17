@@ -18,7 +18,7 @@ namespace Soulseek
     /// <summary>
     ///     A response to a file search.
     /// </summary>
-    public class SearchResponse
+    public sealed class SearchResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
@@ -28,37 +28,21 @@ namespace Soulseek
         /// <param name="freeUploadSlots">The number of free upload slots for the peer.</param>
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
-        /// <param name="fileList">The optional file list.</param>
-        public SearchResponse(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList = null)
+        /// <param name="fileList">The file list.</param>
+        /// <param name="lockedFileList">The optional locked file list.</param>
+        public SearchResponse(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
         {
             Username = username;
             Token = token;
             FreeUploadSlots = freeUploadSlots;
             UploadSpeed = uploadSpeed;
             QueueLength = queueLength;
+
             FileList = fileList ?? Enumerable.Empty<File>();
             FileCount = FileList.Count();
-        }
 
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
-        /// </summary>
-        /// <param name="username">The username of the responding peer.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="fileCount">The number of files contained within the result, as counted by the original response.</param>
-        /// <param name="freeUploadSlots">The number of free upload slots for the peer.</param>
-        /// <param name="uploadSpeed">The upload speed of the peer.</param>
-        /// <param name="queueLength">The length of the peer's upload queue.</param>
-        /// <param name="fileList">The optional file list.</param>
-        internal SearchResponse(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList = null)
-        {
-            Username = username;
-            Token = token;
-            FileCount = fileCount;
-            FreeUploadSlots = freeUploadSlots;
-            UploadSpeed = uploadSpeed;
-            QueueLength = queueLength;
-            FileList = fileList ?? Enumerable.Empty<File>();
+            LockedFileList = lockedFileList ?? Enumerable.Empty<File>();
+            LockedFileCount = LockedFileList.Count();
         }
 
         /// <summary>
@@ -66,8 +50,9 @@ namespace Soulseek
         /// </summary>
         /// <param name="searchResponse">An existing instance from which to copy properties.</param>
         /// <param name="fileList">The file list with which to replace the existing file list.</param>
-        internal SearchResponse(SearchResponse searchResponse, IEnumerable<File> fileList)
-            : this(searchResponse.Username, searchResponse.Token, fileList.Count(), searchResponse.FreeUploadSlots, searchResponse.UploadSpeed, searchResponse.QueueLength, fileList)
+        /// <param name="lockedFileList">The optional locked file list with which to replace the existing locked file list.</param>
+        internal SearchResponse(SearchResponse searchResponse, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
+            : this(searchResponse.Username, searchResponse.Token, searchResponse.FreeUploadSlots, searchResponse.UploadSpeed, searchResponse.QueueLength, fileList, lockedFileList)
         {
         }
 
@@ -86,6 +71,17 @@ namespace Soulseek
         ///     Gets the number of free upload slots for the peer.
         /// </summary>
         public int FreeUploadSlots { get; }
+
+        /// <summary>
+        ///     Gets the number of files contained within the result, as counted by the original response from the peer and prior
+        ///     to filtering. For the filtered count, check the length of <see cref="LockedFiles"/>.
+        /// </summary>
+        public int LockedFileCount { get; }
+
+        /// <summary>
+        ///     Gets the list of locked files.
+        /// </summary>
+        public IReadOnlyCollection<File> LockedFiles => LockedFileList.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the length of the peer's upload queue.
@@ -108,5 +104,6 @@ namespace Soulseek
         public string Username { get; }
 
         private IEnumerable<File> FileList { get; }
+        private IEnumerable<File> LockedFileList { get; }
     }
 }

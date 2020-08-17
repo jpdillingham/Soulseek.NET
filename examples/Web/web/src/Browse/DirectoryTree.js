@@ -9,10 +9,10 @@ const subtree = (root, selectedDirectoryName, onSelect) => {
       const selected = d.directoryName === selectedDirectoryName;
       return (
         <List key={index} className='browse-folderlist-list'>
-          <List.Item>
+          <List.Item style={{opacity: d.locked ? 0.5 : 1}}>
               <List.Icon 
                 className='browse-folderlist-icon'
-                name={selected ? 'folder open' : 'folder'}
+                name={d.locked === true ? 'lock' : selected ? 'folder open' : 'folder'}
                 color={selected ? 'blue' : 'black'}
               />
               <List.Content>
@@ -21,7 +21,7 @@ const subtree = (root, selectedDirectoryName, onSelect) => {
                     onClick={(event) => onSelect(event, d)}
                     style={{ color: selected ? '#0E6EB8' : 'black', fontWeight: selected ? 700 : 400 }}
                   >
-                    {d.directoryName.split('\\').pop().split('/').pop()}
+                      {d.directoryName.split('\\').pop().split('/').pop()}
                   </List.Header>
                   <List.List>
                       {subtree(d.children, selectedDirectoryName, onSelect)}

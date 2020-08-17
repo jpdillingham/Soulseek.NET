@@ -34,7 +34,11 @@ class Browse extends Component {
 
     this.setState({ username , browseState: 'pending', browseError: undefined }, () => {
       api.get(`/user/${this.state.username}/browse`)
-        .then(response => this.setState({ tree: this.getDirectoryTree(response.data) }))
+        .then(response => {
+          let { directories, lockedDirectories } = response.data;
+          directories = directories.concat(lockedDirectories.map(d => ({ ...d, locked: true })));
+          this.setState({ tree: this.getDirectoryTree(directories) });
+        })
         .then(() => this.setState({ browseState: 'complete', browseError: undefined }, () => {
           this.saveState();
         }))
@@ -115,11 +119,11 @@ class Browse extends Component {
 
   render = () => {
     const { browseState, browseStatus, browseError, tree, selectedDirectory, username } = this.state;
+    const { directoryName, locked } = selectedDirectory;
     const pending = browseState === 'pending';
 
     const emptyTree = !(tree && tree.length > 0);
 
-    const directoryName = selectedDirectory.directoryName;
     const files = (selectedDirectory.files || []).map(f => ({ ...f, filename: `${directoryName}${this.sep(directoryName)}${f.filename}`}));
 
     return (
@@ -164,6 +168,7 @@ class Browse extends Component {
                     <Directory
                       marginTop={-20}
                       name={directoryName}
+                      locked={locked}
                       files={files}
                       username={username}
                     />

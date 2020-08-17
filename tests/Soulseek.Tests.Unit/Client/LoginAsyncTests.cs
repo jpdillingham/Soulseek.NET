@@ -145,6 +145,31 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync uses given CancellationToken"), AutoData]
+        public async Task LoginAsync_Uses_Given_CancellationToken(string user, string password)
+        {
+            var cancellationToken = new CancellationToken();
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                await s.LoginAsync(user, password, cancellationToken);
+
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
+                Assert.Equal(user, s.Username);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.AtLeastOnce);
+        }
+
+        [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync writes HaveNoParent on success if enabled"), AutoData]
         public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password)
         {
