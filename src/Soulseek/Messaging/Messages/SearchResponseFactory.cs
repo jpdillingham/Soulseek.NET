@@ -47,7 +47,17 @@ namespace Soulseek.Messaging.Messages
 
             var freeUploadSlots = reader.ReadByte();
             var uploadSpeed = reader.ReadInteger();
-            var queueLength = reader.ReadLong();
+
+            long queueLength;
+
+            if (reader.Remaining == 4)
+            {
+                queueLength = reader.ReadInteger();
+            }
+            else
+            {
+                queueLength = reader.ReadLong();
+            }
 
             IEnumerable<File> lockedFileList = Enumerable.Empty<File>();
 

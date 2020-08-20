@@ -62,6 +62,11 @@ namespace Soulseek.Messaging
         public bool HasMoreData => Position < Payload.Length;
 
         /// <summary>
+        ///     Gets the Message payload length.
+        /// </summary>
+        public int Length => Payload.Length;
+
+        /// <summary>
         ///     Gets the Message payload.
         /// </summary>
         public Memory<byte> Payload { get; private set; }
@@ -70,6 +75,11 @@ namespace Soulseek.Messaging
         ///     Gets the current position of the head of the reader.
         /// </summary>
         public int Position { get; private set; } = 0;
+
+        /// <summary>
+        ///     Gets the length of the remaining payload data.
+        /// </summary>
+        public int Remaining => Length - Position;
 
         private int CodeLength { get; }
         private bool Decompressed { get; set; } = false;
