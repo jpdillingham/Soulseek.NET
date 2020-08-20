@@ -82,8 +82,8 @@ namespace Soulseek.Tests.Unit.Messaging
             Assert.Equal(MessageCode.Peer.BrowseRequest, code);
             Assert.Equal(BitConverter.GetBytes(num), reader.Payload.ToArray());
             Assert.Equal(0, reader.Position);
-            Assert.Equal(num, reader.ReadInteger());
-            Assert.Equal(4, reader.Position);
+            Assert.Equal(4, reader.Length);
+            Assert.Equal(4, reader.Remaining);
         }
 
         [Trait("Category", "Instantiation")]
@@ -537,6 +537,54 @@ namespace Soulseek.Tests.Unit.Messaging
             reader.ReadInteger();
 
             Assert.False(reader.HasMoreData);
+        }
+
+        [Trait("Category", "Remaining")]
+        [Fact(DisplayName = "Remaining property returns remaining length to be read")]
+        public void Remaining_Property_Returns_Remaining_Length_To_Be_Read()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteInteger(1)
+                .WriteInteger(2)
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+            reader.ReadCode();
+
+            Assert.Equal(8, reader.Remaining);
+
+            reader.ReadInteger();
+
+            Assert.Equal(4, reader.Remaining);
+
+            reader.ReadInteger();
+
+            Assert.Equal(0, reader.Remaining);
+        }
+
+        [Trait("Category", "Position")]
+        [Fact(DisplayName = "Position property returns number of bytes read")]
+        public void Position_Property_Returns_Number_Of_Bytes_Read()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteInteger(1)
+                .WriteInteger(2)
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+            reader.ReadCode();
+
+            Assert.Equal(0, reader.Position);
+
+            reader.ReadInteger();
+
+            Assert.Equal(4, reader.Position);
+
+            reader.ReadInteger();
+
+            Assert.Equal(8, reader.Position);
         }
 
         [Trait("Category", "ReadCode")]
