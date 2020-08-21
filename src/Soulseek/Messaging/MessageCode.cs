@@ -588,6 +588,11 @@ namespace Soulseek.Messaging
             PublicChat = 152,
 
             /// <summary>
+            ///     153
+            /// </summary>
+            RelatedSearch = 153,
+
+            /// <summary>
             ///     1
             /// </summary>
             CannotConnect = 1001,
