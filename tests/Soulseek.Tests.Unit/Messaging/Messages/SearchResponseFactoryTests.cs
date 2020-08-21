@@ -152,6 +152,51 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse handles legacy responses with 4 byte queue length"), AutoData]
+        public void Parse_Handles_Legacy_Responses_With_4_Byte_Queue_Length(string username, int token, byte freeUploadSlots, int uploadSpeed, int queueLength)
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchResponse)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteInteger(1) // file count
+                .WriteByte(0x2) // code
+                .WriteString("filename") // filename
+                .WriteLong(3) // size
+                .WriteString("ext") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(freeUploadSlots)
+                .WriteInteger(uploadSpeed)
+                .WriteInteger(queueLength)
+                .Compress()
+                .Build();
+
+            var r = SearchResponseFactory.FromByteArray(msg);
+
+            Assert.Equal(username, r.Username);
+            Assert.Equal(token, r.Token);
+            Assert.Equal(1, r.FileCount);
+            Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
+            Assert.Equal(uploadSpeed, r.UploadSpeed);
+            Assert.Equal(queueLength, r.QueueLength);
+
+            Assert.Single(r.Files);
+
+            var file = r.Files.ToList()[0];
+
+            Assert.Equal(0x2, file.Code);
+            Assert.Equal("filename", file.Filename);
+            Assert.Equal(3, file.Size);
+            Assert.Equal("ext", file.Extension);
+            Assert.Equal(1, file.AttributeCount);
+            Assert.Single(file.Attributes);
+            Assert.Equal(FileAttributeType.BitDepth, file.Attributes.ToList()[0].Type);
+            Assert.Equal(4, file.Attributes.ToList()[0].Value);
+        }
+
+        [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse handles empty responses"), AutoData]
         public void Parse_Handles_Empty_Responses(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
