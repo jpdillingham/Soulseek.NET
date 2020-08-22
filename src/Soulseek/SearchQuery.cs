@@ -31,8 +31,8 @@ namespace Soulseek
         /// <param name="exclusions">The list of excluded terms.</param>
         public SearchQuery(IEnumerable<string> terms, IEnumerable<string> exclusions = null)
         {
-            TermList = terms;
-            ExclusionList = exclusions;
+            TermList = terms ?? Enumerable.Empty<string>();
+            ExclusionList = exclusions ?? Enumerable.Empty<string>();
         }
 
         /// <summary>
@@ -51,9 +51,7 @@ namespace Soulseek
         /// <param name="searchText">The full search text of the query.</param>
         public SearchQuery(string searchText)
         {
-            searchText ??= string.Empty;
-
-            IEnumerable<string> tokens = searchText.Split(' ');
+            IEnumerable<string> tokens = searchText?.Split(' ') ?? Enumerable.Empty<string>();
 
             var excludedTokens = tokens.Where(t => t.StartsWith("-", IgnoreCase));
             ExclusionList = excludedTokens.Select(t => t.TrimStart('-')).Distinct();
