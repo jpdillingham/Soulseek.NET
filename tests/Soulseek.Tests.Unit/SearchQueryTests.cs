@@ -21,33 +21,70 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given values"), AutoData]
-        public void Instantiates_With_Given_Values(string query, IEnumerable<string> exclusions, int? mbr, int? mfs, int? mfif, bool cbr, bool vbr)
+        public void Instantiates_With_Given_Values(string query, IEnumerable<string> exclusions)
         {
-            var s = new SearchQuery(query, exclusions, mbr, mfs, mfif, vbr, cbr);
+            var s = new SearchQuery(query, exclusions);
 
             Assert.Equal(query, s.Query);
             Assert.Equal(exclusions, s.Exclusions);
-            Assert.Equal(mbr, s.MinimumBitrate);
-            Assert.Equal(mfs, s.MinimumFileSize);
-            Assert.Equal(mfif, s.MinimumFilesInFolder);
-            Assert.Equal(cbr, s.IsCBR);
-            Assert.Equal(vbr, s.IsVBR);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with null searchText")]
+        public void Instantiates_With_Null_SearchText()
+        {
+            var s = new SearchQuery(null);
+
+            Assert.Empty(s.Terms);
+            Assert.Empty(s.Exclusions);
+            Assert.Equal(string.Empty, s.Query);
+            Assert.Equal(string.Empty, s.SearchText);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with null query and exclusions")]
+        public void Instantiates_With_Null_Query_And_Exclusions()
+        {
+            var s = new SearchQuery(query: null, exclusions: null);
+
+            Assert.Empty(s.Terms);
+            Assert.Empty(s.Exclusions);
+            Assert.Equal(string.Empty, s.Query);
+            Assert.Equal(string.Empty, s.SearchText);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with null terms and exclusions")]
+        public void Instantiates_With_Null_Terms_And_Exclusions()
+        {
+            var s = new SearchQuery(terms: null, exclusions: null);
+
+            Assert.Empty(s.Terms);
+            Assert.Empty(s.Exclusions);
+            Assert.Equal(string.Empty, s.Query);
+            Assert.Equal(string.Empty, s.SearchText);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Splits terms and exclusions")]
+        public void Splits_Terms_And_Exclusions()
+        {
+            var s = new SearchQuery("foo bar -baz -qux");
+
+            Assert.Equal("foo", s.Terms.ToList()[0]);
+            Assert.Equal("bar", s.Terms.ToList()[1]);
+            Assert.Equal("baz", s.Exclusions.ToList()[0]);
+            Assert.Equal("qux", s.Exclusions.ToList()[1]);
         }
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Constructs expected search text")]
-        [InlineData("foo", new[] { "bar", "baz" }, 1, 2, 3, true, true, "foo -bar -baz mbr:1 mfs:2 mfif:3 isvbr iscbr")]
-        [InlineData("foo", new string[0], 1, 2, 3, true, true, "foo mbr:1 mfs:2 mfif:3 isvbr iscbr")]
-        [InlineData("foo", new string[0], null, 2, 3, true, true, "foo mfs:2 mfif:3 isvbr iscbr")]
-        [InlineData("foo", new string[0], 1, null, 3, true, true, "foo mbr:1 mfif:3 isvbr iscbr")]
-        [InlineData("foo", new string[0], 1, 2, null, true, true, "foo mbr:1 mfs:2 isvbr iscbr")]
-        [InlineData("foo", new string[0], null, null, null, true, false, "foo isvbr")]
-        [InlineData("foo", new string[0], null, null, null, false, true, "foo iscbr")]
-        [InlineData("foo", new string[0], null, null, null, false, false, "foo")]
-        [InlineData("foo", new[] { "bar" }, null, null, null, false, false, "foo -bar")]
-        public void Constructs_Expected_Search_Text(string query, string[] exclusions, int? mbr, int? mfs, int? mfif, bool cbr, bool vbr, string expected)
+        [InlineData("foo", new[] { "bar", "baz" }, "foo -bar -baz")]
+        [InlineData("foo", new[] { "bar" }, "foo -bar")]
+        [InlineData("foo", null, "foo")]
+        public void Constructs_Expected_Search_Text(string query, string[] exclusions, string expected)
         {
-            var s = new SearchQuery(query, exclusions, mbr, mfs, mfif, cbr, vbr);
+            var s = new SearchQuery(query, exclusions);
 
             Assert.Equal(expected, s.SearchText);
         }
@@ -61,11 +98,6 @@ namespace Soulseek.Tests.Unit
             Assert.Equal("foo", s.Query);
             Assert.Equal("foo", s.SearchText);
             Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
         }
 
         [Trait("Category", "Instantiation")]
@@ -79,11 +111,6 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(2, s.Exclusions.Count);
             Assert.Equal("bar", s.Exclusions.ToList()[0]);
             Assert.Equal("baz", s.Exclusions.ToList()[1]);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
         }
 
         [Trait("Category", "Instantiation")]
@@ -93,15 +120,10 @@ namespace Soulseek.Tests.Unit
             var s = new SearchQuery("-bar foo -baz");
 
             Assert.Equal("foo", s.Query);
-            Assert.Equal("-bar foo -baz", s.SearchText);
+            Assert.Equal("foo -bar -baz", s.SearchText);
             Assert.Equal(2, s.Exclusions.Count);
             Assert.Equal("bar", s.Exclusions.ToList()[0]);
             Assert.Equal("baz", s.Exclusions.ToList()[1]);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
         }
 
         [Trait("Category", "Instantiation")]
@@ -111,170 +133,14 @@ namespace Soulseek.Tests.Unit
             var s = new SearchQuery("-bar foo -baz -baz -bar");
 
             Assert.Equal("foo", s.Query);
-            Assert.Equal("-bar foo -baz -baz -bar", s.SearchText);
+            Assert.Equal("foo -bar -baz", s.SearchText);
             Assert.Equal(2, s.Exclusions.Count);
             Assert.Equal("bar", s.Exclusions.ToList()[0]);
             Assert.Equal("baz", s.Exclusions.ToList()[1]);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Parses MinimumBitrate")]
-        [InlineData("foo minbitrate:5", "foo", 5)]
-        [InlineData("bar mbr:12", "bar", 12)]
-        [InlineData("baz mbr:111 qux", "baz qux", 111)]
-        [InlineData("mbr:99", "", 99)]
-        [InlineData("foo MBR:7", "foo", 7)]
-        public void Parses_MinimumBitrate(string rawQuery, string query, int value)
-        {
-            var s = new SearchQuery(rawQuery);
-
-            Assert.Equal(query, s.Query);
-            Assert.Equal(rawQuery, s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Equal(value, s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Discards MinimumBitrate when invalid")]
-        public void Discards_MinimumBitrate_When_Invalid()
-        {
-            var s = new SearchQuery("foo mbr:bar");
-
-            Assert.Equal("foo", s.Query);
-            Assert.Equal("foo mbr:bar", s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Parses MinimumFileSize")]
-        [InlineData("foo minfilesize:5", "foo", 5)]
-        [InlineData("bar mfs:12", "bar", 12)]
-        [InlineData("baz mfs:111 qux", "baz qux", 111)]
-        [InlineData("mfs:99", "", 99)]
-        [InlineData("foo MFS:7", "foo", 7)]
-        public void Parses_MinimumFileSize(string rawQuery, string query, int value)
-        {
-            var s = new SearchQuery(rawQuery);
-
-            Assert.Equal(query, s.Query);
-            Assert.Equal(rawQuery, s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Equal(value, s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Discards MinimumFileSize when invalid")]
-        public void Discards_MinimumFileSize_When_Invalid()
-        {
-            var s = new SearchQuery("foo mfs:bar");
-
-            Assert.Equal("foo", s.Query);
-            Assert.Equal("foo mfs:bar", s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Parses MinimumFilesInFolder")]
-        [InlineData("foo minfilesinfolder:5", "foo", 5)]
-        [InlineData("bar mfif:12", "bar", 12)]
-        [InlineData("baz mfif:111 qux", "baz qux", 111)]
-        [InlineData("mfif:99", "", 99)]
-        [InlineData("foo MFIF:7", "foo", 7)]
-        public void Parses_MinimumFilesInFolder(string rawQuery, string query, int value)
-        {
-            var s = new SearchQuery(rawQuery);
-
-            Assert.Equal(query, s.Query);
-            Assert.Equal(rawQuery, s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Equal(value, s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Discards MinimumFilesInFolder when invalid")]
-        public void Discards_MinimumFilesInFolder()
-        {
-            var s = new SearchQuery("foo mfif:bar");
-
-            Assert.Equal("foo", s.Query);
-            Assert.Equal("foo mfif:bar", s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Parses IsCBR")]
-        [InlineData("foo iscbr", "foo", true)]
-        [InlineData("foo", "foo", false)]
-        [InlineData("foo iscbr iscbr", "foo", true)]
-        [InlineData("iscbr foo", "foo", true)]
-        public void Parses_IsCBR(string rawQuery, string query, bool value)
-        {
-            var s = new SearchQuery(rawQuery);
-
-            Assert.Equal(query, s.Query);
-            Assert.Equal(rawQuery, s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.Equal(value, s.IsCBR);
-            Assert.False(s.IsVBR);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Parses IsVBR")]
-        [InlineData("foo isvbr", "foo", true)]
-        [InlineData("foo", "foo", false)]
-        [InlineData("foo isvbr isvbr", "foo", true)]
-        [InlineData("isvbr foo", "foo", true)]
-        public void Parses_IsVBR(string rawQuery, string query, bool value)
-        {
-            var s = new SearchQuery(rawQuery);
-
-            Assert.Equal(query, s.Query);
-            Assert.Equal(rawQuery, s.SearchText);
-            Assert.Empty(s.Exclusions);
-            Assert.Null(s.MinimumBitrate);
-            Assert.Null(s.MinimumFileSize);
-            Assert.Null(s.MinimumFilesInFolder);
-            Assert.False(s.IsCBR);
-            Assert.Equal(value, s.IsVBR);
         }
 
         [Trait("Category", "FromText")]
-        [Theory(DisplayName ="FromText returns new instance from given text"), AutoData]
+        [Theory(DisplayName = "FromText returns new instance from given text"), AutoData]
         public void FromText_Returns_New_Instance_From_Given_Text(string searchText)
         {
             var s = SearchQuery.FromText(searchText);
