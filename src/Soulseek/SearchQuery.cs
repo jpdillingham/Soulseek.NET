@@ -14,7 +14,6 @@ namespace Soulseek
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.Linq;
     using System.Text;
 
@@ -28,22 +27,22 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchQuery"/> class.
         /// </summary>
+        /// <param name="terms">The list of search terms.</param>
+        /// <param name="exclusions">The list of excluded terms.</param>
+        public SearchQuery(IEnumerable<string> terms, IEnumerable<string> exclusions = null)
+        {
+            TermList = terms ?? Enumerable.Empty<string>();
+            ExclusionList = exclusions ?? Enumerable.Empty<string>();
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchQuery"/> class.
+        /// </summary>
         /// <param name="query">The query text.</param>
         /// <param name="exclusions">The list of excluded terms.</param>
-        /// <param name="minimumBitrate">The minimum desired bitrate.</param>
-        /// <param name="minimumFileSize">The minimum desired file size.</param>
-        /// <param name="minimumFilesInFolder">The minimum desired number of files in the containing folder.</param>
-        /// <param name="isVBR">A value indicating whether to restrict the search to variable bit rate files.</param>
-        /// <param name="isCBR">A value indicating whehter to restrict the search to constant bit rate files.</param>
-        public SearchQuery(string query, IEnumerable<string> exclusions, int? minimumBitrate, int? minimumFileSize, int? minimumFilesInFolder, bool isVBR, bool isCBR)
+        public SearchQuery(string query, IEnumerable<string> exclusions)
+            : this(query?.Split(' '), exclusions)
         {
-            Query = query;
-            ExclusionList = exclusions;
-            MinimumBitrate = minimumBitrate;
-            MinimumFileSize = minimumFileSize;
-            MinimumFilesInFolder = minimumFilesInFolder;
-            IsVBR = isVBR;
-            IsCBR = isCBR;
         }
 
         /// <summary>
@@ -52,27 +51,12 @@ namespace Soulseek
         /// <param name="searchText">The full search text of the query.</param>
         public SearchQuery(string searchText)
         {
-            searchText = searchText ?? string.Empty;
-            RawSearchText = searchText;
-
-            IEnumerable<string> tokens = searchText.Split(' ').ToList();
+            IEnumerable<string> tokens = searchText?.Split(' ') ?? Enumerable.Empty<string>();
 
             var excludedTokens = tokens.Where(t => t.StartsWith("-", IgnoreCase));
-            tokens = tokens.Except(excludedTokens);
-
             ExclusionList = excludedTokens.Select(t => t.TrimStart('-')).Distinct();
 
-            var filters = new[] { "isvbr", "iscbr", "minbitrate:", "mbr:", "minfilesize:", "mfs:", "minfilesinfolder:", "mfif:" };
-
-            var filterTokens = tokens.Where(t =>
-                filters.Any(f => t.StartsWith(f, IgnoreCase)));
-
-            Query = string.Join(" ", tokens.Except(filterTokens));
-            MinimumBitrate = GetFilterValue(filterTokens, "minbitrate:", "mbr:");
-            MinimumFileSize = GetFilterValue(filterTokens, "minfilesize:", "mfs:");
-            MinimumFilesInFolder = GetFilterValue(filterTokens, "minfilesinfolder:", "mfif:");
-            IsVBR = filterTokens.Any(t => t.Equals("isvbr", IgnoreCase));
-            IsCBR = filterTokens.Any(t => t.Equals("iscbr", IgnoreCase));
+            TermList = tokens.Except(excludedTokens);
         }
 
         /// <summary>
@@ -81,42 +65,22 @@ namespace Soulseek
         public IReadOnlyCollection<string> Exclusions => ExclusionList.ToList().AsReadOnly();
 
         /// <summary>
-        ///     Gets a value indicating whether to restrict the search to constant bit rate files.
+        ///     Gets the query text, concatenated from <see cref="Terms"/>.
         /// </summary>
-        public bool IsCBR { get; }
+        public string Query => string.Join(" ", TermList);
 
         /// <summary>
-        ///     Gets a value indicating whether to restrict the search to variable bit rate files.
+        ///     Gets the full search text, including both <see cref="Terms"/> and <see cref="Exclusions"/>.
         /// </summary>
-        public bool IsVBR { get; }
+        public string SearchText => ToString();
 
         /// <summary>
-        ///     Gets the minimum desired bitrate.
+        ///     Gets the list of search terms.
         /// </summary>
-        public int? MinimumBitrate { get; }
-
-        /// <summary>
-        ///     Gets the minimum desired number of files in the containing folder.
-        /// </summary>
-        public int? MinimumFilesInFolder { get; }
-
-        /// <summary>
-        ///     Gets the minimum desired file size.
-        /// </summary>
-        public int? MinimumFileSize { get; }
-
-        /// <summary>
-        ///     Gets the query text.
-        /// </summary>
-        public string Query { get; }
-
-        /// <summary>
-        ///     Gets the full search text.
-        /// </summary>
-        public string SearchText => RawSearchText ?? ToString();
+        public IReadOnlyCollection<string> Terms => TermList.ToList().AsReadOnly();
 
         private IEnumerable<string> ExclusionList { get; }
-        private string RawSearchText { get; }
+        private IEnumerable<string> TermList { get; }
 
         /// <summary>
         ///     Returns a new instance of <see cref="SearchQuery"/> from the specified search text.
@@ -134,25 +98,8 @@ namespace Soulseek
             var builder = new StringBuilder();
             builder.Append(Query);
             builder.Append(Exclusions.Count > 0 ? " " + string.Join(" ", Exclusions.Select(e => $"-{e}")) : string.Empty);
-            builder.Append(MinimumBitrate.HasValue ? $" mbr:{MinimumBitrate.Value}" : string.Empty);
-            builder.Append(MinimumFileSize.HasValue ? $" mfs:{MinimumFileSize.Value}" : string.Empty);
-            builder.Append(MinimumFilesInFolder.HasValue ? $" mfif:{MinimumFilesInFolder.Value}" : string.Empty);
-            builder.Append(IsVBR ? " isvbr" : string.Empty);
-            builder.Append(IsCBR ? " iscbr" : string.Empty);
 
             return builder.ToString();
-        }
-
-        private int? GetFilterValue(IEnumerable<string> tokens, params string[] prefixes)
-        {
-            var firstToken = tokens.FirstOrDefault(token => prefixes.Any(prefix => token.StartsWith(prefix, IgnoreCase)));
-
-            if (firstToken != default && firstToken.Contains(":", IgnoreCase) && int.TryParse(firstToken.Split(':')[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
-            {
-                return value;
-            }
-
-            return null;
         }
     }
 }
