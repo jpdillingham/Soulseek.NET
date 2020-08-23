@@ -42,13 +42,13 @@ namespace Soulseek
         /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         public SearchOptions(
             int searchTimeout = 15000,
-            int responseLimit = 100,
+            int responseLimit = 250,
             bool filterResponses = true,
             int minimumResponseFileCount = 1,
             int minimumPeerFreeUploadSlots = 0,
-            int maximumPeerQueueLength = 1000000,
+            int maximumPeerQueueLength = int.MaxValue,
             int minimumPeerUploadSpeed = 0,
-            int fileLimit = 10000,
+            int fileLimit = 25000,
             Func<SearchResponse, bool> responseFilter = null,
             Func<File, bool> fileFilter = null,
             Action<SearchStateChangedEventArgs> stateChanged = null,
@@ -74,7 +74,7 @@ namespace Soulseek
         public Func<File, bool> FileFilter { get; }
 
         /// <summary>
-        ///     Gets the maximum number of file results to accept before the search is considered complete. (Default = 10,000).
+        ///     Gets the maximum number of file results to accept before the search is considered complete. (Default = 25,000).
         /// </summary>
         public int FileLimit { get; }
 
@@ -84,7 +84,7 @@ namespace Soulseek
         public bool FilterResponses { get; }
 
         /// <summary>
-        ///     Gets the maximum queue depth a peer may have in order for a response to be processed. (Default = 1000000).
+        ///     Gets the maximum queue depth a peer may have in order for a response to be processed. (Default = maximum integer value).
         /// </summary>
         public int MaximumPeerQueueLength { get; }
 
@@ -110,7 +110,7 @@ namespace Soulseek
         public Func<SearchResponse, bool> ResponseFilter { get; }
 
         /// <summary>
-        ///     Gets the maximum number of search results to accept before the search is considered complete. (Default = 100).
+        ///     Gets the maximum number of search results to accept before the search is considered complete. (Default = 250).
         /// </summary>
         public int ResponseLimit { get; }
 
