@@ -56,9 +56,11 @@
 
             var results = new ConcurrentBag<SearchResponse>();
 
+            var searchText = string.Join(' ', request.SearchText.Split(' ').Where(term => term.Length > 1));
+
             try
             {
-                await Client.SearchAsync(SearchQuery.FromText(request.SearchText), (r) => results.Add(r), SearchScope.Default, request.Token, options);
+                await Client.SearchAsync(SearchQuery.FromText(searchText), (r) => results.Add(r), SearchScope.Default, request.Token, options);
                 return Ok(results);
             }
             catch (Exception ex)
