@@ -107,7 +107,7 @@
 
                 if (e.Transfer.State == TransferStates.Queued || e.Transfer.State == TransferStates.Initializing)
                 {
-                    waitUntilEnqueue.SetResult(true);
+                    waitUntilEnqueue.TrySetResult(true);
                 }
             }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
 
