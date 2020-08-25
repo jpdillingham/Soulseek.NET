@@ -105,9 +105,9 @@
             {
                 Tracker.AddOrUpdate(e, cts);
 
-                if (e.Transfer.State == TransferStates.Queued)
+                if (e.Transfer.State == TransferStates.Queued || e.Transfer.State == TransferStates.Initializing)
                 {
-                    waitUntilEnqueue.SetResult(true);
+                    waitUntilEnqueue.TrySetResult(true);
                 }
             }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
 
@@ -117,9 +117,9 @@
                 // downloadTask throws due to an error prior to successfully queueing.
                 var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
 
-                if (task == downloadTask)
+                if (task == downloadTask && downloadTask.Exception is AggregateException)
                 {
-                    var rejected = downloadTask.Exception.InnerExceptions.Where(e => e is TransferRejectedException);
+                    var rejected = downloadTask.Exception?.InnerExceptions.Where(e => e is TransferRejectedException) ?? Enumerable.Empty<Exception>();
 
                     if (rejected.Any())
                     {
