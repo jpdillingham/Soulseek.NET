@@ -32,6 +32,7 @@
     {
         internal static string Username { get; set; }
         internal static string Password { get; set; }
+        internal static string BasePath { get; set; }
         internal static string WebRoot { get; set; }
         internal static int ListenPort { get; set; }
         internal static string OutputDirectory { get; set; }
@@ -57,7 +58,8 @@
 
             Username = Configuration.GetValue<string>("USERNAME");
             Password = Configuration.GetValue<string>("PASSWORD");
-            WebRoot = Configuration.GetValue<string>("WEBROOT");
+            BasePath = Configuration.GetValue<string>("BASE_PATH");
+            WebRoot = Configuration.GetValue<string>("WEB_ROOT");
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT", 50000);
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
@@ -158,6 +160,11 @@
             }
 
             app.UseCors("AllowAll");
+
+            BasePath = BasePath ?? "/";
+            BasePath = BasePath.StartsWith("/") ? BasePath : $"/{BasePath}";
+
+            app.UsePathBase(BasePath);
 
             WebRoot = WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
             Console.WriteLine($"Serving static content from {WebRoot}");
