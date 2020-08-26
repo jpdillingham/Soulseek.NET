@@ -169,6 +169,13 @@
             WebRoot = WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
             Console.WriteLine($"Serving static content from {WebRoot}");
 
+            app.Use(async (context, next) =>
+            {
+                Console.WriteLine(context.Request.Path);
+
+                await next();
+            });
+
             var fileServerOptions = new FileServerOptions
             {
                 FileProvider = new PhysicalFileProvider(WebRoot),
