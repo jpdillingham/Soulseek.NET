@@ -146,7 +146,7 @@ class App extends Component {
                         <Route path='*/browse' render={(props) => this.withSessionCheck(<Browse {...props}/>)}/>
                         <Route path='*/downloads' render={(props) => this.withSessionCheck(<Transfers {...props} direction='download'/>)}/>
                         <Route path='*/uploads' render={(props) => this.withSessionCheck(<Transfers {...props} direction='upload'/>)}/>
-                        <Route path='/' render={(props) => this.withSessionCheck(<Search {...props}/>)}/>
+                        <Route path='*/' render={(props) => this.withSessionCheck(<Search {...props}/>)}/>
                     </Switch>
                 </Sidebar.Pusher>
             </Sidebar.Pushable>
