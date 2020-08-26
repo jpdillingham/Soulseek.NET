@@ -32,6 +32,7 @@
     {
         internal static string Username { get; set; }
         internal static string Password { get; set; }
+        internal static string BasePath { get; set; }
         internal static string WebRoot { get; set; }
         internal static int ListenPort { get; set; }
         internal static string OutputDirectory { get; set; }
@@ -57,7 +58,8 @@
 
             Username = Configuration.GetValue<string>("USERNAME");
             Password = Configuration.GetValue<string>("PASSWORD");
-            WebRoot = Configuration.GetValue<string>("WEBROOT");
+            BasePath = Configuration.GetValue<string>("BASE_PATH");
+            WebRoot = Configuration.GetValue<string>("WEB_ROOT");
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT", 50000);
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
@@ -159,6 +161,18 @@
 
             app.UseCors("AllowAll");
 
+            BasePath = BasePath ?? "/";
+            BasePath = BasePath.StartsWith("/") ? BasePath : $"/{BasePath}";
+
+            app.UsePathBase(BasePath);
+
+            // remove any errant double forward slashes which may have been introduced
+            // by a reverse proxy or having the base path removed
+            app.Use(async (context, next) => {
+                context.Request.Path = context.Request.Path.ToString().Replace("//", "/");
+                await next();
+            });
+
             WebRoot = WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
             Console.WriteLine($"Serving static content from {WebRoot}");
 
@@ -180,8 +194,10 @@
                 .ForEach(description => options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName)));
 
             // if we made it this far and the route still wasn't matched, return the index
-            app.Use(async (context, next) => 
+            // this is required so that SPA routing (React Router, etc) can work properly
+            app.Use(async (context, next) =>
             {
+                // exclude API routes which are not matched or return a 404
                 if (!context.Request.Path.StartsWithSegments("/api"))
                 {
                     context.Request.Path = "/";
@@ -339,7 +355,7 @@
             filename = filename.ToLocalOSPath();
             var fileInfo = new FileInfo(filename);
 
-            if (!fileInfo.Exists) 
+            if (!fileInfo.Exists)
             {
                 Console.WriteLine($"[UPLOAD REJECTED] File {filename} not found.");
                 throw new DownloadEnqueueException($"File not found.");
@@ -365,8 +381,8 @@
                 {
                     await Client.UploadAsync(username, fileInfo.FullName, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
                 }
-            }).ContinueWith(t => 
-            { 
+            }).ContinueWith(t =>
+            {
                 Console.WriteLine($"[UPLOAD FAILED] {t.Exception}");
             }, TaskContinuationOptions.NotOnRanToCompletion); // fire and forget
 
@@ -420,7 +436,7 @@
 
         class IPAddressConverter : JsonConverter<IPAddress>
         {
-            public override bool CanConvert(Type objectType) =>(objectType == typeof(IPAddress));
+            public override bool CanConvert(Type objectType) => (objectType == typeof(IPAddress));
 
             public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => IPAddress.Parse(reader.GetString());
 

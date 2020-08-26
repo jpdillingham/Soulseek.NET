@@ -13,7 +13,7 @@ import {
 } from 'semantic-ui-react';
 
 const buildTree = (response) => {
-    let { files, lockedFiles } = response;
+    let { files = [], lockedFiles = [] } = response;
     files = files.concat(lockedFiles.map(file => ({ ...file, locked: true })));
 
     return files.reduce((dict, file) => {
@@ -39,7 +39,7 @@ class Response extends Component {
 
     download = (username, files) => {
         this.setState({ downloadRequest: 'inProgress' }, () => {
-            Promise.all(files.map(f => this.downloadOne(username, f)))
+            Promise.all((files || []).map(f => this.downloadOne(username, f)))
             .then(() => this.setState({ downloadRequest: 'complete' }))
             .catch(err => this.setState({ downloadRequest: 'error', downloadError: err.response }))
         });
@@ -68,7 +68,7 @@ class Response extends Component {
                     <Card.Meta className='result-meta'>
                         <span>Upload Speed: {formatBytes(response.uploadSpeed)}/s, Free Upload Slot: {free ? 'YES' : 'NO'}, Queue Length: {response.queueLength}</span>
                     </Card.Meta>
-                    {Object.keys(tree).map((dir, i) => 
+                    {(Object.keys(tree) || []).map((dir, i) => 
                         <FileList 
                             key={i}
                             directoryName={dir}

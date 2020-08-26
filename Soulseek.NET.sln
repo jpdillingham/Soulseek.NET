@@ -24,7 +24,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console", "examples\Console
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{34124378-23C1-449B-9E5E-C8F26BA2BFFE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{725D726B-7422-47F6-A7D1-02BC411DA743}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bin", "bin", "{725D726B-7422-47F6-A7D1-02BC411DA743}"
 	ProjectSection(SolutionItems) = preProject
 		bin\build = bin\build
 		bin\ci = bin\ci

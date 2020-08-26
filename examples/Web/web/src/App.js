@@ -108,22 +108,22 @@ class App extends Component {
                     direction='top' 
                     visible width='thin'
                 >
-                    <Link to='/'>
+                    <Link to='.'>
                         <Menu.Item>
                             <Icon name='search'/>Search
                         </Menu.Item>
                     </Link>
-                    <Link to='/browse'>
+                    <Link to='browse'>
                         <Menu.Item>
                             <Icon name='folder open'/>Browse
                         </Menu.Item>
                     </Link>
-                    <Link to='/downloads'>
+                    <Link to='downloads'>
                         <Menu.Item>
                             <Icon name='download'/>Downloads
                         </Menu.Item>
                     </Link>
-                    <Link to='/uploads'>
+                    <Link to='uploads'>
                         <Menu.Item>
                             <Icon name='upload'/>Uploads
                         </Menu.Item>
@@ -143,10 +143,10 @@ class App extends Component {
                 </Sidebar>
                 <Sidebar.Pusher className='app-content'>
                     <Switch>
-                        <Route exact path='/' render={(props) => this.withSessionCheck(<Search {...props}/>)}/>
-                        <Route path='/browse/' render={(props) => this.withSessionCheck(<Browse {...props}/>)}/>
-                        <Route path='/downloads/' render={(props) => this.withSessionCheck(<Transfers {...props} direction='download'/>)}/>
-                        <Route path='/uploads/' render={(props) => this.withSessionCheck(<Transfers {...props} direction='upload'/>)}/>
+                        <Route path='*/browse' render={(props) => this.withSessionCheck(<Browse {...props}/>)}/>
+                        <Route path='*/downloads' render={(props) => this.withSessionCheck(<Transfers {...props} direction='download'/>)}/>
+                        <Route path='*/uploads' render={(props) => this.withSessionCheck(<Transfers {...props} direction='upload'/>)}/>
+                        <Route path='*/' render={(props) => this.withSessionCheck(<Search {...props}/>)}/>
                     </Switch>
                 </Sidebar.Pusher>
             </Sidebar.Pushable>
