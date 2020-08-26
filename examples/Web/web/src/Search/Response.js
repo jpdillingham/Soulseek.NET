@@ -13,8 +13,8 @@ import {
 } from 'semantic-ui-react';
 
 const buildTree = (response) => {
-    let { files, lockedFiles } = response;
-    files = files.concat((lockedFiles || []).map(file => ({ ...file, locked: true })));
+    let { files = [], lockedFiles = [] } = response;
+    files = files.concat(lockedFiles.map(file => ({ ...file, locked: true })));
 
     return files.reduce((dict, file) => {
         let dir = getDirectoryName(file.filename);
