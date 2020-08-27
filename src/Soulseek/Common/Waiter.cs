@@ -147,8 +147,8 @@ namespace Soulseek
         /// <returns>A Task representing the wait.</returns>
         public Task<T> Wait<T>(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null)
         {
-            timeout = timeout ?? DefaultTimeout;
-            cancellationToken = cancellationToken ?? CancellationToken.None;
+            timeout ??= DefaultTimeout;
+            cancellationToken ??= CancellationToken.None;
 
             var taskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
 

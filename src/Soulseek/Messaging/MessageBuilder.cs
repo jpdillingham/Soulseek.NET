@@ -198,7 +198,7 @@ namespace Soulseek.Messaging
 
         private void Compress(byte[] inData, out byte[] outData)
         {
-            void CopyStream(Stream input, Stream output)
+            static void CopyStream(Stream input, Stream output)
             {
                 byte[] buffer = new byte[2000];
                 int len;
@@ -213,14 +213,13 @@ namespace Soulseek.Messaging
 
             try
             {
-                using (MemoryStream outMemoryStream = new MemoryStream())
-                using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
-                using (Stream inMemoryStream = new MemoryStream(inData))
-                {
-                    CopyStream(inMemoryStream, outZStream);
-                    outZStream.finish();
-                    outData = outMemoryStream.ToArray();
-                }
+                using MemoryStream outMemoryStream = new MemoryStream();
+                using ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION);
+                using Stream inMemoryStream = new MemoryStream(inData);
+
+                CopyStream(inMemoryStream, outZStream);
+                outZStream.finish();
+                outData = outMemoryStream.ToArray();
             }
             catch (Exception ex)
             {

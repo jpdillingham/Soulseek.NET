@@ -100,19 +100,17 @@ namespace Soulseek
         [SuppressMessage("Microsoft.NetCore.CSharp.Analyzers", "CA5351", Justification = "Required by the Soulseek protocol.")]
         public static string ToMD5Hash(this string str)
         {
-            using (MD5 md5Hash = MD5.Create())
+            using MD5 md5Hash = MD5.Create();
+            byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(str));
+
+            StringBuilder sBuilder = new StringBuilder();
+
+            for (int i = 0; i < data.Length; i++)
             {
-                byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(str));
-
-                StringBuilder sBuilder = new StringBuilder();
-
-                for (int i = 0; i < data.Length; i++)
-                {
-                    sBuilder.Append(data[i].ToString("x2", CultureInfo.InvariantCulture));
-                }
-
-                return sBuilder.ToString();
+                sBuilder.Append(data[i].ToString("x2", CultureInfo.InvariantCulture));
             }
+
+            return sBuilder.ToString();
         }
     }
 }

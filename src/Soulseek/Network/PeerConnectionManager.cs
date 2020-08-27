@@ -46,7 +46,7 @@ namespace Soulseek.Network
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
-                new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+                new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         /// <summary>
@@ -208,51 +208,50 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the established connection.</returns>
         public async Task<IConnection> AwaitTransferConnectionAsync(string username, string filename, int remoteToken, CancellationToken cancellationToken)
         {
-            using (var directCts = new CancellationTokenSource())
-            using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
-            using (var indirectCts = new CancellationTokenSource())
-            using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
+            using var directCts = new CancellationTokenSource();
+            using var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
+            using var indirectCts = new CancellationTokenSource();
+            using var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
+
+            Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {remoteToken} for {filename}");
+
+            // completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
+            var indirect = SoulseekClient.Waiter.Wait<IConnection>(
+                key: new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, remoteToken),
+                timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
+                cancellationToken: indirectLinkedCts.Token);
+
+            // completed in AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
+            var direct = SoulseekClient.Waiter.Wait<IConnection>(
+                key: new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken),
+                timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
+                cancellationToken: directLinkedCts.Token);
+
+            var tasks = new[] { direct, indirect }.ToList();
+            Task<IConnection> task;
+
+            do
             {
-                Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {remoteToken} for {filename}");
-
-                // completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
-                var indirect = SoulseekClient.Waiter.Wait<IConnection>(
-                    key: new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, remoteToken),
-                    timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
-                    cancellationToken: indirectLinkedCts.Token);
-
-                // completed in AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
-                var direct = SoulseekClient.Waiter.Wait<IConnection>(
-                    key: new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken),
-                    timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
-                    cancellationToken: directLinkedCts.Token);
-
-                var tasks = new[] { direct, indirect }.ToList();
-                Task<IConnection> task;
-
-                do
-                {
-                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
-                    tasks.Remove(task);
-                }
-                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-
-                if (task.Status != TaskStatus.RanToCompletion)
-                {
-                    var msg = $"Failed to establish a direct or indirect transfer connection to {username} with remote token {remoteToken} for {filename}";
-                    Diagnostic.Debug(msg);
-                    throw new ConnectionException(msg);
-                }
-
-                var connection = await task.ConfigureAwait(false);
-                var isDirect = task == direct;
-
-                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({connection.IPEndPoint}) with remote token {remoteToken} for {filename} established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
-                (isDirect ? indirectCts : directCts).Cancel();
-
-                Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) with remote token {remoteToken} for {filename} established. (type: {connection.Type}, id: {connection.Id})");
-                return connection;
+                task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                tasks.Remove(task);
             }
+            while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+
+            if (task.Status != TaskStatus.RanToCompletion)
+            {
+                var msg = $"Failed to establish a direct or indirect transfer connection to {username} with remote token {remoteToken} for {filename}";
+                Diagnostic.Debug(msg);
+                throw new ConnectionException(msg);
+            }
+
+            var connection = await task.ConfigureAwait(false);
+            var isDirect = task == direct;
+
+            Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({connection.IPEndPoint}) with remote token {remoteToken} for {filename} established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
+            (isDirect ? indirectCts : directCts).Cancel();
+
+            Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) with remote token {remoteToken} for {filename} established. (type: {connection.Type}, id: {connection.Id})");
+            return connection;
         }
 
         /// <summary>
@@ -384,64 +383,63 @@ namespace Soulseek.Network
             {
                 cached = false;
 
-                using (var directCts = new CancellationTokenSource())
-                using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
-                using (var indirectCts = new CancellationTokenSource())
-                using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
+                using var directCts = new CancellationTokenSource();
+                using var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
+                using var indirectCts = new CancellationTokenSource();
+                using var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
+
+                Diagnostic.Debug($"Attempting simultaneous direct and indirect message connections to {username} ({ipEndPoint})");
+
+                var direct = GetMessageConnectionOutboundDirectAsync(username, ipEndPoint, directLinkedCts.Token);
+                var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
+
+                var tasks = new[] { direct, indirect }.ToList();
+                Task<IMessageConnection> task;
+
+                do
                 {
-                    Diagnostic.Debug($"Attempting simultaneous direct and indirect message connections to {username} ({ipEndPoint})");
-
-                    var direct = GetMessageConnectionOutboundDirectAsync(username, ipEndPoint, directLinkedCts.Token);
-                    var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
-
-                    var tasks = new[] { direct, indirect }.ToList();
-                    Task<IMessageConnection> task;
-
-                    do
-                    {
-                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
-                        tasks.Remove(task);
-                    }
-                    while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-
-                    if (task.Status != TaskStatus.RanToCompletion)
-                    {
-                        var msg = $"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})";
-                        Diagnostic.Debug(msg);
-                        throw new ConnectionException(msg);
-                    }
-
-                    var connection = await task.ConfigureAwait(false);
-                    connection.Disconnected += MessageConnection_Disconnected;
-
-                    var isDirect = task == direct;
-
-                    Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
-                    (isDirect ? indirectCts : directCts).Cancel();
-
-                    try
-                    {
-                        if (isDirect)
-                        {
-                            var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
-                            await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            connection.StartReadingContinuously();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = $"Failed to negotiate message connection to {username} ({ipEndPoint}): {ex.Message}";
-                        Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
-                        connection.Dispose();
-                        throw new ConnectionException(msg, ex);
-                    }
-
-                    Diagnostic.Debug($"Message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-                    return connection;
+                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                    tasks.Remove(task);
                 }
+                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+
+                if (task.Status != TaskStatus.RanToCompletion)
+                {
+                    var msg = $"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})";
+                    Diagnostic.Debug(msg);
+                    throw new ConnectionException(msg);
+                }
+
+                var connection = await task.ConfigureAwait(false);
+                connection.Disconnected += MessageConnection_Disconnected;
+
+                var isDirect = task == direct;
+
+                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
+                (isDirect ? indirectCts : directCts).Cancel();
+
+                try
+                {
+                    if (isDirect)
+                    {
+                        var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
+                        await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        connection.StartReadingContinuously();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var msg = $"Failed to negotiate message connection to {username} ({ipEndPoint}): {ex.Message}";
+                    Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
+                    connection.Dispose();
+                    throw new ConnectionException(msg, ex);
+                }
+
+                Diagnostic.Debug($"Message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                return connection;
             }
         }
 
@@ -497,60 +495,59 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new connection.</returns>
         public async Task<IConnection> GetTransferConnectionAsync(string username, IPEndPoint ipEndPoint, int token, CancellationToken cancellationToken)
         {
-            using (var directCts = new CancellationTokenSource())
-            using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
-            using (var indirectCts = new CancellationTokenSource())
-            using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
+            using var directCts = new CancellationTokenSource();
+            using var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
+            using var indirectCts = new CancellationTokenSource();
+            using var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
+
+            Diagnostic.Debug($"Attempting simultaneous direct and indirect transfer connections to {username} ({ipEndPoint})");
+
+            var direct = GetTransferConnectionOutboundDirectAsync(ipEndPoint, token, directLinkedCts.Token);
+            var indirect = GetTransferConnectionOutboundIndirectAsync(username, token, indirectLinkedCts.Token);
+
+            var tasks = new[] { direct, indirect }.ToList();
+            Task<IConnection> task;
+
+            do
             {
-                Diagnostic.Debug($"Attempting simultaneous direct and indirect transfer connections to {username} ({ipEndPoint})");
-
-                var direct = GetTransferConnectionOutboundDirectAsync(ipEndPoint, token, directLinkedCts.Token);
-                var indirect = GetTransferConnectionOutboundIndirectAsync(username, token, indirectLinkedCts.Token);
-
-                var tasks = new[] { direct, indirect }.ToList();
-                Task<IConnection> task;
-
-                do
-                {
-                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
-                    tasks.Remove(task);
-                }
-                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-
-                if (task.Status != TaskStatus.RanToCompletion)
-                {
-                    var msg = $"Failed to establish a direct or indirect transfer connection to {username} ({ipEndPoint})";
-                    Diagnostic.Debug(msg);
-                    throw new ConnectionException(msg);
-                }
-
-                var connection = await task.ConfigureAwait(false);
-                var isDirect = task == direct;
-
-                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
-                (isDirect ? indirectCts : directCts).Cancel();
-
-                try
-                {
-                    if (isDirect)
-                    {
-                        var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Transfer, token).ToByteArray();
-                        await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    var msg = $"Failed to negotiate transfer connection to {username} ({ipEndPoint}): {ex.Message}";
-                    Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
-                    connection.Dispose();
-                    throw new ConnectionException(msg, ex);
-                }
-
-                Diagnostic.Debug($"Transfer connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-                return connection;
+                task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                tasks.Remove(task);
             }
+            while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+
+            if (task.Status != TaskStatus.RanToCompletion)
+            {
+                var msg = $"Failed to establish a direct or indirect transfer connection to {username} ({ipEndPoint})";
+                Diagnostic.Debug(msg);
+                throw new ConnectionException(msg);
+            }
+
+            var connection = await task.ConfigureAwait(false);
+            var isDirect = task == direct;
+
+            Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
+            (isDirect ? indirectCts : directCts).Cancel();
+
+            try
+            {
+                if (isDirect)
+                {
+                    var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Transfer, token).ToByteArray();
+                    await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                }
+
+                await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                var msg = $"Failed to negotiate transfer connection to {username} ({ipEndPoint}): {ex.Message}";
+                Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
+                connection.Dispose();
+                throw new ConnectionException(msg, ex);
+            }
+
+            Diagnostic.Debug($"Transfer connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+            return connection;
         }
 
         /// <summary>
@@ -624,25 +621,24 @@ namespace Soulseek.Network
                     .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Peer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
-                using (var incomingConnection = await SoulseekClient.Waiter
+                using var incomingConnection = await SoulseekClient.Waiter
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), SoulseekClient.Options.PeerConnectionOptions.ConnectTimeout, cancellationToken)
-                    .ConfigureAwait(false))
-                {
-                    var connection = ConnectionFactory.GetMessageConnection(
-                        username,
-                        incomingConnection.IPEndPoint,
-                        SoulseekClient.Options.PeerConnectionOptions,
-                        incomingConnection.HandoffTcpClient());
+                    .ConfigureAwait(false);
 
-                    Diagnostic.Debug($"Indirect message connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+                var connection = ConnectionFactory.GetMessageConnection(
+                    username,
+                    incomingConnection.IPEndPoint,
+                    SoulseekClient.Options.PeerConnectionOptions,
+                    incomingConnection.HandoffTcpClient());
 
-                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
-                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
-                    connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
+                Diagnostic.Debug($"Indirect message connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
-                    Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-                    return connection;
-                }
+                connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
+                connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
+
+                Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                return connection;
             }
             catch (Exception ex)
             {
@@ -693,23 +689,22 @@ namespace Soulseek.Network
                     .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Transfer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
-                using (var incomingConnection = await SoulseekClient.Waiter
+                using var incomingConnection = await SoulseekClient.Waiter
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout, cancellationToken)
-                    .ConfigureAwait(false))
-                {
-                    var connection = ConnectionFactory.GetTransferConnection(
-                        incomingConnection.IPEndPoint,
-                        SoulseekClient.Options.TransferConnectionOptions,
-                        incomingConnection.HandoffTcpClient());
+                    .ConfigureAwait(false);
 
-                    Diagnostic.Debug($"Indirect transfer connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+                var connection = ConnectionFactory.GetTransferConnection(
+                    incomingConnection.IPEndPoint,
+                    SoulseekClient.Options.TransferConnectionOptions,
+                    incomingConnection.HandoffTcpClient());
 
-                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
-                    connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
+                Diagnostic.Debug($"Indirect transfer connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
-                    Diagnostic.Debug($"Indirect transfer connection for {token} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-                    return connection;
-                }
+                connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
+                connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
+
+                Diagnostic.Debug($"Indirect transfer connection for {token} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                return connection;
             }
             catch (Exception ex)
             {

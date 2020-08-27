@@ -41,6 +41,14 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
+        public SoulseekClient()
+            : this(options: new SoulseekClientOptions())
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
         /// <param name="options">The client options.</param>
         public SoulseekClient(SoulseekClientOptions options)
             : this(options, serverConnection: null)
@@ -83,7 +91,7 @@ namespace Soulseek
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
-            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -413,7 +421,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to browse (currently: {State})");
             }
 
-            options = options ?? new BrowseOptions();
+            options ??= new BrowseOptions();
 
             return BrowseInternalAsync(username, options, cancellationToken ?? CancellationToken.None);
         }
@@ -817,7 +825,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to fetch directory contents (currently: {State})");
             }
 
-            token = token ?? GetNextToken();
+            token ??= GetNextToken();
 
             return GetDirectoryContentsInternalAsync(username, directoryName, token.Value, cancellationToken ?? CancellationToken.None);
         }
@@ -1277,15 +1285,15 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
             }
 
-            token = token ?? TokenFactory.NextToken();
+            token ??= TokenFactory.NextToken();
 
             if (Searches.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope = scope ?? new SearchScope();
-            options = options ?? new SearchOptions();
+            scope ??= new SearchScope();
+            options ??= new SearchOptions();
 
             return SearchToCollectionAsync(query.SearchText, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
@@ -1335,15 +1343,15 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
             }
 
-            token = token ?? TokenFactory.NextToken();
+            token ??= TokenFactory.NextToken();
 
             if (Searches.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope = scope ?? new SearchScope();
-            options = options ?? new SearchOptions();
+            scope ??= new SearchScope();
+            options ??= new SearchOptions();
 
             return SearchToCallbackAsync(query.SearchText, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
@@ -1533,7 +1541,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to upload files (currently: {State})");
             }
 
-            token = token ?? GetNextToken();
+            token ??= GetNextToken();
 
             if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
             {
@@ -1545,7 +1553,7 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued upload of {filename} to {username} is already in progress");
             }
 
-            options = options ?? new TransferOptions();
+            options ??= new TransferOptions();
 
             return UploadFromByteArrayAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
@@ -1613,7 +1621,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to upload files (currently: {State})");
             }
 
-            token = token ?? GetNextToken();
+            token ??= GetNextToken();
 
             if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
             {
@@ -1625,7 +1633,7 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued upload of {filename} to {username} is already in progress");
             }
 
-            options = options ?? new TransferOptions();
+            options ??= new TransferOptions();
 
             return UploadFromStreamAsync(username, filename, length, inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
@@ -2535,10 +2543,8 @@ namespace Soulseek
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
-            using (var memoryStream = new MemoryStream(data))
-            {
-                await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
-            }
+            using var memoryStream = new MemoryStream(data);
+            await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task UploadFromStreamAsync(string username, string filename, long length, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
