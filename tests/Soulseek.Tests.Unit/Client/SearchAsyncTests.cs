@@ -109,22 +109,6 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
-        [Fact(DisplayName = "SearchAsync throws ArgumentException given empty searchText")]
-        public async Task SearchAsync_Throws_ArgumentException_Given_Empty_SearchText()
-        {
-            using (var s = new SoulseekClient())
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(null, token: 0));
-
-                Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
-                Assert.Equal("query", ((ArgumentException)ex).ParamName);
-            }
-        }
-
-        [Trait("Category", "SearchAsync")]
         [Fact(DisplayName = "SearchAsync throws ArgumentNullException given null query")]
         public async Task SearchAsync_Throws_ArgumentNullException_Given_Null_Query()
         {
