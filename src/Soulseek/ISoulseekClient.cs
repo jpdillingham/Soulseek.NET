@@ -328,8 +328,8 @@ namespace Soulseek
         ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
@@ -363,8 +363,8 @@ namespace Soulseek
         ///     to the specified <paramref name="outputStream"/>.
         /// </summary>
         /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>

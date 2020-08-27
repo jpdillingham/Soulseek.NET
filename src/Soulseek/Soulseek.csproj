@@ -28,7 +28,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.0-rc2.1</Version>
+    <Version>1.0.0-rc2.3</Version>
     <Authors>JP Dillingham</Authors>
     <Product>Soulseek.NET</Product>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
@@ -42,6 +42,7 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

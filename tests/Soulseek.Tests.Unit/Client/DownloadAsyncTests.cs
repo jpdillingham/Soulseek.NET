@@ -471,7 +471,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream));
+                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream));
             }
 
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None), Times.Once);
@@ -489,7 +489,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream, cancellationToken: cancellationToken));
+                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream, cancellationToken: cancellationToken));
             }
 
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
@@ -505,7 +505,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename));
+                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename));
             }
 
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None), Times.Once);
@@ -522,7 +522,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var _ = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, cancellationToken: cancellationToken));
+                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, cancellationToken: cancellationToken));
             }
 
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);

@@ -30,7 +30,7 @@ namespace Soulseek
         {
             Type = type;
 
-            subjects = subjects ?? Array.Empty<string>();
+            subjects ??= Array.Empty<string>();
 
             if (Type == SearchScopeType.Default && subjects.Length > 0)
             {

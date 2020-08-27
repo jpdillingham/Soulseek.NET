@@ -197,7 +197,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
 
-            cancellationToken = cancellationToken ?? CancellationToken.None;
+            cancellationToken ??= CancellationToken.None;
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
             // that ends when the result is set programmatically. create another for cancellation via the externally provided token.
@@ -265,7 +265,7 @@ namespace Soulseek.Network.Tcp
         {
             if (State != ConnectionState.Disconnected && State != ConnectionState.Disconnecting)
             {
-                message = message ?? exception?.Message;
+                message ??= exception?.Message;
 
                 ChangeState(ConnectionState.Disconnecting, message);
 
@@ -540,11 +540,10 @@ namespace Soulseek.Network.Tcp
 
         private async Task<byte[]> ReadInternalAsync(long length, CancellationToken cancellationToken)
         {
-            using (var stream = new MemoryStream())
-            {
-                await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
-                return stream.ToArray();
-            }
+            using var stream = new MemoryStream();
+
+            await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
+            return stream.ToArray();
         }
 
         private async Task ReadInternalAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
@@ -603,10 +602,9 @@ namespace Soulseek.Network.Tcp
 
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
-            using (var stream = new MemoryStream(bytes))
-            {
-                await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
-            }
+            using var stream = new MemoryStream(bytes);
+
+            await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task WriteInternalAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)

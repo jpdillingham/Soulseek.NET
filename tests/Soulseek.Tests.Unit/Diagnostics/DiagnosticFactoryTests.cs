@@ -21,11 +21,10 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(object source, DiagnosticLevel level, Action<DiagnosticEventArgs> handler)
+        public void Instantiates_With_The_Given_Data(DiagnosticLevel level, Action<DiagnosticEventArgs> handler)
         {
-            var d = new DiagnosticFactory(source, level, handler);
+            var d = new DiagnosticFactory(level, handler);
 
-            Assert.Equal(source, d.GetProperty<object>("Source"));
             Assert.Equal(level, d.GetProperty<DiagnosticLevel>("MinimumLevel"));
             Assert.Equal(handler, d.GetProperty<Action<DiagnosticEventArgs>>("EventHandler"));
         }
@@ -36,7 +35,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.Debug, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.Debug, (args) =>
             {
                 e = args;
             });
@@ -55,7 +54,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.Debug, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.Debug, (args) =>
             {
                 e = args;
             });
@@ -75,7 +74,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.Info, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.Info, (args) =>
             {
                 e = args;
             });
@@ -91,7 +90,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.Info, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.Info, (args) =>
             {
                 e = args;
             });
@@ -110,7 +109,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.Warning, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.Warning, (args) =>
             {
                 e = args;
             });
@@ -126,7 +125,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.Warning, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.Warning, (args) =>
             {
                 e = args;
             });
@@ -145,7 +144,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.None, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.None, (args) =>
             {
                 e = args;
             });
@@ -161,7 +160,7 @@ namespace Soulseek.Tests.Unit
         {
             DiagnosticEventArgs e = null;
 
-            var d = new DiagnosticFactory(this, DiagnosticLevel.None, (args) =>
+            var d = new DiagnosticFactory(DiagnosticLevel.None, (args) =>
             {
                 e = args;
             });

@@ -915,8 +915,6 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
             {
-                GlobalMessageReceivedEventArgs args = default;
-
                 var ex = Record.Exception(() => handlerMock.Raise(m => m.GlobalMessageReceived += null, new GlobalMessageReceivedEventArgs(msg)));
 
                 Assert.Null(ex);
@@ -1320,7 +1318,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "RoomJoined fires when handler raises"), AutoData]
-        public void RoomJoined_Fires_When_Handler_Raises(string roomName, string username, string message, UserData userData)
+        public void RoomJoined_Fires_When_Handler_Raises(string roomName, string username, UserData userData)
         {
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomJoinedEventArgs(roomName, username, userData);
@@ -1353,7 +1351,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "RoomLeft fires when handler raises"), AutoData]
-        public void RoomLeft_Fires_When_Handler_Raises(string roomName, string username, string message)
+        public void RoomLeft_Fires_When_Handler_Raises(string roomName, string username)
         {
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomLeftEventArgs(roomName, username);

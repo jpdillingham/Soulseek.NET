@@ -24,7 +24,7 @@ namespace Soulseek.Tests.Unit
             var type = target.GetType();
             var field = type.GetField(fieldName, Flags);
 
-            if (field == default(FieldInfo))
+            if (field == default)
             {
                 throw new ArgumentException($"No such field '{fieldName}' exists on target Type {type.Name}.", nameof(fieldName));
             }
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit
             var type = target.GetType();
             var property = type.GetProperty(propertyName, Flags);
 
-            if (property == default(PropertyInfo))
+            if (property == default)
             {
                 throw new ArgumentException($"No such property '{propertyName}' exists on target Type {type.Name}.", nameof(propertyName));
             }
@@ -56,20 +56,6 @@ namespace Soulseek.Tests.Unit
             catch (Exception ex)
             {
                 throw new Exception($"Failed to get property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
-            }
-        }
-
-        public static void InvokeMethod(this object target, string methodName, BindingFlags bindingFlags, params object[] args)
-        {
-            var type = target.GetType();
-
-            try
-            {
-                GetMethod(type, methodName, bindingFlags).Invoke(target, args);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to invoke method '{methodName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
@@ -114,6 +100,20 @@ namespace Soulseek.Tests.Unit
             catch (Exception ex)
             {
                 throw new Exception($"Failed to invoke method '{methodName}<{typeof(TArg).Name}>' on target Type {type.Name}.  See inner Exception for details.", ex);
+            }
+        }
+
+        public static void InvokeMethod(this object target, string methodName, BindingFlags bindingFlags, params object[] args)
+        {
+            var type = target.GetType();
+
+            try
+            {
+                GetMethod(type, methodName, bindingFlags).Invoke(target, args);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to invoke method '{methodName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
@@ -174,7 +174,7 @@ namespace Soulseek.Tests.Unit
             var type = target.GetType();
             var field = type.GetField(fieldName, Flags);
 
-            if (field == default(FieldInfo))
+            if (field == default)
             {
                 throw new ArgumentException($"No such field '{fieldName}' exists on target Type {type.Name}.", nameof(fieldName));
             }
@@ -194,7 +194,7 @@ namespace Soulseek.Tests.Unit
             var type = target.GetType();
             var property = type.GetProperty(propertyName, Flags);
 
-            if (property == default(PropertyInfo))
+            if (property == default)
             {
                 throw new ArgumentException($"No such property '{propertyName}' exists on target Type {type.Name}.", nameof(propertyName));
             }
@@ -213,7 +213,7 @@ namespace Soulseek.Tests.Unit
         {
             var method = type.GetMethod(methodName, flags);
 
-            if (method == default(MethodInfo))
+            if (method == default)
             {
                 throw new ArgumentException($"No such method '{methodName}' exists on target Type {type.Name}.", nameof(methodName));
             }
