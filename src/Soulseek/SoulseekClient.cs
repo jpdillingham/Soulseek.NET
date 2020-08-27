@@ -455,7 +455,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously connects the client to default server, but does not log in.
+        ///     Asynchronously connects the client to the default server, but does not log in.
         /// </summary>
         /// <remarks>
         ///     To fully establish a connection, <see cref="LoginAsync(string, string, CancellationToken?)"/> must be invoked.
@@ -628,8 +628,8 @@ namespace Soulseek
         ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
@@ -705,8 +705,8 @@ namespace Soulseek
         ///     to the specified <paramref name="outputStream"/>.
         /// </summary>
         /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///     without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
@@ -1247,6 +1247,30 @@ namespace Soulseek
             {
                 throw new PingException($"Failed to ping the server: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
+        ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The search text.</param>
+        /// <param name="scope">the search scope.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="query"/> is null.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the search text of the specified <paramref name="query"/> is null, empty, or consists of only whitespace..
+        /// </exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            return SearchAsync(SearchQuery.FromText(searchText), scope, token, options, cancellationToken);
         }
 
         /// <summary>
@@ -1971,7 +1995,7 @@ namespace Soulseek
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
                     UpdateState(TransferStates.Initializing);
 
-                    // if size wasn't supplied, use the size provided by the remote client.  for files over 4gb, the value provided
+                    // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
                     // by the remote client will erroneously be reported as zero and the transfer will fail.
                     download.Size ??= transferRequestAcknowledgement.FileSize;
 
@@ -1995,7 +2019,7 @@ namespace Soulseek
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
-                    // if size wasn't supplied, use the size provided by the remote client.  for files over 4gb, the value provided
+                    // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
                     // by the remote client will erroneously be reported as zero and the transfer will fail.
                     download.Size ??= transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
