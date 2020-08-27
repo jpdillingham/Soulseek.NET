@@ -1259,9 +1259,8 @@ namespace Soulseek
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="query"/> is null.</exception>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the search text of the specified <paramref name="query"/> is null, empty, or consists of only whitespace..
+        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace..
         /// </exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
