@@ -375,6 +375,32 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync delegate creates token when not given"), AutoData]
+        public async Task SearchInternalAsync_Delegate_Creates_Token_When_Not_Given(string searchText)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
+                .Returns(Task.CompletedTask);
+
+            using (var cts = new CancellationTokenSource(1000))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var task = s.SearchAsync(SearchQuery.FromText(searchText), (r) => { }, cancellationToken: cts.Token);
+
+                var active = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches").ToList();
+
+                cts.Cancel();
+
+                await Record.ExceptionAsync(() => task); // swallow the cancellation exception
+
+                Assert.Single(active);
+                Assert.Contains(active, kvp => kvp.Value.SearchText == searchText);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
         [Theory(DisplayName = "SearchAsync throws OperationCanceledException on cancellation"), AutoData]
         public async Task SearchInternalAsync_Throws_OperationCanceledException_On_Cancellation(string searchText, int token)
         {
