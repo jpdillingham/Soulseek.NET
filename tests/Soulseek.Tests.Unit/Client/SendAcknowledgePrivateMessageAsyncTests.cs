@@ -208,6 +208,26 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
+        [Fact(DisplayName = "SendPrivateMessageAsync uses given CancellationToken")]
+        public async Task SendPrivateMessageAsync_Uses_Given_CancellationToken()
+        {
+            var cancellationToken = new CancellationToken(true);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.SendPrivateMessageAsync("foo", "bar", cancellationToken);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
         [Fact(DisplayName = "SendPrivateMessageAsync throws PrivateMessageException when write throws")]
         public async Task SendPrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
         {

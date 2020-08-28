@@ -92,6 +92,26 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SendRoomMessageAsync")]
+        [Theory(DisplayName = "SendRoomMessageAsync uses given CancellationToken"), AutoData]
+        public async Task SendRoomMessageAsync_Uses_Given_CancellationToken(string roomName, string message)
+        {
+            var cancellationToken = new CancellationToken(true);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.SendRoomMessageAsync(roomName, message, cancellationToken);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+        }
+
+        [Trait("Category", "SendRoomMessageAsync")]
         [Theory(DisplayName = "SendRoomMessageAsync throws RoomMessageException when write throws"), AutoData]
         public async Task SendRoomMessageAsync_Throws_RoomMessageException_When_Write_Throws(string roomName, string message)
         {

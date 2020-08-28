@@ -149,6 +149,21 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Fact(DisplayName = "UploadAsync stream throws InvalidOperationException when not connected")]
+        public async Task UploadAsync_Stream_Throws_InvalidOperationException_When_Not_Connected()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Fact(DisplayName = "UploadAsync stream throws ArgumentNullException given null stream")]
         public async Task UploadAsync_Stream_Throws_ArgumentNullException_Given_Null_Stream()
         {
@@ -275,6 +290,46 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync does not throw DuplicateTransferException when an existing Upload matches only the username"), AutoData]
+        public async Task UploadAsync_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Username(string username, string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
+
+                s.SetProperty("Uploads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", new byte[] { 0x0 }, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync does not throw DuplicateTransferException when an existing Upload matches only the filename"), AutoData]
+        public async Task UploadAsync_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Filename(string username, string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
+
+                s.SetProperty("Uploads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, new byte[] { 0x0 }, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync stream throws DuplicateTransferException when an existing Upload matches the username and filename"), AutoData]
         public async Task UploadAsync_Stream_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_The_Username_And_Filename(string username, string filename)
         {
@@ -293,6 +348,87 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
                 Assert.Contains($"An active or queued upload of {filename} to {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync stream does not throw DuplicateTransferException when an existing Upload matches only the username"), AutoData]
+        public async Task UploadAsync_Stream_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Username(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
+
+                s.SetProperty("Uploads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", 1, stream, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync stream does not throw DuplicateTransferException when an existing Upload matches only the filename"), AutoData]
+        public async Task UploadAsync_Stream_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Filename(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
+
+                s.SetProperty("Uploads", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, 1, stream, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsNotType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync uses given CancellationToken"), AutoData]
+        public async Task UploadAsync_Uses_Given_CancellationToken(string username, string filename)
+        {
+            var cancellationToken = new CancellationToken(true);
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, new byte[] { 0x0 }, cancellationToken: cancellationToken));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync stream uses given CancellationToken"), AutoData]
+        public async Task UploadAsync_Stream_Uses_Given_CancellationToken(string username, string filename)
+        {
+            var cancellationToken = new CancellationToken(true);
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, stream, cancellationToken: cancellationToken));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
 

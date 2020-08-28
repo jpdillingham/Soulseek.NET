@@ -227,7 +227,7 @@ namespace Soulseek.Network.Tcp
                         }
                         else if (completedTask == cancellationTaskCompletionSource.Task)
                         {
-                            throw new OperationCanceledException("Operation cancelled");
+                            throw new OperationCanceledException("Operation cancelled", cancellationToken.Value);
                         }
 
                         if (connectTask.Exception?.InnerException != null)

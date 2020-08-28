@@ -1882,7 +1882,7 @@ namespace Soulseek
 
                 ServerConnection?.Disconnect(message, exception);
 
-                DistributedConnectionManager?.RemoveAndDisposeAll();
+                DistributedConnectionManager.RemoveAndDisposeAll();
 
                 Searches.Values.ToList().ForEach(search =>
                 {
@@ -2072,7 +2072,6 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 download.State = TransferStates.Rejected;
-                download.Connection?.Disconnect("Transfer rejected", ex);
 
                 throw new TransferException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
@@ -2588,7 +2587,16 @@ namespace Soulseek
             try
             {
                 UpdateState(TransferStates.Queued);
-                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                try
+                {
+                    await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (TaskCanceledException ex)
+                {
+                    throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
+                }
+
                 semaphoreAcquired = true;
 
                 // in case the upload record was removed via cleanup while we were waiting, add it back.
@@ -2686,7 +2694,6 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 upload.State = TransferStates.Rejected;
-                upload.Connection?.Disconnect("Transfer rejected", ex);
 
                 throw new TransferException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
