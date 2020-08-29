@@ -19,6 +19,7 @@ namespace Soulseek
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Net.Http.Headers;
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
@@ -609,9 +610,33 @@ namespace Soulseek
         ///     Disconnects the client from the server.
         /// </summary>
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
-        public void Disconnect(string message = null)
+        /// <param name="exception">An optional Exception causing the disconnect.</param>
+        public void Disconnect(string message = null, Exception exception = null)
         {
-            Disconnect(message, null);
+            if (State != SoulseekClientStates.Disconnected)
+            {
+                message ??= exception?.Message ?? "Client disconnected";
+
+                if (ServerConnection != default)
+                {
+                    ServerConnection.Disconnected -= ServerConnection_Disconnected;
+                }
+
+                ServerConnection?.Disconnect(message, exception);
+
+                DistributedConnectionManager.RemoveAndDisposeAll();
+
+                Searches.Values.ToList().ForEach(search =>
+                {
+                    search.Cancel();
+                });
+
+                Searches.RemoveAndDisposeAll();
+
+                Username = null;
+
+                ChangeState(SoulseekClientStates.Disconnected, message, exception);
+            }
         }
 
         /// <summary>
@@ -1755,7 +1780,7 @@ namespace Soulseek
                     // wait for the receipt of the response message. this may come back on a connection different from the one
                     // which made the request.
                     (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
-                    responseLength = responseReceivedEventArgs?.Length - 4;
+                    responseLength = responseReceivedEventArgs.Length - 4;
 
                     responseConnection.Disconnected += (sender, args) =>
                         Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
@@ -1773,7 +1798,7 @@ namespace Soulseek
 
                 // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
                 // we've already read the first 4k or whatever the read buffer size is)
-                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs?.Code, 0, responseLength.Value));
+                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength.Value));
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -1783,7 +1808,7 @@ namespace Soulseek
                 // case, fake it
                 if (!completionEventFired)
                 {
-                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs?.Code, responseLength.Value, responseLength.Value));
+                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, responseLength.Value, responseLength.Value));
                 }
 
                 return response;
@@ -1866,34 +1891,6 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
-            }
-        }
-
-        private void Disconnect(string message, Exception exception = null)
-        {
-            if (State != SoulseekClientStates.Disconnected)
-            {
-                message ??= exception?.Message ?? "Client disconnected";
-
-                if (ServerConnection != default)
-                {
-                    ServerConnection.Disconnected -= ServerConnection_Disconnected;
-                }
-
-                ServerConnection?.Disconnect(message, exception);
-
-                DistributedConnectionManager.RemoveAndDisposeAll();
-
-                Searches.Values.ToList().ForEach(search =>
-                {
-                    search.Cancel();
-                });
-
-                Searches.RemoveAndDisposeAll();
-
-                Username = null;
-
-                ChangeState(SoulseekClientStates.Disconnected, message, exception);
             }
         }
 
@@ -2178,44 +2175,58 @@ namespace Soulseek
 
             if (cache != default)
             {
+                static void TryCacheOperation(Action action)
+                {
+                    try
+                    {
+                        action();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new UserEndPointCacheException($"Exception retrieving or updating user endpoint cache: {ex.Message}", ex);
+                    }
+                }
+
+                bool cached = false;
+                IPEndPoint endPoint = default;
+
+                TryCacheOperation(() => cached = cache.TryGet(username, out endPoint));
+
+                if (cached)
+                {
+                    Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
+                    return endPoint;
+                }
+
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
+#pragma warning restore CA2000 // Dispose objects before losing scope
+                await semaphore.WaitAsync().ConfigureAwait(false);
+
                 try
                 {
-                    if (cache.TryGet(username, out var endPoint))
+                    UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
+                    TryCacheOperation(() => cached = cache.TryGet(username, out endPoint));
+
+                    if (cached)
                     {
                         Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
                         return endPoint;
                     }
 
-#pragma warning disable CA2000 // Dispose objects before losing scope
-                    var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-                    await semaphore.WaitAsync().ConfigureAwait(false);
+                    endPoint = await GetEndPoint().ConfigureAwait(false);
 
-                    try
-                    {
-                        UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+                    TryCacheOperation(() => cache.AddOrUpdate(username, endPoint));
 
-                        if (cache.TryGet(username, out endPoint))
-                        {
-                            Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
-                            return endPoint;
-                        }
+                    Diagnostic.Debug($"EndPoint cache MISS for {username}: {endPoint}");
 
-                        endPoint = await GetEndPoint().ConfigureAwait(false);
-                        cache.AddOrUpdate(username, endPoint);
-                        Diagnostic.Debug($"EndPoint cache MISS for {username}: {endPoint}");
-
-                        return endPoint;
-                    }
-                    finally
-                    {
-                        UserEndPointSemaphores.TryRemove(username, out var _);
-                        semaphore.Release();
-                    }
+                    return endPoint;
                 }
-                catch (Exception ex) when (!(ex is UserEndPointException) && !(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+                finally
                 {
-                    throw new UserEndPointCacheException($"Exception retrieving or updating user endpoint cache: {ex.Message}", ex);
+                    UserEndPointSemaphores.TryRemove(username, out var _);
+                    semaphore.Release();
                 }
             }
 
