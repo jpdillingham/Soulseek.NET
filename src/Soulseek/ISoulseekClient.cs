@@ -321,7 +321,8 @@ namespace Soulseek
         ///     Disconnects the client from the server.
         /// </summary>
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
-        void Disconnect(string message = null);
+        /// <param name="exception">An optional Exception causing the disconnect.</param>
+        void Disconnect(string message = null, Exception exception = null);
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
