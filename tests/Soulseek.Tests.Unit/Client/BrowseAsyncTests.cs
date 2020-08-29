@@ -417,5 +417,49 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Contains("disconnected unexpectedly", ex.InnerException.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
+
+        [Trait("Category", "BrowseAsync")]
+        [Theory(DisplayName = "BrowseAsync throws ConnectionException on unexpected disconnect"), AutoData]
+        public async Task BrowseAsync_Throws_ConnectionException_On_Unexpected_Disconnect(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories)
+        {
+            var tcs = new TaskCompletionSource<BrowseResponse>();
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((new MessageReceivedEventArgs(1, new byte[] { 0x0 }), conn.Object)));
+            waiter.Setup(m => m.Throw(It.IsAny<WaitKey>(), It.IsAny<Exception>()))
+                .Callback<WaitKey, Exception>((key, ex) => tcs.SetException(ex));
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var task = s.BrowseAsync(username);
+
+                conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("foo"));
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                Assert.NotNull(ex);
+                Assert.IsType<BrowseException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
+            }
+        }
     }
 }
