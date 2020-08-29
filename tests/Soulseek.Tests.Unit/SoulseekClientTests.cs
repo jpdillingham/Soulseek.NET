@@ -648,6 +648,76 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect uses default message if none is given")]
+        public void Disconnect_Uses_Default_Message_If_None_Is_Given()
+        {
+            string message = default;
+
+            var c = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: c.Object))
+            {
+                s.StateChanged += (sender, e) => message = e.Message;
+
+                s.SetProperty("State", ConnectionState.Connected);
+
+                var ex = Record.Exception(() => s.Disconnect());
+
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+
+                Assert.Equal("Client disconnected", message);
+            }
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Theory(DisplayName = "Disconnect uses given message"), AutoData]
+        public void Disconnect_Uses_Given_Message(string msg)
+        {
+            string message = default;
+
+            var c = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: c.Object))
+            {
+                s.StateChanged += (sender, e) => message = e.Message;
+
+                s.SetProperty("State", ConnectionState.Connected);
+
+                var ex = Record.Exception(() => s.Disconnect(msg));
+
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+
+                Assert.Equal(msg, message);
+            }
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Theory(DisplayName = "Disconnect uses Exception message if no message is supplied"), AutoData]
+        public void Disconnect_Uses_Exception_Message_If_No_Message_Is_Supplied(string msg)
+        {
+            string message = default;
+            var exception = new Exception(msg);
+
+            var c = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: c.Object))
+            {
+                s.StateChanged += (sender, e) => message = e.Message;
+
+                s.SetProperty("State", ConnectionState.Connected);
+
+                var ex = Record.Exception(() => s.InvokeMethod("Disconnect", null, exception));
+
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+
+                Assert.Equal(msg, message);
+            }
+        }
+
+        [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect clears searches")]
         public void Disconnect_Clears_Searches()
         {
@@ -784,6 +854,34 @@ namespace Soulseek.Tests.Unit
 
                 Assert.Null(ex);
             }
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Theory(DisplayName = "ChangeState produces diagnostic"), AutoData]
+        public void ChangeState_Produces_Diagnostic(string message, Exception exception)
+        {
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            using (var s = new SoulseekClient(diagnosticFactory: diagnostic.Object))
+            {
+                s.InvokeMethod("ChangeState", SoulseekClientStates.Disconnected, message, exception);
+            }
+
+            diagnostic.Verify(m => m.Debug(It.Is<string>(s => s == $"Client state changed from Disconnected to Disconnected; message: {message}")), Times.Once);
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Fact(DisplayName = "ChangeState produces diagnostic and omits message if none is provided")]
+        public void ChangeState_Produces_Diagnostic_And_Omits_Message_If_None_Is_Provided()
+        {
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            using (var s = new SoulseekClient(diagnosticFactory: diagnostic.Object))
+            {
+                s.InvokeMethod("ChangeState", SoulseekClientStates.Disconnected, null, null);
+            }
+
+            diagnostic.Verify(m => m.Debug(It.Is<string>(s => s == $"Client state changed from Disconnected to Disconnected")), Times.Once);
         }
 
         [Trait("Category", "ChangeState")]

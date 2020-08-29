@@ -609,9 +609,33 @@ namespace Soulseek
         ///     Disconnects the client from the server.
         /// </summary>
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
-        public void Disconnect(string message = null)
+        /// <param name="exception">An optional Exception causing the disconnect.</param>
+        public void Disconnect(string message = null, Exception exception = null)
         {
-            Disconnect(message, null);
+            if (State != SoulseekClientStates.Disconnected)
+            {
+                message ??= exception?.Message ?? "Client disconnected";
+
+                if (ServerConnection != default)
+                {
+                    ServerConnection.Disconnected -= ServerConnection_Disconnected;
+                }
+
+                ServerConnection?.Disconnect(message, exception);
+
+                DistributedConnectionManager.RemoveAndDisposeAll();
+
+                Searches.Values.ToList().ForEach(search =>
+                {
+                    search.Cancel();
+                });
+
+                Searches.RemoveAndDisposeAll();
+
+                Username = null;
+
+                ChangeState(SoulseekClientStates.Disconnected, message, exception);
+            }
         }
 
         /// <summary>
@@ -1866,34 +1890,6 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
-            }
-        }
-
-        private void Disconnect(string message, Exception exception = null)
-        {
-            if (State != SoulseekClientStates.Disconnected)
-            {
-                message ??= exception?.Message ?? "Client disconnected";
-
-                if (ServerConnection != default)
-                {
-                    ServerConnection.Disconnected -= ServerConnection_Disconnected;
-                }
-
-                ServerConnection?.Disconnect(message, exception);
-
-                DistributedConnectionManager.RemoveAndDisposeAll();
-
-                Searches.Values.ToList().ForEach(search =>
-                {
-                    search.Cancel();
-                });
-
-                Searches.RemoveAndDisposeAll();
-
-                Username = null;
-
-                ChangeState(SoulseekClientStates.Disconnected, message, exception);
             }
         }
 
