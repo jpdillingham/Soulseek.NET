@@ -19,6 +19,7 @@ namespace Soulseek
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Net.Http.Headers;
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
@@ -2174,44 +2175,58 @@ namespace Soulseek
 
             if (cache != default)
             {
+                static void TryCacheOperation(Action action)
+                {
+                    try
+                    {
+                        action();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new UserEndPointCacheException($"Exception retrieving or updating user endpoint cache: {ex.Message}", ex);
+                    }
+                }
+
+                bool cached = false;
+                IPEndPoint endPoint = default;
+
+                TryCacheOperation(() => cached = cache.TryGet(username, out endPoint));
+
+                if (cached)
+                {
+                    Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
+                    return endPoint;
+                }
+
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
+#pragma warning restore CA2000 // Dispose objects before losing scope
+                await semaphore.WaitAsync().ConfigureAwait(false);
+
                 try
                 {
-                    if (cache.TryGet(username, out var endPoint))
+                    UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
+                    TryCacheOperation(() => cached = cache.TryGet(username, out endPoint));
+
+                    if (cached)
                     {
                         Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
                         return endPoint;
                     }
 
-#pragma warning disable CA2000 // Dispose objects before losing scope
-                    var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-                    await semaphore.WaitAsync().ConfigureAwait(false);
+                    endPoint = await GetEndPoint().ConfigureAwait(false);
 
-                    try
-                    {
-                        UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+                    TryCacheOperation(() => cache.AddOrUpdate(username, endPoint));
 
-                        if (cache.TryGet(username, out endPoint))
-                        {
-                            Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
-                            return endPoint;
-                        }
+                    Diagnostic.Debug($"EndPoint cache MISS for {username}: {endPoint}");
 
-                        endPoint = await GetEndPoint().ConfigureAwait(false);
-                        cache.AddOrUpdate(username, endPoint);
-                        Diagnostic.Debug($"EndPoint cache MISS for {username}: {endPoint}");
-
-                        return endPoint;
-                    }
-                    finally
-                    {
-                        UserEndPointSemaphores.TryRemove(username, out var _);
-                        semaphore.Release();
-                    }
+                    return endPoint;
                 }
-                catch (Exception ex) when (!(ex is UserEndPointException) && !(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+                finally
                 {
-                    throw new UserEndPointCacheException($"Exception retrieving or updating user endpoint cache: {ex.Message}", ex);
+                    UserEndPointSemaphores.TryRemove(username, out var _);
+                    semaphore.Release();
                 }
             }
 

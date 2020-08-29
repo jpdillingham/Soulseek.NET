@@ -104,7 +104,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetUserEndPointAsync")]
         [Theory(DisplayName = "GetUserEndPointAsync throws UserEndPointException on error other than cancel or timeout"), AutoData]
-        public async Task GetUserEndPointAsync_Throws_UserAddressException_On_Error_Other_Than_Cancel_Or_Timeout(string username)
+        public async Task GetUserEndPointAsync_Throws_UserEndPointException_On_Error_Other_Than_Cancel_Or_Timeout(string username)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
