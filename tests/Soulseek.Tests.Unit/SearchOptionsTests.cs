@@ -30,6 +30,7 @@ namespace Soulseek.Tests.Unit
             int minimumPeerUploadSpeed,
             Func<SearchResponse, bool> responseFilter,
             int fileLimit,
+            bool removeSingleCharacterSearchTerms,
             Func<File, bool> fileFilter,
             Action<SearchStateChangedEventArgs> stateChanged,
             Action<SearchResponseReceivedEventArgs> responseReceived)
@@ -43,6 +44,7 @@ namespace Soulseek.Tests.Unit
                 maximumPeerQueueLength,
                 minimumPeerUploadSpeed,
                 fileLimit,
+                removeSingleCharacterSearchTerms,
                 responseFilter,
                 fileFilter,
                 stateChanged,
@@ -57,6 +59,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(minimumPeerUploadSpeed, o.MinimumPeerUploadSpeed);
             Assert.Equal(responseFilter, o.ResponseFilter);
             Assert.Equal(fileLimit, o.FileLimit);
+            Assert.Equal(removeSingleCharacterSearchTerms, o.RemoveSingleCharacterSearchTerms);
             Assert.Equal(fileFilter, o.FileFilter);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(responseReceived, o.ResponseReceived);
