@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -1304,6 +1304,11 @@ namespace Soulseek
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
             }
 
+            if (query.Terms.Count == 0)
+            {
+                throw new ArgumentException($"Search query must contain at least one non-exclusion term", nameof(query));
+            }
+
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
@@ -1319,7 +1324,17 @@ namespace Soulseek
             scope ??= new SearchScope();
             options ??= new SearchOptions();
 
-            return SearchToCollectionAsync(query.SearchText, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
+            if (options.RemoveSingleCharacterSearchTerms)
+            {
+                query = new SearchQuery(query.Terms.Where(term => term.Length > 1), query.Exclusions);
+            }
+
+            if (query.Terms.Count == 0)
+            {
+                throw new ArgumentException($"Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
+            }
+
+            return SearchToCollectionAsync(query, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1357,6 +1372,11 @@ namespace Soulseek
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
             }
 
+            if (query.Terms.Count == 0)
+            {
+                throw new ArgumentException($"Search query must contain at least one non-exclusion term", nameof(query));
+            }
+
             if (responseReceived == default)
             {
                 throw new ArgumentNullException(nameof(responseReceived), "The specified Response delegate is null");
@@ -1377,7 +1397,17 @@ namespace Soulseek
             scope ??= new SearchScope();
             options ??= new SearchOptions();
 
-            return SearchToCallbackAsync(query.SearchText, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
+            if (options.RemoveSingleCharacterSearchTerms)
+            {
+                query = new SearchQuery(query.Terms.Where(term => term.Length > 1), query.Exclusions);
+            }
+
+            if (query.Terms.Count == 0)
+            {
+                throw new ArgumentException($"Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
+            }
+
+            return SearchToCallbackAsync(query, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2415,9 +2445,9 @@ namespace Soulseek
             }
         }
 
-        private async Task SearchToCallbackAsync(string searchText, Action<SearchResponse> responseReceived, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task SearchToCallbackAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
-            var search = new SearchInternal(searchText, token, options);
+            var search = new SearchInternal(query.SearchText, token, options);
             var lastState = SearchStates.None;
 
             void UpdateState(SearchStates state)
@@ -2478,7 +2508,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 search.Complete(SearchStates.Errored);
-                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
+                throw new SearchException($"Failed to search for {query.SearchText} ({token}): {ex.Message}", ex);
             }
             finally
             {
@@ -2489,7 +2519,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(string searchText, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(SearchQuery query, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var responseBag = new ConcurrentBag<SearchResponse>();
 
@@ -2498,7 +2528,7 @@ namespace Soulseek
                 responseBag.Add(response);
             }
 
-            await SearchToCallbackAsync(searchText, ResponseReceived, scope, token, options, cancellationToken).ConfigureAwait(false);
+            await SearchToCallbackAsync(query, ResponseReceived, scope, token, options, cancellationToken).ConfigureAwait(false);
             return responseBag.ToList().AsReadOnly();
         }
 

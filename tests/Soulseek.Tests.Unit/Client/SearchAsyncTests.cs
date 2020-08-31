@@ -125,6 +125,136 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync throws ArgumentException given query with no terms")]
+        public async Task SearchAsync_Throws_ArgumentNullException_Given_Query_With_No_Terms()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery(null), token: 0));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync throws ArgumentException given query with only exclusions")]
+        public async Task SearchAsync_Throws_ArgumentNullException_Given_Query_With_Only_Exclusions()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("-no"), token: 0));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync throws ArgumentException given query with one single character term")]
+        public async Task SearchAsync_Throws_ArgumentNullException_Given_Query_With_One_Single_Character_Term()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var options = new SearchOptions(removeSingleCharacterSearchTerms: true);
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), token: 0, options: options));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync does not throw ArgumentException given query with one single character term and removeSingleCharacterSearchTerms disabled")]
+        public async Task SearchAsync_Throws_ArgumentNullException_Given_Query_With_One_Single_Character_Term_And_RemoveSingleCharacterSearchTerms_Disabled()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var options = new SearchOptions(removeSingleCharacterSearchTerms: false);
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), token: 0, options: options));
+
+                Assert.NotNull(ex);
+                Assert.IsType<SearchException>(ex);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync delegate throws ArgumentException given query with no terms")]
+        public async Task SearchAsync_Delegate_Throws_ArgumentNullException_Given_Query_With_No_Terms()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery(null), responseReceived: (r) => { }));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync delegate throws ArgumentException given query with only exclusions")]
+        public async Task SearchAsync_Delegate_Throws_ArgumentNullException_Given_Query_With_Only_Exclusions()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("-no"), responseReceived: (r) => { }));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync delegate throws ArgumentException given query with one single character term")]
+        public async Task SearchAsync_Delegate_Throws_ArgumentNullException_Given_Query_With_One_Single_Character_Term()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var options = new SearchOptions(removeSingleCharacterSearchTerms: true);
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), responseReceived: (r) => { }, options: options));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync delegate does not throw ArgumentException given query with one single character term and removeSingleCharacterSearchTerms disabled")]
+        public async Task SearchAsync_Delegate_Throws_ArgumentNullException_Given_Query_With_One_Single_Character_Term_And_RemoveSingleCharacterSearchTerms_Disabled()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var options = new SearchOptions(removeSingleCharacterSearchTerms: false);
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), responseReceived: (r) => { }, options: options));
+
+                Assert.NotNull(ex);
+                Assert.IsType<SearchException>(ex);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
         [Theory(DisplayName = "SearchAsync delegate throws ArgumentException given bad search text")]
         [InlineData("")]
         [InlineData(null)]
@@ -264,6 +394,31 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(username, res.Username);
                 Assert.Equal(token, res.Token);
             }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync sends expected search string")]
+        [InlineData("foo bar", "foo bar")]
+        [InlineData("foo -bar", "foo -bar")]
+        [InlineData("foo a -bar", "foo -bar")]
+        public async Task SearchAsync_Sends_Expected_Search_String(string searchText, string expected)
+        {
+            var options = new SearchOptions(searchTimeout: 1);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
+                .Returns(Task.CompletedTask);
+
+            var msg = new SearchRequest(expected, 0);
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await s.SearchAsync(SearchQuery.FromText(searchText), token: 0, options: options);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(s => s.Matches(msg.ToByteArray())), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "SearchAsync")]
