@@ -420,7 +420,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync throws ConnectionException on unexpected disconnect"), AutoData]
-        public async Task BrowseAsync_Throws_ConnectionException_On_Unexpected_Disconnect(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories)
+        public async Task BrowseAsync_Throws_ConnectionException_On_Unexpected_Disconnect(string username, IPEndPoint endpoint, string localUsername)
         {
             var tcs = new TaskCompletionSource<BrowseResponse>();
 

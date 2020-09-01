@@ -34,6 +34,7 @@ namespace Soulseek
         ///     The minimum upload speed a peer must have in order for a response to be processed.
         /// </param>
         /// <param name="fileLimit">The maximum number of file results to accept before the search is considered complete.</param>
+        /// <param name="removeSingleCharacterSearchTerms">A value indicating whether single character search terms are removed.</param>
         /// <param name="responseFilter">
         ///     The function used to evaluate whether a response should be included in the search results.
         /// </param>
@@ -49,6 +50,7 @@ namespace Soulseek
             int maximumPeerQueueLength = int.MaxValue,
             int minimumPeerUploadSpeed = 0,
             int fileLimit = 25000,
+            bool removeSingleCharacterSearchTerms = true,
             Func<SearchResponse, bool> responseFilter = null,
             Func<File, bool> fileFilter = null,
             Action<SearchStateChangedEventArgs> stateChanged = null,
@@ -66,6 +68,7 @@ namespace Soulseek
             FileFilter = fileFilter;
             StateChanged = stateChanged;
             ResponseReceived = responseReceived;
+            RemoveSingleCharacterSearchTerms = removeSingleCharacterSearchTerms;
         }
 
         /// <summary>
@@ -102,6 +105,11 @@ namespace Soulseek
         ///     Gets the minimum number of files a response must contain in order to be processed. (Default = 1).
         /// </summary>
         public int MinimumResponseFileCount { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether single character search terms are removed. (Default = true).
+        /// </summary>
+        public bool RemoveSingleCharacterSearchTerms { get; }
 
         /// <summary>
         ///     Gets the function used to evaluate whether a response should be included in the search results (Default = all
