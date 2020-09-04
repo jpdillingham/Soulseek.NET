@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import React, { Component } from 'react';
 import api from '../api';
 
@@ -14,6 +15,7 @@ import {
 
 const initialState = {
     searchPhrase: '',
+    searchId: '',
     searchState: 'idle',
     searchStatus: {
         responseCount: 0,
@@ -40,10 +42,11 @@ class Search extends Component {
     state = initialState;
 
     search = () => {
-        let searchPhrase = this.inputtext.inputRef.current.value;
+        const searchPhrase = this.inputtext.inputRef.current.value;
+        const searchId = uuidv4();
 
-        this.setState({ searchPhrase: searchPhrase, searchState: 'pending' }, () => {
-            api.post('/searches', JSON.stringify({ searchText: searchPhrase }), {
+        this.setState({ searchPhrase, searchId, searchState: 'pending' }, () => {
+            api.post('/searches', JSON.stringify({ id: searchId, searchText: searchPhrase }), {
                 headers: {'Content-Type': 'application/json; charset=utf-8'}
             })
             .then(response => this.setState({ results: response.data }))
@@ -93,7 +96,7 @@ class Search extends Component {
 
     fetchStatus = () => {
         if (this.state.searchState === 'pending') {
-            api.get('/searches/' + encodeURIComponent(this.state.searchPhrase))
+            api.get('/searches/' + encodeURIComponent(this.state.searchId))
             .then(response => this.setState({
                 searchStatus: response.data
             }));
