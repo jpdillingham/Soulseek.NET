@@ -11,7 +11,8 @@
     "react-scripts": "3.0.1",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^0.88.2",
-    "signalr": "^2.4.1"
+    "signalr": "^2.4.1",
+    "uuid": "^8.3.0"
   },
   "scripts": {
     "start": "react-scripts start",
