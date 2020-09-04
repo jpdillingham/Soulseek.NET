@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Trackers
 {
     using Soulseek;
+    using System;
     using System.Collections.Concurrent;
 
     /// <summary>
@@ -11,16 +12,17 @@
         /// <summary>
         ///     Gets active searches.
         /// </summary>
-        public ConcurrentDictionary<string, Search> Searches { get; private set; } =
-            new ConcurrentDictionary<string, Search>();
+        public ConcurrentDictionary<Guid, Search> Searches { get; private set; } =
+            new ConcurrentDictionary<Guid, Search>();
 
         /// <summary>
         ///     Adds or updates a tracked search.
         /// </summary>
+        /// <param name="id"></param>
         /// <param name="args"></param>
-        public void AddOrUpdate(SearchEventArgs args)
+        public void AddOrUpdate(Guid id, SearchEventArgs args)
         {
-            Searches.AddOrUpdate(args.Search.SearchText, args.Search, (searchText, search) => args.Search);
+            Searches.AddOrUpdate(id, args.Search, (token, search) => args.Search);
         }
 
         /// <summary>
@@ -34,10 +36,10 @@
         /// <summary>
         ///     Removes a tracked search.
         /// </summary>
-        /// <param name="searchText"></param>
-        public void TryRemove(string searchText)
+        /// <param name="id"></param>
+        public void TryRemove(Guid id)
         {
-            Searches.TryRemove(searchText, out _);
+            Searches.TryRemove(id, out _);
         }
     }
 }
