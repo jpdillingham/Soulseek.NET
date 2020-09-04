@@ -50,9 +50,11 @@
         [ProducesResponseType(typeof(string), 500)]
         public async Task<IActionResult> Post([FromBody]SearchRequest request)
         {
+            var id = request.Id ?? Guid.NewGuid();
+
             var options = request.ToSearchOptions(
-                responseReceived: (e) => Tracker.AddOrUpdate(e),
-                stateChanged: (e) => Tracker.AddOrUpdate(e));
+                responseReceived: (e) => Tracker.AddOrUpdate(id, e),
+                stateChanged: (e) => Tracker.AddOrUpdate(id, e));
 
             var results = new ConcurrentBag<SearchResponse>();
 
@@ -70,60 +72,24 @@
             finally
             {
                 results = null;
-                Tracker.TryRemove(request.SearchText);
+                Tracker.TryRemove(id);
             }
         }
 
         /// <summary>
-        ///     Gets the state of all current searches.
+        ///     Gets the state of the search corresponding to the specified <paramref name="id"/>.
         /// </summary>
-        /// <returns></returns>
-        /// <response code="200">The request completed successfully.</response>
-        [HttpGet("")]
-        [Authorize]
-        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
-        public IActionResult Get()
-        {
-            return Ok(Tracker.Searches);
-        }
-
-        /// <summary>
-        ///     Gets the state of the search corresponding to the specified <paramref name="searchText"/>.
-        /// </summary>
-        /// <param name="searchText">The search phrase of the desired search.</param>
+        /// <param name="id">The unique id of the search.</param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         /// <response code="404">A matching search was not found.</response>
-        [HttpGet("{searchText}")]
+        [HttpGet("{id}")]
         [Authorize]
         [ProducesResponseType(typeof(Search), 200)]
         [ProducesResponseType(404)]
-        public IActionResult GetBySearchText([FromRoute]string searchText)
+        public IActionResult GetById([FromRoute]Guid id)
         {
-            Tracker.Searches.TryGetValue(searchText, out var search);
-
-            if (search == default)
-            {
-                return NotFound();
-            }
-
-            return Ok(search);
-        }
-
-        /// <summary>
-        ///     Gets the state of the search corresponding to the specified <paramref name="token"/>.
-        /// </summary>
-        /// <param name="token">The token of the desired search.</param>
-        /// <returns></returns>
-        /// <response code="200">The request completed successfully.</response>
-        /// <response code="404">A matching search was not found.</response>
-        [HttpGet("{token:int}")]
-        [Authorize]
-        [ProducesResponseType(typeof(Search), 200)]
-        [ProducesResponseType(404)]
-        public IActionResult GetByToken([FromRoute]int token)
-        {
-            var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);
+            Tracker.Searches.TryGetValue(id, out var search);
 
             if (search == default)
             {
