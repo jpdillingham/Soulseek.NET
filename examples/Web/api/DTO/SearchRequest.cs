@@ -9,6 +9,11 @@ namespace WebAPI.DTO
     public class SearchRequest
     {
         /// <summary>
+        ///     Gets or sets the unique search identifier
+        /// </summary>
+        public Guid? Id { get; set; }
+
+        /// <summary>
         ///     Gets or sets the maximum number of file results to accept before the search is considered complete. (Default = 10,000).
         /// </summary>
         public int? FileLimit { get; set; }
