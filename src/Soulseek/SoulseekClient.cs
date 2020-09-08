@@ -2009,7 +2009,7 @@ namespace Soulseek
                         .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
                 }
-                else if (transferRequestAcknowledgement.Message.Equals("File not shared.", StringComparison.InvariantCultureIgnoreCase))
+                else if (transferRequestAcknowledgement.Message.Contains("not shared", StringComparison.InvariantCultureIgnoreCase))
                 {
                     throw new TransferRejectedException(transferRequestAcknowledgement.Message);
                 }
