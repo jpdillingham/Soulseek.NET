@@ -377,7 +377,7 @@
             // normally there would be an internal queue, and uploads would be handled separately.
             Task.Run(async () =>
             {
-                using (var stream = new FileStream(fileInfo.FullName, FileMode.Open))
+                using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read))
                 {
                     await Client.UploadAsync(username, fileInfo.FullName, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
                 }
