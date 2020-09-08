@@ -2675,7 +2675,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(conn.Object, actual);
             }
 
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Waiting for a direct or indirect connection"))));
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Waiting for a direct or indirect transfer connection"))));
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("established first, attempting to cancel"))));
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("established."))));
         }
