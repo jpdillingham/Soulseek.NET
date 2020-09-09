@@ -97,6 +97,29 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(size, response.FileSize);
         }
 
+        [Trait("Category", "Parse")]
+        [Fact(DisplayName = "Parse does not throw if length is missing")]
+        public void Parse_Does_Not_Throw_If_Length_Is_Missing()
+        {
+            var dir = Random.Next(2);
+            var token = Random.Next();
+            var file = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.TransferRequest)
+                .WriteInteger(dir)
+                .WriteInteger(token)
+                .WriteString(file)
+                .Build();
+
+            var response = TransferRequest.FromByteArray(msg);
+
+            Assert.Equal(dir, (int)response.Direction);
+            Assert.Equal(token, response.Token);
+            Assert.Equal(file, response.Filename);
+            Assert.Equal(0, response.FileSize);
+        }
+
         [Trait("Category", "ToByteArray")]
         [Theory(DisplayName = "ToByteArray constructs the correct Message"), AutoData]
         public void ToByteArray_Constructs_The_Correct_Message(TransferDirection dir, int token, string file, long size)

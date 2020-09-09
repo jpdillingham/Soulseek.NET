@@ -72,7 +72,13 @@ namespace Soulseek.Messaging.Messages
             var direction = (TransferDirection)reader.ReadInteger();
             var token = reader.ReadInteger();
             var filename = reader.ReadString();
-            var fileSize = reader.ReadLong();
+
+            long fileSize = 0;
+
+            if (reader.HasMoreData)
+            {
+                fileSize = reader.ReadLong();
+            }
 
             return new TransferRequest(direction, token, filename, fileSize);
         }

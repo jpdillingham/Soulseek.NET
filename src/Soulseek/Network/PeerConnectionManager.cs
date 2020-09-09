@@ -213,7 +213,7 @@ namespace Soulseek.Network
             using var indirectCts = new CancellationTokenSource();
             using var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
 
-            Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {remoteToken} for {filename}");
+            Diagnostic.Debug($"Waiting for a direct or indirect transfer connection from {username} with remote token {remoteToken} for {filename}");
 
             // completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
             var indirect = SoulseekClient.Waiter.Wait<IConnection>(

@@ -634,7 +634,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
-            var expected = new TransferResponse(token, "Queued.").ToByteArray();
+            var expected = new TransferResponse(token, "Queued").ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 

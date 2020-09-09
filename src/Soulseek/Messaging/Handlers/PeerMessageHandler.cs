@@ -220,7 +220,7 @@ namespace Soulseek.Messaging.Handlers
                             }
                             else
                             {
-                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued.").ToByteArray()).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued").ToByteArray()).ConfigureAwait(false);
                                 await TrySendPlaceInQueueAsync(connection, transferRequest.Filename).ConfigureAwait(false);
                             }
                         }
