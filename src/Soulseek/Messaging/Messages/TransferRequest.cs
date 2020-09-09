@@ -77,14 +77,7 @@ namespace Soulseek.Messaging.Messages
 
             if (reader.HasMoreData)
             {
-                if (reader.Remaining == 4)
-                {
-                    fileSize = reader.ReadInteger();
-                }
-                else
-                {
-                    fileSize = reader.ReadLong();
-                }
+                fileSize = reader.ReadLong();
             }
 
             return new TransferRequest(direction, token, filename, fileSize);
