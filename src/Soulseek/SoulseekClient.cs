@@ -1993,8 +1993,7 @@ namespace Soulseek
 
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
-                    // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
-                    // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
+                    // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
                     UpdateState(TransferStates.Initializing);
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
