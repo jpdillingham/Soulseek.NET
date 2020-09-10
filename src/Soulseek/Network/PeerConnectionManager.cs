@@ -287,7 +287,7 @@ namespace Soulseek.Network
 
                 if (cached)
                 {
-                    Diagnostic.Debug($"Retrieved cached message connection to {r.Username} ({r.IPEndPoint})");
+                    Diagnostic.Debug($"Retrieved cached message connection to {r.Username} ({r.IPEndPoint}) (type: {connection.Type}, id: {connection.Id})");
                 }
 
                 return connection;
@@ -367,7 +367,7 @@ namespace Soulseek.Network
 
                 if (cached)
                 {
-                    Diagnostic.Debug($"Retrieved cached message connection to {username} ({ipEndPoint})");
+                    Diagnostic.Debug($"Retrieved cached message connection to {username} ({ipEndPoint}) (type: {connection.Type}, id: {connection.Id})");
                 }
 
                 return connection;
