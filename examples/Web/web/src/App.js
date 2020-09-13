@@ -32,17 +32,20 @@ class App extends Component {
 
     componentDidMount = async () => {
         const { login } = this.state;
+        const securityEnabled = (await api.get('/session/enabled')).data;
 
-        const response = await api.get('/session/enabled');
-        const securityEnabled = response.data;
-
-        if (securityEnabled) {
-            this.loadToken();
-        } else {
-            this.setToken(localStorage, tokenPassthroughValue)
+        if (!securityEnabled) {
+            this.setToken(sessionStorage, tokenPassthroughValue)
         }
+        
+        this.setState({
+            token: this.getToken(),
+            login: {
+                ...login,
+                initialized: true
+            }
+        });
 
-        this.setState({ login: { ...login, initialized: true } })
         await this.checkToken();
     }
 
@@ -54,14 +57,8 @@ class App extends Component {
         }
     }
 
-    loadToken = () => {
-        const token = JSON.parse(sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey));
-        this.setState({ token });
-    }
-
-    setToken = (storage, token) => {
-        storage.setItem(tokenKey, JSON.stringify(token))
-    }
+    getToken = () => JSON.parse(sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey));
+    setToken = (storage, token) => storage.setItem(tokenKey, JSON.stringify(token));
 
     login = (username, password, rememberMe) => {
         this.setState({ login: { ...this.state.login, pending: true, error: undefined }}, async () => {
@@ -81,7 +78,7 @@ class App extends Component {
         this.setState({ ...initialState, login: { ...initialState.login, initialized: true }});
     }
 
-    withSessionCheck = (component) => {
+    withTokenCheck = (component) => {
         this.checkToken(); // async, runs in the background
         return { ...component };
     }
@@ -91,66 +88,67 @@ class App extends Component {
 
         return (
             <>
-            {!token ? 
-            <LoginForm 
-                onLoginAttempt={this.login} 
-                initialized={login.initialized}
-                loading={login.pending} 
-                error={login.error}
-            /> : 
-            login.initialized && <Sidebar.Pushable as={Segment} className='app'>
-                <Sidebar 
-                    as={Menu} 
-                    animation='overlay' 
-                    icon='labeled' 
-                    inverted 
-                    horizontal='true'
-                    direction='top' 
-                    visible width='thin'
-                >
-                    <Link to='.'>
-                        <Menu.Item>
-                            <Icon name='search'/>Search
-                        </Menu.Item>
-                    </Link>
-                    <Link to='browse'>
-                        <Menu.Item>
-                            <Icon name='folder open'/>Browse
-                        </Menu.Item>
-                    </Link>
-                    <Link to='downloads'>
-                        <Menu.Item>
-                            <Icon name='download'/>Downloads
-                        </Menu.Item>
-                    </Link>
-                    <Link to='uploads'>
-                        <Menu.Item>
-                            <Icon name='upload'/>Uploads
-                        </Menu.Item>
-                    </Link>
-                    {token !== tokenPassthroughValue && <Modal
-                        trigger={
-                            <Menu.Item position='right'>
-                                <Icon name='sign-out'/>Log Out
-                            </Menu.Item>
-                        }
-                        centered
-                        size='mini'
-                        header={<Header icon='sign-out' content='Confirm Log Out' />}
-                        content='Are you sure you want to log out?'
-                        actions={['Cancel', { key: 'done', content: 'Log Out', negative: true, onClick: this.logout }]}
-                    />}
-                </Sidebar>
-                <Sidebar.Pusher className='app-content'>
-                    <Switch>
-                        <Route path='*/browse' render={(props) => this.withSessionCheck(<Browse {...props}/>)}/>
-                        <Route path='*/downloads' render={(props) => this.withSessionCheck(<Transfers {...props} direction='download'/>)}/>
-                        <Route path='*/uploads' render={(props) => this.withSessionCheck(<Transfers {...props} direction='upload'/>)}/>
-                        <Route path='*/' render={(props) => this.withSessionCheck(<Search {...props}/>)}/>
-                    </Switch>
-                </Sidebar.Pusher>
-            </Sidebar.Pushable>
-            }</>
+                {!token ? 
+                    <LoginForm 
+                        onLoginAttempt={this.login} 
+                        initialized={login.initialized}
+                        loading={login.pending} 
+                        error={login.error}
+                    /> : 
+                    login.initialized && <Sidebar.Pushable as={Segment} className='app'>
+                        <Sidebar 
+                            as={Menu} 
+                            animation='overlay' 
+                            icon='labeled' 
+                            inverted 
+                            horizontal='true'
+                            direction='top' 
+                            visible width='thin'
+                        >
+                            <Link to='.'>
+                                <Menu.Item>
+                                    <Icon name='search'/>Search
+                                </Menu.Item>
+                            </Link>
+                            <Link to='browse'>
+                                <Menu.Item>
+                                    <Icon name='folder open'/>Browse
+                                </Menu.Item>
+                            </Link>
+                            <Link to='downloads'>
+                                <Menu.Item>
+                                    <Icon name='download'/>Downloads
+                                </Menu.Item>
+                            </Link>
+                            <Link to='uploads'>
+                                <Menu.Item>
+                                    <Icon name='upload'/>Uploads
+                                </Menu.Item>
+                            </Link>
+                            {token !== tokenPassthroughValue && <Modal
+                                trigger={
+                                    <Menu.Item position='right'>
+                                        <Icon name='sign-out'/>Log Out
+                                    </Menu.Item>
+                                }
+                                centered
+                                size='mini'
+                                header={<Header icon='sign-out' content='Confirm Log Out' />}
+                                content='Are you sure you want to log out?'
+                                actions={['Cancel', { key: 'done', content: 'Log Out', negative: true, onClick: this.logout }]}
+                            />}
+                        </Sidebar>
+                        <Sidebar.Pusher className='app-content'>
+                            <Switch>
+                                <Route path='*/browse' render={(props) => this.withTokenCheck(<Browse {...props}/>)}/>
+                                <Route path='*/downloads' render={(props) => this.withTokenCheck(<Transfers {...props} direction='download'/>)}/>
+                                <Route path='*/uploads' render={(props) => this.withTokenCheck(<Transfers {...props} direction='upload'/>)}/>
+                                <Route path='*/' render={(props) => this.withTokenCheck(<Search {...props}/>)}/>
+                            </Switch>
+                        </Sidebar.Pusher>
+                    </Sidebar.Pushable>
+                }
+            </>
         )
     }
 }
