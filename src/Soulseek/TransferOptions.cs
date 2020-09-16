@@ -43,7 +43,7 @@ namespace Soulseek
             Func<Transfer, CancellationToken, Task> governor = null,
             Action<TransferStateChangedEventArgs> stateChanged = null,
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
-            int maximumLingerTime = 5000,
+            int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
             bool disposeOutputStreamOnCompletion = false)
         {
@@ -72,7 +72,7 @@ namespace Soulseek
 
         /// <summary>
         ///     Gets the maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a
-        ///     transfer. (Default = 5000).
+        ///     transfer. (Default = 3000).
         /// </summary>
         public int MaximumLingerTime { get; }
 
