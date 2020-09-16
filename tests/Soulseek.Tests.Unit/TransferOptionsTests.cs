@@ -27,12 +27,14 @@ namespace Soulseek.Tests.Unit
             bool disposeOutput,
             Func<Transfer, CancellationToken, Task> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
+            int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated)
         {
             var o = new TransferOptions(
                 governor,
                 stateChanged,
                 progressUpdated,
+                maximumLingerTime,
                 disposeInput,
                 disposeOutput);
 
@@ -41,6 +43,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(governor, o.Governor);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
+            Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
         }
 
         [Trait("Category", "Instantiation")]
