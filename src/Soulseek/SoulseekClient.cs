@@ -2744,7 +2744,7 @@ namespace Soulseek
                             await Task.Delay(100).ConfigureAwait(false);
                         }
                     }
-                    catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed")
+                    catch (ConnectionReadException)
                     {
                         // swallow this specific exception; we're expecting it when the connection closes.
                     }
