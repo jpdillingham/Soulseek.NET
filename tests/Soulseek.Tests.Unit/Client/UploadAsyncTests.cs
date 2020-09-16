@@ -1876,7 +1876,7 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
             transferConn.Setup(m => m.ReadAsync(1, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<byte[]>(new ConnectionReadException("Remote connection closed.", new ConnectionException("Remote connection closed."))));
+                .Returns(Task.FromException<byte[]>(new ConnectionReadException("Remote connection closed", new ConnectionException("Remote connection closed"))));
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
@@ -1888,7 +1888,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(maximumLingerTime: int.MaxValue), null));
 
                 Assert.Null(ex);
             }
