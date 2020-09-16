@@ -2648,6 +2648,7 @@ namespace Soulseek
                     throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
                 }
 
+                Diagnostic.Debug($"Upload semaphore for {username} acquired");
                 semaphoreAcquired = true;
 
                 // in case the upload record was removed via cleanup while we were waiting, add it back.
@@ -2726,14 +2727,27 @@ namespace Soulseek
                     // data after the offset
                     try
                     {
-                        await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                        var lingerStartTime = DateTime.UtcNow;
+
+                        while (true)
+                        {
+                            if (lingerStartTime.AddMilliseconds(options.MaximumLingerTime) <= DateTime.UtcNow)
+                            {
+                                upload.Connection.Disconnect("Transfer complete, maximum linger time exceeded");
+                                Diagnostic.Warning($"Transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} forcibly closed after exceeding maximum linger time of {options.MaximumLingerTime}ms.");
+                                break;
+                            }
+
+                            await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                            await Task.Delay(100).ConfigureAwait(false);
+                        }
                     }
-                    catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
+                    catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed")
                     {
-                        // swallow this specific exception
+                        // swallow this specific exception; we're expecting it when the connection closes.
                     }
 
-                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} from {username} complete ({startOffset + inputStream.Position} of {upload.Size} bytes).");
+                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({startOffset + inputStream.Position} of {upload.Size} bytes).");
                 }
                 catch (Exception ex)
                 {
@@ -2791,6 +2805,7 @@ namespace Soulseek
                 // threw due to cancellation
                 if (semaphoreAcquired)
                 {
+                    Diagnostic.Debug($"Upload semaphore for {username} released");
                     semaphore.Release();
                 }
 
