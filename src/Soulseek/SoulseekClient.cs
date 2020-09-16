@@ -1931,6 +1931,7 @@ namespace Soulseek
                 options.Governor,
                 options.StateChanged,
                 options.ProgressUpdated,
+                options.MaximumLingerTime,
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
@@ -2590,6 +2591,7 @@ namespace Soulseek
                 options.Governor,
                 options.StateChanged,
                 options.ProgressUpdated,
+                options.MaximumLingerTime,
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
