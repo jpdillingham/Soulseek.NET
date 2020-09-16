@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -2044,7 +2044,18 @@ namespace Soulseek
                     // initiate the connection
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                    download.Connection = await connectionTask.ConfigureAwait(false);
+                    try
+                    {
+                        download.Connection = await connectionTask.ConfigureAwait(false);
+                    }
+                    catch (ConnectionException)
+                    {
+                        // if the remote user doesn't initiate a transfer connection, try to initiate one from this end.
+                        // the remote client in this scenario is most likely Nicotine+.
+                        download.Connection = await PeerConnectionManager
+                            .GetTransferConnectionAsync(username, endpoint, download.RemoteToken.Value, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
                 }
 
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
