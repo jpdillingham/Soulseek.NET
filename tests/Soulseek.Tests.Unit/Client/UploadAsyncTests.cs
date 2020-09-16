@@ -886,7 +886,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false);
+                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0);
 
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, stream, token, txoptions, null));
 
@@ -933,7 +933,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false);
+                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0);
 
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, stream, token, txoptions, null));
 
@@ -1088,7 +1088,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.TransferProgressUpdated += (d, e) => events.Add(e);
 
-                await s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(maximumLingerTime: 0), null);
 
                 Assert.Equal(3, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
@@ -1202,7 +1202,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(maximumLingerTime: 0), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -1328,7 +1328,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(maximumLingerTime: 0), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
