@@ -2714,6 +2714,11 @@ namespace Soulseek
 
                     upload.StartOffset = startOffset;
 
+                    if (upload.StartOffset > upload.Size)
+                    {
+                        throw new TransferException($"Requested start offset of {startOffset} bytes exceeds file length of {upload.Size} bytes");
+                    }
+
                     Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {startOffset} bytes");
                     inputStream.Seek(startOffset, SeekOrigin.Begin);
 
