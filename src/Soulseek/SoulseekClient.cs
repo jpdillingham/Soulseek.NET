@@ -2720,7 +2720,10 @@ namespace Soulseek
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(startOffset);
 
-                    await upload.Connection.WriteAsync(length - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
+                    if (length - startOffset > 0)
+                    {
+                        await upload.Connection.WriteAsync(length - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
+                    }
 
                     upload.State = TransferStates.Succeeded;
 
@@ -2748,7 +2751,7 @@ namespace Soulseek
                         // swallow this specific exception; we're expecting it when the connection closes.
                     }
 
-                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({startOffset + inputStream.Position} of {upload.Size} bytes).");
+                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");
                 }
                 catch (Exception ex)
                 {
