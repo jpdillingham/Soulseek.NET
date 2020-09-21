@@ -2714,13 +2714,21 @@ namespace Soulseek
 
                     upload.StartOffset = startOffset;
 
+                    if (upload.StartOffset > upload.Size)
+                    {
+                        throw new TransferException($"Requested start offset of {startOffset} bytes exceeds file length of {upload.Size} bytes");
+                    }
+
                     Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {startOffset} bytes");
                     inputStream.Seek(startOffset, SeekOrigin.Begin);
 
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(startOffset);
 
-                    await upload.Connection.WriteAsync(length - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
+                    if (length - startOffset > 0)
+                    {
+                        await upload.Connection.WriteAsync(length - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
+                    }
 
                     upload.State = TransferStates.Succeeded;
 
@@ -2748,7 +2756,7 @@ namespace Soulseek
                         // swallow this specific exception; we're expecting it when the connection closes.
                     }
 
-                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({startOffset + inputStream.Position} of {upload.Size} bytes).");
+                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");
                 }
                 catch (Exception ex)
                 {
