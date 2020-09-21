@@ -2725,7 +2725,6 @@ namespace Soulseek
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(startOffset);
 
-                    // Soulseek NS will seek to the length of the file if the requested file exists on the local filesystem
                     if (length - startOffset > 0)
                     {
                         await upload.Connection.WriteAsync(length - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
