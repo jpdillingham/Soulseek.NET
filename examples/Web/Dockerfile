@@ -9,6 +9,6 @@ RUN mkdir /var/slsk/download
 ENV SLSK_OUTPUT_DIR=/var/slsk/download
 ENV SLSK_SHARED_DIR=/var/slsk/shared
 
-ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_URLS=http://+:5000;https://+:5001
 
 ENTRYPOINT ["dotnet", "app/WebAPI.dll"]
