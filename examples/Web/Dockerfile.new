@@ -1,0 +1,31 @@
+
+FROM node as web
+
+WORKDIR /src
+COPY web .
+
+RUN npm install
+RUN npm run build
+
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS api
+
+WORKDIR /src
+COPY api .
+COPY --from=web src/build/ wwwroot
+
+RUN dotnet publish --configuration Release
+
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS app
+
+COPY --from=api src/bin/Release/netcoreapp3.1/publish app/
+
+RUN mkdir /var/slsk
+RUN mkdir /var/slsk/shared
+RUN mkdir /var/slsk/download
+
+ENV SLSK_OUTPUT_DIR=/var/slsk/download
+ENV SLSK_SHARED_DIR=/var/slsk/shared
+
+ENV ASPNETCORE_URLS=http://+:5000
+
+ENTRYPOINT ["dotnet", "app/WebAPI.dll"]
