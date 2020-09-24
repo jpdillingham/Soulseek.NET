@@ -61,8 +61,11 @@ class Search extends Component {
         this.setState(initialState, () => {
             this.saveState();
             this.setSearchText();
+            this.inputtext.focus();
         });
     }
+
+    keyUp = (event) => event.key === 'Escape' ? this.clear() : '';
 
     onSearchPhraseChange = (event, data) => {
         this.setState({ searchPhrase: data.value });
@@ -82,6 +85,8 @@ class Search extends Component {
         this.setState({
             interval: window.setInterval(this.fetchStatus, 500)
         }, () => this.setSearchText());
+
+        document.addEventListener("keyup", this.keyUp, false);
     }
 
     setSearchText = () => {
@@ -92,6 +97,7 @@ class Search extends Component {
     componentWillUnmount = () => {
         clearInterval(this.state.interval);
         this.setState({ interval: undefined });
+        document.removeEventListener("keyup", this.keyUp, false);
     }
 
     fetchStatus = () => {

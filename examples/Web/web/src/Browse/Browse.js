@@ -49,8 +49,11 @@ class Browse extends Component {
   clear = () => {
     this.setState(initialState, () => {
       this.saveState();
+      this.inputtext.focus();
     });
   }
+
+  keyUp = (event) => event.key === 'Escape' ? this.clear() : '';
 
   onUsernameChange = (event, data) => {
     this.setState({ username: data.value });
@@ -70,13 +73,16 @@ class Browse extends Component {
     this.fetchStatus();
     this.loadState();
     this.setState({ 
-        interval: window.setInterval(this.fetchStatus, 500)
+      interval: window.setInterval(this.fetchStatus, 500)
     }, () => this.saveState());
+    
+    document.addEventListener("keyup", this.keyUp, false);
   }
-
+  
   componentWillUnmount = () => {
     clearInterval(this.state.interval);
     this.setState({ interval: undefined });
+    document.removeEventListener("keyup", this.keyUp, false);
   }
 
   fetchStatus = () => {
