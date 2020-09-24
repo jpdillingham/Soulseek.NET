@@ -137,7 +137,8 @@ class Browse extends Component {
             disabled={pending}
             className='search-input'
             placeholder="Username"
-            action={!pending && (browseState === 'idle' ? { icon: 'search', onClick: this.browse } : { icon: 'x', color: 'red', onClick: this.clear })} 
+            action={!pending && (browseState === 'idle' ? { icon: 'search', onClick: this.browse } : { icon: 'x', color: 'red', onClick: this.clear })}
+            onKeyUp={(e) => e.key === 'Enter' ? this.browse() : ''}
           />
         </Segment>
         {pending ? 
