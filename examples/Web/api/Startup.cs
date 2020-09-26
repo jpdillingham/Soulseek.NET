@@ -25,6 +25,7 @@
     using Soulseek;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
+    using WebAPI.Entities;
     using WebAPI.Security;
     using WebAPI.Trackers;
 
@@ -150,9 +151,10 @@
             services.AddSingleton<ITransferTracker, TransferTracker>();
             services.AddSingleton<ISearchTracker, SearchTracker>();
             services.AddSingleton<IBrowseTracker, BrowseTracker>();
+            services.AddSingleton<IConversationTracker, ConversationTracker>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker, IConversationTracker conversationTracker)
         {
             if (!env.IsDevelopment())
             {
@@ -220,6 +222,7 @@
                 distributedChildLimit: DistributedChildLimit,
                 enableDistributedNetwork: EnableDistributedNetwork,
                 minimumDiagnosticLevel: DiagnosticLevel,
+                autoAcknowledgePrivateMessages: false,
                 serverConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: 0),
@@ -265,7 +268,12 @@
             // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
 
-            Client.PrivateMessageReceived += (e, args) => Console.WriteLine($"[{args.Timestamp}] [PM]{(args.IsAdmin ? " [ADMIN]" : "")} {args.Username}: {args.Message}");
+            Client.PrivateMessageReceived += async (e, args) =>
+            {
+                conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
+                Console.WriteLine($"[{args.Timestamp}] [PM]{(args.IsAdmin ? " [ADMIN]" : "")} {args.Username}: {args.Message}");
+                await Client.AcknowledgePrivateMessageAsync(args.Id);
+            };
 
             Client.Disconnected += async (e, args) =>
             {
