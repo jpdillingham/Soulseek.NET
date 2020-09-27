@@ -78,7 +78,7 @@ namespace Soulseek
         public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.UtcNow) - StartTime.Value);
 
         /// <summary>
-        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
+        ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
         public DateTime? EndTime { get; private set; }
 
@@ -123,7 +123,7 @@ namespace Soulseek
         public long StartOffset { get; set; }
 
         /// <summary>
-        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
+        ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
         public DateTime? StartTime { get; private set; }
 
