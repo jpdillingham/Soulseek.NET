@@ -64,14 +64,12 @@ namespace Soulseek
         /// <param name="timestamp">The timestamp at which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
-        public PrivateMessageReceivedEventArgs(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
+        public PrivateMessageReceivedEventArgs(int id, DateTime timestamp, string username, string message)
         {
             Id = id;
             Timestamp = timestamp;
             Username = username;
             Message = message;
-            IsAdmin = isAdmin;
         }
 
         /// <summary>
@@ -79,7 +77,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="notification">The notification which raised the event.</param>
         internal PrivateMessageReceivedEventArgs(PrivateMessageNotification notification)
-            : this(notification.Id, notification.Timestamp, notification.Username, notification.Message, notification.IsAdmin)
+            : this(notification.Id, notification.Timestamp, notification.Username, notification.Message)
         {
         }
 
@@ -87,11 +85,6 @@ namespace Soulseek
         ///     Gets the unique id of the message.
         /// </summary>
         public int Id { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether the message was sent by an administrator.
-        /// </summary>
-        public bool IsAdmin { get; }
 
         /// <summary>
         ///     Gets the message content.
