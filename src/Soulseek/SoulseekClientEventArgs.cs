@@ -61,15 +61,17 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="PrivateMessageReceivedEventArgs"/> class.
         /// </summary>
         /// <param name="id">The unique id of the message.</param>
-        /// <param name="timestamp">The timestamp at which the message was sent.</param>
+        /// <param name="timestamp">The UTC timestamp at which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        public PrivateMessageReceivedEventArgs(int id, DateTime timestamp, string username, string message)
+        /// <param name="replayed">A value indicating whether the message was replayed from a previous time.</param>
+        public PrivateMessageReceivedEventArgs(int id, DateTime timestamp, string username, string message, bool replayed)
         {
             Id = id;
             Timestamp = timestamp;
             Username = username;
             Message = message;
+            Replayed = replayed;
         }
 
         /// <summary>
@@ -77,7 +79,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="notification">The notification which raised the event.</param>
         internal PrivateMessageReceivedEventArgs(PrivateMessageNotification notification)
-            : this(notification.Id, notification.Timestamp, notification.Username, notification.Message)
+            : this(notification.Id, notification.Timestamp, notification.Username, notification.Message, notification.Replayed)
         {
         }
 
@@ -92,7 +94,12 @@ namespace Soulseek
         public string Message { get; }
 
         /// <summary>
-        ///     Gets the timestamp at which the message was sent.
+        ///     Gets a value indicating whether the message was replayed from a previous time.
+        /// </summary>
+        public bool Replayed { get; }
+
+        /// <summary>
+        ///     Gets the UTC timestamp at which the message was sent.
         /// </summary>
         public DateTime Timestamp { get; }
 
