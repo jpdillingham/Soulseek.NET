@@ -23,11 +23,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(int id, DateTime timestamp, string username, string message, bool isAdmin)
+        public void Instantiates_With_The_Given_Data(int id, DateTime timestamp, string username, string message)
         {
             PrivateMessageNotification response = null;
 
-            var ex = Record.Exception(() => response = new PrivateMessageNotification(id, timestamp, username, message, isAdmin));
+            var ex = Record.Exception(() => response = new PrivateMessageNotification(id, timestamp, username, message));
 
             Assert.Null(ex);
 
@@ -35,7 +35,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(timestamp, response.Timestamp);
             Assert.Equal(username, response.Username);
             Assert.Equal(message, response.Message);
-            Assert.Equal(isAdmin, response.IsAdmin);
         }
 
         [Trait("Category", "Parse")]
@@ -68,7 +67,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(int id, int timeOffset, string username, string message, bool isAdmin)
+        public void Parse_Returns_Expected_Data(int id, int timeOffset, string username, string message)
         {
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
@@ -79,7 +78,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(timeOffset)
                 .WriteString(username)
                 .WriteString(message)
-                .WriteByte((byte)(isAdmin ? 1 : 0))
+                .WriteByte((byte)(0))
                 .Build();
 
             var response = PrivateMessageNotification.FromByteArray(msg);
@@ -88,7 +87,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(timestamp, response.Timestamp);
             Assert.Equal(username, response.Username);
             Assert.Equal(message, response.Message);
-            Assert.Equal(isAdmin, response.IsAdmin);
         }
     }
 }
