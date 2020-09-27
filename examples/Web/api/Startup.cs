@@ -268,11 +268,10 @@
             // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
 
-            Client.PrivateMessageReceived += async (e, args) =>
+            Client.PrivateMessageReceived += (e, args) =>
             {
                 conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
-                Console.WriteLine($"[{args.Timestamp}] [PM]{(args.IsAdmin ? " [ADMIN]" : "")} {args.Username}: {args.Message}");
-                await Client.AcknowledgePrivateMessageAsync(args.Id);
+                Console.WriteLine($"[{args.Timestamp.ToLocalTime()}] {(args.Replayed ? "[REPLAY] " : "")}[PM] {args.Username}: {args.Message}");
             };
 
             Client.Disconnected += async (e, args) =>
