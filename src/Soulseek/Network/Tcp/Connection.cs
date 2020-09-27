@@ -571,7 +571,7 @@ namespace Soulseek.Network.Tcp
 
                     totalBytesRead += bytesRead;
 
-                    await outputStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+                    await outputStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
 
                     Interlocked.CompareExchange(ref DataRead, null, null)?
                         .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
@@ -623,7 +623,7 @@ namespace Soulseek.Network.Tcp
                     var bytesRemaining = length - totalBytesWritten;
 
                     var bytesToRead = bytesRemaining >= inputBuffer.Length ? inputBuffer.Length : (int)bytesRemaining;
-                    var bytesRead = await inputStream.ReadAsync(inputBuffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(inputBuffer.AsMemory(0, bytesToRead), cancellationToken).ConfigureAwait(false);
 
                     await Stream.WriteAsync(inputBuffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 

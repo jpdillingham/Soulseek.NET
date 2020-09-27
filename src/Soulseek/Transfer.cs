@@ -34,10 +34,10 @@ namespace Soulseek
         /// <param name="bytesTransferred">The total number of bytes transferred.</param>
         /// <param name="averageSpeed">The current average download speed.</param>
         /// <param name="startTime">
-        ///     The time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
+        ///     The UTC time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </param>
         /// <param name="endTime">
-        ///     The time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
+        ///     The UTC time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </param>
         /// <param name="remoteToken">The remote unique token for the transfer.</param>
         /// <param name="ipEndPoint">The ip endpoint of the remote transfer connection, if one has been established.</param>
@@ -116,10 +116,10 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current duration of the transfer, if it has been started.
         /// </summary>
-        public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.Now) - StartTime.Value);
+        public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.UtcNow) - StartTime.Value);
 
         /// <summary>
-        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
+        ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
         public DateTime? EndTime { get; }
 
@@ -159,7 +159,7 @@ namespace Soulseek
         public long StartOffset { get; }
 
         /// <summary>
-        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
+        ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
         public DateTime? StartTime { get; }
 

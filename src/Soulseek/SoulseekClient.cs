@@ -2158,7 +2158,7 @@ namespace Soulseek
 
                 if (options.DisposeOutputStreamOnCompletion)
                 {
-                    await outputStream.FlushAsync().ConfigureAwait(false);
+                    await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
                     outputStream.Dispose();
                 }
 
@@ -2241,7 +2241,7 @@ namespace Soulseek
 #pragma warning disable CA2000 // Dispose objects before losing scope
                 var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
 #pragma warning restore CA2000 // Dispose objects before losing scope
-                await semaphore.WaitAsync().ConfigureAwait(false);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 try
                 {
@@ -2748,7 +2748,7 @@ namespace Soulseek
                             }
 
                             await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
-                            await Task.Delay(100).ConfigureAwait(false);
+                            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
                         }
                     }
                     catch (ConnectionReadException)
