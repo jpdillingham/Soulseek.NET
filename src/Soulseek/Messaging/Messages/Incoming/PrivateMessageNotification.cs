@@ -27,25 +27,18 @@ namespace Soulseek.Messaging.Messages
         /// <param name="timestamp">The timestamp at which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
-        public PrivateMessageNotification(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
+        public PrivateMessageNotification(int id, DateTime timestamp, string username, string message)
         {
             Id = id;
             Timestamp = timestamp;
             Username = username;
             Message = message;
-            IsAdmin = isAdmin;
         }
 
         /// <summary>
         ///     Gets the unique id of the message.
         /// </summary>
         public int Id { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether the message was sent by an administrator.
-        /// </summary>
-        public bool IsAdmin { get; }
 
         /// <summary>
         ///     Gets the message content.
@@ -82,13 +75,16 @@ namespace Soulseek.Messaging.Messages
             var timestampSeconds = reader.ReadInteger();
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            var timestamp = epoch.AddSeconds(timestampSeconds).ToLocalTime();
+            var timestamp = epoch.AddSeconds(timestampSeconds);
 
             var username = reader.ReadString();
             var msg = reader.ReadString();
-            var isAdmin = reader.ReadByte() == 1;
 
-            return new PrivateMessageNotification(id, timestamp, username, msg, isAdmin);
+            // documented as 'IsAdmin'; indicating that an admin sent the message,
+            // but does not appear to behave that way.
+            reader.ReadByte();
+
+            return new PrivateMessageNotification(id, timestamp, username, msg);
         }
     }
 }
