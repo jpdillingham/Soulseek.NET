@@ -143,13 +143,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises PrivateMessageReceived event on ServerPrivateMessage"), AutoData]
-        public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
+        public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool replayed)
         {
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: false);
             var (handler, mocks) = GetFixture(options);
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
+            var timestamp = epoch.AddSeconds(timeOffset);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateMessage)
@@ -157,7 +157,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(timeOffset)
                 .WriteString(username)
                 .WriteString(message)
-                .WriteByte((byte)(isAdmin ? 1 : 0))
+                .WriteByte((byte)(replayed ? 0 : 1))
                 .Build();
 
             PrivateMessageReceivedEventArgs response = null;
@@ -170,7 +170,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(timestamp, response.Timestamp);
             Assert.Equal(username, response.Username);
             Assert.Equal(message, response.Message);
-            Assert.Equal(isAdmin, response.IsAdmin);
+            Assert.Equal(replayed, response.Replayed);
         }
 
         [Trait("Category", "Message")]

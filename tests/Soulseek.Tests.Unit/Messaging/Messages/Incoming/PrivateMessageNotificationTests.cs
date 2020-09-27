@@ -23,11 +23,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(int id, DateTime timestamp, string username, string message)
+        public void Instantiates_With_The_Given_Data(int id, DateTime timestamp, string username, string message, bool replayed)
         {
             PrivateMessageNotification response = null;
 
-            var ex = Record.Exception(() => response = new PrivateMessageNotification(id, timestamp, username, message));
+            var ex = Record.Exception(() => response = new PrivateMessageNotification(id, timestamp, username, message, replayed));
 
             Assert.Null(ex);
 
@@ -35,6 +35,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(timestamp, response.Timestamp);
             Assert.Equal(username, response.Username);
             Assert.Equal(message, response.Message);
+            Assert.Equal(replayed, response.Replayed);
         }
 
         [Trait("Category", "Parse")]
@@ -70,7 +71,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data(int id, int timeOffset, string username, string message)
         {
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
+            var timestamp = epoch.AddSeconds(timeOffset);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateMessage)
@@ -78,7 +79,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(timeOffset)
                 .WriteString(username)
                 .WriteString(message)
-                .WriteByte((byte)(0))
+                .WriteByte((byte)0)
                 .Build();
 
             var response = PrivateMessageNotification.FromByteArray(msg);
