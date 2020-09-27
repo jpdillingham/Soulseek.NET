@@ -24,15 +24,17 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="PrivateMessageNotification"/> class.
         /// </summary>
         /// <param name="id">The unique id of the message.</param>
-        /// <param name="timestamp">The timestamp at which the message was sent.</param>
+        /// <param name="timestamp">The UTC timestamp at which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        public PrivateMessageNotification(int id, DateTime timestamp, string username, string message)
+        /// <param name="replayed">A value indicating whether the message was replayed from a previous time.</param>
+        public PrivateMessageNotification(int id, DateTime timestamp, string username, string message, bool replayed)
         {
             Id = id;
             Timestamp = timestamp;
             Username = username;
             Message = message;
+            Replayed = replayed;
         }
 
         /// <summary>
@@ -46,7 +48,12 @@ namespace Soulseek.Messaging.Messages
         public string Message { get; }
 
         /// <summary>
-        ///     Gets the timestamp at which the message was sent.
+        ///     Gets a value indicating whether the message was replayed from a previous time.
+        /// </summary>
+        public bool Replayed { get; }
+
+        /// <summary>
+        ///     Gets the UTC timestamp at which the message was sent.
         /// </summary>
         public DateTime Timestamp { get; }
 
@@ -73,18 +80,14 @@ namespace Soulseek.Messaging.Messages
             var id = reader.ReadInteger();
 
             var timestampSeconds = reader.ReadInteger();
-
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            var timestamp = epoch.AddSeconds(timestampSeconds);
+            var timestamp = DateTimeOffset.FromUnixTimeSeconds(timestampSeconds).UtcDateTime;
 
             var username = reader.ReadString();
             var msg = reader.ReadString();
 
-            // documented as 'IsAdmin'; indicating that an admin sent the message,
-            // but does not appear to behave that way.
-            reader.ReadByte();
+            var replayed = reader.ReadByte() != 1;
 
-            return new PrivateMessageNotification(id, timestamp, username, msg);
+            return new PrivateMessageNotification(id, timestamp, username, msg, replayed);
         }
     }
 }
