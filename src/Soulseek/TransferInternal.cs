@@ -75,7 +75,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current duration of the transfer, if it has been started.
         /// </summary>
-        public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.Now) - StartTime.Value);
+        public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.UtcNow) - StartTime.Value);
 
         /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
@@ -141,12 +141,12 @@ namespace Soulseek
             {
                 if (!state.HasFlag(TransferStates.InProgress) && value.HasFlag(TransferStates.InProgress))
                 {
-                    StartTime = DateTime.Now;
+                    StartTime = DateTime.UtcNow;
                     EndTime = null;
                 }
                 else if (!state.HasFlag(TransferStates.Completed) && value.HasFlag(TransferStates.Completed))
                 {
-                    EndTime = DateTime.Now;
+                    EndTime = DateTime.UtcNow;
                 }
 
                 state = value;
@@ -176,14 +176,14 @@ namespace Soulseek
         {
             BytesTransferred = bytesTransferred;
 
-            var ts = DateTime.Now - (lastProgressTime ?? StartTime);
+            var ts = DateTime.UtcNow - (lastProgressTime ?? StartTime);
 
             if (ts.HasValue && ts.Value.TotalMilliseconds >= progressUpdateLimit)
             {
                 var currentSpeed = (bytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
-                lastProgressTime = DateTime.Now;
+                lastProgressTime = DateTime.UtcNow;
                 lastProgressBytes = bytesTransferred;
             }
         }
