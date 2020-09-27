@@ -14,7 +14,7 @@
         public int Id { get; set; }
 
         /// <summary>
-        ///     The timestamp of the message.
+        ///     The UTC timestamp of the message.
         /// </summary>
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
@@ -46,7 +46,6 @@
                 Timestamp = eventArgs.Timestamp,
                 Username = eventArgs.Username,
                 Message = eventArgs.Message,
-                IsAdmin = eventArgs.IsAdmin,
                 Acknowledged = false
             };
         }
