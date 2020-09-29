@@ -79,10 +79,10 @@
         /// <param name="message"></param>
         /// <returns></returns>
         /// <response code="201">The request completed successfully.</response>
-        /// <response conde="400">The specified message is null or empty.</response>
+        /// <response code="400">The specified message is null or empty.</response>
         [HttpPost("{username}")]
         [Authorize]
-        [ProducesResponseType(200)]
+        [ProducesResponseType(201)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
         {
@@ -93,14 +93,71 @@
 
             await Client.SendPrivateMessageAsync(username, message);
 
-            Tracker.AddOrUpdate(username, new PrivateMessage() { 
-                Username = Client.Username, 
-                Timestamp = DateTime.UtcNow, 
+            Tracker.AddOrUpdate(username, new PrivateMessage()
+            {
+                Username = Client.Username,
+                Timestamp = DateTime.UtcNow,
                 Message = message,
                 Acknowledged = true
             });
 
             return StatusCode(201);
+        }
+
+        /// <summary>
+        ///     Acknowledges the given message id for the given username.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">A conversation with the specified username, or a message matching the specified id could not be found.</response>
+        [HttpPut("{username}/{id}")]
+        [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Acknowledge([FromRoute]string username, [FromRoute]int id)
+        {
+            Tracker.Conversations.TryGetValue(username, out var conversation);
+
+            if (conversation == default || !conversation.Any(p => p.Id == id))
+            {
+                return NotFound();
+            }
+
+            await Client.AcknowledgePrivateMessageAsync(id);
+            return StatusCode(200);
+        }
+
+        /// <summary>
+        ///     Acknowledges all messages for the given username.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">A conversation with the specified username could not be found.</response>
+        [HttpPut("{username}")]
+        [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> AcknowledgeAll([FromRoute]string username)
+        {
+            Tracker.Conversations.TryGetValue(username, out var conversation);
+
+            if (conversation == default)
+            {
+                return NotFound();
+            }
+
+            var tasks = new List<Task>();
+
+            foreach (var message in conversation.Where(p => !p.Acknowledged))
+            {
+                tasks.Add(Client.AcknowledgePrivateMessageAsync(message.Id));
+            }
+
+            await Task.WhenAll(tasks);
+            return StatusCode(200);
         }
     }
 }
