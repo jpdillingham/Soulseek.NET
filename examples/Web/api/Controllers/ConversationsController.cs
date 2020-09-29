@@ -37,6 +37,19 @@
         }
 
         /// <summary>
+        ///     Gets all tracked conversations.
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
+        [HttpGet("")]
+        [Authorize]
+        [ProducesResponseType(typeof(List<PrivateMessage>), 200)]
+        public IActionResult GetAll()
+        {
+            return Ok(Tracker.Conversations);
+        }
+
+        /// <summary>
         ///     Gets the conversation associated with the specified username.
         /// </summary>
         /// <param name="username">The username associated with the desired conversation.</param>
