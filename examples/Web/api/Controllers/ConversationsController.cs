@@ -71,5 +71,36 @@
 
             return Ok(conversation.OrderBy(m => m.Timestamp));
         }
+
+        /// <summary>
+        ///     Sends a private message to the specified username.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        /// <response code="201">The request completed successfully.</response>
+        /// <response conde="400">The specified message is null or empty.</response>
+        [HttpPost("{username}")]
+        [Authorize]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return BadRequest();
+            }
+
+            await Client.SendPrivateMessageAsync(username, message);
+
+            Tracker.AddOrUpdate(username, new PrivateMessage() { 
+                Username = Client.Username, 
+                Timestamp = DateTime.UtcNow, 
+                Message = message,
+                Acknowledged = true
+            });
+
+            return StatusCode(201);
+        }
     }
 }
