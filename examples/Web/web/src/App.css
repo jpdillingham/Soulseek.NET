@@ -24,6 +24,10 @@ body {
     width: 100% !important;
 }
 
+.result-card:last-child, .transfer-card:last-child {
+    margin-bottom: 17px !important;
+}
+
 .result-meta {
     margin-top: 5px;
 }
@@ -142,7 +146,7 @@ body {
 .showmore-button {
     padding: 20px !important;
     max-width: 1200px !important;
-    margin: auto !important;
+    margin-bottom: 17px !important;
 }
 
 .login-button {

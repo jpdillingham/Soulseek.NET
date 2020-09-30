@@ -38,7 +38,6 @@ class Transfers extends Component {
                 {downloads.map((user, index) => 
                     <TransferGroup key={index} direction={this.props.direction} user={user}/>
                 )}
-                <div>&nbsp;</div>
             </div>
         );
     }
