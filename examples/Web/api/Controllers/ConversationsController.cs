@@ -1,14 +1,12 @@
 ﻿namespace WebAPI.Controllers
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
-    using WebAPI.DTO;
     using WebAPI.Entities;
     using WebAPI.Trackers;
 
