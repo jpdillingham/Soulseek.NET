@@ -9,7 +9,7 @@ body {
 
 .app {
     margin: auto;
-    margin-bottom: 17px !important;
+    padding-bottom: 17px !important;
     border: 0px !important;
     border-radius: 0% !important;
     box-shadow: none !important;
@@ -54,9 +54,15 @@ body {
     .search-options-hide-no-slots {
         margin-left: 20px;
     }
+
     .transferlist-progress {
         max-width: 300px;
         width: 300px;
+    }
+
+    .chat-active-segment {
+        margin-top: 15px !important;
+        height: 100%;
     }
 }
 
@@ -145,4 +151,21 @@ body {
 
 .login-failure {
     text-align: left;
+}
+
+.chat-container {
+    padding-left: 15px;
+    padding-right: 15px;
+    max-width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.chat-grid {
+    /* height: calc(100vh - 60px); */
+}
+
+.chat-names-segment {
+    margin-top: 15px !important;
+    height: 100%;
 }
