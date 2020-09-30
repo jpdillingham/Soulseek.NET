@@ -7,6 +7,7 @@ import './App.css';
 import Search from './Search/Search';
 import Browse from './Browse/Browse';
 import Transfers from './Transfers/Transfers';
+import Chat from './Chat/Chat';
 import LoginForm from './LoginForm';
 
 import { 
@@ -110,11 +111,6 @@ class App extends Component {
                                     <Icon name='search'/>Search
                                 </Menu.Item>
                             </Link>
-                            <Link to='browse'>
-                                <Menu.Item>
-                                    <Icon name='folder open'/>Browse
-                                </Menu.Item>
-                            </Link>
                             <Link to='downloads'>
                                 <Menu.Item>
                                     <Icon name='download'/>Downloads
@@ -123,6 +119,21 @@ class App extends Component {
                             <Link to='uploads'>
                                 <Menu.Item>
                                     <Icon name='upload'/>Uploads
+                                </Menu.Item>
+                            </Link>
+                            <Link to='browse'>
+                                <Menu.Item>
+                                    <Icon name='folder open'/>Browse
+                                </Menu.Item>
+                            </Link>
+                            <Link to='rooms'>
+                                <Menu.Item>
+                                    <Icon name='comments'/>Rooms
+                                </Menu.Item>
+                            </Link>
+                            <Link to='chat'>
+                                <Menu.Item>
+                                    <Icon name='comment'/>Chat
                                 </Menu.Item>
                             </Link>
                             {token !== tokenPassthroughValue && <Modal
@@ -140,9 +151,11 @@ class App extends Component {
                         </Sidebar>
                         <Sidebar.Pusher className='app-content'>
                             <Switch>
+                                <Route path='*/chat' render={(props) => this.withTokenCheck(<Chat {...props}/>)}/>
+                                <Route path='*/rooms' render={(props) => this.withTokenCheck(<div>Rooms</div>)}/>
                                 <Route path='*/browse' render={(props) => this.withTokenCheck(<Browse {...props}/>)}/>
-                                <Route path='*/downloads' render={(props) => this.withTokenCheck(<Transfers {...props} direction='download'/>)}/>
                                 <Route path='*/uploads' render={(props) => this.withTokenCheck(<Transfers {...props} direction='upload'/>)}/>
+                                <Route path='*/downloads' render={(props) => this.withTokenCheck(<Transfers {...props} direction='download'/>)}/>
                                 <Route path='*/' render={(props) => this.withTokenCheck(<Search {...props}/>)}/>
                             </Switch>
                         </Sidebar.Pusher>
