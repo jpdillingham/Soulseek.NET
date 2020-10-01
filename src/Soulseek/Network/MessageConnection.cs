@@ -1,4 +1,4 @@
-// <copyright file="MessageConnection.cs" company="JP Dillingham">
+﻿// <copyright file="MessageConnection.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -18,6 +18,7 @@ namespace Soulseek.Network
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
     /// <summary>
@@ -187,7 +188,7 @@ namespace Soulseek.Network
             void RaiseMessageDataRead(object sender, ConnectionDataEventArgs e)
             {
                 Interlocked.CompareExchange(ref MessageDataRead, null, null)?
-                    .Invoke(this, new MessageDataReadEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
+                    .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
             }
 
             try
@@ -217,7 +218,7 @@ namespace Soulseek.Network
 
                         var messageBytes = message.ToArray();
                         Interlocked.CompareExchange(ref MessageRead, null, null)?
-                            .Invoke(this, new MessageReadEventArgs(messageBytes));
+                            .Invoke(this, new MessageEventArgs(messageBytes));
                     }
                     finally
                     {

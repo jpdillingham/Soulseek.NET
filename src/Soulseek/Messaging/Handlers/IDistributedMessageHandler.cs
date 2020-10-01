@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The child <see cref="IMessageConnection"/> from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        void HandleChildMessageRead(object sender, MessageReadEventArgs args);
+        void HandleChildMessageRead(object sender, MessageEventArgs args);
 
         /// <summary>
         ///     Handles incoming messages from distributed children.

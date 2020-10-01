@@ -104,7 +104,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleMessageRead(object sender, MessageReadEventArgs args)
+        public void HandleMessageRead(object sender, MessageEventArgs args)
         {
             HandleMessageRead(sender, args.Message);
         }

@@ -716,7 +716,7 @@ namespace Soulseek.Network
             }
         }
 
-        private void WaitForParentCandidateConnection_MessageRead(object sender, MessageReadEventArgs e)
+        private void WaitForParentCandidateConnection_MessageRead(object sender, MessageEventArgs e)
         {
             var conn = (IMessageConnection)sender;
 

@@ -1,4 +1,4 @@
-// <copyright file="IMessageConnection.cs" company="JP Dillingham">
+﻿// <copyright file="IMessageConnection.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,6 +13,10 @@
 namespace Soulseek.Network
 {
     using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Soulseek.Exceptions;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
     /// <summary>

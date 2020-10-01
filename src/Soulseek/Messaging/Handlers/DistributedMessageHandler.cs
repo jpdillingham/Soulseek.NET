@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The child <see cref="IMessageConnection"/> from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleChildMessageRead(object sender, MessageReadEventArgs args)
+        public void HandleChildMessageRead(object sender, MessageEventArgs args)
         {
             HandleChildMessageRead(sender, args.Message);
         }
@@ -96,7 +96,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleMessageRead(object sender, MessageReadEventArgs args)
+        public void HandleMessageRead(object sender, MessageEventArgs args)
         {
             HandleMessageRead(sender, args.Message);
         }

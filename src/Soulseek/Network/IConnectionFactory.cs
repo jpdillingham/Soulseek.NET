@@ -46,7 +46,7 @@ namespace Soulseek.Network
             IPEndPoint ipEndPoint,
             EventHandler connectedEventHandler,
             EventHandler<ConnectionDisconnectedEventArgs> disconnectedEventHandler,
-            EventHandler<MessageReadEventArgs> messageReadEventHandler,
+            EventHandler<MessageEventArgs> messageReadEventHandler,
             ConnectionOptions options = null,
             ITcpClient tcpClient = null);
 
