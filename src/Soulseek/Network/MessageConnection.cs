@@ -1,4 +1,4 @@
-﻿// <copyright file="MessageConnection.cs" company="JP Dillingham">
+// <copyright file="MessageConnection.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -57,7 +57,7 @@ namespace Soulseek.Network
             Connected += (sender, e) =>
             {
                 // if Username is empty, this is a server connection. begin reading continuously, and throw on exception.
-                if (string.IsNullOrEmpty(Username))
+                if (IsServerConnection)
                 {
                     Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
                 }
@@ -83,6 +83,11 @@ namespace Soulseek.Network
         ///     Occurs when a new message is received, but before it is read.
         /// </summary>
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
+        /// </summary>
+        public bool IsServerConnection => string.IsNullOrEmpty(Username);
 
         /// <summary>
         ///     Gets the unique identifier for the connection.

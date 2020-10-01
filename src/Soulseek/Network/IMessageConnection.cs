@@ -1,4 +1,4 @@
-﻿// <copyright file="IMessageConnection.cs" company="JP Dillingham">
+// <copyright file="IMessageConnection.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -34,6 +34,11 @@ namespace Soulseek.Network
         ///     Occurs when a new message is received, but before it is read.
         /// </summary>
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
+        /// </summary>
+        bool IsServerConnection { get; }
 
         /// <summary>
         ///     Gets a value indicating whether the internal continuous read loop is running.
