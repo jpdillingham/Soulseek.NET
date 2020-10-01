@@ -130,6 +130,50 @@ namespace Soulseek.Network
             }
         }
 
+        /// <summary>
+        ///     Asynchronously writes the specified <paramref name="message"/> to the connection.
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="message"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="MessageException">
+        ///     Thrown when an error is encountered while converting the message to a byte array.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        public Task WriteMessageAsync(IWriteableMessage message, CancellationToken? cancellationToken = null)
+        {
+            if (message == default)
+            {
+                throw new ArgumentException("The specified message is null", nameof(message));
+            }
+
+            byte[] bytes;
+
+            try
+            {
+                bytes = message.ToByteArray();
+            }
+            catch (Exception ex)
+            {
+                throw new MessageException("Failed to convert the message to a byte array", ex);
+            }
+
+            return WriteMessageInternalAsync(bytes, cancellationToken ?? CancellationToken.None);
+        }
+
+        private async Task WriteMessageInternalAsync(byte[] bytes, CancellationToken cancellationToken)
+        {
+            await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+
+            Interlocked.CompareExchange(ref MessageWritten, null, null)?
+                .Invoke(this, new MessageEventArgs(bytes));
+        }
+
         private async Task ReadContinuouslyAsync()
         {
             if (ReadingContinuously)

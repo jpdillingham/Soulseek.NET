@@ -77,5 +77,22 @@ namespace Soulseek.Network
         ///     MessageRead event, which is impossible if we simply start the loop immediately upon instantiation.
         /// </remarks>
         void StartReadingContinuously();
+
+        /// <summary>
+        ///     Asynchronously writes the specified <paramref name="message"/> to the connection.
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="message"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="MessageException">
+        ///     Thrown when an error is encountered while converting the message to a byte array.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        Task WriteMessageAsync(IWriteableMessage message, CancellationToken? cancellationToken = null);
     }
 }
