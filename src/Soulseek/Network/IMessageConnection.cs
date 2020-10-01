@@ -23,17 +23,32 @@ namespace Soulseek.Network
         /// <summary>
         ///     Occurs when message data is received.
         /// </summary>
-        event EventHandler<MessageDataReadEventArgs> MessageDataRead;
+        /// <remarks>
+        ///     <para>
+        ///         This event is separate from the underlying <see cref="Connection.DataRead"/> because it is bounded to the
+        ///         message payload. The base event will be raised when reading the message length and code, while this event will not.
+        ///     </para>
+        ///     <para>
+        ///         This event is only useful for tracking the progress of large messages (larger than the receive buffer);
+        ///         basically only the response to a browse request.
+        ///     </para>
+        /// </remarks>
+        event EventHandler<MessageDataEventArgs> MessageDataRead;
 
         /// <summary>
         ///     Occurs when a new message is read in its entirety.
         /// </summary>
-        event EventHandler<MessageReadEventArgs> MessageRead;
+        event EventHandler<MessageEventArgs> MessageRead;
 
         /// <summary>
         ///     Occurs when a new message is received, but before it is read.
         /// </summary>
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        ///     Occurs when a message is written in its entirety.
+        /// </summary>
+        event EventHandler<MessageEventArgs> MessageWritten;
 
         /// <summary>
         ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
