@@ -19,30 +19,38 @@ namespace Soulseek.Network
     /// </summary>
     internal abstract class MessageConnectionEventArgs : EventArgs
     {
-    }
-
-    /// <summary>
-    ///     EventArgs for <see cref="MessageConnection"/> events raised message data is received.
-    /// </summary>
-    internal sealed class MessageDataReadEventArgs : MessageConnectionEventArgs
-    {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageDataReadEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="MessageConnectionEventArgs"/> class.
         /// </summary>
         /// <param name="code">The message code, as a byte array.</param>
-        /// <param name="currentLength">The length of the event data.</param>
-        /// <param name="totalLength">The total expected length of the data transfer.</param>
-        public MessageDataReadEventArgs(byte[] code, long currentLength, long totalLength)
+        protected MessageConnectionEventArgs(byte[] code)
         {
             Code = code;
-            CurrentLength = currentLength;
-            TotalLength = totalLength;
         }
 
         /// <summary>
         ///     Gets the message code, as a byte array.
         /// </summary>
         public byte[] Code { get; }
+    }
+
+    /// <summary>
+    ///     EventArgs for <see cref="MessageConnection"/> events raised message data is received or sent.
+    /// </summary>
+    internal sealed class MessageDataEventArgs : MessageConnectionEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MessageDataEventArgs"/> class.
+        /// </summary>
+        /// <param name="code">The message code, as a byte array.</param>
+        /// <param name="currentLength">The length of the event data.</param>
+        /// <param name="totalLength">The total expected length of the data transfer.</param>
+        public MessageDataEventArgs(byte[] code, long currentLength, long totalLength)
+            : base(code)
+        {
+            CurrentLength = currentLength;
+            TotalLength = totalLength;
+        }
 
         /// <summary>
         ///     Gets the length of the event data.
@@ -61,15 +69,16 @@ namespace Soulseek.Network
     }
 
     /// <summary>
-    ///     EventArgs for <see cref="MessageConnection"/> events raised when a message is read in its entirety.
+    ///     EventArgs for <see cref="MessageConnection"/> events raised when a message is read or written in its entirety.
     /// </summary>
-    internal sealed class MessageReadEventArgs : MessageConnectionEventArgs
+    internal sealed class MessageEventArgs : MessageConnectionEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageReadEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="MessageEventArgs"/> class.
         /// </summary>
         /// <param name="message">The message associated with the event.</param>
-        public MessageReadEventArgs(byte[] message)
+        public MessageEventArgs(byte[] message)
+            : base(code: message.AsSpan().Slice(0, 4).ToArray())
         {
             Message = message;
         }
@@ -91,15 +100,10 @@ namespace Soulseek.Network
         /// <param name="length">The message length.</param>
         /// <param name="code">The message code, as a byte array.</param>
         public MessageReceivedEventArgs(long length, byte[] code)
+            : base(code)
         {
             Length = length;
-            Code = code;
         }
-
-        /// <summary>
-        ///     Gets the message code, as a byte array.
-        /// </summary>
-        public byte[] Code { get; }
 
         /// <summary>
         ///     Gets the message length.
