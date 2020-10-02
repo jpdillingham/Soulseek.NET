@@ -363,5 +363,16 @@ namespace Soulseek.Messaging.Handlers
                 Diagnostic.Warning($"Error handling server message: {code}; {ex.Message}", ex);
             }
         }
+
+        /// <summary>
+        ///     Handles outging messages, post send.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleMessageWritten(object sender, MessageEventArgs args)
+        {
+            var code = (MessageCode.Server)BitConverter.ToInt32(args.Code);
+            Diagnostic.Debug($"Server message sent: {code}");
+        }
     }
 }
