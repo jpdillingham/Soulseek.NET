@@ -58,7 +58,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessageRead(conn.Object, new MessageReadEventArgs(message));
+            handler.HandleMessageRead(conn.Object, new MessageEventArgs(message));
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
         }
@@ -575,7 +575,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedPingRequest().ToByteArray();
 
-            handler.HandleChildMessageRead(conn.Object, new MessageReadEventArgs(message));
+            handler.HandleChildMessageRead(conn.Object, new MessageEventArgs(message));
 
             conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }

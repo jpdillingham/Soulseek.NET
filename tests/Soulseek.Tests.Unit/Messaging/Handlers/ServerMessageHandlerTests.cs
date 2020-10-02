@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessageRead(null, new MessageReadEventArgs(message));
+            handler.HandleMessageRead(null, new MessageEventArgs(message));
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
         }

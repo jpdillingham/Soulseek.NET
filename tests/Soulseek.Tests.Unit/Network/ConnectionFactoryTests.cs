@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit
             EventHandler<ConnectionDisconnectedEventArgs> disconnected = (s, a) => { disconnect = true; };
 
             bool read = false;
-            EventHandler<MessageReadEventArgs> messageRead = (s, a) => { read = true; };
+            EventHandler<MessageEventArgs> messageRead = (s, a) => { read = true; };
 
             var c = new ConnectionFactory().GetServerConnection(endpoint, connected, disconnected, messageRead, options);
 
@@ -69,7 +69,7 @@ namespace Soulseek.Tests.Unit
             c.RaiseEvent(typeof(Connection), "Disconnected", new ConnectionDisconnectedEventArgs("foo"));
             Assert.True(disconnect);
 
-            c.RaiseEvent("MessageRead", new MessageReadEventArgs(Array.Empty<byte>()));
+            c.RaiseEvent("MessageRead", new MessageEventArgs(new byte[4]));
             Assert.True(read);
 
             Assert.Equal(options.ReadBufferSize, c.Options.ReadBufferSize);
@@ -84,7 +84,7 @@ namespace Soulseek.Tests.Unit
         {
             EventHandler connected = (s, a) => { };
             EventHandler<ConnectionDisconnectedEventArgs> disconnected = (s, a) => { };
-            EventHandler<MessageReadEventArgs> messageRead = (s, a) => { };
+            EventHandler<MessageEventArgs> messageRead = (s, a) => { };
 
             var c = new ConnectionFactory().GetServerConnection(endpoint, connected, disconnected, messageRead);
 

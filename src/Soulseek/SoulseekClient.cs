@@ -1724,7 +1724,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageCommand(privateMessageId), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new AcknowledgePrivateMessageCommand(privateMessageId), cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Acknowledged private message ID {privateMessageId}");
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
