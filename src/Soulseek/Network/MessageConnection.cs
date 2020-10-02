@@ -132,6 +132,25 @@ namespace Soulseek.Network
         }
 
         /// <summary>
+        ///     Asynchronously writes the specified bytes to the connection.
+        /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        [Obsolete("Use WriteAsync(IOutgoingMessage).")]
+        public new Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        {
+            return base.WriteAsync(bytes, cancellationToken);
+        }
+
+        /// <summary>
         ///     Asynchronously writes the specified <paramref name="message"/> to the connection.
         /// </summary>
         /// <param name="message">The message to write.</param>
@@ -169,7 +188,7 @@ namespace Soulseek.Network
 
         private async Task WriteMessageInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
-            await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+            await base.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
 
             Interlocked.CompareExchange(ref MessageWritten, null, null)?
                 .Invoke(this, new MessageEventArgs(bytes));
