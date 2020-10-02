@@ -175,6 +175,7 @@ namespace Soulseek.Network
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
+                connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
                 connection.Disconnected += ChildConnection_Disconnected;
 
                 try
@@ -247,6 +248,7 @@ namespace Soulseek.Network
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
+                connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
 
                 Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
 
@@ -333,6 +335,7 @@ namespace Soulseek.Network
                     ParentConnection.Disconnected += ParentConnection_Disconnected;
                     ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
                     ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
+                    ParentConnection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleMessageWritten;
 
                     Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
