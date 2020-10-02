@@ -78,7 +78,7 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="message">The message associated with the event.</param>
         public MessageEventArgs(byte[] message)
-            : base(code: message.AsSpan().Slice(0, 4).ToArray())
+            : base(code: message.Length >= 4 ? message.AsSpan().Slice(0, 4).ToArray() : throw new ArgumentException($"Malformed message; must be at least 4 bytes long.", nameof(message)))
         {
             Message = message;
         }
