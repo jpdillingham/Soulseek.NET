@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomListResponse.cs" company="JP Dillingham">
+﻿// <copyright file="PrivilegedUserListNotification.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -16,43 +16,34 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     A list of available chat rooms.
+    ///     A list of the privileged users on the server.
     /// </summary>
-    internal static class RoomListResponse : IIncomingMessage
+    internal sealed class PrivilegedUserListNotification : IIncomingMessage
     {
         /// <summary>
-        ///     Creates a new list of rooms from the specified <paramref name="bytes"/>.
+        ///     Creates a new list of privileged users from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<Room> FromByteArray(byte[] bytes)
+        public static IReadOnlyCollection<string> FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Server.RoomList)
+            if (code != MessageCode.Server.PrivilegedUsers)
             {
-                throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.Server.RoomList}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating Privileged Users response (expected: {(int)MessageCode.Server.PrivilegedUsers}, received: {(int)code}");
             }
 
-            var roomCount = reader.ReadInteger();
-            var roomNames = new List<string>();
+            var count = reader.ReadInteger();
+            var list = new List<string>();
 
-            for (int i = 0; i < roomCount; i++)
+            for (int i = 0; i < count; i++)
             {
-                roomNames.Add(reader.ReadString());
+                list.Add(reader.ReadString());
             }
 
-            var userCountCount = reader.ReadInteger();
-            var rooms = new List<Room>();
-
-            for (int i = 0; i < userCountCount; i++)
-            {
-                var count = reader.ReadInteger();
-                rooms.Add(new Room(roomNames[i], count));
-            }
-
-            return rooms.AsReadOnly();
+            return list.AsReadOnly();
         }
     }
 }

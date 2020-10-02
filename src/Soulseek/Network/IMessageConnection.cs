@@ -97,6 +97,6 @@ namespace Soulseek.Network
         ///     Thrown when an error is encountered while converting the message to a byte array.
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        Task WriteAsync(IWriteableMessage message, CancellationToken? cancellationToken = null);
+        Task WriteAsync(IOutgoingMessage message, CancellationToken? cancellationToken = null);
     }
 }

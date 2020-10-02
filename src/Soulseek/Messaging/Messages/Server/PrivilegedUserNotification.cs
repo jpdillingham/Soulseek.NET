@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming notification of a new privileged user.
     /// </summary>
-    internal static class PrivilegedUserNotification : IIncomingMessage
+    internal sealed class PrivilegedUserNotification : IIncomingMessage
     {
         /// <summary>
         ///     Creates a new instance of <see cref="PrivilegedUserNotification"/> from the specified <paramref name="bytes"/>.

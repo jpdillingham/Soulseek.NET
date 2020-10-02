@@ -10,16 +10,15 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek
+namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging;
 
     /// <summary>
     ///     The response to request to join a chat room.
     /// </summary>
-    internal static class RoomJoinResponse : IIncomingMessage
+    internal sealed class RoomJoinResponse : IIncomingMessage
     {
         /// <summary>
         ///     Creates a new instance of <see cref="RoomData"/> from the specified <paramref name="bytes"/>.
