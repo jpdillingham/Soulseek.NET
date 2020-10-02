@@ -92,6 +92,18 @@ namespace Soulseek.Messaging.Handlers
         }
 
         /// <summary>
+        ///     Handles outging messages to distributed children, post send.
+        /// </summary>
+        /// <param name="sender">The child <see cref="IMessageConnection"/> instance to which the message was sent.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleChildMessageWritten(object sender, MessageEventArgs args)
+        {
+            var connection = (IMessageConnection)sender;
+            var code = (MessageCode.Distributed)BitConverter.ToInt32(args.Code);
+            Diagnostic.Debug($"Distributed child message sent: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+        }
+
+        /// <summary>
         ///     Handles incoming messages.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
@@ -196,6 +208,17 @@ namespace Soulseek.Messaging.Handlers
             {
                 Diagnostic.Warning($"Error handling distributed message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        ///     Handles outging messages, post send.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleMessageWritten(object sender, MessageEventArgs args)
+        {
+            var code = (MessageCode.Distributed)BitConverter.ToInt32(args.Code);
+            Diagnostic.Debug($"Distributed message sent: {code}");
         }
 
         private async Task<bool> TrySendSearchResults(string username, int token, string query)
