@@ -168,7 +168,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.InfoResponse:
-                        var incomingInfo = UserInfoResponse.FromByteArray(message);
+                        var incomingInfo = UserInfoResponseFactory.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), incomingInfo);
                         break;
 

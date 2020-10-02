@@ -1,4 +1,4 @@
-﻿// <copyright file="UserInfoResponse.cs" company="JP Dillingham">
+﻿// <copyright file="UserInfoResponseFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@ namespace Soulseek
     /// <summary>
     ///     The response to a user info request.
     /// </summary>
-    internal static class UserInfoResponse
+    internal static class UserInfoResponseFactory
     {
         /// <summary>
         ///     Creates a new instance of <see cref="UserInfo"/> from the specified <paramref name="bytes"/>.
