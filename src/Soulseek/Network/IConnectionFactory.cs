@@ -39,6 +39,7 @@ namespace Soulseek.Network
         /// <param name="connectedEventHandler">The event handler for <see cref="IConnection.Connected"/>.</param>
         /// <param name="disconnectedEventHandler">The handler for <see cref="IConnection.Disconnected"/>.</param>
         /// <param name="messageReadEventHandler">The handler for <see cref="IMessageConnection.MessageRead"/>.</param>
+        /// <param name="messageWrittenEventHandler">The handler for <see cref="IMessageConnection.MessageWritten"/>.</param>
         /// <param name="options">The options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection with event handlers bound.</returns>
@@ -47,6 +48,7 @@ namespace Soulseek.Network
             EventHandler connectedEventHandler,
             EventHandler<ConnectionDisconnectedEventArgs> disconnectedEventHandler,
             EventHandler<MessageEventArgs> messageReadEventHandler,
+            EventHandler<MessageEventArgs> messageWrittenEventHandler,
             ConnectionOptions options = null,
             ITcpClient tcpClient = null);
 
