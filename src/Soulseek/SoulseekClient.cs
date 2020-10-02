@@ -1914,6 +1914,7 @@ namespace Soulseek
                     ServerConnection_Connected,
                     ServerConnection_Disconnected,
                     ServerConnection_MessageRead,
+                    ServerConnection_MessageWritten,
                     Options.ServerConnectionOptions);
 
                 await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
@@ -2581,6 +2582,11 @@ namespace Soulseek
         private void ServerConnection_MessageRead(object sender, MessageEventArgs e)
         {
             ServerMessageHandler.HandleMessageRead(sender, e);
+        }
+
+        private void ServerConnection_MessageWritten(object sender, MessageEventArgs e)
+        {
+            ServerMessageHandler.HandleMessageWritten(sender, e);
         }
 
         private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
