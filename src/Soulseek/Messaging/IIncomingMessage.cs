@@ -1,4 +1,4 @@
-﻿// <copyright file="IWriteableMessage.cs" company="JP Dillingham">
+﻿// <copyright file="IIncomingMessage.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,14 +13,9 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     A message which can be converted to a byte array and written to a message connection.
+    ///     An incoming message.
     /// </summary>
-    internal interface IWriteableMessage
+    internal interface IIncomingMessage
     {
-        /// <summary>
-        ///     Constructs a <see cref="byte"/> array from this message.
-        /// </summary>
-        /// <returns>The constructed byte array.</returns>
-        byte[] ToByteArray();
     }
 }
