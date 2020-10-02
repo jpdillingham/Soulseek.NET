@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Advises the server of the local listen port.
     /// </summary>
-    internal sealed class SetListenPortCommand
+    internal sealed class SetListenPortCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SetListenPortCommand"/> class.

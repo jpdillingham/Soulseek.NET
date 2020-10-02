@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A request to transfer a file.
     /// </summary>
-    internal sealed class TransferRequest
+    internal sealed class TransferRequest : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferRequest"/> class.

@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A request to retreive the contents of a directory from a remote user.
     /// </summary>
-    internal sealed class FolderContentsRequest
+    internal sealed class FolderContentsRequest : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="FolderContentsRequest"/> class.

@@ -19,7 +19,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a login request.
     /// </summary>
-    internal sealed class LoginResponse
+    internal sealed class LoginResponse : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="LoginResponse"/> class.

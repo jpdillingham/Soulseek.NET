@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server that we have no distributed parent.
     /// </summary>
-    internal sealed class HaveNoParentsCommand
+    internal sealed class HaveNoParentsCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="HaveNoParentsCommand"/> class.

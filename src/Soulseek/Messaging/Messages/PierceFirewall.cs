@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Pierces the local firewall to initiate a connection.
     /// </summary>
-    internal sealed class PierceFirewall
+    internal sealed class PierceFirewall : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PierceFirewall"/> class.

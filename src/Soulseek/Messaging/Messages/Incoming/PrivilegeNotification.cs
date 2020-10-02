@@ -22,7 +22,7 @@ namespace Soulseek.Messaging.Messages
     ///     users, however the inclusion of the username in the payload might imply this is incorrect. The Museek documentation
     ///     also has send/receive swapped; this was verified against the Nicotine source code.
     /// </remarks>
-    internal sealed class PrivilegeNotification
+    internal sealed class PrivilegeNotification : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PrivilegeNotification"/> class.

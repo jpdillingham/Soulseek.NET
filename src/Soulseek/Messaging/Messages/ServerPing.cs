@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A server ping.
     /// </summary>
-    internal sealed class ServerPing
+    internal sealed class ServerPing : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ServerPing"/> class.

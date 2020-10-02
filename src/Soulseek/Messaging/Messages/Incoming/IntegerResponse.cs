@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A simple integer response.
     /// </summary>
-    internal static class IntegerResponse
+    internal static class IntegerResponse : IIncomingMessage
     {
         /// <summary>
         ///     Creates a new instance of <see cref="IntegerResponse"/> with message code <typeparamref name="T"/> from the

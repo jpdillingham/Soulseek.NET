@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming global message.
     /// </summary>
-    internal sealed class GlobalMessageNotification
+    internal sealed class GlobalMessageNotification : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="GlobalMessageNotification"/> class.

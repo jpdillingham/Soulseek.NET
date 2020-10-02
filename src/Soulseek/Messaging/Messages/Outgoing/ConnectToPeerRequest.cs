@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Adds a peer to the server-side watch list.
     /// </summary>
-    internal sealed class ConnectToPeerRequest
+    internal sealed class ConnectToPeerRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectToPeerRequest"/> class.

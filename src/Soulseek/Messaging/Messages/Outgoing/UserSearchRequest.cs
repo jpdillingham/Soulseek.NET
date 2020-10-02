@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests a search from a specific user.
     /// </summary>
-    internal sealed class UserSearchRequest
+    internal sealed class UserSearchRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserSearchRequest"/> class.

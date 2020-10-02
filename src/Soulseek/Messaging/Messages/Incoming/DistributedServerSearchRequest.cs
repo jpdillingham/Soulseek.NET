@@ -22,7 +22,7 @@ namespace Soulseek.Messaging.Messages
     ///     come from a distributed parent. It isn't clear whether this can ever come from the server; perhaps if we are connected
     ///     directly, but no idea how to do that or why we'd want to.
     /// </remarks>
-    internal sealed class DistributedServerSearchRequest
+    internal sealed class DistributedServerSearchRequest : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedServerSearchRequest"/> class.

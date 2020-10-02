@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Sends a message to a chat room.
     /// </summary>
-    internal sealed class RoomMessageCommand
+    internal sealed class RoomMessageCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomMessageCommand"/> class.

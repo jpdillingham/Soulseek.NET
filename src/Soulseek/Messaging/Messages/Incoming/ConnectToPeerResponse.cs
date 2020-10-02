@@ -19,7 +19,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A server response which solicits a peer connection.
     /// </summary>
-    internal sealed class ConnectToPeerResponse
+    internal sealed class ConnectToPeerResponse : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectToPeerResponse"/> class.

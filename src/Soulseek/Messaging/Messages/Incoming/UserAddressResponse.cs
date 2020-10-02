@@ -19,7 +19,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a request for a peer's address.
     /// </summary>
-    internal sealed class UserAddressResponse
+    internal sealed class UserAddressResponse : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserAddressResponse"/> class.

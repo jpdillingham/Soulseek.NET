@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests a distributed search.
     /// </summary>
-    internal sealed class SearchRequest
+    internal sealed class SearchRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchRequest"/> class.

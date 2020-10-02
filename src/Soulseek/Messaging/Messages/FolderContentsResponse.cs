@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a peer folder contents request.
     /// </summary>
-    internal sealed class FolderContentsResponse
+    internal sealed class FolderContentsResponse : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="FolderContentsResponse"/> class.

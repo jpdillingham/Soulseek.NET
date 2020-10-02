@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the current distributed child depth.
     /// </summary>
-    internal sealed class ChildDepthCommand
+    internal sealed class ChildDepthCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ChildDepthCommand"/> class.

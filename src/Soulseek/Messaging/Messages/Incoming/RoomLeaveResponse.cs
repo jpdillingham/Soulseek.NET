@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a request to leave a chat room.
     /// </summary>
-    internal sealed class RoomLeaveResponse
+    internal sealed class RoomLeaveResponse : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomLeaveResponse"/> class.

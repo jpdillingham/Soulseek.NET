@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the status of privileges.
     /// </summary>
-    internal sealed class CheckPrivilegesRequest
+    internal sealed class CheckPrivilegesRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="CheckPrivilegesRequest"/> class.

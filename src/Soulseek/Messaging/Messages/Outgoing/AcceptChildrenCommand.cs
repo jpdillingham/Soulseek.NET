@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of our ability to accept distributed children connections.
     /// </summary>
-    internal sealed class AcceptChildrenCommand
+    internal sealed class AcceptChildrenCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="AcceptChildrenCommand"/> class.

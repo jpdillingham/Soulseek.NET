@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the current distributed branch level.
     /// </summary>
-    internal sealed class BranchLevelCommand
+    internal sealed class BranchLevelCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="BranchLevelCommand"/> class.

@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the place of a file in a remote queue.
     /// </summary>
-    internal sealed class PlaceInQueueRequest
+    internal sealed class PlaceInQueueRequest : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PlaceInQueueRequest"/> class.

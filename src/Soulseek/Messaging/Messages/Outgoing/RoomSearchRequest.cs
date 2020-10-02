@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests a search from all members of a room.
     /// </summary>
-    internal sealed class RoomSearchRequest
+    internal sealed class RoomSearchRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomSearchRequest"/> class.

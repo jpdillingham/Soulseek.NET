@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Gets the list of chat rooms.
     /// </summary>
-    internal sealed class RoomListRequest
+    internal sealed class RoomListRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomListRequest"/> class.

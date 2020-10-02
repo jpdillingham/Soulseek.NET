@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A distributed ping request.
     /// </summary>
-    internal sealed class DistributedPingRequest
+    internal sealed class DistributedPingRequest : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedPingRequest"/> class.

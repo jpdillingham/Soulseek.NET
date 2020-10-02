@@ -21,7 +21,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming list of available distributed parent candidates.
     /// </summary>
-    internal sealed class NetInfoNotification
+    internal sealed class NetInfoNotification : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="NetInfoNotification"/> class.

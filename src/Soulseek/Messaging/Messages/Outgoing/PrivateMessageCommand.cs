@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Sends a private message.
     /// </summary>
-    internal sealed class PrivateMessageCommand
+    internal sealed class PrivateMessageCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PrivateMessageCommand"/> class.

@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the username of the current distributed branch root.
     /// </summary>
-    internal sealed class BranchRootCommand
+    internal sealed class BranchRootCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="BranchRootCommand"/> class.

@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming response to a peer transfer request.
     /// </summary>
-    internal sealed class TransferResponse
+    internal sealed class TransferResponse : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferResponse"/> class.

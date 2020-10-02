@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the address of a peer.
     /// </summary>
-    internal sealed class UserAddressRequest
+    internal sealed class UserAddressRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserAddressRequest"/> class.

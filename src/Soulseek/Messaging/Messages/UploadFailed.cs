@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The sent or received when an attempt to queue a file for downloading has failed.
     /// </summary>
-    internal sealed class UploadFailed
+    internal sealed class UploadFailed : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UploadFailed"/> class.

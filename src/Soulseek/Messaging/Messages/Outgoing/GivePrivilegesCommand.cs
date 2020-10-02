@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Grants privileges to a user.
     /// </summary>
-    internal sealed class GivePrivilegesCommand
+    internal sealed class GivePrivilegesCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="GivePrivilegesCommand"/> class.

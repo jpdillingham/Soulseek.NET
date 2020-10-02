@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming notification that a user has joined a chat room.
     /// </summary>
-    internal sealed class RoomJoinedNotification
+    internal sealed class RoomJoinedNotification : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomJoinedNotification"/> class.

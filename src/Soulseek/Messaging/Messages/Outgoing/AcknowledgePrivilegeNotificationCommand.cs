@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Acknowledges the reciept of a privilege notification.
     /// </summary>
-    internal sealed class AcknowledgePrivilegeNotificationCommand
+    internal sealed class AcknowledgePrivilegeNotificationCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="AcknowledgePrivilegeNotificationCommand"/> class.

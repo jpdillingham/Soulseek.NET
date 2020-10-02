@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Adds a peer to the server-side watch list.
     /// </summary>
-    internal sealed class AddUserRequest
+    internal sealed class AddUserRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="AddUserRequest"/> class.

@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the IP address of the current distributed parent.
     /// </summary>
-    internal sealed class ParentsIPCommand
+    internal sealed class ParentsIPCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ParentsIPCommand"/> class.

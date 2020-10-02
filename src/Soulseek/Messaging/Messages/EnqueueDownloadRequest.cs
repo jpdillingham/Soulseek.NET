@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A request to queue a file.
     /// </summary>
-    internal sealed class EnqueueDownloadRequest
+    internal sealed class EnqueueDownloadRequest : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="EnqueueDownloadRequest"/> class.

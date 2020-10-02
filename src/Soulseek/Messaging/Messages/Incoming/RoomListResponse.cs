@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A list of available chat rooms.
     /// </summary>
-    internal static class RoomListResponse
+    internal static class RoomListResponse : IIncomingMessage
     {
         /// <summary>
         ///     Creates a new list of rooms from the specified <paramref name="bytes"/>.

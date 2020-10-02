@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the current user status.
     /// </summary>
-    internal sealed class SetOnlineStatusCommand
+    internal sealed class SetOnlineStatusCommand : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SetOnlineStatusCommand"/> class.

@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The command and response to a password change.
     /// </summary>
-    internal sealed class NewPassword
+    internal sealed class NewPassword : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="NewPassword"/> class.

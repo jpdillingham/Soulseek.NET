@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to an add user request.
     /// </summary>
-    internal sealed class AddUserResponse
+    internal sealed class AddUserResponse : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="AddUserResponse"/> class.

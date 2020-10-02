@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Joins a chat room.
     /// </summary>
-    internal sealed class JoinRoomRequest
+    internal sealed class JoinRoomRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="JoinRoomRequest"/> class.

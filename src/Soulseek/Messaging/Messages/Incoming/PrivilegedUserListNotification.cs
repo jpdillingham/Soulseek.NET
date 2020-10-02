@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A list of the privileged users on the server.
     /// </summary>
-    internal static class PrivilegedUserListNotification
+    internal static class PrivilegedUserListNotification : IIncomingMessage
     {
         /// <summary>
         ///     Creates a new list of privileged users from the specified <paramref name="bytes"/>.

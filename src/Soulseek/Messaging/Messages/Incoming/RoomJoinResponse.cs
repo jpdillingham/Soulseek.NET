@@ -19,7 +19,7 @@ namespace Soulseek
     /// <summary>
     ///     The response to request to join a chat room.
     /// </summary>
-    internal static class RoomJoinResponse
+    internal static class RoomJoinResponse : IIncomingMessage
     {
         /// <summary>
         ///     Creates a new instance of <see cref="RoomData"/> from the specified <paramref name="bytes"/>.

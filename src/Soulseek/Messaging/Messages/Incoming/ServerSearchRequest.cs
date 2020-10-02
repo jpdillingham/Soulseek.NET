@@ -21,7 +21,7 @@ namespace Soulseek.Messaging.Messages
     ///     This message is routed from the server, instead of the distributed network. This occurs when a remote user searches us
     ///     directly either by username or from a room to which we are joined.
     /// </remarks>
-    internal sealed class ServerSearchRequest
+    internal sealed class ServerSearchRequest : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ServerSearchRequest"/> class.

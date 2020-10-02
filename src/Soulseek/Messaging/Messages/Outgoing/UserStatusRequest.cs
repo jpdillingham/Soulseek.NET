@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the status of a peer.
     /// </summary>
-    internal sealed class UserStatusRequest
+    internal sealed class UserStatusRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserStatusRequest"/> class.
