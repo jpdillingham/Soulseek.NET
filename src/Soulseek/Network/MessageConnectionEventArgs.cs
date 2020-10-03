@@ -19,19 +19,6 @@ namespace Soulseek.Network
     /// </summary>
     internal abstract class MessageConnectionEventArgs : EventArgs
     {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageConnectionEventArgs"/> class.
-        /// </summary>
-        /// <param name="code">The message code, as a byte array.</param>
-        protected MessageConnectionEventArgs(byte[] code)
-        {
-            Code = code;
-        }
-
-        /// <summary>
-        ///     Gets the message code, as a byte array.
-        /// </summary>
-        public byte[] Code { get; }
     }
 
     /// <summary>
@@ -46,11 +33,16 @@ namespace Soulseek.Network
         /// <param name="currentLength">The length of the event data.</param>
         /// <param name="totalLength">The total expected length of the data transfer.</param>
         public MessageDataEventArgs(byte[] code, long currentLength, long totalLength)
-            : base(code)
         {
+            Code = code;
             CurrentLength = currentLength;
             TotalLength = totalLength;
         }
+
+        /// <summary>
+        ///     Gets the message code, as a byte array.
+        /// </summary>
+        public byte[] Code { get; }
 
         /// <summary>
         ///     Gets the length of the event data.
@@ -78,7 +70,6 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="message">The message associated with the event.</param>
         public MessageEventArgs(byte[] message)
-            : base(code: message.Length >= 8 ? message.AsSpan().Slice(4, 4).ToArray() : throw new ArgumentException($"Malformed message; must be at least 8 bytes long.", nameof(message)))
         {
             Message = message;
         }
@@ -100,10 +91,15 @@ namespace Soulseek.Network
         /// <param name="length">The message length.</param>
         /// <param name="code">The message code, as a byte array.</param>
         public MessageReceivedEventArgs(long length, byte[] code)
-            : base(code)
         {
             Length = length;
+            Code = code;
         }
+
+        /// <summary>
+        ///     Gets the message code, as a byte array.
+        /// </summary>
+        public byte[] Code { get; }
 
         /// <summary>
         ///     Gets the message length.
