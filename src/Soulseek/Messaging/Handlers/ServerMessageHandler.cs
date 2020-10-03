@@ -347,8 +347,8 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
-                    // if we fail to connect to a distributed parent in a timely manner, the server will begin to send us distributed search requests directly.
-                    // forward these to the distributed message handler.
+                    // if we fail to connect to a distributed parent in a timely manner, the server will begin to send us
+                    // distributed search requests directly. forward these to the distributed message handler.
                     case MessageCode.Server.SearchRequest:
                         SoulseekClient.DistributedMessageHandler.HandleMessageRead(SoulseekClient.ServerConnection, message);
                         break;
