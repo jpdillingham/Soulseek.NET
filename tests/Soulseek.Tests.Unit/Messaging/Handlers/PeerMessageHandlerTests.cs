@@ -851,6 +851,36 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(Constants.WaitKey.BrowseResponseConnection, username), It.IsAny<(MessageReceivedEventArgs, IMessageConnection)>()), Times.Once);
         }
 
+        [Trait("Category", "HandleMessageReceived")]
+        [Theory(DisplayName = "Does nothing on unhandled MessageRecieved"), AutoData]
+        public void Does_Nothing_On_Unhandled_MessageRecieved(string username, IPEndPoint endpoint)
+        {
+            var (handler, mocks) = GetFixture(username, endpoint);
+
+            var request = new BrowseRequest();
+            var message = request.ToByteArray();
+            var args = new MessageReceivedEventArgs(message.Length, message.Skip(4).Take(4).ToArray());
+
+            var ex = Record.Exception(() => handler.HandleMessageReceived(mocks.PeerConnection.Object, args));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "HandleMessageWritten")]
+        [Theory(DisplayName = "Creates diagnostic on MessageWritten"), AutoData]
+        public void Creates_Diagnostic_On_MessageWritten(string username, IPEndPoint endpoint)
+        {
+            var (handler, mocks) = GetFixture(username, endpoint);
+
+            var request = new BrowseRequest();
+            var message = request.ToByteArray();
+            var args = new MessageEventArgs(message);
+
+            handler.HandleMessageWritten(mocks.PeerConnection.Object, args);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Peer message sent: BrowseRequest"))));
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on exception handling BrowseResponse receipt"), AutoData]
         public void Creates_Diagnostic_On_Exception_Handling_BrowseResponse_Receipt(string username, IPEndPoint endpoint)
