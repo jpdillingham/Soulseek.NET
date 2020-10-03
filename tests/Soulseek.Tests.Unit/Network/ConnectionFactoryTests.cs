@@ -58,7 +58,10 @@ namespace Soulseek.Tests.Unit
             bool read = false;
             EventHandler<MessageEventArgs> messageRead = (s, a) => { read = true; };
 
-            var c = new ConnectionFactory().GetServerConnection(endpoint, connected, disconnected, messageRead, options);
+            bool written = false;
+            EventHandler<MessageEventArgs> messageWritten = (s, a) => { written = true; };
+
+            var c = new ConnectionFactory().GetServerConnection(endpoint, connected, disconnected, messageRead, messageWritten, options);
 
             Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
             Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
@@ -71,6 +74,9 @@ namespace Soulseek.Tests.Unit
 
             c.RaiseEvent("MessageRead", new MessageEventArgs(new byte[4]));
             Assert.True(read);
+
+            c.RaiseEvent("MessageWritten", new MessageEventArgs(new byte[4]));
+            Assert.True(written);
 
             Assert.Equal(options.ReadBufferSize, c.Options.ReadBufferSize);
             Assert.Equal(options.WriteBufferSize, c.Options.WriteBufferSize);
@@ -85,8 +91,9 @@ namespace Soulseek.Tests.Unit
             EventHandler connected = (s, a) => { };
             EventHandler<ConnectionDisconnectedEventArgs> disconnected = (s, a) => { };
             EventHandler<MessageEventArgs> messageRead = (s, a) => { };
+            EventHandler<MessageEventArgs> messageWritten = (s, a) => { };
 
-            var c = new ConnectionFactory().GetServerConnection(endpoint, connected, disconnected, messageRead);
+            var c = new ConnectionFactory().GetServerConnection(endpoint, connected, disconnected, messageRead, messageWritten);
 
             Assert.NotNull(c.Options);
         }

@@ -183,6 +183,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -208,6 +209,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
@@ -235,6 +237,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -259,6 +262,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
@@ -298,6 +302,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -322,6 +327,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -345,6 +351,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
@@ -377,6 +384,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
@@ -549,6 +557,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -578,6 +587,7 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
