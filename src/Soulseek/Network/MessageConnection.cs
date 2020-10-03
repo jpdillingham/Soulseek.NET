@@ -80,7 +80,8 @@ namespace Soulseek.Network
         ///     </para>
         ///     <para>
         ///         This event is only useful for tracking the progress of large messages (larger than the receive buffer);
-        ///         basically only the response to a browse request.
+        ///         basically only the response to a browse request.  There is no corresponding event for data written, as this
+        ///         library sends messages in their entirety, and the two would be fuctionally identical.
         ///     </para>
         /// </remarks>
         public event EventHandler<MessageDataEventArgs> MessageDataRead;
@@ -186,14 +187,6 @@ namespace Soulseek.Network
             return WriteMessageInternalAsync(bytes, cancellationToken ?? CancellationToken.None);
         }
 
-        private async Task WriteMessageInternalAsync(byte[] bytes, CancellationToken cancellationToken)
-        {
-            await base.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
-
-            Interlocked.CompareExchange(ref MessageWritten, null, null)?
-                .Invoke(this, new MessageEventArgs(bytes));
-        }
-
         private async Task ReadContinuouslyAsync()
         {
             if (ReadingContinuously)
@@ -249,6 +242,14 @@ namespace Soulseek.Network
             {
                 ReadingContinuously = false;
             }
+        }
+
+        private async Task WriteMessageInternalAsync(byte[] bytes, CancellationToken cancellationToken)
+        {
+            await base.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+
+            Interlocked.CompareExchange(ref MessageWritten, null, null)?
+                .Invoke(this, new MessageEventArgs(bytes));
         }
     }
 }
