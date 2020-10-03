@@ -100,7 +100,7 @@ namespace Soulseek.Messaging.Handlers
         {
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Distributed>(args.Message).ReadCode();
-            Diagnostic.Debug($"Distributed child message sent: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+            Diagnostic.Debug($"Distributed child message sent: {code} to {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
         }
 
         /// <summary>
