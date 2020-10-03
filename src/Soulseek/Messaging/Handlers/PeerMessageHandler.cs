@@ -303,7 +303,7 @@ namespace Soulseek.Messaging.Handlers
         /// <param name="args">The message event args.</param>
         public void HandleMessageWritten(object sender, MessageEventArgs args)
         {
-            var code = (MessageCode.Peer)BitConverter.ToInt32(args.Code);
+            var code = new MessageReader<MessageCode.Peer>(args.Message).ReadCode();
             Diagnostic.Debug($"Peer message sent: {code}");
         }
 

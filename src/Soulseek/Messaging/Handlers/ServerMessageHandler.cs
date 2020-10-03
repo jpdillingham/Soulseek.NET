@@ -371,7 +371,7 @@ namespace Soulseek.Messaging.Handlers
         /// <param name="args">The message event args.</param>
         public void HandleMessageWritten(object sender, MessageEventArgs args)
         {
-            var code = (MessageCode.Server)BitConverter.ToInt32(args.Code);
+            var code = new MessageReader<MessageCode.Server>(args.Message).ReadCode();
             Diagnostic.Debug($"Server message sent: {code}");
         }
     }

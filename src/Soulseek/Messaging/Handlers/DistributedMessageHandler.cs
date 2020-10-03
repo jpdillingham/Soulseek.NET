@@ -99,7 +99,7 @@ namespace Soulseek.Messaging.Handlers
         public void HandleChildMessageWritten(object sender, MessageEventArgs args)
         {
             var connection = (IMessageConnection)sender;
-            var code = (MessageCode.Distributed)BitConverter.ToInt32(args.Code);
+            var code = new MessageReader<MessageCode.Distributed>(args.Message).ReadCode();
             Diagnostic.Debug($"Distributed child message sent: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
         }
 
@@ -217,7 +217,7 @@ namespace Soulseek.Messaging.Handlers
         /// <param name="args">The message event args.</param>
         public void HandleMessageWritten(object sender, MessageEventArgs args)
         {
-            var code = (MessageCode.Distributed)BitConverter.ToInt32(args.Code);
+            var code = new MessageReader<MessageCode.Distributed>(args.Message).ReadCode();
             Diagnostic.Debug($"Distributed message sent: {code}");
         }
 
