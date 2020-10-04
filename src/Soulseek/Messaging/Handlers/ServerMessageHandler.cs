@@ -104,7 +104,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleMessageRead(object sender, MessageReadEventArgs args)
+        public void HandleMessageRead(object sender, MessageEventArgs args)
         {
             HandleMessageRead(sender, args.Message);
         }
@@ -347,8 +347,8 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
-                    // if we fail to connect to a distributed parent in a timely manner, the server will begin to send us distributed search requests directly.
-                    // forward these to the distributed message handler.
+                    // if we fail to connect to a distributed parent in a timely manner, the server will begin to send us
+                    // distributed search requests directly. forward these to the distributed message handler.
                     case MessageCode.Server.SearchRequest:
                         SoulseekClient.DistributedMessageHandler.HandleMessageRead(SoulseekClient.ServerConnection, message);
                         break;
@@ -362,6 +362,17 @@ namespace Soulseek.Messaging.Handlers
             {
                 Diagnostic.Warning($"Error handling server message: {code}; {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        ///     Handles outging messages, post send.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleMessageWritten(object sender, MessageEventArgs args)
+        {
+            var code = new MessageReader<MessageCode.Server>(args.Message).ReadCode();
+            Diagnostic.Debug($"Server message sent: {code}");
         }
     }
 }

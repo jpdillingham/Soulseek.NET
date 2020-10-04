@@ -120,6 +120,7 @@ namespace Soulseek.Network
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
                 connection.Disconnected += MessageConnection_Disconnected;
 
                 Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
@@ -322,6 +323,7 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
+                connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
                 connection.Disconnected += MessageConnection_Disconnected;
 
                 using (var cts = new CancellationTokenSource())
@@ -600,6 +602,7 @@ namespace Soulseek.Network
             connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
+            connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
 
             try
             {
@@ -645,6 +648,7 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
+                connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
 
                 Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;

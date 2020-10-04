@@ -182,7 +182,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -208,7 +209,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -234,7 +236,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -259,7 +262,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -297,7 +301,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -321,7 +326,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -345,7 +351,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -377,7 +384,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -548,7 +556,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -578,7 +587,8 @@ namespace Soulseek.Tests.Unit
                 It.IsAny<IPEndPoint>(),
                 It.IsAny<EventHandler>(),
                 It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
+                It.IsAny<EventHandler<MessageEventArgs>>(),
                 It.IsAny<ConnectionOptions>(),
                 It.IsAny<ITcpClient>()))
                 .Returns(c.Object);
@@ -1024,7 +1034,7 @@ namespace Soulseek.Tests.Unit
         public void MessageRead_Invokes_HandleMessageRead()
         {
             var handlerMock = new Mock<IServerMessageHandler>();
-            var args = new MessageReadEventArgs(Array.Empty<byte>());
+            var args = new MessageEventArgs(new byte[4]);
 
             using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
             {
@@ -1032,6 +1042,21 @@ namespace Soulseek.Tests.Unit
             }
 
             handlerMock.Verify(m => m.HandleMessageRead(It.IsAny<object>(), args), Times.Once);
+        }
+
+        [Trait("Category", "MessageWritten")]
+        [Fact(DisplayName = "MessageWritten invokes HandleMessageWritten")]
+        public void MessageWritten_Invokes_HandleMessageWritten()
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+            var args = new MessageEventArgs(new byte[4]);
+
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageWritten", this, args);
+            }
+
+            handlerMock.Verify(m => m.HandleMessageWritten(It.IsAny<object>(), args), Times.Once);
         }
 
         [Trait("Category", "Event")]

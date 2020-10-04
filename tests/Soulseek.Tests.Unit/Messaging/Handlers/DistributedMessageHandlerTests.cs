@@ -58,7 +58,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessageRead(conn.Object, new MessageReadEventArgs(message));
+            handler.HandleMessageRead(conn.Object, new MessageEventArgs(message));
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
         }
@@ -575,7 +575,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedPingRequest().ToByteArray();
 
-            handler.HandleChildMessageRead(conn.Object, new MessageReadEventArgs(message));
+            handler.HandleChildMessageRead(conn.Object, new MessageEventArgs(message));
 
             conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }
@@ -613,6 +613,40 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleChildMessageRead(conn.Object, message);
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("unhandled distributed child message"))), Times.Once);
+        }
+
+        [Trait("Category", "HandleChildMessageWritten")]
+        [Theory(DisplayName = "HandleChildMessageWritten produces debug on message"), AutoData]
+        public void HandleChildMessageWritten_Produces_Debug_On_Message(string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var message = new DistributedBranchLevel(1).ToByteArray();
+
+            handler.HandleChildMessageWritten(conn.Object, new MessageEventArgs(message));
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child message sent: BranchLevel to {username}"))), Times.Once);
+        }
+
+        [Trait("Category", "HandleMessageWritten")]
+        [Theory(DisplayName = "HandleMessageWritten produces debug on message"), AutoData]
+        public void HandleMessageWritten_Produces_Debug_On_Message(string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var message = new DistributedBranchLevel(1).ToByteArray();
+
+            handler.HandleMessageWritten(conn.Object, new MessageEventArgs(message));
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Distributed message sent: BranchLevel"))), Times.Once);
         }
 
         private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)

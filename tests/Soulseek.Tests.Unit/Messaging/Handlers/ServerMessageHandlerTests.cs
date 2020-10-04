@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessageRead(null, new MessageReadEventArgs(message));
+            handler.HandleMessageRead(null, new MessageEventArgs(message));
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
         }
@@ -1258,6 +1258,19 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Trait("Category", "HandleMessageWritten")]
+        [Fact(DisplayName = "Creates diagnostic on message written")]
+        public void Creates_Diagnostic_On_Message_Written()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = GetServerSearchRequest("test", 0, "doesn't matter");
+
+            handler.HandleMessageWritten(new Mock<IMessageConnection>().Object, new MessageEventArgs(message));
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Server message sent: FileSearch"))), Times.Once);
         }
 
         private byte[] GetServerSearchRequest(string username, int token, string query)

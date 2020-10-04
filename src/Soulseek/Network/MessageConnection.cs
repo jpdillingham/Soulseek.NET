@@ -18,6 +18,7 @@ namespace Soulseek.Network
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
     /// <summary>
@@ -57,7 +58,7 @@ namespace Soulseek.Network
             Connected += (sender, e) =>
             {
                 // if Username is empty, this is a server connection. begin reading continuously, and throw on exception.
-                if (string.IsNullOrEmpty(Username))
+                if (IsServerConnection)
                 {
                     Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
                 }
@@ -72,17 +73,38 @@ namespace Soulseek.Network
         /// <summary>
         ///     Occurs when message data is received.
         /// </summary>
-        public event EventHandler<MessageDataReadEventArgs> MessageDataRead;
+        /// <remarks>
+        ///     <para>
+        ///         This event is separate from the underlying <see cref="Connection.DataRead"/> because it is bounded to the
+        ///         message payload. The base event will be raised when reading the message length and code, while this event will not.
+        ///     </para>
+        ///     <para>
+        ///         This event is only useful for tracking the progress of large messages (larger than the receive buffer);
+        ///         basically only the response to a browse request.  There is no corresponding event for data written, as this
+        ///         library sends messages in their entirety, and the two would be fuctionally identical.
+        ///     </para>
+        /// </remarks>
+        public event EventHandler<MessageDataEventArgs> MessageDataRead;
 
         /// <summary>
         ///     Occurs when a new message is read in its entirety.
         /// </summary>
-        public event EventHandler<MessageReadEventArgs> MessageRead;
+        public event EventHandler<MessageEventArgs> MessageRead;
 
         /// <summary>
         ///     Occurs when a new message is received, but before it is read.
         /// </summary>
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        ///     Occurs when a message is written in its entirety.
+        /// </summary>
+        public event EventHandler<MessageEventArgs> MessageWritten;
+
+        /// <summary>
+        ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
+        /// </summary>
+        public bool IsServerConnection => string.IsNullOrEmpty(Username);
 
         /// <summary>
         ///     Gets the unique identifier for the connection.
@@ -110,6 +132,61 @@ namespace Soulseek.Network
             }
         }
 
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to the connection.
+        /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        [Obsolete("Use WriteAsync(IOutgoingMessage).")]
+        public new Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        {
+            return base.WriteAsync(bytes, cancellationToken);
+        }
+
+        /// <summary>
+        ///     Asynchronously writes the specified <paramref name="message"/> to the connection.
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="message"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="MessageException">
+        ///     Thrown when an error is encountered while converting the message to a byte array.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        public Task WriteAsync(IOutgoingMessage message, CancellationToken? cancellationToken = null)
+        {
+            if (message == default)
+            {
+                throw new ArgumentException("The specified message is null", nameof(message));
+            }
+
+            byte[] bytes;
+
+            try
+            {
+                bytes = message.ToByteArray();
+            }
+            catch (Exception ex)
+            {
+                throw new MessageException("Failed to convert the message to a byte array", ex);
+            }
+
+            return WriteMessageInternalAsync(bytes, cancellationToken ?? CancellationToken.None);
+        }
+
         private async Task ReadContinuouslyAsync()
         {
             if (ReadingContinuously)
@@ -123,7 +200,7 @@ namespace Soulseek.Network
             void RaiseMessageDataRead(object sender, ConnectionDataEventArgs e)
             {
                 Interlocked.CompareExchange(ref MessageDataRead, null, null)?
-                    .Invoke(this, new MessageDataReadEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
+                    .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
             }
 
             try
@@ -153,7 +230,7 @@ namespace Soulseek.Network
 
                         var messageBytes = message.ToArray();
                         Interlocked.CompareExchange(ref MessageRead, null, null)?
-                            .Invoke(this, new MessageReadEventArgs(messageBytes));
+                            .Invoke(this, new MessageEventArgs(messageBytes));
                     }
                     finally
                     {
@@ -165,6 +242,14 @@ namespace Soulseek.Network
             {
                 ReadingContinuously = false;
             }
+        }
+
+        private async Task WriteMessageInternalAsync(byte[] bytes, CancellationToken cancellationToken)
+        {
+            await base.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+
+            Interlocked.CompareExchange(ref MessageWritten, null, null)?
+                .Invoke(this, new MessageEventArgs(bytes));
         }
     }
 }
