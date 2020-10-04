@@ -2500,7 +2500,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id).Returns(id);
 
             var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, id);
-            var args = new MessageReadEventArgs(new DistributedSearchRequest(username, token, query).ToByteArray());
+            var args = new MessageEventArgs(new DistributedSearchRequest(username, token, query).ToByteArray());
 
             using (manager)
             {
@@ -2525,7 +2525,7 @@ namespace Soulseek.Tests.Unit.Network
                 .WriteCode(MessageCode.Distributed.ServerSearchRequest)
                 .Build();
 
-            var args = new MessageReadEventArgs(msg);
+            var args = new MessageEventArgs(msg);
 
             using (manager)
             {
@@ -2545,7 +2545,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id).Returns(id);
 
             var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, id);
-            var args = new MessageReadEventArgs(new DistributedBranchLevel(level).ToByteArray());
+            var args = new MessageEventArgs(new DistributedBranchLevel(level).ToByteArray());
 
             using (manager)
             {
@@ -2565,7 +2565,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id).Returns(id);
 
             var key = new WaitKey(Constants.WaitKey.BranchRootMessage, id);
-            var args = new MessageReadEventArgs(new DistributedBranchRoot(root).ToByteArray());
+            var args = new MessageEventArgs(new DistributedBranchRoot(root).ToByteArray());
 
             using (manager)
             {
@@ -2583,7 +2583,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
-            var args = new MessageReadEventArgs(new ServerPing().ToByteArray());
+            var args = new MessageEventArgs(new ServerPing().ToByteArray());
 
             using (manager)
             {
@@ -2601,7 +2601,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
-            var args = new MessageReadEventArgs(null);
+            var args = new MessageEventArgs(new byte[4]);
 
             using (manager)
             {
@@ -2622,7 +2622,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
-            var args = new MessageReadEventArgs(null);
+            var args = new MessageEventArgs(new byte[4]);
 
             using (manager)
             {

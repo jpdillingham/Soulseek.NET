@@ -22,6 +22,7 @@ namespace Soulseek.Tests.Unit.Network
     using Moq;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
@@ -149,8 +150,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "WriteAsync")]
-        [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPEndPoint endpoint)
+        [Theory(DisplayName = "WriteAsync bytes throws InvalidOperationException when disconnected"), AutoData]
+        public async Task WriteAsync_Bytes_Throws_InvalidOperationException_When_Disconnected(string username, IPEndPoint endpoint)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)
@@ -169,7 +170,62 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "WriteAsync")]
         [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPEndPoint endpoint)
+        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPEndPoint endpoint)
+        {
+            var msg = new BrowseRequest();
+
+            using (var c = new MessageConnection(username, endpoint))
+            {
+                c.SetProperty("State", ConnectionState.Disconnected);
+
+                var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync throws ArgumentException when message is null"), AutoData]
+        public async Task WriteAsync_Throws_ArgumentException_When_Message_Is_Null(string username, IPEndPoint endpoint)
+        {
+            using (var c = new MessageConnection(username, endpoint))
+            {
+                c.SetProperty("State", ConnectionState.Disconnected);
+
+                var ex = await Record.ExceptionAsync(() => c.WriteAsync(message: null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Equal("message", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync throws MessageException when message ToByteArray() throws"), AutoData]
+        public async Task WriteAsync_Throws_MessageException_When_Message_ToByteArray_Throws(string username, IPEndPoint endpoint)
+        {
+            var expectedEx = new Exception();
+
+            var msg = new Mock<IOutgoingMessage>();
+            msg.Setup(m => m.ToByteArray())
+                .Throws(expectedEx);
+
+            using (var c = new MessageConnection(username, endpoint))
+            {
+                c.SetProperty("State", ConnectionState.Disconnected);
+
+                var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<MessageException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync bytes throws InvalidOperationException when disconnected"), AutoData]
+        public async Task WriteAsync_Bytes_Throws_InvalidOperationException_When_Disconnecting(string username, IPEndPoint endpoint)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)
@@ -187,8 +243,25 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "WriteAsync")]
-        [Theory(DisplayName = "WriteAsync writes when connected"), AutoData]
-        public async Task WriteAsync_Writes_When_Connected(string username, IPEndPoint endpoint)
+        [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
+        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPEndPoint endpoint)
+        {
+            var msg = new BrowseRequest();
+
+            using (var c = new MessageConnection(username, endpoint))
+            {
+                c.SetProperty("State", ConnectionState.Disconnecting);
+
+                var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync bytes writes when connected"), AutoData]
+        public async Task WriteAsync_Bytes_Writes_When_Connected(string username, IPEndPoint endpoint)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -216,8 +289,94 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "WriteAsync")]
-        [Theory(DisplayName = "WriteAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
-        public async Task WriteAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPEndPoint endpoint)
+        [Theory(DisplayName = "WriteAsync writes when connected"), AutoData]
+        public async Task WriteAsync_Writes_When_Connected(string username, IPEndPoint endpoint)
+        {
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                var msg = new BrowseRequest();
+
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
+                {
+                    await c.WriteAsync(msg);
+
+                    streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync uses given CancellationToken"), AutoData]
+        public async Task WriteAsync_Uses_Given_CancellationToken(string username, IPEndPoint endpoint)
+        {
+            var cancellationToken = new CancellationToken();
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                var msg = new BrowseRequest();
+
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
+                {
+                    await c.WriteAsync(msg, cancellationToken);
+
+                    streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync raises MessageWritten after write"), AutoData]
+        public async Task WriteAsync_Raises_MessageWritten_After_Write(string username, IPEndPoint endpoint)
+        {
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                var msg = new BrowseRequest();
+
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
+                {
+                    bool written = false;
+                    c.MessageWritten += (s, a) => { written = true; };
+
+                    await c.WriteAsync(msg);
+
+                    Assert.True(written);
+                }
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync bytes throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
+        public async Task WriteAsync_Bytes_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPEndPoint endpoint)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -236,6 +395,39 @@ namespace Soulseek.Tests.Unit.Network
                 var msg = new MessageBuilder()
                     .WriteCode(MessageCode.Peer.BrowseRequest)
                     .Build();
+
+                using (var c = new MessageConnection(endpoint, tcpClient: tcpMock.Object))
+                {
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionWriteException>(ex);
+                    Assert.IsType<IOException>(ex.InnerException);
+
+                    streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
+        public async Task WriteAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPEndPoint endpoint)
+        {
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Throws(new IOException());
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                var msg = new BrowseRequest();
 
                 using (var c = new MessageConnection(endpoint, tcpClient: tcpMock.Object))
                 {

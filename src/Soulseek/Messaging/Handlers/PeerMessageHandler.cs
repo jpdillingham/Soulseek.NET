@@ -53,7 +53,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleMessageRead(object sender, MessageReadEventArgs args)
+        public void HandleMessageRead(object sender, MessageEventArgs args)
         {
             HandleMessageRead(sender, args.Message);
         }
@@ -168,7 +168,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.InfoResponse:
-                        var incomingInfo = UserInfoResponse.FromByteArray(message);
+                        var incomingInfo = UserInfoResponseFactory.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), incomingInfo);
                         break;
 
@@ -294,6 +294,17 @@ namespace Soulseek.Messaging.Handlers
             {
                 Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        ///     Handles outging messages, post send.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleMessageWritten(object sender, MessageEventArgs args)
+        {
+            var code = new MessageReader<MessageCode.Peer>(args.Message).ReadCode();
+            Diagnostic.Debug($"Peer message sent: {code}");
         }
 
         private async Task<(bool Rejected, string RejectionMessage)> TryEnqueueDownloadAsync(string username, IPEndPoint ipEndPoint, string filename)

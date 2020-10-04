@@ -1724,7 +1724,8 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new AcknowledgePrivateMessageCommand(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new AcknowledgePrivateMessageCommand(privateMessageId), cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Acknowledged private message ID {privateMessageId}");
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
@@ -1771,7 +1772,7 @@ namespace Soulseek
             var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
             bool completionEventFired = false;
 
-            void UpdateProgress(object sender, MessageDataReadEventArgs args)
+            void UpdateProgress(object sender, MessageDataEventArgs args)
             {
                 if (args.PercentComplete == 100)
                 {
@@ -1827,7 +1828,7 @@ namespace Soulseek
 
                 // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
                 // we've already read the first 4k or whatever the read buffer size is)
-                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength.Value));
+                UpdateProgress(responseConnection, new MessageDataEventArgs(responseReceivedEventArgs.Code, 0, responseLength.Value));
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -1837,7 +1838,7 @@ namespace Soulseek
                 // case, fake it
                 if (!completionEventFired)
                 {
-                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, responseLength.Value, responseLength.Value));
+                    UpdateProgress(responseConnection, new MessageDataEventArgs(responseReceivedEventArgs.Code, responseLength.Value, responseLength.Value));
                 }
 
                 return response;
@@ -1913,6 +1914,7 @@ namespace Soulseek
                     ServerConnection_Connected,
                     ServerConnection_Disconnected,
                     ServerConnection_MessageRead,
+                    ServerConnection_MessageWritten,
                     Options.ServerConnectionOptions);
 
                 await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
@@ -2577,9 +2579,14 @@ namespace Soulseek
             Disconnect(e.Message, e.Exception);
         }
 
-        private void ServerConnection_MessageRead(object sender, MessageReadEventArgs e)
+        private void ServerConnection_MessageRead(object sender, MessageEventArgs e)
         {
             ServerMessageHandler.HandleMessageRead(sender, e);
+        }
+
+        private void ServerConnection_MessageWritten(object sender, MessageEventArgs e)
+        {
+            ServerMessageHandler.HandleMessageWritten(sender, e);
         }
 
         private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)

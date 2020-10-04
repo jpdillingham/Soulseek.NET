@@ -13,6 +13,10 @@
 namespace Soulseek.Network
 {
     using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Soulseek.Exceptions;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
     /// <summary>
@@ -23,17 +27,37 @@ namespace Soulseek.Network
         /// <summary>
         ///     Occurs when message data is received.
         /// </summary>
-        event EventHandler<MessageDataReadEventArgs> MessageDataRead;
+        /// <remarks>
+        ///     <para>
+        ///         This event is separate from the underlying <see cref="Connection.DataRead"/> because it is bounded to the
+        ///         message payload. The base event will be raised when reading the message length and code, while this event will not.
+        ///     </para>
+        ///     <para>
+        ///         This event is only useful for tracking the progress of large messages (larger than the receive buffer);
+        ///         basically only the response to a browse request.
+        ///     </para>
+        /// </remarks>
+        event EventHandler<MessageDataEventArgs> MessageDataRead;
 
         /// <summary>
         ///     Occurs when a new message is read in its entirety.
         /// </summary>
-        event EventHandler<MessageReadEventArgs> MessageRead;
+        event EventHandler<MessageEventArgs> MessageRead;
 
         /// <summary>
         ///     Occurs when a new message is received, but before it is read.
         /// </summary>
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        ///     Occurs when a message is written in its entirety.
+        /// </summary>
+        event EventHandler<MessageEventArgs> MessageWritten;
+
+        /// <summary>
+        ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
+        /// </summary>
+        bool IsServerConnection { get; }
 
         /// <summary>
         ///     Gets a value indicating whether the internal continuous read loop is running.
@@ -57,5 +81,38 @@ namespace Soulseek.Network
         ///     MessageRead event, which is impossible if we simply start the loop immediately upon instantiation.
         /// </remarks>
         void StartReadingContinuously();
+
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to the connection.
+        /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        [Obsolete("Use WriteAsync(IOutgoingMessage).")]
+        new Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously writes the specified <paramref name="message"/> to the connection.
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="message"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="MessageException">
+        ///     Thrown when an error is encountered while converting the message to a byte array.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        Task WriteAsync(IOutgoingMessage message, CancellationToken? cancellationToken = null);
     }
 }

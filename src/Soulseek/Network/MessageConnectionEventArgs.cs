@@ -22,17 +22,17 @@ namespace Soulseek.Network
     }
 
     /// <summary>
-    ///     EventArgs for <see cref="MessageConnection"/> events raised message data is received.
+    ///     EventArgs for <see cref="MessageConnection"/> events raised message data is received or sent.
     /// </summary>
-    internal sealed class MessageDataReadEventArgs : MessageConnectionEventArgs
+    internal sealed class MessageDataEventArgs : MessageConnectionEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageDataReadEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="MessageDataEventArgs"/> class.
         /// </summary>
         /// <param name="code">The message code, as a byte array.</param>
         /// <param name="currentLength">The length of the event data.</param>
         /// <param name="totalLength">The total expected length of the data transfer.</param>
-        public MessageDataReadEventArgs(byte[] code, long currentLength, long totalLength)
+        public MessageDataEventArgs(byte[] code, long currentLength, long totalLength)
         {
             Code = code;
             CurrentLength = currentLength;
@@ -61,15 +61,15 @@ namespace Soulseek.Network
     }
 
     /// <summary>
-    ///     EventArgs for <see cref="MessageConnection"/> events raised when a message is read in its entirety.
+    ///     EventArgs for <see cref="MessageConnection"/> events raised when a message is read or written in its entirety.
     /// </summary>
-    internal sealed class MessageReadEventArgs : MessageConnectionEventArgs
+    internal sealed class MessageEventArgs : MessageConnectionEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageReadEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="MessageEventArgs"/> class.
         /// </summary>
         /// <param name="message">The message associated with the event.</param>
-        public MessageReadEventArgs(byte[] message)
+        public MessageEventArgs(byte[] message)
         {
             Message = message;
         }

@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The child <see cref="IMessageConnection"/> from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleChildMessageRead(object sender, MessageReadEventArgs args)
+        public void HandleChildMessageRead(object sender, MessageEventArgs args)
         {
             HandleChildMessageRead(sender, args.Message);
         }
@@ -92,11 +92,23 @@ namespace Soulseek.Messaging.Handlers
         }
 
         /// <summary>
+        ///     Handles outging messages to distributed children, post send.
+        /// </summary>
+        /// <param name="sender">The child <see cref="IMessageConnection"/> instance to which the message was sent.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleChildMessageWritten(object sender, MessageEventArgs args)
+        {
+            var connection = (IMessageConnection)sender;
+            var code = new MessageReader<MessageCode.Distributed>(args.Message).ReadCode();
+            Diagnostic.Debug($"Distributed child message sent: {code} to {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+        }
+
+        /// <summary>
         ///     Handles incoming messages.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleMessageRead(object sender, MessageReadEventArgs args)
+        public void HandleMessageRead(object sender, MessageEventArgs args)
         {
             HandleMessageRead(sender, args.Message);
         }
@@ -196,6 +208,17 @@ namespace Soulseek.Messaging.Handlers
             {
                 Diagnostic.Warning($"Error handling distributed message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        ///     Handles outging messages, post send.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleMessageWritten(object sender, MessageEventArgs args)
+        {
+            var code = new MessageReader<MessageCode.Distributed>(args.Message).ReadCode();
+            Diagnostic.Debug($"Distributed message sent: {code}");
         }
 
         private async Task<bool> TrySendSearchResults(string username, int token, string query)
