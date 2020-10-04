@@ -1044,6 +1044,21 @@ namespace Soulseek.Tests.Unit
             handlerMock.Verify(m => m.HandleMessageRead(It.IsAny<object>(), args), Times.Once);
         }
 
+        [Trait("Category", "MessageWritten")]
+        [Fact(DisplayName = "MessageWritten invokes HandleMessageWritten")]
+        public void MessageWritten_Invokes_HandleMessageWritten()
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+            var args = new MessageEventArgs(new byte[4]);
+
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageWritten", this, args);
+            }
+
+            handlerMock.Verify(m => m.HandleMessageWritten(It.IsAny<object>(), args), Times.Once);
+        }
+
         [Trait("Category", "Event")]
         [Fact(DisplayName = "Raises DiagnosticGenerated when ListenerHandler raises")]
         public void Raises_DiagnosticGenerated_When_ListenerHandler_Raises()
