@@ -76,6 +76,10 @@ body {
     .chat-history {
         height: calc(100vh - 200px);
     }
+
+    .chat-placeholder {
+        height: calc(100vh - 130px);
+    }
 }
 
 @media only screen and (max-width: 767px) {
@@ -87,8 +91,12 @@ body {
         width: 100%;
     }
 
-    .chat-grid {
-        height: calc(100vh - 102px);
+    .chat-history {
+        height: calc(100vh - 329px);
+    }
+
+    .chat-placeholder {
+        height: calc(100vh - 130px);
     }
 }
 
@@ -232,4 +240,11 @@ body {
 
 .chat-names-item {
     cursor: pointer
+}
+
+.chat-placeholder {
+    opacity: .25;
+    background: unset !important;
+    border: unset !important;
+    box-shadow: unset !important;
 }

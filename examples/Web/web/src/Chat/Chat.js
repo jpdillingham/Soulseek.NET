@@ -72,6 +72,12 @@ class Chat extends Component {
                             </Segment>
                         </Grid.Column>
                         <Grid.Column className='chat-column-history' width={12}>
+                            {active === '' ? 
+                                <div className='chat-active-segment'>
+                                    <Card.Content>
+                                        <Segment placeholder className='chat-placeholder'/>                                        
+                                    </Card.Content>
+                                </div> :
                             <Card className='chat-active-segment' fluid raised>
                                 <Card.Content>
                                     <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header>
@@ -105,7 +111,7 @@ class Chat extends Component {
                                         </Segment>
                                     </Segment.Group>
                                 </Card.Content>
-                            </Card>
+                            </Card>}
                         </Grid.Column>
                     </Grid.Row>
                 </Grid>
