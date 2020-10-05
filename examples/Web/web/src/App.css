@@ -229,3 +229,7 @@ body {
 #chat-history-scroll-anchor {
     scroll-snap-align: start
 }
+
+.chat-names-item {
+    cursor: pointer
+}

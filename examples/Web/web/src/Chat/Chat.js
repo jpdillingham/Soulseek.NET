@@ -7,12 +7,8 @@ import {
 } from 'semantic-ui-react';
 
 const initialState = {
-    active: 'praetor-',
-    conversations: {
-        user1: [],
-        user2: [],
-        user3: []
-    },
+    active: '',
+    conversations: {},
     interval: undefined
 };
 
@@ -49,6 +45,10 @@ class Chat extends Component {
         return dtfUS.format(date);
     }
 
+    selectConversation = (username) => {
+        this.setState({ active: username });
+    }
+
     render = () => {
         const { conversations, active } = this.state;
         const messages = conversations[active] || [];
@@ -59,8 +59,15 @@ class Chat extends Component {
                     <Grid.Row className='chat-grid-row'>
                         <Grid.Column className='chat-column-names' width={4}>
                             <Segment className='chat-names-segment' raised>
-                                <List>
-                                    {Object.keys(conversations).map((name, index) => <List.Item key={index}>{name}</List.Item>)}
+                                <List size='large'>
+                                    {Object.keys(conversations).map((name, index) => 
+                                        <List.Item key={index}>
+                                            <List.Icon name='circle' color='green'/>
+                                            <List.Content>
+                                                <List.Header className='chat-names-item' onClick={() => this.selectConversation(name)}>{name}</List.Header>
+                                            </List.Content>
+                                        </List.Item>
+                                    )}
                                 </List>
                             </Segment>
                         </Grid.Column>
