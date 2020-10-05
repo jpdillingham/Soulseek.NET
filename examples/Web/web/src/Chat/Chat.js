@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React, { Component, createRef } from 'react';
 import api from '../api';
 
 import {
     Segment,
-    List, Grid, Input, Card, Icon
+    List, Grid, Input, Card, Icon, Ref
 } from 'semantic-ui-react';
 
 const initialState = {
@@ -19,6 +19,7 @@ const initialState = {
 class Chat extends Component {
     state = initialState;
     messageRef = undefined;
+    listRef = createRef();
 
     componentDidMount = () => {
         this.fetchConversations();
@@ -27,7 +28,9 @@ class Chat extends Component {
 
     fetchConversations = async () => {
         const conversations = (await api.get('/conversations')).data;
-        this.setState({ conversations });
+        this.setState({ conversations }, () => {
+            this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+        });
     }
 
     sendMessage = async () => {
@@ -65,29 +68,31 @@ class Chat extends Component {
                         <Grid.Column className='chat-column-history' width={12}>
                             <Card className='chat-active-segment' fluid raised>
                                 <Card.Content>
-                                    <Card.Header><Icon name='chat'/>{active}</Card.Header>
+                                    <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header>
                                     <Segment.Group>
                                         <Segment className='chat-history'>
-                                            <List>
-                                                {messages.map((message, index) => 
-                                                    <List.Content 
-                                                        key={index}
-                                                        className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
-                                                    >
-                                                        <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
-                                                        <span className='chat-message-name'>{message.username}: </span>
-                                                        <span className='chat-message-message'>{message.message}</span>
-                                                    </List.Content>
-                                                )}
-                                            </List>
+                                            <Ref innerRef={this.listRef}>
+                                                <List>
+                                                    {messages.map((message, index) => 
+                                                        <List.Content 
+                                                            key={index}
+                                                            className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
+                                                        >
+                                                            <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
+                                                            <span className='chat-message-name'>{message.username}: </span>
+                                                            <span className='chat-message-message'>{message.message}</span>
+                                                        </List.Content>
+                                                    )}
+                                                </List>
+                                            </Ref>
                                         </Segment>
                                         <Segment className='chat-input'>
                                             <Input
                                                 fluid
                                                 transparent
-                                                input={<input type="text" data-lpignore="true"></input>}
+                                                input={<input className='chat-message-input' type="text" data-lpignore="true"></input>}
                                                 ref={input => this.messageRef = input && input.inputRef}
-                                                action={{ icon: 'send', className: 'chat-message-button', onClick: this.sendMessage }}
+                                                action={{ icon: <Icon name='send' color='green'/>, className: 'chat-message-button', onClick: this.sendMessage }}
                                                 onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
                                             />
                                         </Segment>
