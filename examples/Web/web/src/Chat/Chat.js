@@ -28,14 +28,13 @@ class Chat extends Component {
 
     fetchConversations = async () => {
         const conversations = (await api.get('/conversations')).data;
-        this.setState({ conversations }, () => {
-            this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
-        });
+        this.setState({ conversations });
     }
 
     sendMessage = async () => {
         await api.post(`/conversations/${this.state.active}`, JSON.stringify(this.messageRef.current.value));
         this.messageRef.current.value = '';
+        this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
     }
 
     formatTimestamp = (timestamp) => {
@@ -83,6 +82,7 @@ class Chat extends Component {
                                                             <span className='chat-message-message'>{message.message}</span>
                                                         </List.Content>
                                                     )}
+                                                    <List.Content id='chat-history-scroll-anchor'/>
                                                 </List>
                                             </Ref>
                                         </Segment>
@@ -90,7 +90,7 @@ class Chat extends Component {
                                             <Input
                                                 fluid
                                                 transparent
-                                                input={<input className='chat-message-input' type="text" data-lpignore="true"></input>}
+                                                input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
                                                 ref={input => this.messageRef = input && input.inputRef}
                                                 action={{ icon: <Icon name='send' color='green'/>, className: 'chat-message-button', onClick: this.sendMessage }}
                                                 onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
