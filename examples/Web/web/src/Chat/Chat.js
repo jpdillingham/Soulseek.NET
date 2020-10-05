@@ -8,8 +8,7 @@ import {
 
 const initialState = {
     active: '',
-    conversations: {},
-    interval: undefined
+    conversations: {}
 };
 
 class Chat extends Component {
@@ -19,7 +18,6 @@ class Chat extends Component {
 
     componentDidMount = () => {
         this.fetchConversations();
-        this.setState({ interval: window.setInterval(this.fetchConversations, 500) });
     }
 
     fetchConversations = async () => {
