@@ -3,12 +3,13 @@ import api from '../api';
 
 import {
     Segment,
-    List, Grid, Input, Card, Icon, Ref, Tab
+    List, Input, Card, Icon, Ref, Tab, Label
 } from 'semantic-ui-react';
 
 const initialState = {
     active: '',
-    conversations: {}
+    conversations: {},
+    interval: undefined
 };
 
 class Chat extends Component {
@@ -18,6 +19,12 @@ class Chat extends Component {
 
     componentDidMount = () => {
         this.fetchConversations();
+        this.setState({ interval: window.setInterval(this.fetchConversations, 500) });
+    }
+
+    componentWillUnmount = () => {
+        clearInterval(this.state.interval);
+        this.setState({ interval: undefined });
     }
 
     fetchConversations = async () => {
@@ -47,19 +54,38 @@ class Chat extends Component {
         this.setState({ active: username });
     }
 
+    unreadMessages = (username) => {
+        return this.state.conversations[username].filter(message => !message.acknowledged)
+    }
+
     render = () => {
         const { conversations, active } = this.state;
+        const names = Object.keys(conversations);
         const messages = conversations[active] || [];
 
         return (
             <div className='chat-container'>
+                <Card style={{marginTop: 15 }} fluid raised>
+                    <Tab
+                        menu={{ borderless: true, attached: false, tabular: false }}
+                        onTabChange={(_, tabs) => this.selectConversation(tabs.panes[tabs.activeIndex].menuItem.key)} 
+                        panes={
+                            [...names.map((name, index) => ({ 
+                                menuItem: {
+                                    key: name,
+                                content: <span>{name}<Label color='red' floating>{this.unreadMessages(name).length}</Label></span>
+                                }
+                            })), { 
+                                menuItem: { 
+                                    icon: 'plus' 
+                                }
+                            }]
+                        }
+                    />
+                </Card>
                 <Card className='chat-active-segment' fluid raised>
                     <Card.Content>
-                        <Tab 
-                            onTabChange={(_, tabs) => this.selectConversation(tabs.panes[tabs.activeIndex].menuItem)} 
-                            panes={Object.keys(conversations).map((name, index) => ({ menuItem: name }))}
-                        />
-                        {/* <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header> */}
+                        <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header>
                         <Segment.Group>
                             <Segment className='chat-history'>
                                 <Ref innerRef={this.listRef}>
