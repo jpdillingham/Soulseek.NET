@@ -62,7 +62,6 @@ class Chat extends Component {
     sendMessage = async () => {
         await api.post(`/conversations/${this.state.active}`, JSON.stringify(this.messageRef.current.value));
         this.messageRef.current.value = '';
-        this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
     }
 
     formatTimestamp = (timestamp) => {
@@ -80,6 +79,7 @@ class Chat extends Component {
     selectConversation = (username) => {
         this.setState({ active: username }, () => {
             this.acknowledgeMessages(this.state.active);
+            this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
         });
     }
 
