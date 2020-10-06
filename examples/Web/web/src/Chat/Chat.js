@@ -1,10 +1,11 @@
 import React, { Component, createRef } from 'react';
 import api from '../api';
-
+import './Chat.css';
 import {
     Segment,
-    List, Input, Card, Icon, Ref, Tab, Label
+    List, Input, Card, Icon, Ref
 } from 'semantic-ui-react';
+import ConversationMenu from './ConversationMenu';
 
 const initialState = {
     active: '',
@@ -54,36 +55,25 @@ class Chat extends Component {
         this.setState({ active: username });
     }
 
-    unreadMessages = (username) => {
-        return this.state.conversations[username].filter(message => !message.acknowledged)
+    getUnreadMessages = (username) => {
+        return (this.state.conversations[username] || [])
+            .filter(message => !message.acknowledged);
     }
 
     render = () => {
         const { conversations, active } = this.state;
-        const names = Object.keys(conversations);
         const messages = conversations[active] || [];
 
         return (
             <div className='chat-container'>
                 <Card style={{marginTop: 15 }} fluid raised>
-                    <Tab
-                        menu={{ borderless: true, attached: false, tabular: false }}
-                        onTabChange={(_, tabs) => this.selectConversation(tabs.panes[tabs.activeIndex].menuItem.key)} 
-                        panes={
-                            [...names.map((name, index) => ({ 
-                                menuItem: {
-                                    key: name,
-                                content: <span>{name}<Label color='red' floating>{this.unreadMessages(name).length}</Label></span>
-                                }
-                            })), { 
-                                menuItem: { 
-                                    icon: 'plus' 
-                                }
-                            }]
-                        }
+                    <ConversationMenu
+                        conversations={conversations}
+                        active={active}
+                        onConversationChange={(name) => this.selectConversation(name)}
                     />
                 </Card>
-                <Card className='chat-active-segment' fluid raised>
+                {active && <Card className='chat-active' fluid raised>
                     <Card.Content>
                         <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header>
                         <Segment.Group>
@@ -116,7 +106,7 @@ class Chat extends Component {
                             </Segment>
                         </Segment.Group>
                     </Card.Content>
-                </Card>
+                </Card>}
             </div>
         )
     }
