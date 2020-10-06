@@ -3,7 +3,7 @@ import api from '../api';
 
 import {
     Segment,
-    List, Grid, Input, Card, Icon, Ref
+    List, Grid, Input, Card, Icon, Ref, Tab
 } from 'semantic-ui-react';
 
 const initialState = {
@@ -53,66 +53,44 @@ class Chat extends Component {
 
         return (
             <div className='chat-container'>
-                <Grid stackable columns={2} className='chat-grid'>
-                    <Grid.Row className='chat-grid-row'>
-                        <Grid.Column className='chat-column-names' width={4}>
-                            <Segment className='chat-names-segment' raised>
-                                <List size='large'>
-                                    {Object.keys(conversations).map((name, index) => 
-                                        <List.Item key={index}>
-                                            <List.Icon name='circle' color='green'/>
-                                            <List.Content>
-                                                <List.Header className='chat-names-item' onClick={() => this.selectConversation(name)}>{name}</List.Header>
+                <Card className='chat-active-segment' fluid raised>
+                    <Card.Content>
+                        <Tab 
+                            onTabChange={(_, tabs) => this.selectConversation(tabs.panes[tabs.activeIndex].menuItem)} 
+                            panes={Object.keys(conversations).map((name, index) => ({ menuItem: name }))}
+                        />
+                        {/* <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header> */}
+                        <Segment.Group>
+                            <Segment className='chat-history'>
+                                <Ref innerRef={this.listRef}>
+                                    <List>
+                                        {messages.map((message, index) => 
+                                            <List.Content 
+                                                key={index}
+                                                className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
+                                            >
+                                                <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
+                                                <span className='chat-message-name'>{message.username}: </span>
+                                                <span className='chat-message-message'>{message.message}</span>
                                             </List.Content>
-                                        </List.Item>
-                                    )}
-                                </List>
+                                        )}
+                                        <List.Content id='chat-history-scroll-anchor'/>
+                                    </List>
+                                </Ref>
                             </Segment>
-                        </Grid.Column>
-                        <Grid.Column className='chat-column-history' width={12}>
-                            {active === '' ? 
-                                <div className='chat-active-segment'>
-                                    <Card.Content>
-                                        <Segment placeholder className='chat-placeholder'/>                                        
-                                    </Card.Content>
-                                </div> :
-                            <Card className='chat-active-segment' fluid raised>
-                                <Card.Content>
-                                    <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header>
-                                    <Segment.Group>
-                                        <Segment className='chat-history'>
-                                            <Ref innerRef={this.listRef}>
-                                                <List>
-                                                    {messages.map((message, index) => 
-                                                        <List.Content 
-                                                            key={index}
-                                                            className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
-                                                        >
-                                                            <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
-                                                            <span className='chat-message-name'>{message.username}: </span>
-                                                            <span className='chat-message-message'>{message.message}</span>
-                                                        </List.Content>
-                                                    )}
-                                                    <List.Content id='chat-history-scroll-anchor'/>
-                                                </List>
-                                            </Ref>
-                                        </Segment>
-                                        <Segment className='chat-input'>
-                                            <Input
-                                                fluid
-                                                transparent
-                                                input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
-                                                ref={input => this.messageRef = input && input.inputRef}
-                                                action={{ icon: <Icon name='send' color='green'/>, className: 'chat-message-button', onClick: this.sendMessage }}
-                                                onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
-                                            />
-                                        </Segment>
-                                    </Segment.Group>
-                                </Card.Content>
-                            </Card>}
-                        </Grid.Column>
-                    </Grid.Row>
-                </Grid>
+                            <Segment className='chat-input'>
+                                <Input
+                                    fluid
+                                    transparent
+                                    input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
+                                    ref={input => this.messageRef = input && input.inputRef}
+                                    action={{ icon: <Icon name='send' color='green'/>, className: 'chat-message-button', onClick: this.sendMessage }}
+                                    onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
+                                />
+                            </Segment>
+                        </Segment.Group>
+                    </Card.Content>
+                </Card>
             </div>
         )
     }
