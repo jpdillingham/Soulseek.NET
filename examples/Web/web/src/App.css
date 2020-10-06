@@ -53,9 +53,6 @@ body {
     margin-top: 15px !important;
 }
 
-.search-options {
-}
-
 @media only screen and (max-width: 767px) {
     .search-options-hide-no-slots {
         margin-left: 0px;
@@ -72,14 +69,6 @@ body {
         max-width: 300px;
         width: 300px;
     }
-
-    .chat-history {
-        height: calc(100vh - 200px);
-    }
-
-    .chat-placeholder {
-        height: calc(100vh - 130px);
-    }
 }
 
 @media only screen and (max-width: 767px) {
@@ -89,14 +78,6 @@ body {
 
     .transferlist-progress {
         width: 100%;
-    }
-
-    .chat-history {
-        height: calc(100vh - 329px);
-    }
-
-    .chat-placeholder {
-        height: calc(100vh - 130px);
     }
 }
 
@@ -175,76 +156,4 @@ body {
 
 .login-failure {
     text-align: left;
-}
-
-.chat-container {
-    padding-left: 15px;
-    padding-right: 15px;
-    max-width: 1200px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-
-.chat-grid {
-    margin-top: 15px !important;
-    margin-bottom: 17px !important;
-}
-
-.chat-grid-row {
-    padding: 0px !important;
-}
-
-.chat-column-names {
-    padding-right: 0px !important;
-}
-
-.chat-names-segment {
-    height: 100%;
-}
-
-.chat-history {
-    padding: .5em !important;
-    margin-bottom: 17px;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scroll-snap-type: y proximity;
-}
-
-.chat-message-name {
-    font-weight: bold;
-}
-
-.chat-message-time {
-    float:right;
-    opacity: .5;
-    font-size: smaller;
-    font-variant: small-caps;
-    font-style: italic;
-}
-
-.chat-message-self {
-    color: blue;
-}
-
-.chat-input {
-    padding: 0px 0px 0px 1em !important;
-}
-
-.chat-message-button {
-    background-color: transparent !important;
-}
-
-#chat-history-scroll-anchor {
-    scroll-snap-align: start
-}
-
-.chat-names-item {
-    cursor: pointer
-}
-
-.chat-placeholder {
-    opacity: .25;
-    background: unset !important;
-    border: unset !important;
-    box-shadow: unset !important;
 }
