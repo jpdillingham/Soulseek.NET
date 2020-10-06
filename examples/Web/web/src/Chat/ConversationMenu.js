@@ -6,7 +6,7 @@ import {
 } from 'semantic-ui-react';
 
 const ConversationMenu = ({ conversations, active, onConversationChange }) => {
-  const names = [...Object.keys(conversations), 'asfasf aaaaaaaaaaaaaaaaaaaaaasdfas asdf', '1111 asdf1521'];
+  const names = Object.keys(conversations);
 
   const unread = Object.entries(conversations).reduce((acc, [name, messages]) => {
     acc[name] = messages.filter(message => !message.acknowledged)
@@ -17,8 +17,9 @@ const ConversationMenu = ({ conversations, active, onConversationChange }) => {
 
   return (
     <Menu className='conversation-menu' stackable size='huge'>
-      {names.map(name => 
+      {names.map((name, index) => 
         <Menu.Item
+          key={index}
           style={{fontWeight: isActive(name) ? 'bold' : ''}}
           name={name}
           active={isActive(name)}

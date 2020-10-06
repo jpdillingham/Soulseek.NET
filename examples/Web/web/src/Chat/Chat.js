@@ -66,7 +66,7 @@ class Chat extends Component {
 
         return (
             <div className='chat-container'>
-                <Card style={{marginTop: 15 }} fluid raised>
+                <Card className='chat-menu' fluid raised>
                     <ConversationMenu
                         conversations={conversations}
                         active={active}
