@@ -151,7 +151,10 @@
 
             foreach (var message in conversation.Where(p => !p.Acknowledged))
             {
-                tasks.Add(Client.AcknowledgePrivateMessageAsync(message.Id));
+                tasks.Add(Task.Run(async () => {
+                    await Client.AcknowledgePrivateMessageAsync(message.Id);
+                    message.Acknowledged = true;
+                }));
             }
 
             await Task.WhenAll(tasks);
