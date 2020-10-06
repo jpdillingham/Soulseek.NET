@@ -199,7 +199,6 @@ class Search extends Component {
                             </Button>
                             : ''}
                     </div>}
-                <div>&nbsp;</div>
             </div>
         )
     }

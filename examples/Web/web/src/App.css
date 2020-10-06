@@ -7,9 +7,18 @@ body {
     padding-bottom: 5px !important;
 }
 
+/* semantic-ui-react colors the border of inputs
+   when a right aligned action is used, even when 
+   transparent is specified, and it uses !important.
+   this had to be added to an id to override the class
+   declaration. */
+#chat-message-input {
+    border-right-color: transparent !important;
+}
+
 .app {
     margin: auto;
-    margin-bottom: 17px !important;
+    padding-bottom: 17px !important;
     border: 0px !important;
     border-radius: 0% !important;
     box-shadow: none !important;
@@ -22,6 +31,10 @@ body {
 
 .result-card {
     width: 100% !important;
+}
+
+.result-card:last-child, .transfer-card:last-child {
+    margin-bottom: 17px !important;
 }
 
 .result-meta {
@@ -40,9 +53,6 @@ body {
     margin-top: 15px !important;
 }
 
-.search-options {
-}
-
 @media only screen and (max-width: 767px) {
     .search-options-hide-no-slots {
         margin-left: 0px;
@@ -54,6 +64,7 @@ body {
     .search-options-hide-no-slots {
         margin-left: 20px;
     }
+
     .transferlist-progress {
         max-width: 300px;
         width: 300px;
@@ -136,7 +147,7 @@ body {
 .showmore-button {
     padding: 20px !important;
     max-width: 1200px !important;
-    margin: auto !important;
+    margin-bottom: 17px !important;
 }
 
 .login-button {

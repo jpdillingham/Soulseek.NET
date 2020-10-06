@@ -13,6 +13,10 @@
   padding-top: 0px !important;
 }
 
+.browse-results-row:last-child {
+  padding-bottom: 0px !important;  
+}
+
 .browse-folderlist {
   width: 100% !important;
   white-space: pre;
