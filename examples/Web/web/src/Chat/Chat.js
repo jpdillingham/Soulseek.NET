@@ -29,19 +29,32 @@ class Chat extends Component {
     }
 
     fetchConversations = async () => {
-        const conversations = (await api.get('/conversations')).data;
+        const { active } = this.state;
+        let conversations = (await api.get('/conversations')).data;
+
+        const unAckedActiveMessages = (conversations[active] || [])
+            .filter(message => !message.acknowledged);
+
+        if (unAckedActiveMessages.length > 0) {
+            await this.acknowledgeMessages(active, { force: true });
+            conversations = {
+                ...conversations, 
+                [active]: conversations[active].map(message => ({...message, acknowledged: true }))
+            };
+        };
+
         this.setState({ conversations }, () => {
             this.acknowledgeMessages(this.state.active);
         });
     }
 
-    acknowledgeMessages = async (username) => {
+    acknowledgeMessages = async (username, { force = false } = {}) => {
         if (!username) return;
 
         const unAckedMessages = (this.state.conversations[username] || [])
             .filter(message => !message.acknowledged);
 
-        if (unAckedMessages.length === 0) return;
+        if (!force && unAckedMessages.length === 0) return;
 
         await api.put(`/conversations/${username}`);
     }
