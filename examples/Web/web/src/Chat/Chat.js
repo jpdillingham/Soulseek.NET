@@ -30,7 +30,20 @@ class Chat extends Component {
 
     fetchConversations = async () => {
         const conversations = (await api.get('/conversations')).data;
-        this.setState({ conversations });
+        this.setState({ conversations }, () => {
+            this.acknowledgeMessages(this.state.active);
+        });
+    }
+
+    acknowledgeMessages = async (username) => {
+        if (!username) return;
+
+        const unAckedMessages = (this.state.conversations[username] || [])
+            .filter(message => !message.acknowledged);
+
+        if (unAckedMessages.length === 0) return;
+
+        await api.put(`/conversations/${username}`);
     }
 
     sendMessage = async () => {
@@ -52,12 +65,9 @@ class Chat extends Component {
     }
 
     selectConversation = (username) => {
-        this.setState({ active: username });
-    }
-
-    getUnreadMessages = (username) => {
-        return (this.state.conversations[username] || [])
-            .filter(message => !message.acknowledged);
+        this.setState({ active: username }, () => {
+            this.acknowledgeMessages(this.state.active);
+        });
     }
 
     render = () => {
