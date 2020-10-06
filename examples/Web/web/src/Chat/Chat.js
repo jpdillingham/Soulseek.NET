@@ -29,14 +29,39 @@ class Chat extends Component {
     }
 
     fetchConversations = async () => {
-        const conversations = (await api.get('/conversations')).data;
-        this.setState({ conversations });
+        const { active } = this.state;
+        let conversations = (await api.get('/conversations')).data;
+
+        const unAckedActiveMessages = (conversations[active] || [])
+            .filter(message => !message.acknowledged);
+
+        if (unAckedActiveMessages.length > 0) {
+            await this.acknowledgeMessages(active, { force: true });
+            conversations = {
+                ...conversations, 
+                [active]: conversations[active].map(message => ({...message, acknowledged: true }))
+            };
+        };
+
+        this.setState({ conversations }, () => {
+            this.acknowledgeMessages(this.state.active);
+        });
+    }
+
+    acknowledgeMessages = async (username, { force = false } = {}) => {
+        if (!username) return;
+
+        const unAckedMessages = (this.state.conversations[username] || [])
+            .filter(message => !message.acknowledged);
+
+        if (!force && unAckedMessages.length === 0) return;
+
+        await api.put(`/conversations/${username}`);
     }
 
     sendMessage = async () => {
         await api.post(`/conversations/${this.state.active}`, JSON.stringify(this.messageRef.current.value));
         this.messageRef.current.value = '';
-        this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
     }
 
     formatTimestamp = (timestamp) => {
@@ -52,12 +77,10 @@ class Chat extends Component {
     }
 
     selectConversation = (username) => {
-        this.setState({ active: username });
-    }
-
-    getUnreadMessages = (username) => {
-        return (this.state.conversations[username] || [])
-            .filter(message => !message.acknowledged);
+        this.setState({ active: username }, () => {
+            this.acknowledgeMessages(this.state.active);
+            this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+        });
     }
 
     render = () => {
