@@ -1,6 +1,6 @@
 @media only screen and (min-width: 768px) {
   .chat-history {
-      height: calc(100vh - 274px);
+      height: calc(100vh - 299px);
   }
 }
 
@@ -12,13 +12,27 @@
 
 .chat-menu {
   margin-top: 15px !important;
-  padding: 0px !important;
 }
 
 .conversation-menu {
   overflow-x: auto;
-  border: unset !important;
+  box-shadow: unset !important;
 }
+
+.conversation-menu > .menu-item {
+  font-size: 14pt;
+}
+
+.conversation-menu > .menu-active {
+  font-weight: bold !important;
+}
+
+.conversation-menu > .menu > .add-button {
+  margin: 0px;
+  border-top-left-radius: 0%;
+  border-bottom-left-radius: 0%;
+  border-radius: 0%;
+} 
 
 .chat-container {
   padding-left: 15px;
@@ -35,6 +49,10 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
+}
+
+.chat-active > .content > .segments {
+  box-shadow: unset !important;
 }
 
 .chat-message-name {

@@ -126,11 +126,11 @@ class App extends Component {
                                     <Icon name='folder open'/>Browse
                                 </Menu.Item>
                             </Link>
-                            <Link to='rooms'>
+                            {/* <Link to='rooms'>
                                 <Menu.Item>
                                     <Icon name='comments'/>Rooms
                                 </Menu.Item>
-                            </Link>
+                            </Link> */}
                             <Link to='chat'>
                                 <Menu.Item>
                                     <Icon name='comment'/>Chat

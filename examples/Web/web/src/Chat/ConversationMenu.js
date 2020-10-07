@@ -16,11 +16,11 @@ const ConversationMenu = ({ conversations, active, onConversationChange }) => {
   const isActive = (name) => active === name;
 
   return (
-    <Menu className='conversation-menu' stackable size='huge'>
+    <Menu className='conversation-menu' stackable size='large'>
       {names.map((name, index) => 
         <Menu.Item
+          className={`menu-item ${isActive(name) ? 'menu-active' : ''}`}
           key={index}
-          style={{fontWeight: isActive(name) ? 'bold' : ''}}
           name={name}
           active={isActive(name)}
           onClick={() => onConversationChange(name)}
@@ -33,9 +33,7 @@ const ConversationMenu = ({ conversations, active, onConversationChange }) => {
         </Menu.Item>
       )}
       <Menu.Menu position='right'>
-        <Menu.Item>
-          <Button icon><Icon name='plus'/></Button>
-        </Menu.Item>
+          <Button icon className='add-button'><Icon name='plus'/></Button>
       </Menu.Menu>
     </Menu>
   )
