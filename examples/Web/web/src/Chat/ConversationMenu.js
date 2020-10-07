@@ -25,10 +25,10 @@ const ConversationMenu = ({ conversations, active, onConversationChange }) => {
           active={isActive(name)}
           onClick={() => onConversationChange(name)}
         >
+          <Icon name='circle' size='tiny' color='green'/>
           {name}
-          {(unread[name] || []).length === 0 ? 
-            '' :
-            <Label color='red'>{(unread[name] || []).length}</Label>
+          {(unread[name] || []).length === 0 ? '' :
+            <Label size='tiny' color='red'>{(unread[name] || []).length}</Label>
           }
         </Menu.Item>
       )}
