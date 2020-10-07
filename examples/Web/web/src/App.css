@@ -157,3 +157,7 @@ body {
 .login-failure {
     text-align: left;
 }
+
+.close-button {
+    float: right;
+}
