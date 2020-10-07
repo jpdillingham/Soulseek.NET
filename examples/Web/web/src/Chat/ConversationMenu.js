@@ -34,7 +34,7 @@ const ConversationMenu = ({ conversations, active, onConversationChange }) => {
       )}
       <Menu.Menu position='right'>
         <Menu.Item>
-          <Button icon primary><Icon name='plus'/></Button>
+          <Button icon><Icon name='plus'/></Button>
         </Menu.Item>
       </Menu.Menu>
     </Menu>

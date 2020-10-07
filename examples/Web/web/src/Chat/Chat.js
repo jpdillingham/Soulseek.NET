@@ -89,13 +89,13 @@ class Chat extends Component {
 
         return (
             <div className='chat-container'>
-                <Card className='chat-menu' fluid raised>
+                <Segment className='chat-menu' raised>
                     <ConversationMenu
                         conversations={conversations}
                         active={active}
                         onConversationChange={(name) => this.selectConversation(name)}
                     />
-                </Card>
+                </Segment>
                 {active && <Card className='chat-active' fluid raised>
                     <Card.Content>
                         <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header>

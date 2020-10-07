@@ -1,6 +1,6 @@
 @media only screen and (min-width: 768px) {
   .chat-history {
-      height: calc(100vh - 273px);
+      height: calc(100vh - 274px);
   }
 }
 
@@ -12,10 +12,12 @@
 
 .chat-menu {
   margin-top: 15px !important;
+  padding: 0px !important;
 }
 
 .conversation-menu {
   overflow-x: auto;
+  border: unset !important;
 }
 
 .chat-container {
