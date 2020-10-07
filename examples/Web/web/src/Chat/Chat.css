@@ -17,6 +17,7 @@
 .conversation-menu {
   overflow-x: auto;
   box-shadow: unset !important;
+  height: 55px;
 }
 
 .conversation-menu > .menu-item {
