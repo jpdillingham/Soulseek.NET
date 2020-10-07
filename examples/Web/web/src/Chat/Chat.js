@@ -83,6 +83,18 @@ class Chat extends Component {
         });
     }
 
+    deleteConversation = async (username) => {
+        await api.delete(`/conversations/${username}`);
+
+        const { conversations } = this.state;
+        delete conversations[username];
+
+        this.setState({ 
+            active: initialState.active,
+            conversations
+        });
+    }
+
     render = () => {
         const { conversations, active } = this.state;
         const messages = conversations[active] || [];
@@ -98,7 +110,17 @@ class Chat extends Component {
                 </Segment>
                 {active && <Card className='chat-active' fluid raised>
                     <Card.Content>
-                        <Card.Header><Icon name='circle' color='green'/>{active}</Card.Header>
+                        <Card.Header>
+                            <Icon name='circle' color='green'/>
+                            {active}
+                            <Icon 
+                                className='close-button' 
+                                name='close' 
+                                color='red' 
+                                link
+                                onClick={() => this.deleteConversation(active)}
+                            />
+                        </Card.Header>
                         <Segment.Group>
                             <Segment className='chat-history'>
                                 <Ref innerRef={this.listRef}>
