@@ -23,6 +23,7 @@
   overflow: auto !important;
   max-height: 400px;
   padding: 1em !important;
+  box-shadow: unset !important;
 }
 
 .browse-folderlist-list {
@@ -52,4 +53,8 @@
 
 .ui.list .list>.item>.icon+.content, .ui.list .list>.item>.image+.content, .ui.list>.item>.icon+.content, .ui.list>.item>.image+.content {
   padding-left: 0px !important;
+}
+
+.browse-tree-card {
+  width: 100% !important;
 }
