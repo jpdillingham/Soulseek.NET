@@ -5,7 +5,7 @@ import {
     Segment,
     List, Input, Card, Icon, Ref
 } from 'semantic-ui-react';
-import ConversationMenu from './ConversationMenu';
+import ChatMenu from './ChatMenu';
 
 const initialState = {
     active: '',
@@ -118,7 +118,7 @@ class Chat extends Component {
         return (
             <div className='chat-container'>
                 <Segment className='chat-menu' raised>
-                    <ConversationMenu
+                    <ChatMenu
                         conversations={conversations}
                         active={active}
                         onConversationChange={(name) => this.selectConversation(name)}

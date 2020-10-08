@@ -6,7 +6,7 @@ import {
 } from 'semantic-ui-react';
 import SendMessageModal from './SendMessageModal';
 
-const ConversationMenu = ({ conversations, active, onConversationChange, ...rest }) => {
+const ChatMenu = ({ conversations, active, onConversationChange, ...rest }) => {
   const names = Object.keys(conversations);
 
   const unread = Object.entries(conversations).reduce((acc, [name, messages]) => {
@@ -47,4 +47,4 @@ const ConversationMenu = ({ conversations, active, onConversationChange, ...rest
   )
 }
 
-export default ConversationMenu;
+export default ChatMenu;
