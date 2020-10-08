@@ -59,9 +59,19 @@ class Chat extends Component {
         await api.put(`/conversations/${username}`);
     }
 
-    sendMessage = async () => {
-        await api.post(`/conversations/${this.state.active}`, JSON.stringify(this.messageRef.current.value));
+    sendMessage = async (username, message) => {
+        await api.post(`/conversations/${username}`, JSON.stringify(message));
+    }
+
+    sendReply = async () => {
+        await this.sendMessage(this.state.active, this.messageRef.current.value);
         this.messageRef.current.value = '';
+    }
+
+    initiateMessage = async (username, message) => {
+        await this.sendMessage(username, message);
+        // todo: fake conversation
+        // todo: select conversation
     }
 
     formatTimestamp = (timestamp) => {
@@ -106,6 +116,7 @@ class Chat extends Component {
                         conversations={conversations}
                         active={active}
                         onConversationChange={(name) => this.selectConversation(name)}
+                        initiateMessage={this.initiateMessage}
                     />
                 </Segment>
                 {active && <Card className='chat-active' fluid raised>
@@ -146,7 +157,7 @@ class Chat extends Component {
                                     input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
                                     ref={input => this.messageRef = input && input.inputRef}
                                     action={{ icon: <Icon name='send' color='green'/>, className: 'chat-message-button', onClick: this.sendMessage }}
-                                    onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
+                                    onKeyUp={(e) => e.key === 'Enter' ? this.sendReply() : ''}
                                 />
                             </Segment>
                         </Segment.Group>
