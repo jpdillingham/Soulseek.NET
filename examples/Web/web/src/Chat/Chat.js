@@ -70,8 +70,14 @@ class Chat extends Component {
 
     initiateMessage = async (username, message) => {
         await this.sendMessage(username, message);
-        // todo: fake conversation
-        // todo: select conversation
+
+        this.setState({ 
+            conversations: {
+                ...this.state.conversations, 
+                username: [message]
+            },
+            active: username
+        });
     }
 
     formatTimestamp = (timestamp) => {
