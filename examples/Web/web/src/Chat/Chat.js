@@ -68,7 +68,14 @@ class Chat extends Component {
     }
 
     sendReply = async () => {
-        await this.sendMessage(this.state.active, this.messageRef.current.value);
+        const { active } = this.state;
+        const message = this.messageRef.current.value;
+
+        if (!this.validInput()) {
+            return;
+        }
+
+        await this.sendMessage(active, message);
         this.messageRef.current.value = '';
     }
 
@@ -83,6 +90,8 @@ class Chat extends Component {
             active: username
         });
     }
+
+    validInput = () => (this.state.active || '').length > 0 && ((this.messageRef && this.messageRef.current && this.messageRef.current.value) || '').length > 0;
 
     focusInput = () => {
         this.messageRef.current.focus();
@@ -173,7 +182,11 @@ class Chat extends Component {
                                     transparent
                                     input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
                                     ref={input => this.messageRef = input && input.inputRef}
-                                    action={{ icon: <Icon name='send' color='green'/>, className: 'chat-message-button', onClick: this.sendMessage }}
+                                    action={{ 
+                                        icon: <Icon name='send' color='green'/>, 
+                                        className: 'chat-message-button', onClick: this.sendMessage,
+                                        disabled: !this.validInput()
+                                    }}
                                     onKeyUp={(e) => e.key === 'Enter' ? this.sendReply() : ''}
                                 />
                             </Segment>
