@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './Chat.css';
 
 import {
@@ -9,6 +9,16 @@ const SendMessageModal = ({ initiateMessage, ...rest }) => {
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState('');
   const [message, setMessage] = React.useState('');
+  const [focused, setFocus] = React.useState(false);
+
+  const usernameRef = React.createRef();
+
+  useEffect(() => {
+    if (!!usernameRef.current && !focused) {
+      usernameRef.current.focus();
+      setFocus(true);
+    }
+  }, [usernameRef, focused]);
 
   const sendMessage = async () => {
     await initiateMessage(username, message);
@@ -31,12 +41,13 @@ const SendMessageModal = ({ initiateMessage, ...rest }) => {
         <Modal.Content>Send Private Message</Modal.Content>
       </Header>
       <Modal.Content>
-          <Form>
+        <Form>
           <Form.Field>
-            <Input
-              placeholder='Username' 
-              onChange={(e, data) => setUsername(data.value)}
-            />
+              <Input
+                ref={usernameRef}
+                placeholder='Username' 
+                onChange={(e, data) => setUsername(data.value)}
+              />
           </Form.Field>
           <Form.Field>
             <TextArea
@@ -44,7 +55,7 @@ const SendMessageModal = ({ initiateMessage, ...rest }) => {
               onChange={(e, data) => setMessage(data.value)}
             />
           </Form.Field>
-          </Form>
+        </Form>
       </Modal.Content>
       <Modal.Actions>
         <Button onClick={() => setOpen(false)}>Cancel</Button>
