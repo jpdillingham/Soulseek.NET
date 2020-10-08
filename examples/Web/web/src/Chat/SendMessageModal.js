@@ -5,24 +5,22 @@ import {
   Icon, Button, Modal, TextArea, Form, Header, Input
 } from 'semantic-ui-react';
 
+const usernameRef = React.createRef();
+
 const SendMessageModal = ({ initiateMessage, ...rest }) => {
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState('');
   const [message, setMessage] = React.useState('');
-  const [focused, setFocus] = React.useState(false);
-
-  const usernameRef = React.createRef();
 
   useEffect(() => {
-    if (!!usernameRef.current && !focused) {
+    if (open) {
       usernameRef.current.focus();
-      setFocus(true);
     }
-  }, [usernameRef, focused]);
+  }, [open]);
 
   const sendMessage = async () => {
     if (!validInput()) {
-      setFocus(false);
+      usernameRef.current.focus();
       return;
     }
 
