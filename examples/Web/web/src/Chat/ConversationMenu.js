@@ -4,8 +4,9 @@ import './Chat.css';
 import {
   Icon, Button, Label, Menu
 } from 'semantic-ui-react';
+import SendMessageModal from './SendMessageModal';
 
-const ConversationMenu = ({ conversations, active, onConversationChange }) => {
+const ConversationMenu = ({ conversations, active, onConversationChange, ...rest }) => {
   const names = Object.keys(conversations);
 
   const unread = Object.entries(conversations).reduce((acc, [name, messages]) => {
@@ -33,7 +34,14 @@ const ConversationMenu = ({ conversations, active, onConversationChange }) => {
         </Menu.Item>
       )}
       <Menu.Menu position='right'>
-          <Button icon className='add-button'><Icon name='plus'/></Button>
+        <SendMessageModal
+          trigger={
+            <Button icon className='add-button'><Icon name='plus'/></Button>
+          }
+          centered
+          size='mini'
+          {...rest}
+        />
       </Menu.Menu>
     </Menu>
   )
