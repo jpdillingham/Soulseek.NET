@@ -84,6 +84,10 @@ class Chat extends Component {
         });
     }
 
+    focusInput = () => {
+        this.messageRef.current.focus();
+    }
+
     formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
         const dtfUS = new Intl.DateTimeFormat('en', { 
@@ -133,7 +137,7 @@ class Chat extends Component {
                     />
                 </Segment>
                 {active && <Card className='chat-active-card' raised>
-                    <Card.Content>
+                    <Card.Content onClick={() => this.focusInput()}>
                         <Card.Header>
                             <Icon name='circle' color='green'/>
                             {active}
