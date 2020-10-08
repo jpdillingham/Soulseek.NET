@@ -21,6 +21,11 @@ const SendMessageModal = ({ initiateMessage, ...rest }) => {
   }, [usernameRef, focused]);
 
   const sendMessage = async () => {
+    if (!validInput()) {
+      setFocus(false);
+      return;
+    }
+
     await initiateMessage(username, message);
     setOpen(false);
   }
