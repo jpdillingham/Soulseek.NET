@@ -1,4 +1,5 @@
 import React, { Component, createRef } from 'react';
+import { activeChatKey } from '../config';
 import api from '../api';
 import './Chat.css';
 import {
@@ -20,7 +21,10 @@ class Chat extends Component {
 
     componentDidMount = () => {
         this.fetchConversations();
-        this.setState({ interval: window.setInterval(this.fetchConversations, 500) });
+        this.setState({ 
+            active: sessionStorage.getItem(activeChatKey) || '',
+            interval: window.setInterval(this.fetchConversations, 500)
+        });
     }
 
     componentWillUnmount = () => {
@@ -94,6 +98,7 @@ class Chat extends Component {
 
     selectConversation = (username) => {
         this.setState({ active: username }, () => {
+            sessionStorage.setItem(activeChatKey, username);
             this.acknowledgeMessages(this.state.active);
             this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
         });
@@ -108,6 +113,8 @@ class Chat extends Component {
         this.setState({ 
             active: initialState.active,
             conversations
+        }, () => {
+            sessionStorage.removeItem(activeChatKey);
         });
     }
 
@@ -125,7 +132,7 @@ class Chat extends Component {
                         initiateMessage={this.initiateMessage}
                     />
                 </Segment>
-                {active && <Card className='chat-active' fluid raised>
+                {active && <Card className='chat-active-card' raised>
                     <Card.Content>
                         <Card.Header>
                             <Icon name='circle' color='green'/>

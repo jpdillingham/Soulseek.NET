@@ -1,6 +1,6 @@
 @media only screen and (min-width: 768px) {
   .chat-history {
-      height: calc(100vh - 291px);
+      height: calc(100vh - 292px);
   }
 }
 
@@ -12,6 +12,7 @@
 
 .chat-menu {
   margin-top: 15px !important;
+  height: 78px;
 }
 
 .conversation-menu {
@@ -52,7 +53,11 @@
   scroll-snap-type: y proximity;
 }
 
-.chat-active > .content > .segments {
+.chat-active-card {
+  width: 100% !important;
+}
+
+.chat-active-card > .content > .segments {
   box-shadow: unset !important;
 }
 
