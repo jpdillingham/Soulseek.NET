@@ -16,14 +16,18 @@ const FileList = ({ directoryName, files, locked, onSelectionChange, disabled, o
       size='small' 
       className='filelist-header'
     >
-      <Icon name={locked ? 'lock' : 'folder'}/>{directoryName}
-      {!!onClose && <Icon 
-        className='close-button' 
-        name='close' 
-        color='red' 
-        link
-        onClick={() => onClose()}
-      />}
+      <div>
+        <Icon size='large' name={locked ? 'lock' : 'folder'}/>
+          {directoryName}
+     
+        {!!onClose && <Icon 
+            className='close-button' 
+            name='close' 
+            color='red'
+            link
+            onClick={() => onClose()}
+          />}
+      </div>
     </Header>
     {files && files.length > 0 && <List>
       <List.Item>
