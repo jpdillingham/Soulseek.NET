@@ -4,8 +4,9 @@ import './Chat.css';
 import {
   Icon, Button, Label, Menu
 } from 'semantic-ui-react';
+import SendMessageModal from './SendMessageModal';
 
-const ConversationMenu = ({ conversations, active, onConversationChange }) => {
+const ChatMenu = ({ conversations, active, onConversationChange, ...rest }) => {
   const names = Object.keys(conversations);
 
   const unread = Object.entries(conversations).reduce((acc, [name, messages]) => {
@@ -16,29 +17,34 @@ const ConversationMenu = ({ conversations, active, onConversationChange }) => {
   const isActive = (name) => active === name;
 
   return (
-    <Menu className='conversation-menu' stackable size='huge'>
+    <Menu className='conversation-menu' stackable size='large'>
       {names.map((name, index) => 
         <Menu.Item
+          className={`menu-item ${isActive(name) ? 'menu-active' : ''}`}
           key={index}
-          style={{fontWeight: isActive(name) ? 'bold' : ''}}
           name={name}
           active={isActive(name)}
           onClick={() => onConversationChange(name)}
         >
+          <Icon name='circle' size='tiny' color='green'/>
           {name}
-          {(unread[name] || []).length === 0 ? 
-            '' :
-            <Label color='red'>{(unread[name] || []).length}</Label>
+          {(unread[name] || []).length === 0 ? '' :
+            <Label size='tiny' color='red'>{(unread[name] || []).length}</Label>
           }
         </Menu.Item>
       )}
       <Menu.Menu position='right'>
-        <Menu.Item>
-          <Button icon primary><Icon name='plus'/></Button>
-        </Menu.Item>
+        <SendMessageModal
+          trigger={
+            <Button icon className='add-button'><Icon name='plus'/></Button>
+          }
+          centered
+          size='mini'
+          {...rest}
+        />
       </Menu.Menu>
     </Menu>
   )
 }
 
-export default ConversationMenu;
+export default ChatMenu;

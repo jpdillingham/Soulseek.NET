@@ -160,5 +160,27 @@
             await Task.WhenAll(tasks);
             return StatusCode(200);
         }
+
+        /// <summary>
+        ///     Deletes the conversation associated with the given username.
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="204">The request completed successfully.</response>
+        /// <response code="404">A conversation with the specified username could not be found.</response>
+        [HttpDelete("{username}")]
+        [Authorize]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(204)]
+        public IActionResult Delete([FromRoute]string username)
+        {
+            var deleted = Tracker.Conversations.TryRemove(username, out _);
+
+            if (deleted)
+            {
+                return StatusCode(204);
+            }
+
+            return StatusCode(404);
+        }
     }
 }

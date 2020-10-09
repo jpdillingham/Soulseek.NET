@@ -10,7 +10,7 @@ import {
   Input, 
   Loader,
   Card,
-  Grid,
+  Icon,
 } from 'semantic-ui-react';
 
 import Directory from './Directory';
@@ -160,27 +160,29 @@ class Browse extends Component {
           <div>
             {browseError ? 
               <span className='browse-error'>Failed to browse {username}</span> :
-              <div>
-                {!emptyTree && <Grid className='browse-results'>
-                  <Grid.Row className='browse-results-row'>
-                    <Card className='browse-folderlist' raised>
+              <div className='browse-container'>
+                {!emptyTree && <Card className='browse-tree-card' raised>
+                  <Card.Content>
+                    <Card.Header>
+                        <Icon name='circle' color='green'/>
+                        {username}
+                    </Card.Header>
+                    <Segment className='browse-folderlist'>
                       <DirectoryTree 
                         tree={tree} 
                         selectedDirectoryName={directoryName}
                         onSelect={this.onDirectorySelectionChange}
                       />
-                    </Card>
-                  </Grid.Row>
-                  {directoryName && <Grid.Row className='browse-results-row'>
-                    <Directory
-                      marginTop={-20}
-                      name={directoryName}
-                      locked={locked}
-                      files={files}
-                      username={username}
-                    />
-                  </Grid.Row>}
-                </Grid>}
+                    </Segment>
+                  </Card.Content>
+                </Card>}
+                {directoryName && <Directory
+                    marginTop={-20}
+                    name={directoryName}
+                    locked={locked}
+                    files={files}
+                    username={username}
+                />}
               </div>
             }
         </div>}
