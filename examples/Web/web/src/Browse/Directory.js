@@ -47,7 +47,7 @@ class Directory extends Component {
   }
 
   render = () => {
-    let { username, name, locked, marginTop } = this.props;
+    let { username, name, locked, marginTop, onClose } = this.props;
     let { files, downloadRequest, downloadError } = this.state;
 
     let selectedFiles = files
@@ -65,6 +65,7 @@ class Directory extends Component {
               files={files}
               disabled={downloadRequest === 'inProgress'}
               onSelectionChange={this.onFileSelectionChange}
+              onClose={onClose}
             />
           </div>
         </Card.Content>
