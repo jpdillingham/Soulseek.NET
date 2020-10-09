@@ -62,9 +62,19 @@ class Response extends Component {
         let selectedSize = formatBytes(selectedFiles.reduce((total, f) => total + f.size, 0));
 
         return (
-            <Card className='result-card' raised>
+            !this.props.hidden && <Card className='result-card' raised>
                 <Card.Content>
-                    <Card.Header><Icon name='circle' color={free ? 'green' : 'yellow'}/>{response.username}</Card.Header>
+                    <Card.Header>
+                        <Icon name='circle' color={free ? 'green' : 'yellow'}/>
+                        {response.username}
+                        <Icon 
+                            className='close-button' 
+                            name='close' 
+                            color='red' 
+                            link
+                            onClick={() => this.props.onHide()}
+                        />
+                    </Card.Header>
                     <Card.Meta className='result-meta'>
                         <span>Upload Speed: {formatBytes(response.uploadSpeed)}/s, Free Upload Slot: {free ? 'YES' : 'NO'}, Queue Length: {response.queueLength}</span>
                     </Card.Meta>
