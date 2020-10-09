@@ -117,8 +117,12 @@ class Browse extends Component {
     return { ...root, children: children.map(c => this.getChildDirectories(directories, c, separator, depth + 1)) };
   }
 
-  onDirectorySelectionChange = (event, value) => {
-    this.setState({ selectedDirectory: { ...value, children: [] }}, () => this.saveState());
+  selectDirectory = (directory) => {
+    this.setState({ selectedDirectory: { ...directory, children: [] }}, () => this.saveState());
+  }
+
+  deselectDirectory = () => {
+    this.setState({ selectedDirectory: initialState.selectedDirectory }, () => this.saveState());
   }
 
   sep = (directoryName) => directoryName.includes('\\') ? '\\' : '/';
@@ -171,7 +175,7 @@ class Browse extends Component {
                       <DirectoryTree 
                         tree={tree} 
                         selectedDirectoryName={directoryName}
-                        onSelect={this.onDirectorySelectionChange}
+                        onSelect={(_, value) => this.selectDirectory(value)}
                       />
                     </Segment>
                   </Card.Content>
@@ -182,6 +186,7 @@ class Browse extends Component {
                     locked={locked}
                     files={files}
                     username={username}
+                    onClose={this.deselectDirectory}
                 />}
               </div>
             }

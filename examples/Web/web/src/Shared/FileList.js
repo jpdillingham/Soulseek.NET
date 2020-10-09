@@ -10,13 +10,24 @@ import {
     Checkbox
 } from 'semantic-ui-react';
 
-const FileList = ({ directoryName, files, locked, onSelectionChange, disabled }) => (
+const FileList = ({ directoryName, files, locked, onSelectionChange, disabled, onClose }) => (
   <div style={{opacity: locked ? 0.5 : 1}}>
     <Header 
       size='small' 
       className='filelist-header'
     >
-      <Icon name={locked ? 'lock' : 'folder'}/>{directoryName}
+      <div>
+        <Icon size='large' name={locked ? 'lock' : 'folder'}/>
+          {directoryName}
+     
+        {!!onClose && <Icon 
+            className='close-button' 
+            name='close' 
+            color='red'
+            link
+            onClick={() => onClose()}
+          />}
+      </div>
     </Header>
     {files && files.length > 0 && <List>
       <List.Item>

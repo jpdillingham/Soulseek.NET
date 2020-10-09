@@ -25,7 +25,8 @@ const initialState = {
     interval: undefined,
     displayCount: 5,
     resultSort: 'uploadSpeed',
-    hideNoFreeSlots: true
+    hideNoFreeSlots: true,
+    hiddenResults: []
 };
 
 const sortOptions = {
@@ -113,8 +114,8 @@ class Search extends Component {
         this.setState({ displayCount: this.state.displayCount + 5 }, () => this.saveState());
     }
 
-    sortAndFilterResults = (results) => {
-        const { hideNoFreeSlots, resultSort } = this.state;
+    sortAndFilterResults = () => {
+        const { results, hideNoFreeSlots, resultSort } = this.state;
         const { field, order } = sortOptions[resultSort];
 
         return results.filter(r => !(hideNoFreeSlots && r.freeUploadSlots === 0)).sort((a, b) => {
@@ -126,11 +127,21 @@ class Search extends Component {
         });
     }
 
+    hideResult = (result) => {
+        this.setState({ hiddenResults: [...this.state.hiddenResults, result.username]}, () => {
+            if (this.state.hiddenResults.length === this.state.results.length) {
+                this.clear();
+            } else {
+                this.saveState();
+            }
+        });
+    }
+
     render = () => {
-        let { searchState, searchStatus, results, displayCount, resultSort, hideNoFreeSlots } = this.state;
+        let { searchState, searchStatus, results, displayCount, resultSort, hideNoFreeSlots, hiddenResults } = this.state;
         let pending = searchState === 'pending';
 
-        const sortedAndFilteredResults = this.sortAndFilterResults(results);
+        const sortedAndFilteredResults = this.sortAndFilterResults();
 
         const remainingCount = sortedAndFilteredResults.length - displayCount;
         const showMoreCount = remainingCount >= 5 ? 5 : remainingCount;
@@ -184,8 +195,10 @@ class Search extends Component {
                         {sortedAndFilteredResults.slice(0, displayCount).map((r, i) =>
                             <Response
                                 key={i}
+                                hidden={hiddenResults.includes(r.username)}
                                 response={r}
                                 onDownload={this.props.onDownload}
+                                onHide={() => this.hideResult(r)}
                             />
                         )}
                         {remainingCount > 0 ?

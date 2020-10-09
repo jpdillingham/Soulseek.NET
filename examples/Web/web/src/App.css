@@ -49,6 +49,10 @@ body {
     margin-right: auto !important;
 }
 
+.search-container:last-child {
+    margin-bottom: 17px;
+}
+
 .search-segment {
     margin-top: 15px !important;
     height: 78px !important;
@@ -161,4 +165,7 @@ body {
 
 .close-button {
     float: right;
+    margin-right: 0px !important;
+    font-size: 16pt !important;
+    line-height: 1.15 !important;
 }
