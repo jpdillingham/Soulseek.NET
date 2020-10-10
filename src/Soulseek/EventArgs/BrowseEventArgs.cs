@@ -12,12 +12,10 @@
 
 namespace Soulseek
 {
-    using System;
-
     /// <summary>
     ///     Generic event arguments for browse events.
     /// </summary>
-    public class BrowseEventArgs : EventArgs
+    public class BrowseEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="BrowseEventArgs"/> class.

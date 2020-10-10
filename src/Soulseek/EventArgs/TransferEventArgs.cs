@@ -17,7 +17,7 @@ namespace Soulseek
     /// <summary>
     ///     Generic event arguments for transfer events.
     /// </summary>
-    public class TransferEventArgs : EventArgs
+    public class TransferEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferEventArgs"/> class.
