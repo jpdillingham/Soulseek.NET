@@ -6,7 +6,6 @@
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
-    using Soulseek.Exceptions;
     using WebAPI.DTO;
     using WebAPI.Trackers;
 
