@@ -11,7 +11,7 @@
     using WebAPI.Trackers;
 
     /// <summary>
-    ///     Search
+    ///     Conversations
     /// </summary>
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1")]
@@ -20,9 +20,6 @@
     [Consumes("application/json")]
     public class ConversationsController : ControllerBase
     {
-        private ISoulseekClient Client { get; }
-        private IConversationTracker Tracker { get; }
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConversationsController"/> class.
         /// </summary>
@@ -34,73 +31,8 @@
             Tracker = tracker;
         }
 
-        /// <summary>
-        ///     Gets all tracked conversations.
-        /// </summary>
-        /// <returns></returns>
-        /// <response code="200">The request completed successfully.</response>
-        [HttpGet("")]
-        [Authorize]
-        [ProducesResponseType(typeof(List<PrivateMessage>), 200)]
-        public IActionResult GetAll()
-        {
-            return Ok(Tracker.Conversations);
-        }
-
-        /// <summary>
-        ///     Gets the conversation associated with the specified username.
-        /// </summary>
-        /// <param name="username">The username associated with the desired conversation.</param>
-        /// <returns></returns>
-        /// <response code="200">The request completed successfully.</response>
-        /// <response code="404">A matching search was not found.</response>
-        [HttpGet("{username}")]
-        [Authorize]
-        [ProducesResponseType(typeof(List<PrivateMessage>), 200)]
-        [ProducesResponseType(404)]
-        public IActionResult GetById([FromRoute]string username)
-        {
-            Tracker.Conversations.TryGetValue(username, out var conversation);
-
-            if (conversation == default)
-            {
-                return NotFound();
-            }
-
-            return Ok(conversation.OrderBy(m => m.Timestamp));
-        }
-
-        /// <summary>
-        ///     Sends a private message to the specified username.
-        /// </summary>
-        /// <param name="username"></param>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        /// <response code="201">The request completed successfully.</response>
-        /// <response code="400">The specified message is null or empty.</response>
-        [HttpPost("{username}")]
-        [Authorize]
-        [ProducesResponseType(201)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
-        {
-            if (string.IsNullOrEmpty(message))
-            {
-                return BadRequest();
-            }
-
-            await Client.SendPrivateMessageAsync(username, message);
-
-            Tracker.AddOrUpdate(username, new PrivateMessage()
-            {
-                Username = Client.Username,
-                Timestamp = DateTime.UtcNow,
-                Message = message,
-                Acknowledged = true
-            });
-
-            return StatusCode(201);
-        }
+        private ISoulseekClient Client { get; }
+        private IConversationTracker Tracker { get; }
 
         /// <summary>
         ///     Acknowledges the given message id for the given username.
@@ -109,7 +41,9 @@
         /// <param name="id"></param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
-        /// <response code="404">A conversation with the specified username, or a message matching the specified id could not be found.</response>
+        /// <response code="404">
+        ///     A conversation with the specified username, or a message matching the specified id could not be found.
+        /// </response>
         [HttpPut("{username}/{id}")]
         [Authorize]
         [ProducesResponseType(200)]
@@ -151,7 +85,8 @@
 
             foreach (var message in conversation.Where(p => !p.Acknowledged))
             {
-                tasks.Add(Task.Run(async () => {
+                tasks.Add(Task.Run(async () =>
+                {
                     await Client.AcknowledgePrivateMessageAsync(message.Id);
                     message.Acknowledged = true;
                 }));
@@ -181,6 +116,72 @@
             }
 
             return StatusCode(404);
+        }
+
+        /// <summary>
+        ///     Gets all tracked conversations.
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
+        [HttpGet("")]
+        [Authorize]
+        [ProducesResponseType(typeof(Dictionary<string, List<PrivateMessage>>), 200)]
+        public IActionResult GetAll()
+        {
+            return Ok(Tracker.Conversations);
+        }
+
+        /// <summary>
+        ///     Gets the conversation associated with the specified username.
+        /// </summary>
+        /// <param name="username">The username associated with the desired conversation.</param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">A matching search was not found.</response>
+        [HttpGet("{username}")]
+        [Authorize]
+        [ProducesResponseType(typeof(List<PrivateMessage>), 200)]
+        [ProducesResponseType(404)]
+        public IActionResult GetByUsername([FromRoute]string username)
+        {            
+            if (Tracker.TryGet(username, out var conversation))
+            {
+                return Ok(conversation.OrderBy(m => m.Timestamp));
+            }
+
+            return NotFound();
+        }
+
+        /// <summary>
+        ///     Sends a private message to the specified username.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        /// <response code="201">The request completed successfully.</response>
+        /// <response code="400">The specified message is null or empty.</response>
+        [HttpPost("{username}")]
+        [Authorize]
+        [ProducesResponseType(201)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> Send([FromRoute]string username, [FromBody]string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return BadRequest();
+            }
+
+            await Client.SendPrivateMessageAsync(username, message);
+
+            Tracker.AddOrUpdate(username, new PrivateMessage()
+            {
+                Username = Client.Username,
+                Timestamp = DateTime.UtcNow,
+                Message = message,
+                Acknowledged = true
+            });
+
+            return StatusCode(201);
         }
     }
 }
