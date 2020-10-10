@@ -15,7 +15,6 @@ namespace Soulseek.Network
     using System;
     using System.Linq;
     using Soulseek.Diagnostics;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 

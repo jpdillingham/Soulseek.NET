@@ -12,8 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using Soulseek.Exceptions;
-
     /// <summary>
     ///     The response to an add user request.
     /// </summary>

@@ -12,8 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using Soulseek.Exceptions;
-
     /// <summary>
     ///     The response to a request for a user's privileges.
     /// </summary>

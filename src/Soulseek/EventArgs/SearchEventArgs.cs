@@ -17,7 +17,7 @@ namespace Soulseek
     /// <summary>
     ///     Generic event arguments for search events.
     /// </summary>
-    public class SearchEventArgs : EventArgs
+    public class SearchEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.

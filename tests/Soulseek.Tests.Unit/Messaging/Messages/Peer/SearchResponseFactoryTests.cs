@@ -15,7 +15,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using System.Collections.Generic;
     using System.Linq;
     using AutoFixture.Xunit2;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Compression;
     using Soulseek.Messaging.Messages;

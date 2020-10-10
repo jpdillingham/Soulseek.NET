@@ -12,8 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using Soulseek.Exceptions;
-
     /// <summary>
     ///     A server ping.
     /// </summary>

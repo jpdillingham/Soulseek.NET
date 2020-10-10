@@ -12,8 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using Soulseek.Exceptions;
-
     /// <summary>
     ///     A distributed file search request.
     /// </summary>

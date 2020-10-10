@@ -12,8 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using Soulseek.Exceptions;
-
     /// <summary>
     ///     The command and response to a password change.
     /// </summary>

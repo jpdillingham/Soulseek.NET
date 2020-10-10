@@ -4,7 +4,6 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
     using Soulseek;
-    using Soulseek.Exceptions;
     using System;
     using System.ComponentModel.DataAnnotations;
     using System.IO;

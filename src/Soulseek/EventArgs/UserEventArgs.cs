@@ -12,13 +12,12 @@
 
 namespace Soulseek
 {
-    using System;
     using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Generic event arguments for user events.
     /// </summary>
-    public abstract class UserEventArgs : EventArgs
+    public abstract class UserEventArgs : SoulseekClientEventArgs
     {
     }
 

@@ -1,4 +1,4 @@
-﻿namespace WebAPI
+namespace WebAPI
 {
     using System;
     using System.Collections.Generic;
@@ -24,7 +24,6 @@
     using Microsoft.OpenApi.Models;
     using Soulseek;
     using Soulseek.Diagnostics;
-    using Soulseek.Exceptions;
     using WebAPI.Entities;
     using WebAPI.Security;
     using WebAPI.Trackers;

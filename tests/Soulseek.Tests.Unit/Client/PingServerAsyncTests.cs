@@ -16,7 +16,6 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading;
     using System.Threading.Tasks;
     using Moq;
-    using Soulseek.Exceptions;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;

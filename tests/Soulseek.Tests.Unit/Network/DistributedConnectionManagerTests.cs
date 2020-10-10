@@ -22,7 +22,6 @@ namespace Soulseek.Tests.Unit.Network
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;

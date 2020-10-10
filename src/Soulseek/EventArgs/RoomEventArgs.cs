@@ -12,13 +12,12 @@
 
 namespace Soulseek
 {
-    using System;
     using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Generic event arguments for chat room events.
     /// </summary>
-    public abstract class RoomEventArgs : EventArgs
+    public abstract class RoomEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomEventArgs"/> class.

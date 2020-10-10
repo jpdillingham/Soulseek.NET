@@ -17,8 +17,7 @@ namespace Soulseek.Network.Tcp
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Exceptions;
-
+    
     /// <summary>
     ///     Provides client connections for TCP network services.
     /// </summary>

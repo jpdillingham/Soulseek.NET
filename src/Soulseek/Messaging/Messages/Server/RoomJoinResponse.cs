@@ -13,8 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    using Soulseek.Exceptions;
-
+    
     /// <summary>
     ///     The response to request to join a chat room.
     /// </summary>
