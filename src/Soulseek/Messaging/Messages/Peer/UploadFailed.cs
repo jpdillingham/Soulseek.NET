@@ -12,8 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using Soulseek.Exceptions;
-
     /// <summary>
     ///     The sent or received when an attempt to queue a file for downloading has failed.
     /// </summary>

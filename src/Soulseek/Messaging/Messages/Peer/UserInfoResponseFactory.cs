@@ -12,7 +12,6 @@
 
 namespace Soulseek
 {
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
 
     /// <summary>

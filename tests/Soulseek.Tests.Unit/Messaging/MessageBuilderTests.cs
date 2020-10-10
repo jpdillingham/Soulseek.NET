@@ -18,7 +18,6 @@ namespace Soulseek.Tests.Unit.Messaging
     using System.Reflection;
     using System.Text;
     using AutoFixture.Xunit2;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Xunit;
 

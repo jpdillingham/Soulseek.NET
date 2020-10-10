@@ -14,8 +14,7 @@ namespace Soulseek.Messaging.Messages
 {
     using System;
     using System.Net;
-    using Soulseek.Exceptions;
-
+    
     /// <summary>
     ///     The response to a request for a peer's address.
     /// </summary>

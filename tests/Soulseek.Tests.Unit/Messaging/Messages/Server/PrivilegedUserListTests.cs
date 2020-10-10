@@ -13,7 +13,6 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System.Linq;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;

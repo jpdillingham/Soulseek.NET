@@ -19,7 +19,6 @@ namespace Soulseek
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
 
     /// <summary>

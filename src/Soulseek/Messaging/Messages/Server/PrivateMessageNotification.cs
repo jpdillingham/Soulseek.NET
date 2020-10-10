@@ -13,8 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     using System;
-    using Soulseek.Exceptions;
-
+    
     /// <summary>
     ///     An incoming private message.
     /// </summary>

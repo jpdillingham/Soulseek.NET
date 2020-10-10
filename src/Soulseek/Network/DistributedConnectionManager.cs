@@ -23,7 +23,6 @@ namespace Soulseek.Network
     using System.Threading.Tasks;
     using System.Timers;
     using Soulseek.Diagnostics;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;

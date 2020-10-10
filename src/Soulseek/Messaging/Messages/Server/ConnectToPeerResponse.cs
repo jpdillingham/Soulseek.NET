@@ -14,8 +14,7 @@ namespace Soulseek.Messaging.Messages
 {
     using System;
     using System.Net;
-    using Soulseek.Exceptions;
-
+    
     /// <summary>
     ///     A server response which solicits a peer connection.
     /// </summary>

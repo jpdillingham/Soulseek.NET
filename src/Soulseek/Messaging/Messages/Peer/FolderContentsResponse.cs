@@ -13,8 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    using Soulseek.Exceptions;
-
+    
     /// <summary>
     ///     The response to a peer folder contents request.
     /// </summary>

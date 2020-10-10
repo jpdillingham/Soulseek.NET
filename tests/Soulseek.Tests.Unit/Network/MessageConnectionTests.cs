@@ -20,7 +20,6 @@ namespace Soulseek.Tests.Unit.Network
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
