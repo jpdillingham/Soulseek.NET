@@ -1,4 +1,4 @@
-﻿// <copyright file="TransferEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="TransferProgressUpdatedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,28 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
-
-    /// <summary>
-    ///     Generic event arguments for transfer events.
-    /// </summary>
-    public class TransferEventArgs : SoulseekClientEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TransferEventArgs"/> class.
-        /// </summary>
-        /// <param name="transfer">The transfer which raised the event.</param>
-        internal TransferEventArgs(Transfer transfer)
-        {
-            Transfer = transfer;
-        }
-
-        /// <summary>
-        ///     Gets the instance which raised the event.
-        /// </summary>
-        public Transfer Transfer { get; }
-    }
-
     /// <summary>
     ///     Event arguments for events raised by an update to transfer progress.
     /// </summary>
@@ -54,27 +32,5 @@ namespace Soulseek
         ///     Gets the total number of bytes transferred prior to the event.
         /// </summary>
         public long PreviousBytesTransferred { get; }
-    }
-
-    /// <summary>
-    ///     Event arguments for events raised by a change in transfer state.
-    /// </summary>
-    public sealed class TransferStateChangedEventArgs : TransferEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TransferStateChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="previousState">The previous state of the transfer.</param>
-        /// <param name="transfer">The transfer which raised the event.</param>
-        internal TransferStateChangedEventArgs(TransferStates previousState, Transfer transfer)
-            : base(transfer)
-        {
-            PreviousState = previousState;
-        }
-
-        /// <summary>
-        ///     Gets the previous state of the transfer.
-        /// </summary>
-        public TransferStates PreviousState { get; }
     }
 }

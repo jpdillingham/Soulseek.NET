@@ -947,7 +947,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomListException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<IReadOnlyCollection<Room>> GetRoomListAsync(CancellationToken? cancellationToken = null)
+        public async Task<IReadOnlyCollection<RoomInfo>> GetRoomListAsync(CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -956,7 +956,7 @@ namespace Soulseek
 
             try
             {
-                var roomListWait = Waiter.Wait<IReadOnlyCollection<Room>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
+                var roomListWait = Waiter.Wait<IReadOnlyCollection<RoomInfo>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new RoomListRequest().ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
 
                 var response = await roomListWait.ConfigureAwait(false);

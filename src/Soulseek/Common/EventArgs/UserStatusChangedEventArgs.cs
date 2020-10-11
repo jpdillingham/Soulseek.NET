@@ -1,4 +1,4 @@
-﻿// <copyright file="UserEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatusChangedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,13 +13,6 @@
 namespace Soulseek
 {
     using Soulseek.Messaging.Messages;
-
-    /// <summary>
-    ///     Generic event arguments for user events.
-    /// </summary>
-    public abstract class UserEventArgs : SoulseekClientEventArgs
-    {
-    }
 
     /// <summary>
     ///     Event arguments for events raised by user state changed events.

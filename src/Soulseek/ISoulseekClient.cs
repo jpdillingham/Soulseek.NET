@@ -466,7 +466,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomListException">Thrown when an exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<Room>> GetRoomListAsync(CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<RoomInfo>> GetRoomListAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.

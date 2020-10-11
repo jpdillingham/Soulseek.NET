@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="SearchResponseReceivedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,28 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
-
-    /// <summary>
-    ///     Generic event arguments for search events.
-    /// </summary>
-    public class SearchEventArgs : SoulseekClientEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.
-        /// </summary>
-        /// <param name="search">The search which raised the event.</param>
-        internal SearchEventArgs(Search search)
-        {
-            Search = search;
-        }
-
-        /// <summary>
-        ///     Gets the instance which raised the event.
-        /// </summary>
-        public Search Search { get; }
-    }
-
     /// <summary>
     ///     Event arguments for events raised when a search response is received.
     /// </summary>
@@ -54,27 +32,5 @@ namespace Soulseek
         ///     Gets the search response which raised the event.
         /// </summary>
         public SearchResponse Response { get; }
-    }
-
-    /// <summary>
-    ///     Event arguments for events raised by a change in search state.
-    /// </summary>
-    public sealed class SearchStateChangedEventArgs : SearchEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchStateChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="previousState">The previous state of the client.</param>
-        /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchStateChangedEventArgs(SearchStates previousState, Search search)
-            : base(search)
-        {
-            PreviousState = previousState;
-        }
-
-        /// <summary>
-        ///     Gets the previous search state.
-        /// </summary>
-        public SearchStates PreviousState { get; }
     }
 }

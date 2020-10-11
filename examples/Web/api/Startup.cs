@@ -1,4 +1,4 @@
-namespace WebAPI
+﻿namespace WebAPI
 {
     using System;
     using System.Collections.Generic;
@@ -45,6 +45,7 @@ namespace WebAPI
         internal static int InactivityTimeout { get; set; }
         internal static bool EnableSecurity { get; set; }
         internal static int TokenTTL { get; set; }
+        internal static int RoomMessageLimit { get; set; }
 
         internal static SymmetricSecurityKey JwtSigningKey { get; set; }
 
@@ -71,6 +72,7 @@ namespace WebAPI
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
             TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
+            RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 25);
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
 
@@ -151,9 +153,17 @@ namespace WebAPI
             services.AddSingleton<ISearchTracker, SearchTracker>();
             services.AddSingleton<IBrowseTracker, BrowseTracker>();
             services.AddSingleton<IConversationTracker, ConversationTracker>();
+            services.AddSingleton<IRoomTracker, RoomTracker>(_ => new RoomTracker(messageLimit: RoomMessageLimit));
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker, IConversationTracker conversationTracker)
+        public void Configure(
+            IApplicationBuilder app, 
+            IWebHostEnvironment env, 
+            IApiVersionDescriptionProvider provider, 
+            ITransferTracker tracker, 
+            IBrowseTracker browseTracker, 
+            IConversationTracker conversationTracker,
+            IRoomTracker roomTracker)
         {
             if (!env.IsDevelopment())
             {
@@ -271,6 +281,28 @@ namespace WebAPI
             {
                 conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
                 Console.WriteLine($"[{args.Timestamp.ToLocalTime()}] {(args.Replayed ? "[REPLAY] " : "")}[PM] {args.Username}: {args.Message}");
+            };
+
+            Client.RoomMessageReceived += (e, args) =>
+            {
+                var message = RoomMessage.FromEventArgs(args, DateTime.UtcNow);
+                roomTracker.AddOrUpdateMessage(args.RoomName, message);
+                Console.WriteLine($"[{message.Timestamp.ToLocalTime()}] [{message.RoomName}] [{message.Username}]: {message.Message}");
+            };
+
+            Client.RoomJoined += (e, args) =>
+            {
+                if (args.Username != Username) // this will fire when we join a room; track that through the join operation.
+                {
+                    roomTracker.TryAddUser(args.RoomName, args.UserData);
+                    Console.WriteLine($"[ROOM JOIN]: {args.RoomName}");
+                }
+            };
+
+            Client.RoomLeft += (e, args) =>
+            {
+                roomTracker.TryRemoveUser(args.RoomName, args.Username);
+                Console.WriteLine($"[ROOM LEAVE]: {args.RoomName}");
             };
 
             Client.Disconnected += async (e, args) =>

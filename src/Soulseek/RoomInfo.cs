@@ -1,4 +1,4 @@
-﻿// <copyright file="Room.cs" company="JP Dillingham">
+﻿// <copyright file="RoomInfo.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -15,14 +15,14 @@ namespace Soulseek
     /// <summary>
     ///     A chat room.
     /// </summary>
-    public class Room
+    public class RoomInfo
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="Room"/> class.
+        ///     Initializes a new instance of the <see cref="RoomInfo"/> class.
         /// </summary>
         /// <param name="name">The room name.</param>
         /// <param name="userCount">The number of users in the room.</param>
-        public Room(string name, int userCount)
+        public RoomInfo(string name, int userCount)
         {
             Name = name;
             UserCount = userCount;
