@@ -5,7 +5,6 @@
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading.Tasks;
     using WebAPI.Entities;
     using WebAPI.Trackers;
@@ -30,20 +29,20 @@
         private IRoomTracker Tracker { get; }
 
         /// <summary>
-        ///     Gets all tracked rooms.
+        ///     Gets all rooms.
         /// </summary>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("joined")]
         [Authorize]
-        [ProducesResponseType(typeof(Dictionary<string, List<RoomMessage>>), 200)]
+        [ProducesResponseType(typeof(Dictionary<string, Dictionary<string, Room>>), 200)]
         public IActionResult GetAll()
         {
             return Ok(Tracker.Rooms);
         }
 
         /// <summary>
-        ///     Gets all messages for the specified roomName.
+        ///     Gets the specified room.
         /// </summary>
         /// <param name="roomName"></param>
         /// <returns></returns>
@@ -51,13 +50,55 @@
         /// <response code="404">The specified roomName could not be found.</response>
         [HttpGet("joined/{roomName}")]
         [Authorize]
-        [ProducesResponseType(typeof(List<RoomMessage>), 200)]
+        [ProducesResponseType(typeof(Room), 200)]
         [ProducesResponseType(404)]
         public IActionResult GetByRoomName([FromRoute]string roomName)
         {
-            if (Tracker.TryGet(roomName, out var messages))
+            if (Tracker.TryGet(roomName, out var room))
             {
-                return Ok(messages.OrderBy(m => m.Timestamp));
+                return Ok(room);
+            }
+
+            return NotFound();
+        }
+
+        /// <summary>
+        ///     Gets the current list of users for the specified room.
+        /// </summary>
+        /// <param name="roomName"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">The specified roomName could not be found.</response>
+        [HttpGet("joined/{roomName}/users")]
+        [Authorize]
+        [ProducesResponseType(typeof(IList<UserData>), 200)]
+        [ProducesResponseType(404)]
+        public IActionResult GetUsersByRoomName([FromRoute]string roomName)
+        {
+            if (Tracker.TryGet(roomName, out var room))
+            {
+                return Ok(room.Users);
+            }
+
+            return NotFound();
+        }
+
+        /// <summary>
+        ///     Gets the current list of messages for the specified room.
+        /// </summary>
+        /// <param name="roomName"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">The specified roomName could not be found.</response>
+        [HttpGet("joined/{roomName}/messages")]
+        [Authorize]
+        [ProducesResponseType(typeof(IList<RoomMessage>), 200)]
+        [ProducesResponseType(404)]
+        public IActionResult GetMessagesByRoomName([FromRoute]string roomName)
+        {
+            if (Tracker.TryGet(roomName, out var room))
+            {
+                return Ok(room.Messages);
             }
 
             return NotFound();
@@ -69,7 +110,7 @@
         /// <returns></returns>
         [HttpGet("available")]
         [Authorize]
-        [ProducesResponseType(typeof(List<Room>), 200)]
+        [ProducesResponseType(typeof(List<RoomInfo>), 200)]
         public async Task<IActionResult> GetRooms()
         {
             return Ok(await Client.GetRoomListAsync());
@@ -84,7 +125,7 @@
         /// <response code="304">The room has already been joined.</response>
         [HttpPost("joined/{roomName}")]
         [Authorize]
-        [ProducesResponseType(typeof(RoomData), 201)]
+        [ProducesResponseType(typeof(Room), 201)]
         [ProducesResponseType(304)]
         public async Task<IActionResult> JoinRoom([FromRoute]string roomName)
         {
@@ -93,7 +134,11 @@
                 return StatusCode(StatusCodes.Status304NotModified);
             }
 
-            return StatusCode(StatusCodes.Status201Created, await Client.JoinRoomAsync(roomName));
+            var roomData = await Client.JoinRoomAsync(roomName);
+            var room = Room.FromRoomData(roomData);
+            Tracker.TryAdd(roomName, room);
+
+            return StatusCode(StatusCodes.Status201Created, room);
         }
 
         /// <summary>
