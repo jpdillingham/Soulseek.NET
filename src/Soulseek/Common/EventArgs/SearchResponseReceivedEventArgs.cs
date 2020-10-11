@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="SearchResponseReceivedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,29 +13,24 @@
 namespace Soulseek
 {
     /// <summary>
-    ///     Generic event arguments for chat room events.
+    ///     Event arguments for events raised when a search response is received.
     /// </summary>
-    public abstract class RoomEventArgs : SoulseekClientEventArgs
+    public sealed class SearchResponseReceivedEventArgs : SearchEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the room in which the event took place.</param>
-        /// <param name="username">The username of the user associated with the event.</param>
-        protected RoomEventArgs(string roomName, string username)
+        /// <param name="response">The search response which raised the event.</param>
+        /// <param name="search">The search instance with which to initialize data.</param>
+        internal SearchResponseReceivedEventArgs(SearchResponse response, Search search)
+            : base(search)
         {
-            RoomName = roomName;
-            Username = username;
+            Response = response;
         }
 
         /// <summary>
-        ///     Gets the name of the room in which the event took place.
+        ///     Gets the search response which raised the event.
         /// </summary>
-        public string RoomName { get; }
-
-        /// <summary>
-        ///     Gets the username of the user associated with the event.
-        /// </summary>
-        public string Username { get; }
+        public SearchResponse Response { get; }
     }
 }

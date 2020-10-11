@@ -33,48 +33,4 @@ namespace Soulseek
         /// </summary>
         public Transfer Transfer { get; }
     }
-
-    /// <summary>
-    ///     Event arguments for events raised by an update to transfer progress.
-    /// </summary>
-    public sealed class TransferProgressUpdatedEventArgs : TransferEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TransferProgressUpdatedEventArgs"/> class.
-        /// </summary>
-        /// <param name="previousBytesTransferred">The previous total number of bytes transferred.</param>
-        /// <param name="transfer">The transfer which raised the event.</param>
-        internal TransferProgressUpdatedEventArgs(long previousBytesTransferred, Transfer transfer)
-            : base(transfer)
-        {
-            PreviousBytesTransferred = previousBytesTransferred;
-        }
-
-        /// <summary>
-        ///     Gets the total number of bytes transferred prior to the event.
-        /// </summary>
-        public long PreviousBytesTransferred { get; }
-    }
-
-    /// <summary>
-    ///     Event arguments for events raised by a change in transfer state.
-    /// </summary>
-    public sealed class TransferStateChangedEventArgs : TransferEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TransferStateChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="previousState">The previous state of the transfer.</param>
-        /// <param name="transfer">The transfer which raised the event.</param>
-        internal TransferStateChangedEventArgs(TransferStates previousState, Transfer transfer)
-            : base(transfer)
-        {
-            PreviousState = previousState;
-        }
-
-        /// <summary>
-        ///     Gets the previous state of the transfer.
-        /// </summary>
-        public TransferStates PreviousState { get; }
-    }
 }

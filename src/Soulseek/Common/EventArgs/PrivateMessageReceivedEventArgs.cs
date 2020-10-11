@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateMessageNotification.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateMessageReceivedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -10,30 +10,40 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Messaging.Messages
+namespace Soulseek
 {
     using System;
+    using Soulseek.Messaging.Messages;
 
     /// <summary>
-    ///     An incoming private message.
+    ///     Event arguments for events raised upon receipt of a private message.
     /// </summary>
-    internal sealed class PrivateMessageNotification : IIncomingMessage
+    public class PrivateMessageReceivedEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateMessageNotification"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateMessageReceivedEventArgs"/> class.
         /// </summary>
         /// <param name="id">The unique id of the message.</param>
         /// <param name="timestamp">The UTC timestamp at which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
         /// <param name="replayed">A value indicating whether the message was replayed from a previous time.</param>
-        public PrivateMessageNotification(int id, DateTime timestamp, string username, string message, bool replayed)
+        public PrivateMessageReceivedEventArgs(int id, DateTime timestamp, string username, string message, bool replayed)
         {
             Id = id;
             Timestamp = timestamp;
             Username = username;
             Message = message;
             Replayed = replayed;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessageReceivedEventArgs"/> class.
+        /// </summary>
+        /// <param name="notification">The notification which raised the event.</param>
+        internal PrivateMessageReceivedEventArgs(PrivateMessageNotification notification)
+            : this(notification.Id, notification.Timestamp, notification.Username, notification.Message, notification.Replayed)
+        {
         }
 
         /// <summary>
@@ -60,33 +70,5 @@ namespace Soulseek.Messaging.Messages
         ///     Gets the username of the user which sent the message.
         /// </summary>
         public string Username { get; }
-
-        /// <summary>
-        ///     Creates a new instance of <see cref="PrivateMessageNotification"/> from the specified <paramref name="bytes"/>.
-        /// </summary>
-        /// <param name="bytes">The byte array from which to parse.</param>
-        /// <returns>The parsed instance.</returns>
-        public static PrivateMessageNotification FromByteArray(byte[] bytes)
-        {
-            var reader = new MessageReader<MessageCode.Server>(bytes);
-            var code = reader.ReadCode();
-
-            if (code != MessageCode.Server.PrivateMessage)
-            {
-                throw new MessageException($"Message Code mismatch creating {nameof(PrivateMessageNotification)} (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code})");
-            }
-
-            var id = reader.ReadInteger();
-
-            var timestampSeconds = reader.ReadInteger();
-            var timestamp = DateTimeOffset.FromUnixTimeSeconds(timestampSeconds).UtcDateTime;
-
-            var username = reader.ReadString();
-            var msg = reader.ReadString();
-
-            var replayed = reader.ReadByte() != 1;
-
-            return new PrivateMessageNotification(id, timestamp, username, msg, replayed);
-        }
     }
 }

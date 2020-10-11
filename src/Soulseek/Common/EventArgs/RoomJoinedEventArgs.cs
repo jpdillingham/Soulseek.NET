@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="RoomJoinedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,30 +12,37 @@
 
 namespace Soulseek
 {
+    using Soulseek.Messaging.Messages;
+
     /// <summary>
-    ///     Generic event arguments for chat room events.
+    ///     Event arguments for events raised upon the join of a user to a chat room.
     /// </summary>
-    public abstract class RoomEventArgs : SoulseekClientEventArgs
+    public class RoomJoinedEventArgs : RoomEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="RoomJoinedEventArgs"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room in which the event took place.</param>
         /// <param name="username">The username of the user associated with the event.</param>
-        protected RoomEventArgs(string roomName, string username)
+        /// <param name="userData">The user's data.</param>
+        public RoomJoinedEventArgs(string roomName, string username, UserData userData)
+            : base(roomName, username)
         {
-            RoomName = roomName;
-            Username = username;
+            UserData = userData;
         }
 
         /// <summary>
-        ///     Gets the name of the room in which the event took place.
+        ///     Initializes a new instance of the <see cref="RoomJoinedEventArgs"/> class.
         /// </summary>
-        public string RoomName { get; }
+        /// <param name="notification">The notification which raised the event.</param>
+        internal RoomJoinedEventArgs(RoomJoinedNotification notification)
+            : this(notification.RoomName, notification.Username, notification.UserData)
+        {
+        }
 
         /// <summary>
-        ///     Gets the username of the user associated with the event.
+        ///     Gets the user's data.
         /// </summary>
-        public string Username { get; }
+        public UserData UserData { get; }
     }
 }

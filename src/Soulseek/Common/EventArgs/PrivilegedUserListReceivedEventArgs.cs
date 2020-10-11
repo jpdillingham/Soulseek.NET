@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="PrivilegedUserListReceivedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,30 +12,25 @@
 
 namespace Soulseek
 {
+    using System.Collections.Generic;
+
     /// <summary>
-    ///     Generic event arguments for chat room events.
+    ///     Event arguments for events raised upon receipt of the list of privileged users.
     /// </summary>
-    public abstract class RoomEventArgs : SoulseekClientEventArgs
+    public class PrivilegedUserListReceivedEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="PrivilegedUserListReceivedEventArgs"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the room in which the event took place.</param>
-        /// <param name="username">The username of the user associated with the event.</param>
-        protected RoomEventArgs(string roomName, string username)
+        /// <param name="usernames">The list usernames of privilegd users.</param>
+        public PrivilegedUserListReceivedEventArgs(IReadOnlyCollection<string> usernames)
         {
-            RoomName = roomName;
-            Username = username;
+            Usernames = usernames;
         }
 
         /// <summary>
-        ///     Gets the name of the room in which the event took place.
+        ///     Gets the list of usernames of privileged users.
         /// </summary>
-        public string RoomName { get; }
-
-        /// <summary>
-        ///     Gets the username of the user associated with the event.
-        /// </summary>
-        public string Username { get; }
+        public IReadOnlyCollection<string> Usernames { get; }
     }
 }

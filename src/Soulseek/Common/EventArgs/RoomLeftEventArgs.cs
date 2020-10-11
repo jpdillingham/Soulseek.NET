@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="RoomLeftEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,30 +12,30 @@
 
 namespace Soulseek
 {
+    using Soulseek.Messaging.Messages;
+
     /// <summary>
-    ///     Generic event arguments for chat room events.
+    ///     Event arguments for events raised upon the departure of a user from a chat room.
     /// </summary>
-    public abstract class RoomEventArgs : SoulseekClientEventArgs
+    public class RoomLeftEventArgs : RoomEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="RoomLeftEventArgs"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room in which the event took place.</param>
         /// <param name="username">The username of the user associated with the event.</param>
-        protected RoomEventArgs(string roomName, string username)
+        public RoomLeftEventArgs(string roomName, string username)
+            : base(roomName, username)
         {
-            RoomName = roomName;
-            Username = username;
         }
 
         /// <summary>
-        ///     Gets the name of the room in which the event took place.
+        ///     Initializes a new instance of the <see cref="RoomLeftEventArgs"/> class.
         /// </summary>
-        public string RoomName { get; }
-
-        /// <summary>
-        ///     Gets the username of the user associated with the event.
-        /// </summary>
-        public string Username { get; }
+        /// <param name="notification">The notification which raised the event.</param>
+        internal RoomLeftEventArgs(RoomLeftNotification notification)
+            : this(notification.RoomName, notification.Username)
+        {
+        }
     }
 }

@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    
+
     /// <summary>
     ///     A list of available chat rooms.
     /// </summary>

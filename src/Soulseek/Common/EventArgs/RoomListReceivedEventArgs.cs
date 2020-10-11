@@ -1,4 +1,4 @@
-﻿// <copyright file="UserEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="RoomListReceivedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,10 +12,25 @@
 
 namespace Soulseek
 {
+    using System.Collections.Generic;
+
     /// <summary>
-    ///     Generic event arguments for user events.
+    ///     Event arguments for events raised upon receipt of the list of rooms.
     /// </summary>
-    public abstract class UserEventArgs : SoulseekClientEventArgs
+    public class RoomListReceivedEventArgs : SoulseekClientEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomListReceivedEventArgs"/> class.
+        /// </summary>
+        /// <param name="rooms">The list of rooms.</param>
+        public RoomListReceivedEventArgs(IReadOnlyCollection<RoomInfo> rooms)
+        {
+            Rooms = rooms;
+        }
+
+        /// <summary>
+        ///     Gets the list of rooms.
+        /// </summary>
+        public IReadOnlyCollection<RoomInfo> Rooms { get; }
     }
 }

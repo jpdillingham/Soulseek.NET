@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="TransferProgressUpdatedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,29 +13,24 @@
 namespace Soulseek
 {
     /// <summary>
-    ///     Generic event arguments for chat room events.
+    ///     Event arguments for events raised by an update to transfer progress.
     /// </summary>
-    public abstract class RoomEventArgs : SoulseekClientEventArgs
+    public sealed class TransferProgressUpdatedEventArgs : TransferEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="TransferProgressUpdatedEventArgs"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the room in which the event took place.</param>
-        /// <param name="username">The username of the user associated with the event.</param>
-        protected RoomEventArgs(string roomName, string username)
+        /// <param name="previousBytesTransferred">The previous total number of bytes transferred.</param>
+        /// <param name="transfer">The transfer which raised the event.</param>
+        internal TransferProgressUpdatedEventArgs(long previousBytesTransferred, Transfer transfer)
+            : base(transfer)
         {
-            RoomName = roomName;
-            Username = username;
+            PreviousBytesTransferred = previousBytesTransferred;
         }
 
         /// <summary>
-        ///     Gets the name of the room in which the event took place.
+        ///     Gets the total number of bytes transferred prior to the event.
         /// </summary>
-        public string RoomName { get; }
-
-        /// <summary>
-        ///     Gets the username of the user associated with the event.
-        /// </summary>
-        public string Username { get; }
+        public long PreviousBytesTransferred { get; }
     }
 }

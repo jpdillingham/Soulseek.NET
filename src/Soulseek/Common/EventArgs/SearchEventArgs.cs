@@ -12,8 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
-
     /// <summary>
     ///     Generic event arguments for search events.
     /// </summary>
@@ -32,49 +30,5 @@ namespace Soulseek
         ///     Gets the instance which raised the event.
         /// </summary>
         public Search Search { get; }
-    }
-
-    /// <summary>
-    ///     Event arguments for events raised when a search response is received.
-    /// </summary>
-    public sealed class SearchResponseReceivedEventArgs : SearchEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
-        /// </summary>
-        /// <param name="response">The search response which raised the event.</param>
-        /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchResponseReceivedEventArgs(SearchResponse response, Search search)
-            : base(search)
-        {
-            Response = response;
-        }
-
-        /// <summary>
-        ///     Gets the search response which raised the event.
-        /// </summary>
-        public SearchResponse Response { get; }
-    }
-
-    /// <summary>
-    ///     Event arguments for events raised by a change in search state.
-    /// </summary>
-    public sealed class SearchStateChangedEventArgs : SearchEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchStateChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="previousState">The previous state of the client.</param>
-        /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchStateChangedEventArgs(SearchStates previousState, Search search)
-            : base(search)
-        {
-            PreviousState = previousState;
-        }
-
-        /// <summary>
-        ///     Gets the previous search state.
-        /// </summary>
-        public SearchStates PreviousState { get; }
     }
 }
