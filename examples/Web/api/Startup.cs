@@ -72,7 +72,7 @@
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
             TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
-            RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 5);
+            RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 25);
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
 
@@ -286,17 +286,22 @@
             Client.RoomMessageReceived += (e, args) =>
             {
                 var message = RoomMessage.FromEventArgs(args, DateTime.UtcNow);
-                roomTracker.AddOrUpdate(args.RoomName, message);
+                roomTracker.AddOrUpdateMessage(args.RoomName, message);
                 Console.WriteLine($"[{message.Timestamp.ToLocalTime()}] [{message.RoomName}] [{message.Username}]: {message.Message}");
             };
 
             Client.RoomJoined += (e, args) =>
             {
-                Console.WriteLine($"[ROOM JOIN]: {args.RoomName}");
+                if (args.Username != Username) // this will fire when we join a room; track that through the join operation.
+                {
+                    roomTracker.TryAddUser(args.RoomName, args.UserData);
+                    Console.WriteLine($"[ROOM JOIN]: {args.RoomName}");
+                }
             };
 
             Client.RoomLeft += (e, args) =>
             {
+                roomTracker.TryRemoveUser(args.RoomName, args.Username);
                 Console.WriteLine($"[ROOM LEAVE]: {args.RoomName}");
             };
 
