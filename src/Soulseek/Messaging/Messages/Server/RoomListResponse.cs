@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<Room> FromByteArray(byte[] bytes)
+        public static IReadOnlyCollection<RoomInfo> FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -43,12 +43,12 @@ namespace Soulseek.Messaging.Messages
             }
 
             var userCountCount = reader.ReadInteger();
-            var rooms = new List<Room>();
+            var rooms = new List<RoomInfo>();
 
             for (int i = 0; i < userCountCount; i++)
             {
                 var count = reader.ReadInteger();
-                rooms.Add(new Room(roomNames[i], count));
+                rooms.Add(new RoomInfo(roomNames[i], count));
             }
 
             return rooms.AsReadOnly();

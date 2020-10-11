@@ -170,7 +170,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="RoomListReceivedEventArgs"/> class.
         /// </summary>
         /// <param name="rooms">The list of rooms.</param>
-        public RoomListReceivedEventArgs(IReadOnlyCollection<Room> rooms)
+        public RoomListReceivedEventArgs(IReadOnlyCollection<RoomInfo> rooms)
         {
             Rooms = rooms;
         }
@@ -178,7 +178,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the list of rooms.
         /// </summary>
-        public IReadOnlyCollection<Room> Rooms { get; }
+        public IReadOnlyCollection<RoomInfo> Rooms { get; }
     }
 
     /// <summary>

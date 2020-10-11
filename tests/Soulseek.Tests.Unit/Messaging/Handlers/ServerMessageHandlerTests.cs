@@ -252,12 +252,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerRoomList"), AutoData]
         public void Handles_ServerRoomList(List<(string Name, int UserCount)> rooms)
         {
-            IReadOnlyCollection<Room> result = null;
+            IReadOnlyCollection<RoomInfo> result = null;
 
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<Room>>()))
-                .Callback<WaitKey, IReadOnlyCollection<Room>>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<RoomInfo>>()))
+                .Callback<WaitKey, IReadOnlyCollection<RoomInfo>>((key, response) => result = response);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomList)
@@ -279,12 +279,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises RoomListReceived"), AutoData]
         public void Raises_RoomListReceived(List<(string Name, int UserCount)> rooms)
         {
-            IReadOnlyCollection<Room> result = null;
+            IReadOnlyCollection<RoomInfo> result = null;
 
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<Room>>()))
-                .Callback<WaitKey, IReadOnlyCollection<Room>>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<RoomInfo>>()))
+                .Callback<WaitKey, IReadOnlyCollection<RoomInfo>>((key, response) => result = response);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomList)

@@ -29,6 +29,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bin", "bin", "{725D726B-742
 		bin\build = bin\build
 		bin\ci = bin\ci
 		bin\deploy = bin\deploy
+		bin\dev-api = bin\dev-api
+		bin\dev-web = bin\dev-web
 		bin\test = bin\test
 	EndProjectSection
 EndProject
