@@ -136,8 +136,8 @@ class Chat extends Component {
         const messages = conversations[active] || [];
 
         return (
-            <div className='chat-container'>
-                <Segment className='chat-menu' raised>
+            <div className='chat'>
+                <Segment raised>
                     <ChatMenu
                         conversations={conversations}
                         active={active}
