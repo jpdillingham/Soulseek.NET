@@ -38,7 +38,7 @@
         [ProducesResponseType(typeof(Dictionary<string, Dictionary<string, Room>>), 200)]
         public IActionResult GetAll()
         {
-            return Ok(Tracker.Rooms);
+            return Ok(Tracker.Rooms.Keys);
         }
 
         /// <summary>
