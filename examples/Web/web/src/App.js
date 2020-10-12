@@ -18,6 +18,7 @@ import {
     Modal,
     Header
 } from 'semantic-ui-react';
+import Rooms from './Rooms/Rooms';
 
 const initialState = {
     token: undefined,
@@ -126,11 +127,11 @@ class App extends Component {
                                     <Icon name='folder open'/>Browse
                                 </Menu.Item>
                             </Link>
-                            {/* <Link to='rooms'>
+                            <Link to='rooms'>
                                 <Menu.Item>
                                     <Icon name='comments'/>Rooms
                                 </Menu.Item>
-                            </Link> */}
+                            </Link>
                             <Link to='chat'>
                                 <Menu.Item>
                                     <Icon name='comment'/>Chat
@@ -152,7 +153,7 @@ class App extends Component {
                         <Sidebar.Pusher className='app-content'>
                             <Switch>
                                 <Route path='*/chat' render={(props) => this.withTokenCheck(<Chat {...props}/>)}/>
-                                <Route path='*/rooms' render={(props) => this.withTokenCheck(<div>Rooms</div>)}/>
+                                <Route path='*/rooms' render={(props) => this.withTokenCheck(<Rooms {...props}/>)}/>
                                 <Route path='*/browse' render={(props) => this.withTokenCheck(<Browse {...props}/>)}/>
                                 <Route path='*/uploads' render={(props) => this.withTokenCheck(<Transfers {...props} direction='upload'/>)}/>
                                 <Route path='*/downloads' render={(props) => this.withTokenCheck(<Transfers {...props} direction='download'/>)}/>
