@@ -35,7 +35,7 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...rest }) => {
       {...rest}
     >
       <Header>
-        <Icon name='send'/>
+        <Icon name='comments'/>
         <Modal.Content>Join Room</Modal.Content>
       </Header>
       <Modal.Content scrolling>
