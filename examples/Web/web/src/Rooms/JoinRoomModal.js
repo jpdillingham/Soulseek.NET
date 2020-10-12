@@ -6,7 +6,7 @@ import {
   Icon, Button, Modal, Table, Header
 } from 'semantic-ui-react';
 
-const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...rest }) => {
+const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
   const [open, setOpen] = useState(false);
   const [available, setAvailable] = useState([]);
   const [selected, setSelected] = useState(undefined);
@@ -57,7 +57,7 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...rest }) => {
       open={open}
       onClose={() => setOpen(false)}
       onOpen={() => setOpen(true)}
-      {...rest}
+      {...modalOptions}
     >
       <Header>
         <Icon name='comments'/>

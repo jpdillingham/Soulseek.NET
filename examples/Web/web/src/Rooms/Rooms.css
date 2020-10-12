@@ -1,4 +1,4 @@
-.rooms-container {
+.rooms {
   padding-left: 15px;
   padding-right: 15px;
   max-width: 1200px !important;
@@ -7,7 +7,7 @@
   margin-bottom: 17px;
 }
 
-.rooms-menu {
+.rooms > .segment:first-child {
   margin-top: 15px !important;
   height: 78px;
 }
@@ -16,4 +16,23 @@
   overflow-x: auto;
   box-shadow: unset !important;
   height: 47px;
+}
+
+.room-menu > .menu-item {
+  font-size: 14pt;
+}
+
+.room-menu > .menu-active {
+  font-weight: bold !important;
+}
+
+.room-menu > .menu > .add-button {
+  margin: 0px;
+  border-top-left-radius: 0%;
+  border-bottom-left-radius: 0%;
+  border-radius: 0%;
+}
+
+.join-room-modal > .content > .table > thead > tr > th > .icon {
+  float: right !important;
 }

@@ -1,4 +1,5 @@
 import React, { Component, createRef } from 'react';
+import api from '../api';
 import { activeRoomKey } from '../config';
 
 import { Segment } from 'semantic-ui-react';
@@ -23,16 +24,20 @@ class Rooms extends Component {
     this.setState({ active: roomName }, () => sessionStorage.setItem(activeRoomKey, roomName));
   }
 
-  joinRoom = (roomName) => {
-    console.log('join', roomName);
+  joinRoom = async (roomName) => {
+    await api.post(`/rooms/joined/${roomName}`);
+  }
+
+  leaveRoom = async (roomName) => {
+    await api.delete(`/rooms/joined/${roomName}`);
   }
 
   render = () => {
     const { rooms, active } = this.state;
 
     return (
-      <div className='rooms-container'>
-        <Segment className='rooms-menu' raised>
+      <div className='rooms'>
+        <Segment raised>
           <RoomMenu
             rooms={rooms}
             active={active}

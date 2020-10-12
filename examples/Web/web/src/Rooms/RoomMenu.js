@@ -6,7 +6,7 @@ import {
 } from 'semantic-ui-react';
 import JoinRoomModal from './JoinRoomModal';
 
-const RoomMenu = ({ rooms, active, onRoomChange, ...rest }) => {
+const RoomMenu = ({ rooms, active, onRoomChange, ...modalOptions }) => {
   const names = Object.keys(rooms);
   const isActive = (name) => active === name;
 
@@ -30,8 +30,8 @@ const RoomMenu = ({ rooms, active, onRoomChange, ...rest }) => {
             <Button icon className='add-button'><Icon name='plus'/></Button>
           }
           centered
-          size='mini'
-          {...rest}
+          size='small'
+          {...modalOptions}
         />
       </Menu.Menu>
     </Menu>
