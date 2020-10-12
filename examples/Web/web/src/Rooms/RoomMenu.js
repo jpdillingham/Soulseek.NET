@@ -11,7 +11,7 @@ const RoomMenu = ({ rooms, active, onRoomChange, ...modalOptions }) => {
   const isActive = (name) => active === name;
 
   return (
-    <Menu className='room-menu' stackable size='large'>
+    <Menu className='room-menu' size='large'>
       {names.map((name, index) => 
         <Menu.Item
           className={`menu-item ${isActive(name) ? 'menu-active' : ''}`}
