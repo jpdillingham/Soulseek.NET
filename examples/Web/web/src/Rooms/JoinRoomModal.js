@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import api from '../api';
 import './Rooms.css';
 
@@ -7,9 +7,11 @@ import {
 } from 'semantic-ui-react';
 
 const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...rest }) => {
-  const [open, setOpen] = React.useState(false);
-  const [available, setAvailable] = React.useState([]);
-  const [selected, setSelected] = React.useState(undefined);
+  const [open, setOpen] = useState(false);
+  const [available, setAvailable] = useState([]);
+  const [selected, setSelected] = useState(undefined);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
     const getAvailableRooms = async () => {
@@ -20,6 +22,28 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...rest }) => {
     getAvailableRooms();
   }, []);
 
+  const sortedAvailable = useMemo(() => {
+    const sorted = [...available];
+
+    sorted.sort((a, b) => {
+      if (sortOrder === 'asc') {
+        if (typeof(a[sortBy]) === 'string') {
+          return b[sortBy].localeCompare(a[sortBy]);
+        }
+
+        return a[sortBy] - b[sortBy];
+      }
+
+      if (typeof(a[sortBy]) === 'string') {
+        return a[sortBy].localeCompare(b[sortBy]);
+      }
+
+      return b[sortBy] - a[sortBy]
+    });
+    
+    return sorted;
+  }, [available, sortBy, sortOrder]);
+
   const joinRoom = async () => {
     await parentJoinRoom(selected);
     setOpen(false);
@@ -29,6 +53,7 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...rest }) => {
 
   return (
     <Modal
+      className='join-room-modal'
       open={open}
       onClose={() => setOpen(false)}
       onOpen={() => setOpen(true)}
@@ -42,19 +67,36 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...rest }) => {
         <Table celled selectable>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Name</Table.HeaderCell>
-              <Table.HeaderCell>Users</Table.HeaderCell>
+              <Table.HeaderCell onClick={() => setSortBy('name')}>
+                Name
+                <Icon 
+                  link={sortBy === 'name'}
+                  name={sortBy === 'name' && (sortOrder === 'asc' ? 'chevron up' : 'chevron down')}
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                />
+              </Table.HeaderCell>
+              <Table.HeaderCell onClick={() => setSortBy('userCount')}>
+                Users
+                <Icon 
+                  link={sortBy === 'userCount'}
+                  name={sortBy === 'userCount' && (sortOrder === 'asc' ? 'chevron up' : 'chevron down')}
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                />
+              </Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {available.map((room, index) => 
+            {sortedAvailable.map((room, index) => 
               <Table.Row
                 key={index}
                 style={isSelected(room) ? {fontWeight: 'bold'} : {}}
                 onClick={() => setSelected(room.name)}
               >
-                <Table.Cell positive={isSelected(room)}>{room.name}</Table.Cell>
-                <Table.Cell positive={isSelected(room)}>{room.userCount}</Table.Cell>
+                <Table.Cell>
+                  {isSelected(room) && <Icon name='check' color='green'/>}
+                  {room.name}
+                </Table.Cell>
+                <Table.Cell>{room.userCount}</Table.Cell>
               </Table.Row>
             )}
           </Table.Body>
