@@ -7,7 +7,7 @@ import {
 import JoinRoomModal from './JoinRoomModal';
 
 const RoomMenu = ({ rooms, active, onRoomChange, ...modalOptions }) => {
-  const names = Object.keys(rooms);
+  const names = [...rooms];
   const isActive = (name) => active === name;
 
   return (
