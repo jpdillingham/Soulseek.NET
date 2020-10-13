@@ -36,3 +36,59 @@
 .join-room-modal > .content > .table > thead > tr > th > .icon {
   float: right !important;
 }
+
+@media only screen and (min-width: 768px) {
+  .room-history {
+      height: calc(100vh - 292px);
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  .room-history {
+      height: calc(100vh - 128px);
+  }
+}
+
+.room-active-card {
+  width: 100% !important;
+}
+
+.room-active-card > .content > .segments {
+  box-shadow: unset !important;
+}
+
+.room-history {
+  padding: .5em !important;
+  margin-bottom: 17px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-snap-type: y proximity;
+}
+
+.room-message-name {
+  font-weight: bold;
+}
+
+.room-message-time {
+  float:right;
+  opacity: .5;
+  font-size: smaller;
+  font-variant: small-caps;
+  font-style: italic;
+}
+
+.room-message-self {
+  color: blue;
+}
+
+.room-input {
+  padding: 0px 0px 0px 1em !important;
+}
+
+.room-message-button {
+  background-color: transparent !important;
+}
+
+#room-history-scroll-anchor {
+  scroll-snap-align: start
+}
