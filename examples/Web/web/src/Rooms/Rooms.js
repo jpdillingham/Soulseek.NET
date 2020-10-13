@@ -2,7 +2,7 @@ import React, { Component, createRef } from 'react';
 import api from '../api';
 import { activeRoomKey } from '../config';
 
-import { Segment } from 'semantic-ui-react';
+import { Segment, Card, Icon, Input, Ref, List } from 'semantic-ui-react';
 
 import RoomMenu from './RoomMenu';
 
@@ -30,19 +30,19 @@ class Rooms extends Component {
     this.setState({ 
       active: sessionStorage.getItem(activeRoomKey) || '',
       intervals: {
-        rooms: window.setInterval(this.fetchJoinedRooms, 500),
-        messages: window.setInterval(this.fetchActiveRoom, 500),
+        rooms: window.setInterval(this.fetchJoinedRooms, 5000),
+        messages: window.setInterval(this.fetchActiveRoom, 5000),
         users: window.setInterval(() => this.fetchActiveRoom({ includeUsers: true }), 5000)
       }
     }, () => this.fetchActiveRoom({ includeUsers: true }));
-  }
+  };
 
   fetchJoinedRooms = async () => {
     const rooms = (await api.get('/rooms/joined')).data;
     this.setState({
       rooms
     });
-  }
+  };
 
   fetchActiveRoom = async ({ includeUsers = false } = {}) => {
     const { active, room } = this.state;
@@ -63,25 +63,59 @@ class Rooms extends Component {
         messages
       }
     });
-  }
+  };
 
   selectRoom = async (roomName) => {
     this.setState({ 
       active: roomName, 
       room: initialState.room 
-    }, () => {
+    }, async () => {
       sessionStorage.setItem(activeRoomKey, roomName);
-      this.fetchActiveRoom({ includeUsers: true });
+      await this.fetchActiveRoom({ includeUsers: true });
+      this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
     });
-  }
+  };
 
   joinRoom = async (roomName) => {
     await api.post(`/rooms/joined/${roomName}`);
-  }
+  };
 
   leaveRoom = async (roomName) => {
     await api.delete(`/rooms/joined/${roomName}`);
-  }
+    this.setState({ active: initialState.active }, () => {
+      sessionStorage.removeItem(activeRoomKey);
+    });
+  };
+
+  validInput = () => (this.state.active || '').length > 0 && ((this.messageRef && this.messageRef.current && this.messageRef.current.value) || '').length > 0;
+  
+  focusInput = () => {
+    this.messageRef.current.focus();
+  };
+
+  formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const dtfUS = new Intl.DateTimeFormat('en', { 
+        month: 'numeric', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+
+    return dtfUS.format(date);
+  };
+
+  sendMessage = async () => {
+    const { active } = this.state;
+    const message = this.messageRef.current.value;
+
+    if (!this.validInput()) {
+      return;
+    }
+
+    await api.post(`/rooms/joined/${active}/messages`, JSON.stringify(message));
+    this.messageRef.current.value = '';
+  };
 
   render = () => {
     const { rooms, active, room } = this.state;
@@ -96,14 +130,57 @@ class Rooms extends Component {
             joinRoom={this.joinRoom}
           />
         </Segment>
-        <Segment>
-          <pre>
-            {JSON.stringify(room, null, 2)}
-          </pre>
-        </Segment>
+        {active && <Card className='room-active-card' raised>
+          <Card.Content onClick={() => this.focusInput()}>
+            <Card.Header>
+              <Icon name='circle' color='green'/>
+              {active}
+              <Icon 
+                  className='close-button' 
+                  name='close' 
+                  color='red' 
+                  link
+                  onClick={() => this.leaveRoom(active)}
+              />
+            </Card.Header>
+            <Segment.Group>
+              <Segment className='chat-history'>
+                <Ref innerRef={this.listRef}>
+                  <List>
+                    {room.messages.map((message, index) => 
+                      <List.Content 
+                        key={index}
+                        className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
+                      >
+                        <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
+                        <span className='chat-message-name'>{message.username}: </span>
+                        <span className='chat-message-message'>{message.message}</span>
+                      </List.Content>
+                    )}
+                    <List.Content id='chat-history-scroll-anchor'/>
+                  </List>
+                </Ref>
+              </Segment>
+              <Segment className='chat-input'>
+                <Input
+                  fluid
+                  transparent
+                  input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
+                  ref={input => this.messageRef = input && input.inputRef}
+                  action={{ 
+                      icon: <Icon name='send' color='green'/>, 
+                      className: 'chat-message-button', onClick: this.sendMessage,
+                      disabled: !this.validInput()
+                  }}
+                  onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
+                />
+              </Segment>
+            </Segment.Group>
+          </Card.Content>
+        </Card>}
       </div>
     )
-  }
-}
+  };
+};
 
 export default Rooms;
