@@ -88,3 +88,12 @@
 #chat-history-scroll-anchor {
   scroll-snap-align: start
 }
+
+/* semantic-ui-react colors the border of inputs
+   when a right aligned action is used, even when 
+   transparent is specified, and it uses !important.
+   this had to be added to an id to override the class
+   declaration. */
+#chat-message-input {
+    border-right-color: transparent !important;
+}
