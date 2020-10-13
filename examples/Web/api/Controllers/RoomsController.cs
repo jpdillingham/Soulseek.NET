@@ -58,7 +58,7 @@
         {
             if (Tracker.TryGet(roomName, out var room))
             {
-                return Ok(room);
+                return Ok(MapRoomToRoomResponse(room));
             }
 
             return NotFound();
@@ -169,7 +169,7 @@
             var room = Room.FromRoomData(roomData);
             Tracker.TryAdd(roomName, room);
 
-            return StatusCode(StatusCodes.Status201Created, room);
+            return StatusCode(StatusCodes.Status201Created, MapRoomToRoomResponse(room));
         }
 
         /// <summary>
@@ -194,6 +194,22 @@
             Tracker.TryRemove(roomName);
 
             return StatusCode(StatusCodes.Status204NoContent);
+        }
+
+        private RoomResponse MapRoomToRoomResponse(Room room)
+        {
+            bool IsSelf(string username)
+            {
+                return username == Client.Username;
+            }
+
+            var response = RoomResponse.FromRoom(room);
+            response.Users = room.Users
+                .Select(user => UserDataResponse.FromUserData(user, self: IsSelf(user.Username)));
+            response.Messages = room.Messages
+                .Select(message => RoomMessageResponse.FromRoomMessage(message, self: IsSelf(message.Username)));
+
+            return response;
         }
     }
 }
