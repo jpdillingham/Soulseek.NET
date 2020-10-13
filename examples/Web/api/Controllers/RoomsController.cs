@@ -5,7 +5,9 @@
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
+    using WebAPI.DTO;
     using WebAPI.Entities;
     using WebAPI.Trackers;
 
@@ -100,7 +102,10 @@
         {
             if (Tracker.TryGet(roomName, out var room))
             {
-                return Ok(room.Users);
+                var response = room.Users
+                    .Select(user => UserDataResponse.FromUserData(user, self: user.Username == Client.Username));
+
+                return Ok(response);
             }
 
             return NotFound();
@@ -121,7 +126,10 @@
         {
             if (Tracker.TryGet(roomName, out var room))
             {
-                return Ok(room.Messages);
+                var response = room.Messages
+                    .Select(message => RoomMessageResponse.FromRoomMessage(message, self: message.Username == Client.Username));
+
+                return Ok(response);
             }
 
             return NotFound();
