@@ -144,32 +144,32 @@ class Rooms extends Component {
               />
             </Card.Header>
             <Segment.Group>
-              <Segment className='chat-history'>
+              <Segment className='room-history'>
                 <Ref innerRef={this.listRef}>
                   <List>
                     {room.messages.map((message, index) => 
                       <List.Content 
                         key={index}
-                        className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
+                        className={`room-message ${!!message.self ? 'room-message-self' : ''}`}
                       >
-                        <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
-                        <span className='chat-message-name'>{message.username}: </span>
-                        <span className='chat-message-message'>{message.message}</span>
+                        <span className='room-message-time'>{this.formatTimestamp(message.timestamp)}</span>
+                        <span className='room-message-name'>{message.username}: </span>
+                        <span className='room-message-message'>{message.message}</span>
                       </List.Content>
                     )}
-                    <List.Content id='chat-history-scroll-anchor'/>
+                    <List.Content id='room-history-scroll-anchor'/>
                   </List>
                 </Ref>
               </Segment>
-              <Segment className='chat-input'>
+              <Segment className='room-input'>
                 <Input
                   fluid
                   transparent
-                  input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
+                  input={<input id='room-message-input' type="text" data-lpignore="true"></input>}
                   ref={input => this.messageRef = input && input.inputRef}
                   action={{ 
                       icon: <Icon name='send' color='green'/>, 
-                      className: 'chat-message-button', onClick: this.sendMessage,
+                      className: 'room-message-button', onClick: this.sendMessage,
                       disabled: !this.validInput()
                   }}
                   onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
