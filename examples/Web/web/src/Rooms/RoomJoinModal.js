@@ -3,15 +3,16 @@ import api from '../api';
 import './Rooms.css';
 
 import {
-  Icon, Button, Modal, Table, Header
+  Icon, Button, Modal, Table, Header, Input
 } from 'semantic-ui-react';
 
-const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
+const RoomJoinModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
   const [open, setOpen] = useState(false);
   const [available, setAvailable] = useState([]);
   const [selected, setSelected] = useState(undefined);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [filter, setFilter] = useState('');
 
   useEffect(() => {
     const getAvailableRooms = async () => {
@@ -23,7 +24,7 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
   }, []);
 
   const sortedAvailable = useMemo(() => {
-    const sorted = [...available];
+    const sorted = [...available].filter(room => room.name.includes(filter));
 
     sorted.sort((a, b) => {
       if (sortOrder === 'asc') {
@@ -42,7 +43,7 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
     });
     
     return sorted;
-  }, [available, sortBy, sortOrder]);
+  }, [available, sortBy, sortOrder, filter]);
 
   const joinRoom = async () => {
     await parentJoinRoom(selected);
@@ -50,6 +51,15 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
   }
 
   const isSelected = (room) => selected === room.name;
+
+  const close = () => {
+    setAvailable([]);
+    setSelected(undefined);
+    setSortBy('name');
+    setSortOrder('desc');
+    setFilter('');
+    setOpen(false);
+  }
 
   return (
     <Modal
@@ -64,6 +74,12 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
         <Modal.Content>Join Room</Modal.Content>
       </Header>
       <Modal.Content scrolling>
+        <Input 
+          fluid 
+          onChange={(_, e) => setFilter(e.value)}
+          placeholder='Room Filter'
+          icon='filter'
+        />
         <Table celled selectable>
           <Table.Header>
             <Table.Row>
@@ -114,4 +130,4 @@ const JoinRoomModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
   )
 }
 
-export default JoinRoomModal;
+export default RoomJoinModal;

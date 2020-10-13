@@ -4,9 +4,9 @@ import './Rooms.css';
 import {
   Icon, Button, Menu
 } from 'semantic-ui-react';
-import JoinRoomModal from './JoinRoomModal';
+import RoomJoinModal from './RoomJoinModal';
 
-const RoomMenu = ({ rooms, active, onRoomChange, ...modalOptions }) => {
+const RoomMenu = ({ rooms, active, onRoomChange, ...rest }) => {
   const names = [...rooms];
   const isActive = (name) => active === name;
 
@@ -25,13 +25,13 @@ const RoomMenu = ({ rooms, active, onRoomChange, ...modalOptions }) => {
         </Menu.Item>
       )}
       <Menu.Menu position='right'>
-        <JoinRoomModal
+        <RoomJoinModal
           trigger={
             <Button icon className='add-button'><Icon name='plus'/></Button>
           }
           centered
           size='small'
-          {...modalOptions}
+          {...rest}
         />
       </Menu.Menu>
     </Menu>
