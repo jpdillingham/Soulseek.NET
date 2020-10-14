@@ -88,12 +88,13 @@
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
   overflow-x: hidden;
-  min-width: 300px;
-  max-width: 300px;
+  min-width: 250px;
+  max-width: 250px;
   box-shadow: unset !important;
   border-left: unset !important;
   border-bottom-left-radius: unset !important;
   border-top-left-radius: unset !important;
+  padding: 7px !important;
 }
 
 .room-message-name {
@@ -131,4 +132,8 @@
    declaration. */
 #room-message-input {
     border-right-color: transparent !important;
+}
+
+.unknown-user-flag {
+  opacity: .1 !important;
 }

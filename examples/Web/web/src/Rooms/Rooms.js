@@ -5,6 +5,7 @@ import { activeRoomKey } from '../config';
 import { Segment, Card, Icon, Input, Ref, List } from 'semantic-ui-react';
 
 import RoomMenu from './RoomMenu';
+import RoomUserList from './RoomUserList';
 
 const initialState = {
   active: '',
@@ -178,9 +179,7 @@ class Rooms extends Component {
                 </Segment>
               </Segment.Group>
               <Segment className='room-users'>
-                    <ul>
-                      {room.users.map(user => <li>{user.username}</li>)}
-                    </ul>
+                <RoomUserList users={room.users}/>
               </Segment>
             </div>
           </Card.Content>
