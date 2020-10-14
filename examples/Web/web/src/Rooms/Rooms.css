@@ -109,7 +109,7 @@
   font-style: italic;
 }
 
-.room-message-self {
+.room-message-self, .room-user-self {
   color: blue;
 }
 
