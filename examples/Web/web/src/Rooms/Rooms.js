@@ -31,8 +31,8 @@ class Rooms extends Component {
     this.setState({ 
       active: sessionStorage.getItem(activeRoomKey) || '',
       intervals: {
-        rooms: window.setInterval(this.fetchJoinedRooms, 5000),
-        messages: window.setInterval(this.fetchActiveRoom, 5000),
+        rooms: window.setInterval(this.fetchJoinedRooms, 500),
+        messages: window.setInterval(this.fetchActiveRoom, 1000),
         users: window.setInterval(() => this.fetchActiveRoom({ includeUsers: true }), 5000)
       }
     }, () => this.fetchActiveRoom({ includeUsers: true }));
