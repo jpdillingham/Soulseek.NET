@@ -41,20 +41,37 @@
   .room-history {
       height: calc(100vh - 292px);
   }
+
+  .room-users {
+    height: calc(100vh - 255px);
+  }
 }
 
 @media only screen and (max-width: 767px) {
   .room-history {
       height: calc(100vh - 128px);
   }
+
+  .room-users {
+    display: none;
+  }
+}
+
+.room {
+  display: flex;
+  margin-top: 1rem;
 }
 
 .room-active-card {
   width: 100% !important;
 }
 
-.room-active-card > .content > .segments {
+.room-active-card > .content > .room > .segments {
   box-shadow: unset !important;
+  margin-bottom: 0px;
+  border-top-right-radius: unset !important;
+  border-bottom-right-radius: unset !important;
+  width: 100% !important;
 }
 
 .room-history {
@@ -63,6 +80,20 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
+}
+
+.room-users {
+  margin-top: 0px !important;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-snap-type: y proximity;
+  overflow-x: hidden;
+  min-width: 300px;
+  max-width: 300px;
+  box-shadow: unset !important;
+  border-left: unset !important;
+  border-bottom-left-radius: unset !important;
+  border-top-left-radius: unset !important;
 }
 
 .room-message-name {

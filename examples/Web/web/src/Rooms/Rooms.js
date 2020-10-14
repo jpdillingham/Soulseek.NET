@@ -143,39 +143,46 @@ class Rooms extends Component {
                   onClick={() => this.leaveRoom(active)}
               />
             </Card.Header>
-            <Segment.Group>
-              <Segment className='room-history'>
-                <Ref innerRef={this.listRef}>
-                  <List>
-                    {room.messages.map((message, index) => 
-                      <List.Content 
-                        key={index}
-                        className={`room-message ${!!message.self ? 'room-message-self' : ''}`}
-                      >
-                        <span className='room-message-time'>{this.formatTimestamp(message.timestamp)}</span>
-                        <span className='room-message-name'>{message.username}: </span>
-                        <span className='room-message-message'>{message.message}</span>
-                      </List.Content>
-                    )}
-                    <List.Content id='room-history-scroll-anchor'/>
-                  </List>
-                </Ref>
+            <div className='room'>
+              <Segment.Group>
+                <Segment className='room-history'>
+                  <Ref innerRef={this.listRef}>
+                    <List>
+                      {room.messages.map((message, index) =>
+                        <List.Content
+                          key={index}
+                          className={`room-message ${!!message.self ? 'room-message-self' : ''}`}
+                        >
+                          <span className='room-message-time'>{this.formatTimestamp(message.timestamp)}</span>
+                          <span className='room-message-name'>{message.username}: </span>
+                          <span className='room-message-message'>{message.message}</span>
+                        </List.Content>
+                      )}
+                      <List.Content id='room-history-scroll-anchor'/>
+                    </List>
+                  </Ref>
+                </Segment>
+                <Segment className='room-input'>
+                  <Input
+                    fluid
+                    transparent
+                    input={<input id='room-message-input' type="text" data-lpignore="true"></input>}
+                    ref={input => this.messageRef = input && input.inputRef}
+                    action={{
+                        icon: <Icon name='send' color='green'/>,
+                        className: 'room-message-button', onClick: this.sendMessage,
+                        disabled: !this.validInput()
+                    }}
+                    onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
+                  />
+                </Segment>
+              </Segment.Group>
+              <Segment className='room-users'>
+                    <ul>
+                      {room.users.map(user => <li>{user.username}</li>)}
+                    </ul>
               </Segment>
-              <Segment className='room-input'>
-                <Input
-                  fluid
-                  transparent
-                  input={<input id='room-message-input' type="text" data-lpignore="true"></input>}
-                  ref={input => this.messageRef = input && input.inputRef}
-                  action={{ 
-                      icon: <Icon name='send' color='green'/>, 
-                      className: 'room-message-button', onClick: this.sendMessage,
-                      disabled: !this.validInput()
-                  }}
-                  onKeyUp={(e) => e.key === 'Enter' ? this.sendMessage() : ''}
-                />
-              </Segment>
-            </Segment.Group>
+            </div>
           </Card.Content>
         </Card>}
       </div>
