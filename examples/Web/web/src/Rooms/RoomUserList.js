@@ -29,8 +29,8 @@ const RoomUserList = ({ users }) => {
 
   return (
     <List>
-      {sortedUsers.map(user => 
-        <List.Item>
+      {sortedUsers.map((user, index) => 
+        <List.Item key={index}>
           <List.Content style={{ opacity: user.status === 'Online' ? 1 : .5}}>
             <Popup content={getDetails(user)} trigger={getFlag(user)}/>
             {user.username}
