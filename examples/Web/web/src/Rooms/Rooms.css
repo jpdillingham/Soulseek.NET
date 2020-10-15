@@ -75,11 +75,16 @@
 }
 
 .room-history {
-  padding: .5em !important;
-  margin-bottom: 17px;
+  padding: .5em .5em 0 .5em !important;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
+  display: grid;
+}
+
+.room-history > .list {
+  align-self: end;
+  margin-bottom: .5em !important;
 }
 
 .room-users {
