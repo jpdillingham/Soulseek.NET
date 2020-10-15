@@ -91,7 +91,7 @@ namespace Soulseek.Messaging.Messages
                 var slot = slots[i];
                 var country = countries[i];
 
-                users.Add(new UserData(name, status, averageSpeed, downloadCount, fileCount, directoryCount, slot, country));
+                users.Add(new UserData(name, status, averageSpeed, downloadCount, fileCount, directoryCount, country, slot));
             }
 
             string owner = null;

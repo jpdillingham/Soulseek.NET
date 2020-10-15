@@ -71,7 +71,7 @@ namespace Soulseek.Messaging.Messages
             var slotsFree = reader.ReadInteger();
             string countryCode = reader.ReadString();
 
-            var userData = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, slotsFree, countryCode);
+            var userData = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode, slotsFree);
 
             return new RoomJoinedNotification(roomName, username, userData);
         }
