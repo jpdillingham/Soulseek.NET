@@ -10,7 +10,16 @@
   }
 }
 
-.chat-menu {
+.chat {
+  padding-left: 15px;
+  padding-right: 15px;
+  max-width: 1200px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-bottom: 17px;
+}
+
+.chat > .segment:first-child {
   margin-top: 15px !important;
   height: 78px;
 }
@@ -35,15 +44,6 @@
   border-bottom-left-radius: 0%;
   border-radius: 0%;
 } 
-
-.chat-container {
-  padding-left: 15px;
-  padding-right: 15px;
-  max-width: 1200px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  margin-bottom: 17px;
-}
 
 .chat-history {
   padding: .5em !important;
@@ -87,4 +87,13 @@
 
 #chat-history-scroll-anchor {
   scroll-snap-align: start
+}
+
+/* semantic-ui-react colors the border of inputs
+   when a right aligned action is used, even when 
+   transparent is specified, and it uses !important.
+   this had to be added to an id to override the class
+   declaration. */
+#chat-message-input {
+    border-right-color: transparent !important;
 }

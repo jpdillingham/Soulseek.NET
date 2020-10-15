@@ -73,14 +73,9 @@ namespace Soulseek.Messaging.Messages
                 var downloadCount = reader.ReadLong();
                 var fileCount = reader.ReadInteger();
                 var directoryCount = reader.ReadInteger();
-                string countryCode = null;
+                var countryCode = reader.ReadString();
 
-                if (reader.HasMoreData)
-                {
-                    countryCode = reader.ReadString();
-                }
-
-                user = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
+                user = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
             }
 
             return new AddUserResponse(username, exists, user);

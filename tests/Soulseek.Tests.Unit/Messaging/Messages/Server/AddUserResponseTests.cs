@@ -104,8 +104,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
-        [Theory(DisplayName = "Parse does not throw if CountryCode is missing"), AutoData]
-        public void Parse_Does_Not_Throw_If_CountryCode_Is_Missing(string username, UserData userData)
+        [Theory(DisplayName = "Parse does not throw if CountryCode is blank"), AutoData]
+        public void Parse_Does_Not_Throw_If_CountryCode_Is_Blank(string username, UserData userData)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.AddUser)
@@ -116,6 +116,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteLong(userData.DownloadCount)
                 .WriteInteger(userData.FileCount)
                 .WriteInteger(userData.DirectoryCount)
+                .WriteString(string.Empty)
                 .Build();
 
             var r = AddUserResponse.FromByteArray(msg);
@@ -127,7 +128,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(userData.DownloadCount, r.UserData.DownloadCount);
             Assert.Equal(userData.FileCount, r.UserData.FileCount);
             Assert.Equal(userData.DirectoryCount, r.UserData.DirectoryCount);
-            Assert.Null(r.UserData.CountryCode);
+            Assert.Empty(r.UserData.CountryCode);
         }
     }
 }

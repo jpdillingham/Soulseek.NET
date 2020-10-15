@@ -72,7 +72,7 @@
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
             TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
-            RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 25);
+            RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 100);
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
 

@@ -61,6 +61,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteLong(data.DownloadCount)
                 .WriteInteger(data.FileCount)
                 .WriteInteger(data.DirectoryCount)
+                .WriteInteger(data.SlotsFree.Value)
                 .WriteString(data.CountryCode);
 
             var response = RoomJoinedNotification.FromByteArray(builder.Build());
@@ -72,6 +73,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(data.DownloadCount, response.UserData.DownloadCount);
             Assert.Equal(data.FileCount, response.UserData.FileCount);
             Assert.Equal(data.DirectoryCount, response.UserData.DirectoryCount);
+            Assert.Equal(data.SlotsFree, response.UserData.SlotsFree);
             Assert.Equal(data.CountryCode, response.UserData.CountryCode);
         }
 
@@ -87,7 +89,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(data.AverageSpeed)
                 .WriteLong(data.DownloadCount)
                 .WriteInteger(data.FileCount)
-                .WriteInteger(data.DirectoryCount);
+                .WriteInteger(data.DirectoryCount)
+                .WriteInteger(data.SlotsFree.Value)
+                .WriteString(string.Empty);
 
             var response = RoomJoinedNotification.FromByteArray(builder.Build());
 
@@ -98,6 +102,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(data.DownloadCount, response.UserData.DownloadCount);
             Assert.Equal(data.FileCount, response.UserData.FileCount);
             Assert.Equal(data.DirectoryCount, response.UserData.DirectoryCount);
+            Assert.Equal(data.SlotsFree, response.UserData.SlotsFree);
+            Assert.Empty(response.UserData.CountryCode);
         }
     }
 }

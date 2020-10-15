@@ -68,14 +68,10 @@ namespace Soulseek.Messaging.Messages
             var downloadCount = reader.ReadLong();
             var fileCount = reader.ReadInteger();
             var directoryCount = reader.ReadInteger();
-            string countryCode = null;
+            var slotsFree = reader.ReadInteger();
+            string countryCode = reader.ReadString();
 
-            if (reader.HasMoreData)
-            {
-                countryCode = reader.ReadString();
-            }
-
-            var userData = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
+            var userData = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode, slotsFree);
 
             return new RoomJoinedNotification(roomName, username, userData);
         }

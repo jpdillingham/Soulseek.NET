@@ -17,7 +17,7 @@ const ChatMenu = ({ conversations, active, onConversationChange, ...rest }) => {
   const isActive = (name) => active === name;
 
   return (
-    <Menu className='conversation-menu' stackable size='large'>
+    <Menu className='conversation-menu' size='large'>
       {names.map((name, index) => 
         <Menu.Item
           className={`menu-item ${isActive(name) ? 'menu-active' : ''}`}

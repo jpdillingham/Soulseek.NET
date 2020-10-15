@@ -7,6 +7,7 @@
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
+    using WebAPI.DTO;
     using WebAPI.Entities;
     using WebAPI.Trackers;
 
@@ -125,10 +126,16 @@
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("")]
         [Authorize]
-        [ProducesResponseType(typeof(Dictionary<string, List<PrivateMessage>>), 200)]
+        [ProducesResponseType(typeof(Dictionary<string, List<PrivateMessageResponse>>), 200)]
         public IActionResult GetAll()
         {
-            return Ok(Tracker.Conversations);
+            var response = Tracker.Conversations.ToDictionary(
+                entry => entry.Key, 
+                entry => entry.Value
+                    .Select(pm => PrivateMessageResponse.FromPrivateMessage(pm, self: pm.Username == Client.Username))
+                    .OrderBy(m => m.Timestamp));
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -140,13 +147,17 @@
         /// <response code="404">A matching search was not found.</response>
         [HttpGet("{username}")]
         [Authorize]
-        [ProducesResponseType(typeof(List<PrivateMessage>), 200)]
+        [ProducesResponseType(typeof(List<PrivateMessageResponse>), 200)]
         [ProducesResponseType(404)]
         public IActionResult GetByUsername([FromRoute]string username)
         {            
             if (Tracker.TryGet(username, out var conversation))
             {
-                return Ok(conversation.OrderBy(m => m.Timestamp));
+                var response = conversation
+                    .Select(pm => PrivateMessageResponse.FromPrivateMessage(pm, self: pm.Username == Client.Username))
+                    .OrderBy(m => m.Timestamp);
+
+                return Ok(response);
             }
 
             return NotFound();

@@ -5,7 +5,9 @@
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
+    using WebAPI.DTO;
     using WebAPI.Entities;
     using WebAPI.Trackers;
 
@@ -38,7 +40,7 @@
         [ProducesResponseType(typeof(Dictionary<string, Dictionary<string, Room>>), 200)]
         public IActionResult GetAll()
         {
-            return Ok(Tracker.Rooms);
+            return Ok(Tracker.Rooms.Keys);
         }
 
         /// <summary>
@@ -56,7 +58,7 @@
         {
             if (Tracker.TryGet(roomName, out var room))
             {
-                return Ok(room);
+                return Ok(MapRoomToRoomResponse(room));
             }
 
             return NotFound();
@@ -100,7 +102,10 @@
         {
             if (Tracker.TryGet(roomName, out var room))
             {
-                return Ok(room.Users);
+                var response = room.Users
+                    .Select(user => UserDataResponse.FromUserData(user, self: user.Username == Client.Username));
+
+                return Ok(response);
             }
 
             return NotFound();
@@ -121,7 +126,10 @@
         {
             if (Tracker.TryGet(roomName, out var room))
             {
-                return Ok(room.Messages);
+                var response = room.Messages
+                    .Select(message => RoomMessageResponse.FromRoomMessage(message, self: message.Username == Client.Username));
+
+                return Ok(response);
             }
 
             return NotFound();
@@ -161,7 +169,7 @@
             var room = Room.FromRoomData(roomData);
             Tracker.TryAdd(roomName, room);
 
-            return StatusCode(StatusCodes.Status201Created, room);
+            return StatusCode(StatusCodes.Status201Created, MapRoomToRoomResponse(room));
         }
 
         /// <summary>
@@ -186,6 +194,22 @@
             Tracker.TryRemove(roomName);
 
             return StatusCode(StatusCodes.Status204NoContent);
+        }
+
+        private RoomResponse MapRoomToRoomResponse(Room room)
+        {
+            bool IsSelf(string username)
+            {
+                return username == Client.Username;
+            }
+
+            var response = RoomResponse.FromRoom(room);
+            response.Users = room.Users
+                .Select(user => UserDataResponse.FromUserData(user, self: IsSelf(user.Username)));
+            response.Messages = room.Messages
+                .Select(message => RoomMessageResponse.FromRoomMessage(message, self: IsSelf(message.Username)));
+
+            return response;
         }
     }
 }
