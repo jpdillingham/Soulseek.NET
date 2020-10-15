@@ -2,7 +2,7 @@ import React, { Component, createRef } from 'react';
 import api from '../api';
 import { activeRoomKey } from '../config';
 
-import { Segment, Card, Icon, Input, Ref, List } from 'semantic-ui-react';
+import { Segment, Card, Icon, Input, Ref, List, Loader, Dimmer } from 'semantic-ui-react';
 
 import RoomMenu from './RoomMenu';
 import RoomUserList from './RoomUserList';
@@ -16,9 +16,9 @@ const initialState = {
   },
   intervals: {
     rooms: undefined,
-    messages: undefined,
-    users: undefined
-  }
+    messages: undefined
+  },
+  loading: false
 }
 
 class Rooms extends Component {
@@ -32,18 +32,17 @@ class Rooms extends Component {
       active: sessionStorage.getItem(activeRoomKey) || '',
       intervals: {
         rooms: window.setInterval(this.fetchJoinedRooms, 500),
-        messages: window.setInterval(this.fetchActiveRoom, 1000),
-        users: window.setInterval(() => this.fetchActiveRoom({ includeUsers: true }), 5000)
-      }
-    }, () => this.fetchActiveRoom({ includeUsers: true }));
+        messages: window.setInterval(this.fetchActiveRoom, 1000)
+      },
+      loading: true
+    }, () => this.selectRoom(this.state.active));
   };
 
   componentWillUnmount = () => {
-    const { rooms, messages, users } = this.state.intervals;
+    const { rooms, messages } = this.state.intervals;
 
     clearInterval(rooms);
     clearInterval(messages);
-    clearInterval(users);
 
     this.setState({ intervals: initialState.intervals });
   }
@@ -55,18 +54,13 @@ class Rooms extends Component {
     });
   };
 
-  fetchActiveRoom = async ({ includeUsers = false } = {}) => {
-    const { active, room } = this.state;
+  fetchActiveRoom = async () => {
+    const { active } = this.state;
 
     if (active.length === 0) return;
 
     const messages = (await api.get(`/rooms/joined/${active}/messages`)).data;
-
-    let { users } = room;
-
-    if (includeUsers) {
-      users = (await api.get(`/rooms/joined/${active}/users`)).data;
-    }
+    const users = (await api.get(`/rooms/joined/${active}/users`)).data;
 
     this.setState({
       room: {
@@ -79,11 +73,16 @@ class Rooms extends Component {
   selectRoom = async (roomName) => {
     this.setState({ 
       active: roomName, 
-      room: initialState.room 
+      room: initialState.room,
+      loading: true
     }, async () => {
       sessionStorage.setItem(activeRoomKey, roomName);
-      await this.fetchActiveRoom({ includeUsers: true });
-      this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+      await this.fetchActiveRoom();
+      this.setState({loading: false}, () => {
+        try {
+          this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+        } catch {}
+      });
     });
   };
 
@@ -129,7 +128,7 @@ class Rooms extends Component {
   };
 
   render = () => {
-    const { rooms, active, room } = this.state;
+    const { rooms, active, room, loading } = this.state;
 
     return (
       <div className='rooms'>
@@ -155,6 +154,7 @@ class Rooms extends Component {
               />
             </Card.Header>
             <div className='room'>
+            {loading ? <Dimmer active inverted><Loader inverted/></Dimmer> : <>
               <Segment.Group>
                 <Segment className='room-history'>
                   <Ref innerRef={this.listRef}>
@@ -191,6 +191,7 @@ class Rooms extends Component {
               <Segment className='room-users'>
                 <RoomUserList users={room.users}/>
               </Segment>
+              </>}
             </div>
           </Card.Content>
         </Card>}
