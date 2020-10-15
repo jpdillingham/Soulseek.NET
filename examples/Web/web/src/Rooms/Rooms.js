@@ -38,6 +38,16 @@ class Rooms extends Component {
     }, () => this.fetchActiveRoom({ includeUsers: true }));
   };
 
+  componentWillUnmount = () => {
+    const { rooms, messages, users } = this.state.intervals;
+
+    clearInterval(rooms);
+    clearInterval(messages);
+    clearInterval(users);
+
+    this.setState({ intervals: initialState.intervals });
+  }
+
   fetchJoinedRooms = async () => {
     const rooms = (await api.get('/rooms/joined')).data;
     this.setState({
