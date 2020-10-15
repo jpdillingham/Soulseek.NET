@@ -880,6 +880,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteLong(data.DownloadCount)
                 .WriteInteger(data.FileCount)
                 .WriteInteger(data.DirectoryCount)
+                .WriteInteger(data.SlotsFree.Value)
                 .WriteString(data.CountryCode);
 
             var message = builder.Build();
