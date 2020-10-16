@@ -180,7 +180,7 @@ class Chat extends Component {
                                 <Input
                                     fluid
                                     transparent
-                                    input={<input id='chat-message-input' type="text" data-lpignore="true"></input>}
+                                    input={<input id='chat-message-input' type="text" data-lpignore="true" autoComplete="off"></input>}
                                     ref={input => this.messageRef = input && input.inputRef}
                                     action={{ 
                                         icon: <Icon name='send' color='green'/>, 
