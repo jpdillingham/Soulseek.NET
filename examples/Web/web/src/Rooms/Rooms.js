@@ -78,11 +78,12 @@ class Rooms extends Component {
     }, async () => {
       sessionStorage.setItem(activeRoomKey, roomName);
       await this.fetchActiveRoom();
-      this.setState({loading: false}, () => {
-        try {
-          this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
-        } catch {}
-      });
+
+      try {
+        this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+      } catch {}
+
+      this.setState({loading: false});
     });
   };
 
