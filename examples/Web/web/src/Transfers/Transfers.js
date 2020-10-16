@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import api from '../api';
+import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 import TransferGroup from './TransferGroup';
 
@@ -27,13 +28,12 @@ class Transfers extends Component {
     }
     
     render = () => {
-        let { downloads } = this.state;
+        const { downloads } = this.state;
+        const { direction } = this.props;
 
         return (
             downloads.length === 0 ? 
-            <h3 className='transfer-placeholder'>
-                No {this.props.direction}s
-            </h3> :
+            <PlaceholderSegment icon={direction}/> :
             <div className='transfer-segment'>
                 {downloads.map((user, index) => 
                     <TransferGroup key={index} direction={this.props.direction} user={user}/>

@@ -6,7 +6,9 @@ import {
     Segment,
     List, Input, Card, Icon, Ref, Dimmer, Loader
 } from 'semantic-ui-react';
+
 import ChatMenu from './ChatMenu';
+import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 const initialState = {
     active: '',
@@ -150,7 +152,9 @@ class Chat extends Component {
                         initiateConversation={this.initiateConversation}
                     />
                 </Segment>
-                {active && <Card className='chat-active-card' raised>
+                {!active ? 
+                <PlaceholderSegment icon='comment'/> :
+                <Card className='chat-active-card' raised>
                     <Card.Content onClick={() => this.focusInput()}>
                         <Card.Header>
                             <Icon name='circle' color='green'/>

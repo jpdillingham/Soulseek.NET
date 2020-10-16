@@ -6,6 +6,7 @@ import { Segment, Card, Icon, Input, Ref, List, Loader, Dimmer } from 'semantic-
 
 import RoomMenu from './RoomMenu';
 import RoomUserList from './RoomUserList';
+import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 const initialState = {
   active: '',
@@ -149,7 +150,9 @@ class Rooms extends Component {
             joinRoom={this.joinRoom}
           />
         </Segment>
-        {active && <Card className='room-active-card' raised>
+        {!active ? 
+        <PlaceholderSegment icon='comments'/> :
+        <Card className='room-active-card' raised>
           <Card.Content onClick={() => this.focusInput()}>
             <Card.Header>
               <Icon name='circle' color='green'/>

@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import api from '../api';
 
 import Response from './Response';
+import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 import {
     Segment,
@@ -173,7 +174,7 @@ class Search extends Component {
                     </Loader>
                 :
                     <div>
-                        {results && results.length > 0 && <Segment className='search-options' raised>
+                        {(results && results.length > 0) ? <Segment className='search-options' raised>
                             <Dropdown
                                 button
                                 className='search-options-sort icon'
@@ -191,7 +192,7 @@ class Search extends Component {
                                 checked={hideNoFreeSlots}
                                 label='Hide Results with No Free Slots'
                             />
-                        </Segment>}
+                        </Segment> : <PlaceholderSegment icon='search'/>}
                         {sortedAndFilteredResults.slice(0, displayCount).map((r, i) =>
                             <Response
                                 key={i}
