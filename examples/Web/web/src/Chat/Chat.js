@@ -23,18 +23,20 @@ class Chat extends Component {
     componentDidMount = async () => {
         await this.fetchConversations();
 
-        const names = [...Object.keys(this.state.conversations)];
-
         this.setState({ 
-            active: sessionStorage.getItem(activeChatKey) || names.length > 0 ? names[0] : '',
             interval: window.setInterval(this.fetchConversations, 5000),
             loading: true
-        }, () => this.selectConversation(this.state.active));
+        }, () => this.selectConversation(sessionStorage.getItem(activeChatKey) || this.getFirstConversation()));
     }
 
     componentWillUnmount = () => {
         clearInterval(this.state.interval);
         this.setState({ interval: undefined });
+    }
+
+    getFirstConversation = () => {
+        const names = [...Object.keys(this.state.conversations)];
+        return names.length > 0 ? names[0] : '';
     }
 
     fetchConversations = async () => {
@@ -86,14 +88,8 @@ class Chat extends Component {
 
     initiateMessage = async (username, message) => {
         await this.sendMessage(username, message);
-
-        this.setState({ 
-            conversations: {
-                ...this.state.conversations, 
-                username: [message]
-            },
-            active: username
-        });
+        await this.fetchConversations();
+        this.selectConversation(username);
     }
 
     validInput = () => (this.state.active || '').length > 0 && ((this.messageRef && this.messageRef.current && this.messageRef.current.value) || '').length > 0;
@@ -136,16 +132,14 @@ class Chat extends Component {
 
     deleteConversation = async (username) => {
         await api.delete(`/conversations/${username}`);
+        await this.fetchConversations();
 
         const { conversations } = this.state;
         delete conversations[username];
 
         this.setState({ 
-            active: initialState.active,
             conversations
-        }, () => {
-            sessionStorage.removeItem(activeChatKey);
-        });
+        }, () => this.selectConversation(this.getFirstConversation()));
     }
 
     render = () => {
