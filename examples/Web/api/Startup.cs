@@ -271,7 +271,6 @@
             Client.BrowseProgressUpdated += (e, args) =>
             {
                 browseTracker.AddOrUpdate(args.Username, args);
-                Console.WriteLine($"[BROWSE] {args.Username}: {args.BytesTransferred} of {args.Size} ({args.PercentComplete}%)");
             };
 
             // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
@@ -280,14 +279,12 @@
             Client.PrivateMessageReceived += (e, args) =>
             {
                 conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
-                Console.WriteLine($"[{args.Timestamp.ToLocalTime()}] {(args.Replayed ? "[REPLAY] " : "")}[PM] {args.Username}: {args.Message}");
             };
 
             Client.RoomMessageReceived += (e, args) =>
             {
                 var message = RoomMessage.FromEventArgs(args, DateTime.UtcNow);
                 roomTracker.AddOrUpdateMessage(args.RoomName, message);
-                Console.WriteLine($"[{message.Timestamp.ToLocalTime()}] [{message.RoomName}] [{message.Username}]: {message.Message}");
             };
 
             Client.RoomJoined += (e, args) =>
@@ -295,14 +292,12 @@
                 if (args.Username != Username) // this will fire when we join a room; track that through the join operation.
                 {
                     roomTracker.TryAddUser(args.RoomName, args.UserData);
-                    Console.WriteLine($"[ROOM JOIN]: {args.RoomName}");
                 }
             };
 
             Client.RoomLeft += (e, args) =>
             {
                 roomTracker.TryRemoveUser(args.RoomName, args.Username);
-                Console.WriteLine($"[ROOM LEAVE]: {args.RoomName}");
             };
 
             Client.Disconnected += async (e, args) =>
@@ -479,16 +474,6 @@
             public override IPAddress Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => IPAddress.Parse(reader.GetString());
 
             public override void Write(Utf8JsonWriter writer, IPAddress value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToString());
-
-            //public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-            //{
-            //    writer.WriteValue(value.ToString());
-            //}
-
-            //public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-            //{
-            //    return IPAddress.Parse((string)reader.Value);
-            //}
         }
 
         class UserEndPointCache : IUserEndPointCache
