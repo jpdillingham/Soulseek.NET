@@ -4,14 +4,15 @@ import api from '../api';
 import './Chat.css';
 import {
     Segment,
-    List, Input, Card, Icon, Ref
+    List, Input, Card, Icon, Ref, Dimmer, Loader
 } from 'semantic-ui-react';
 import ChatMenu from './ChatMenu';
 
 const initialState = {
     active: '',
     conversations: {},
-    interval: undefined
+    interval: undefined,
+    loading: false
 };
 
 class Chat extends Component {
@@ -19,12 +20,16 @@ class Chat extends Component {
     messageRef = undefined;
     listRef = createRef();
 
-    componentDidMount = () => {
-        this.fetchConversations();
+    componentDidMount = async () => {
+        await this.fetchConversations();
+
+        const names = [...Object.keys(this.state.conversations)];
+
         this.setState({ 
-            active: sessionStorage.getItem(activeChatKey) || '',
-            interval: window.setInterval(this.fetchConversations, 500)
-        });
+            active: sessionStorage.getItem(activeChatKey) || names.length > 0 ? names[0] : '',
+            interval: window.setInterval(this.fetchConversations, 5000),
+            loading: true
+        }, () => this.selectConversation(this.state.active));
     }
 
     componentWillUnmount = () => {
@@ -110,10 +115,22 @@ class Chat extends Component {
     }
 
     selectConversation = (username) => {
-        this.setState({ active: username }, () => {
-            sessionStorage.setItem(activeChatKey, username);
-            this.acknowledgeMessages(this.state.active);
-            this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+        this.setState({ 
+            active: username,
+            loading: true
+        }, async () => {
+            const { active } = this.state;
+
+            sessionStorage.setItem(activeChatKey, active);
+
+            const tasks = [this.fetchConversations(), this.acknowledgeMessages(active)];
+            await Promise.all(tasks);
+
+            try {
+                this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+            } catch {}
+
+            this.setState({ loading: false });
         });
     }
 
@@ -132,11 +149,11 @@ class Chat extends Component {
     }
 
     render = () => {
-        const { conversations, active } = this.state;
+        const { conversations, active, loading } = this.state;
         const messages = conversations[active] || [];
 
         return (
-            <div className='chat'>
+            <div className='chats'>
                 <Segment raised>
                     <ChatMenu
                         conversations={conversations}
@@ -158,39 +175,42 @@ class Chat extends Component {
                                 onClick={() => this.deleteConversation(active)}
                             />
                         </Card.Header>
-                        <Segment.Group>
-                            <Segment className='chat-history'>
-                                <Ref innerRef={this.listRef}>
-                                    <List>
-                                        {messages.map((message, index) => 
-                                            <List.Content 
-                                                key={index}
-                                                className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
-                                            >
-                                                <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
-                                                <span className='chat-message-name'>{message.username}: </span>
-                                                <span className='chat-message-message'>{message.message}</span>
-                                            </List.Content>
-                                        )}
-                                        <List.Content id='chat-history-scroll-anchor'/>
-                                    </List>
-                                </Ref>
-                            </Segment>
-                            <Segment className='chat-input'>
-                                <Input
-                                    fluid
-                                    transparent
-                                    input={<input id='chat-message-input' type="text" data-lpignore="true" autoComplete="off"></input>}
-                                    ref={input => this.messageRef = input && input.inputRef}
-                                    action={{ 
-                                        icon: <Icon name='send' color='green'/>, 
-                                        className: 'chat-message-button', onClick: this.sendMessage,
-                                        disabled: !this.validInput()
-                                    }}
-                                    onKeyUp={(e) => e.key === 'Enter' ? this.sendReply() : ''}
-                                />
-                            </Segment>
-                        </Segment.Group>
+                        <div className='chat'>
+                        {loading ? <Dimmer active inverted><Loader inverted/></Dimmer> :
+                            <Segment.Group>
+                                <Segment className='chat-history'>
+                                    <Ref innerRef={this.listRef}>
+                                        <List>
+                                            {messages.map((message, index) => 
+                                                <List.Content 
+                                                    key={index}
+                                                    className={`chat-message ${message.username !== active ? 'chat-message-self' : ''}`}
+                                                >
+                                                    <span className='chat-message-time'>{this.formatTimestamp(message.timestamp)}</span>
+                                                    <span className='chat-message-name'>{message.username}: </span>
+                                                    <span className='chat-message-message'>{message.message}</span>
+                                                </List.Content>
+                                            )}
+                                            <List.Content id='chat-history-scroll-anchor'/>
+                                        </List>
+                                    </Ref>
+                                </Segment>
+                                <Segment className='chat-input'>
+                                    <Input
+                                        fluid
+                                        transparent
+                                        input={<input id='chat-message-input' type="text" data-lpignore="true" autoComplete="off"></input>}
+                                        ref={input => this.messageRef = input && input.inputRef}
+                                        action={{ 
+                                            icon: <Icon name='send' color='green'/>, 
+                                            className: 'chat-message-button', onClick: this.sendMessage,
+                                            disabled: !this.validInput()
+                                        }}
+                                        onKeyUp={(e) => e.key === 'Enter' ? this.sendReply() : ''}
+                                    />
+                                </Segment>
+                            </Segment.Group>}
+                        </div>
                     </Card.Content>
                 </Card>}
             </div>
