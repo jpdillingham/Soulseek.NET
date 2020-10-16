@@ -37,29 +37,7 @@
   float: right !important;
 }
 
-@media only screen and (min-width: 768px) {
-  .room-history {
-      height: calc(100vh - 292px);
-  }
-
-  .room {
-    height: calc(100vh - 255px);
-  }
-
-  .room-users {
-    height: calc(100vh - 255px);
-  }
-}
-
 @media only screen and (max-width: 767px) {
-  .room-history {
-      height: calc(100vh - 128px);
-  }
-
-  .room {
-    height: calc(100vh - 255px);
-  }
-
   .room-users {
     display: none;
   }
@@ -68,6 +46,7 @@
 .room {
   display: flex;
   margin-top: 1rem;
+  height: calc(100vh - 255px);
 }
 
 .room-active-card {
@@ -88,6 +67,7 @@
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
   display: grid;
+  height: calc(100vh - 292px);
 }
 
 .room-history > .list {

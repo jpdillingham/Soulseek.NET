@@ -1,26 +1,7 @@
-@media only screen and (min-width: 768px) {
-  .chat-history {
-      height: calc(100vh - 292px);
-  }
-
-  .chat {
-    height: calc(100vh - 255px);
-  }
-}
-
-@media only screen and (max-width: 767px) {
-  .chat-history {
-      height: calc(100vh - 128px);
-  }
-
-  .chat {
-    height: calc(100vh - 255px);
-  }
-}
-
 .chat {
   display: flex;
   margin-top: 1rem;
+  height: calc(100vh - 255px);
 }
 
 .chat > .segments {
@@ -69,6 +50,7 @@
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
   display: grid;
+  height: calc(100vh - 292px);
 }
 
 .chat-history > .list {
