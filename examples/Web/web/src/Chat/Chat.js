@@ -86,12 +86,6 @@ class Chat extends Component {
         this.messageRef.current.value = '';
     }
 
-    initiateMessage = async (username, message) => {
-        await this.sendMessage(username, message);
-        await this.fetchConversations();
-        this.selectConversation(username);
-    }
-
     validInput = () => (this.state.active || '').length > 0 && ((this.messageRef && this.messageRef.current && this.messageRef.current.value) || '').length > 0;
 
     focusInput = () => {
@@ -122,24 +116,24 @@ class Chat extends Component {
             const tasks = [this.fetchConversations(), this.acknowledgeMessages(active)];
             await Promise.all(tasks);
 
-            try {
-                this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
-            } catch {}
-
-            this.setState({ loading: false });
+            this.setState({ loading: false }, () => {
+                try {
+                    this.listRef.current.lastChild.scrollIntoView();
+                } catch {}
+            });
         });
+    }
+    
+    initiateConversation = async (username, message) => {
+        await this.sendMessage(username, message);
+        await this.fetchConversations();
+        this.selectConversation(username);
     }
 
     deleteConversation = async (username) => {
         await api.delete(`/conversations/${username}`);
         await this.fetchConversations();
-
-        const { conversations } = this.state;
-        delete conversations[username];
-
-        this.setState({ 
-            conversations
-        }, () => this.selectConversation(this.getFirstConversation()));
+        this.selectConversation(this.getFirstConversation());
     }
 
     render = () => {
@@ -153,7 +147,7 @@ class Chat extends Component {
                         conversations={conversations}
                         active={active}
                         onConversationChange={(name) => this.selectConversation(name)}
-                        initiateMessage={this.initiateMessage}
+                        initiateConversation={this.initiateConversation}
                     />
                 </Segment>
                 {active && <Card className='chat-active-card' raised>

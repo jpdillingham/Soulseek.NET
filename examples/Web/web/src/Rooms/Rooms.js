@@ -26,16 +26,16 @@ class Rooms extends Component {
   messageRef = undefined;
   listRef = createRef();
 
-  componentDidMount = () => {
-    this.fetchJoinedRooms();
+  componentDidMount = async () => {
+    await this.fetchJoinedRooms();
+
     this.setState({ 
-      active: sessionStorage.getItem(activeRoomKey) || '',
       intervals: {
         rooms: window.setInterval(this.fetchJoinedRooms, 500),
         messages: window.setInterval(this.fetchActiveRoom, 1000)
       },
       loading: true
-    }, () => this.selectRoom(this.state.active));
+    }, () => this.selectRoom(sessionStorage.getItem(activeRoomKey) || this.getFirstRoom()));
   };
 
   componentWillUnmount = () => {
@@ -45,6 +45,10 @@ class Rooms extends Component {
     clearInterval(messages);
 
     this.setState({ intervals: initialState.intervals });
+  }
+
+  getFirstRoom = () => {
+    return this.state.rooms.length > 0 ? this.state.rooms[0] : '';
   }
 
   fetchJoinedRooms = async () => {
@@ -81,24 +85,25 @@ class Rooms extends Component {
       sessionStorage.setItem(activeRoomKey, active);
 
       await this.fetchActiveRoom();
-
+      this.setState({ loading: false }, () => {
+        
       try {
-        this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+        this.listRef.current.lastChild.scrollIntoView();
       } catch {}
-
-      this.setState({ loading: false });
+      });
     });
   };
 
   joinRoom = async (roomName) => {
     await api.post(`/rooms/joined/${roomName}`);
+    await this.fetchJoinedRooms();
+    this.selectRoom(roomName);
   };
 
   leaveRoom = async (roomName) => {
     await api.delete(`/rooms/joined/${roomName}`);
-    this.setState({ active: initialState.active }, () => {
-      sessionStorage.removeItem(activeRoomKey);
-    });
+    await this.fetchJoinedRooms();
+    this.selectRoom(this.getFirstRoom());
   };
 
   validInput = () => (this.state.active || '').length > 0 && ((this.messageRef && this.messageRef.current && this.messageRef.current.value) || '').length > 0;
