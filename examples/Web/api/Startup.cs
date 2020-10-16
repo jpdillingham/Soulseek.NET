@@ -274,7 +274,10 @@
             };
 
             // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
-            Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
+            Client.UserStatusChanged += (e, args) =>
+            {
+                // Console.WriteLine($"[USER] {args.Username}: {args.Status}");
+            };
 
             Client.PrivateMessageReceived += (e, args) =>
             {
