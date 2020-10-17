@@ -14,6 +14,7 @@ import {
 } from 'semantic-ui-react';
 
 import Directory from './Directory';
+import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 const initialState = { 
   username: '', 
@@ -165,7 +166,9 @@ class Browse extends Component {
             {browseError ? 
               <span className='browse-error'>Failed to browse {username}</span> :
               <div className='browse-container'>
-                {!emptyTree && <Card className='browse-tree-card' raised>
+                {emptyTree ? 
+                <PlaceholderSegment icon='folder open'/> : 
+                <Card className='browse-tree-card' raised>
                   <Card.Content>
                     <Card.Header>
                         <Icon name='circle' color='green'/>

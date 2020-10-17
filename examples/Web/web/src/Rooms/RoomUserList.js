@@ -13,7 +13,7 @@ const RoomUserList = ({ users }) => {
   }
 
   const getDetails = (user) => {
-    return JSON.stringify(user);
+    return user.countryCode || '?';
   }
 
   const sortedUsers = useMemo(() => {

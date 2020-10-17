@@ -2,10 +2,11 @@ import React, { Component, createRef } from 'react';
 import api from '../api';
 import { activeRoomKey } from '../config';
 
-import { Segment, Card, Icon, Input, Ref, List } from 'semantic-ui-react';
+import { Segment, Card, Icon, Input, Ref, List, Loader, Dimmer } from 'semantic-ui-react';
 
 import RoomMenu from './RoomMenu';
 import RoomUserList from './RoomUserList';
+import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 const initialState = {
   active: '',
@@ -16,9 +17,9 @@ const initialState = {
   },
   intervals: {
     rooms: undefined,
-    messages: undefined,
-    users: undefined
-  }
+    messages: undefined
+  },
+  loading: false
 }
 
 class Rooms extends Component {
@@ -26,17 +27,30 @@ class Rooms extends Component {
   messageRef = undefined;
   listRef = createRef();
 
-  componentDidMount = () => {
-    this.fetchJoinedRooms();
+  componentDidMount = async () => {
+    await this.fetchJoinedRooms();
+
     this.setState({ 
-      active: sessionStorage.getItem(activeRoomKey) || '',
       intervals: {
         rooms: window.setInterval(this.fetchJoinedRooms, 500),
-        messages: window.setInterval(this.fetchActiveRoom, 1000),
-        users: window.setInterval(() => this.fetchActiveRoom({ includeUsers: true }), 5000)
-      }
-    }, () => this.fetchActiveRoom({ includeUsers: true }));
+        messages: window.setInterval(this.fetchActiveRoom, 1000)
+      },
+      loading: true
+    }, () => this.selectRoom(sessionStorage.getItem(activeRoomKey) || this.getFirstRoom()));
   };
+
+  componentWillUnmount = () => {
+    const { rooms, messages } = this.state.intervals;
+
+    clearInterval(rooms);
+    clearInterval(messages);
+
+    this.setState({ intervals: initialState.intervals });
+  }
+
+  getFirstRoom = () => {
+    return this.state.rooms.length > 0 ? this.state.rooms[0] : '';
+  }
 
   fetchJoinedRooms = async () => {
     const rooms = (await api.get('/rooms/joined')).data;
@@ -45,18 +59,13 @@ class Rooms extends Component {
     });
   };
 
-  fetchActiveRoom = async ({ includeUsers = false } = {}) => {
-    const { active, room } = this.state;
+  fetchActiveRoom = async () => {
+    const { active } = this.state;
 
     if (active.length === 0) return;
 
     const messages = (await api.get(`/rooms/joined/${active}/messages`)).data;
-
-    let { users } = room;
-
-    if (includeUsers) {
-      users = (await api.get(`/rooms/joined/${active}/users`)).data;
-    }
+    const users = (await api.get(`/rooms/joined/${active}/users`)).data;
 
     this.setState({
       room: {
@@ -69,23 +78,33 @@ class Rooms extends Component {
   selectRoom = async (roomName) => {
     this.setState({ 
       active: roomName, 
-      room: initialState.room 
+      room: initialState.room,
+      loading: true
     }, async () => {
-      sessionStorage.setItem(activeRoomKey, roomName);
-      await this.fetchActiveRoom({ includeUsers: true });
-      this.listRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+      const { active } = this.state;
+
+      sessionStorage.setItem(activeRoomKey, active);
+
+      await this.fetchActiveRoom();
+      this.setState({ loading: false }, () => {
+        
+      try {
+        this.listRef.current.lastChild.scrollIntoView();
+      } catch {}
+      });
     });
   };
 
   joinRoom = async (roomName) => {
     await api.post(`/rooms/joined/${roomName}`);
+    await this.fetchJoinedRooms();
+    this.selectRoom(roomName);
   };
 
   leaveRoom = async (roomName) => {
     await api.delete(`/rooms/joined/${roomName}`);
-    this.setState({ active: initialState.active }, () => {
-      sessionStorage.removeItem(activeRoomKey);
-    });
+    await this.fetchJoinedRooms();
+    this.selectRoom(this.getFirstRoom());
   };
 
   validInput = () => (this.state.active || '').length > 0 && ((this.messageRef && this.messageRef.current && this.messageRef.current.value) || '').length > 0;
@@ -119,7 +138,7 @@ class Rooms extends Component {
   };
 
   render = () => {
-    const { rooms, active, room } = this.state;
+    const { rooms, active, room, loading } = this.state;
 
     return (
       <div className='rooms'>
@@ -131,7 +150,9 @@ class Rooms extends Component {
             joinRoom={this.joinRoom}
           />
         </Segment>
-        {active && <Card className='room-active-card' raised>
+        {!active ? 
+        <PlaceholderSegment icon='comments'/> :
+        <Card className='room-active-card' raised>
           <Card.Content onClick={() => this.focusInput()}>
             <Card.Header>
               <Icon name='circle' color='green'/>
@@ -145,6 +166,7 @@ class Rooms extends Component {
               />
             </Card.Header>
             <div className='room'>
+            {loading ? <Dimmer active inverted><Loader inverted/></Dimmer> : <>
               <Segment.Group>
                 <Segment className='room-history'>
                   <Ref innerRef={this.listRef}>
@@ -167,7 +189,7 @@ class Rooms extends Component {
                   <Input
                     fluid
                     transparent
-                    input={<input id='room-message-input' type="text" data-lpignore="true"></input>}
+                    input={<input id='room-message-input' type="text" data-lpignore="true" autoComplete="off"></input>}
                     ref={input => this.messageRef = input && input.inputRef}
                     action={{
                         icon: <Icon name='send' color='green'/>,
@@ -181,6 +203,7 @@ class Rooms extends Component {
               <Segment className='room-users'>
                 <RoomUserList users={room.users}/>
               </Segment>
+              </>}
             </div>
           </Card.Content>
         </Card>}

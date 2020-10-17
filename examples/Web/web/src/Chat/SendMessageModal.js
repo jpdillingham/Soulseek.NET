@@ -7,7 +7,7 @@ import {
 
 const usernameRef = React.createRef();
 
-const SendMessageModal = ({ initiateMessage, ...rest }) => {
+const SendMessageModal = ({ initiateConversation, ...rest }) => {
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState('');
   const [message, setMessage] = React.useState('');
@@ -24,7 +24,7 @@ const SendMessageModal = ({ initiateMessage, ...rest }) => {
       return;
     }
 
-    await initiateMessage(username, message);
+    await initiateConversation(username, message);
     setOpen(false);
   }
 

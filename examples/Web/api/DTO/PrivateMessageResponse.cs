@@ -48,7 +48,7 @@
                 Timestamp = privateMessage.Timestamp,
                 Username = privateMessage.Username,
                 Message = privateMessage.Message,
-                Acknowledged = false,
+                Acknowledged = privateMessage.Acknowledged,
                 Replayed = privateMessage.Replayed,
                 Self = self ? self: (bool?)null
             };

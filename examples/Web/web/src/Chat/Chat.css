@@ -1,16 +1,15 @@
-@media only screen and (min-width: 768px) {
-  .chat-history {
-      height: calc(100vh - 292px);
-  }
-}
-
-@media only screen and (max-width: 767px) {
-  .chat-history {
-      height: calc(100vh - 128px);
-  }
-}
-
 .chat {
+  display: flex;
+  margin-top: 1rem;
+  height: calc(100vh - 255px);
+}
+
+.chat > .segments {
+  width: 100%;
+  box-shadow: unset !important;
+}
+
+.chats {
   padding-left: 15px;
   padding-right: 15px;
   max-width: 1200px !important;
@@ -19,7 +18,7 @@
   margin-bottom: 17px;
 }
 
-.chat > .segment:first-child {
+.chats > .segment:first-child {
   margin-top: 15px !important;
   height: 78px;
 }
@@ -46,19 +45,21 @@
 } 
 
 .chat-history {
-  padding: .5em !important;
-  margin-bottom: 17px;
+  padding: .5em .5em 0 .5em !important;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scroll-snap-type: y proximity;
+  display: grid;
+  height: calc(100vh - 292px);
+}
+
+.chat-history > .list {
+  align-self: end;
+  margin-bottom: .5em !important;
 }
 
 .chat-active-card {
   width: 100% !important;
-}
-
-.chat-active-card > .content > .segments {
-  box-shadow: unset !important;
 }
 
 .chat-message-name {
