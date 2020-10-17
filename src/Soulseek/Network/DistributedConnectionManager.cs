@@ -182,7 +182,7 @@ namespace Soulseek.Network
                     await connection.ConnectAsync().ConfigureAwait(false);
 
                     var request = new PierceFirewall(r.Token);
-                    await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+                    await connection.WriteAsync(request).ConfigureAwait(false);
 
                     await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
                 }
@@ -524,7 +524,7 @@ namespace Soulseek.Network
 
                 if (isDirect)
                 {
-                    var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray();
+                    var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken());
                     await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                 }
                 else
@@ -585,7 +585,7 @@ namespace Soulseek.Network
                 PendingSolicitationDictionary.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Distributed).ToByteArray(), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Distributed), cancellationToken)
                     .ConfigureAwait(false);
 
                 using var incomingConnection = await SoulseekClient.Waiter
@@ -691,7 +691,7 @@ namespace Soulseek.Network
 
                 if (HasParent)
                 {
-                    await ParentConnection.WriteAsync(new DistributedChildDepth(ChildConnectionDictionary.Count).ToByteArray()).ConfigureAwait(false);
+                    await ParentConnection.WriteAsync(new DistributedChildDepth(ChildConnectionDictionary.Count)).ConfigureAwait(false);
                 }
 
                 var sb = new StringBuilder("Updated distributed status; ");

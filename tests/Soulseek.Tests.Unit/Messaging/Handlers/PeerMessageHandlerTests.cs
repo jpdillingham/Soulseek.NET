@@ -412,7 +412,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var defaultResponse = await new SoulseekClientOptions()
                 .UserInfoResponseResolver(null, null).ConfigureAwait(false);
-            var defaultMessage = Encoding.UTF8.GetString(defaultResponse.ToByteArray());
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -420,7 +419,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, msg);
 
-            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => Encoding.UTF8.GetString(o.ToByteArray()) == defaultMessage), null), Times.Once);
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(defaultResponse.ToByteArray())), null), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -437,7 +436,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(mocks.PeerConnection.Object, msg);
 
             mocks.PeerConnection.Verify(
-                m => m.WriteAsync(It.Is<IOutgoingMessage>(o => Encoding.UTF8.GetString(o.ToByteArray()) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+                m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(response.ToByteArray())), null), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]
@@ -485,7 +484,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(mocks.PeerConnection.Object, msg);
 
             mocks.PeerConnection.Verify(
-                m => m.WriteAsync(It.Is<IOutgoingMessage>(o => Encoding.UTF8.GetString(o.ToByteArray()) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+                m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(response.ToByteArray())), null), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]
