@@ -114,7 +114,9 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Failed to resolve user info response: {ex.Message}", ex);
                         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
                         await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
+#pragma warning restore CS0618 // Type or member is obsolete
                         break;
 
                     case MessageCode.Peer.BrowseRequest:
@@ -132,7 +134,9 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Failed to resolve browse response: {ex.Message}", ex);
                         }
 
+#pragma warning disable CS0618 // Type or member is obsolete
                         await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
+#pragma warning restore CS0618 // Type or member is obsolete
                         break;
 
                     case MessageCode.Peer.FolderContentsRequest:
@@ -156,7 +160,7 @@ namespace Soulseek.Messaging.Handlers
                         {
                             var folderContentsResponseMessage = new FolderContentsResponse(folderContentsRequest.Token, outgoingFolderContents);
 
-                            await connection.WriteAsync(folderContentsResponseMessage.ToByteArray()).ConfigureAwait(false);
+                            await connection.WriteAsync(folderContentsResponseMessage).ConfigureAwait(false);
                         }
 
                         break;
@@ -184,7 +188,7 @@ namespace Soulseek.Messaging.Handlers
 
                         if (queueRejected)
                         {
-                            await connection.WriteAsync(new EnqueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToByteArray()).ConfigureAwait(false);
+                            await connection.WriteAsync(new EnqueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
                         }
                         else
                         {
@@ -205,7 +209,7 @@ namespace Soulseek.Messaging.Handlers
                             else
                             {
                                 // reject the transfer with an empty reason.  it was probably cancelled, but we can't be sure.
-                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, string.Empty).ToByteArray()).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, string.Empty)).ConfigureAwait(false);
                             }
                         }
                         else
@@ -214,12 +218,12 @@ namespace Soulseek.Messaging.Handlers
 
                             if (transferRejected)
                             {
-                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage).ToByteArray()).ConfigureAwait(false);
-                                await connection.WriteAsync(new EnqueueFailedResponse(transferRequest.Filename, transferRejectionMessage).ToByteArray()).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage)).ConfigureAwait(false);
+                                await connection.WriteAsync(new EnqueueFailedResponse(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
                             }
                             else
                             {
-                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued").ToByteArray()).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued")).ConfigureAwait(false);
                                 await TrySendPlaceInQueueAsync(connection, transferRequest.Filename).ConfigureAwait(false);
                             }
                         }
@@ -351,7 +355,7 @@ namespace Soulseek.Messaging.Handlers
 
             if (placeInQueue.HasValue)
             {
-                await connection.WriteAsync(new PlaceInQueueResponse(filename, placeInQueue.Value).ToByteArray()).ConfigureAwait(false);
+                await connection.WriteAsync(new PlaceInQueueResponse(filename, placeInQueue.Value)).ConfigureAwait(false);
             }
         }
     }

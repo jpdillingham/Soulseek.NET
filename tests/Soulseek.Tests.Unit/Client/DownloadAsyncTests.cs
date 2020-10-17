@@ -473,7 +473,7 @@ namespace Soulseek.Tests.Unit.Client
                 await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream));
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), CancellationToken.None), Times.Once);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -491,7 +491,7 @@ namespace Soulseek.Tests.Unit.Client
                 await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, stream, cancellationToken: cancellationToken));
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -507,7 +507,7 @@ namespace Soulseek.Tests.Unit.Client
                 await Record.ExceptionAsync(() => s.DownloadAsync(username, filename));
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), CancellationToken.None), Times.Once);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -524,7 +524,7 @@ namespace Soulseek.Tests.Unit.Client
                 await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, cancellationToken: cancellationToken));
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -624,7 +624,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), CancellationToken.None))
                 .Throws(new ConnectionWriteException());
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);

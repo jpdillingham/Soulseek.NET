@@ -140,7 +140,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             var expectedBytes = new SetListenPortCommand(port).ToByteArray();
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "LoginAsync")]
@@ -165,7 +165,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(user, s.Username);
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.AtLeastOnce);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.AtLeastOnce);
         }
 
         [Trait("Category", "LoginAsync")]
@@ -188,7 +188,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             var expectedBytes = new HaveNoParentsCommand(true).ToByteArray();
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "LoginAsync")]
@@ -211,7 +211,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             var expectedBytes = new HaveNoParentsCommand(true).ToByteArray();
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()), Times.Never);
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()), Times.Never);
         }
 
         [Trait("Category", "LoginAsync")]
@@ -286,7 +286,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Exception>(new ConnectionWriteException()));
 
             using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))

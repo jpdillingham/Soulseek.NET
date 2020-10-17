@@ -129,7 +129,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("0.0.0.0"), 0)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
             using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
@@ -152,7 +152,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
             using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
@@ -235,7 +235,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
             var cache = new Mock<IUserEndPointCache>();

@@ -16,6 +16,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading;
     using System.Threading.Tasks;
     using Moq;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
@@ -86,7 +87,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task AcknowledgePrivilegeNotificationAsync_Throws_PrivateMessageException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -106,7 +107,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task AcknowledgePrivilegeNotificationAsync_Throws_TimeoutException_When_Write_Times_Out()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -125,7 +126,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task AcknowledgePrivilegeNotificationAsync_Throws_OperationCanceledException_When_Write_Is_Canceled()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))

@@ -241,8 +241,8 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
             }
 
-            c1.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
-            c2.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
+            c1.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(bytes)), It.IsAny<CancellationToken?>()));
+            c2.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(bytes)), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "BroadcastMessageAsync")]
@@ -253,7 +253,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var c1 = new Mock<IMessageConnection>();
             var c2 = new Mock<IMessageConnection>();
-            c2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            c2.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Throws(new Exception("foo"));
 
             var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
@@ -265,9 +265,9 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
             }
 
-            c1.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
+            c1.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(bytes)), It.IsAny<CancellationToken?>()));
 
-            c2.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
+            c2.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(bytes)), It.IsAny<CancellationToken?>()));
             c2.Verify(m => m.Dispose(), Times.AtLeastOnce);
         }
 
@@ -400,7 +400,7 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.AddChildConnectionAsync(ctpr);
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -599,7 +599,7 @@ namespace Soulseek.Tests.Unit.Network
             expected.AddRange(new DistributedBranchLevel(manager.BranchLevel + 1).ToByteArray());
             expected.AddRange(new DistributedBranchRoot(manager.BranchRoot).ToByteArray());
 
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(expected.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -710,7 +710,7 @@ namespace Soulseek.Tests.Unit.Network
             var (manager, mocks) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Throws(expectedEx);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
@@ -741,7 +741,7 @@ namespace Soulseek.Tests.Unit.Network
             var (manager, mocks) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Throws(expectedEx);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
@@ -780,7 +780,7 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -909,7 +909,7 @@ namespace Soulseek.Tests.Unit.Network
             var (manager, mocks) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Throws(expectedEx);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
@@ -951,7 +951,7 @@ namespace Soulseek.Tests.Unit.Network
             expected.AddRange(new DistributedBranchLevel(manager.BranchLevel + 1).ToByteArray());
             expected.AddRange(new DistributedBranchRoot(manager.BranchRoot).ToByteArray());
 
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(expected.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -1025,7 +1025,7 @@ namespace Soulseek.Tests.Unit.Network
             var (manager, mocks) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Throws(new Exception("foo"));
 
             mocks.Client.Setup(m => m.State)
@@ -1065,7 +1065,7 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()), Times.Never);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -1089,7 +1089,7 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()), Times.Never);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -1115,7 +1115,7 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -1139,7 +1139,7 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -1173,7 +1173,7 @@ namespace Soulseek.Tests.Unit.Network
             bytes.AddRange(new DistributedBranchLevel(manager.BranchLevel + 1).ToByteArray());
             bytes.AddRange(new DistributedBranchRoot(manager.BranchRoot).ToByteArray());
 
-            child.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
+            child.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(bytes.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -1196,7 +1196,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             var expectedBytes = new DistributedChildDepth(0).ToByteArray();
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -1232,7 +1232,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException(expectedEx));
 
             var conn = GetMessageConnectionMock("foo", null);
@@ -1259,7 +1259,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException(expectedEx))
                 .Callback(() => mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Disconnected));
 
@@ -1729,7 +1729,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var peerInit = new PeerInit(localUser, Constants.ConnectionType.Distributed, token).ToByteArray();
 
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken>()));
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(peerInit)), It.IsAny<CancellationToken>()));
         }
 
         [Trait("Category", "GetParentCandidateConnectionAsync")]
@@ -2238,7 +2238,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Warning("Failed to connect to any of the available parent candidates", It.IsAny<Exception>()), Times.Once);
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()));
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "AddParentConnectionAsync")]

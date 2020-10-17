@@ -224,7 +224,7 @@ namespace Soulseek.Tests.Unit.Client
                 await s.SendPrivateMessageAsync("foo", "bar", cancellationToken);
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
@@ -232,7 +232,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SendPrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -252,7 +252,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SendPrivateMessageAsync_Throws_TimeoutException_On_Timeout()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -271,7 +271,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SendPrivateMessageAsync_Throws_OperationCanceledException_On_Cancellation()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))

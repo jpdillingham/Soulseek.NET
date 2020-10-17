@@ -12,8 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
-
     /// <summary>
     ///     Generic event arguments for transfer events.
     /// </summary>

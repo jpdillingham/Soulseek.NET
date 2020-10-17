@@ -17,6 +17,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
 
@@ -69,7 +70,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(password));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
@@ -91,7 +92,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(password));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
@@ -101,7 +102,7 @@ namespace Soulseek.Tests.Unit.Client
                 await s.ChangePasswordAsync(password, cancellationToken);
             }
 
-            serverConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            serverConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "ChangePasswordAsync")]
@@ -113,7 +114,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(password + "!"));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
@@ -137,7 +138,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(password));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new ConnectionException()));
 
             using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
@@ -161,7 +162,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(password));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
@@ -184,7 +185,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(password));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))

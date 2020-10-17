@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit.Client
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
@@ -126,7 +127,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(expectedResponse, response);
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "JoinRoomAsync")]
@@ -134,7 +135,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task JoinRoomAsync_Throws_RoomJoinException_When_Write_Throws(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -154,7 +155,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task JoinRoomAsync_Throws_TimeoutException_On_Timeout(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -173,7 +174,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task JoinRoomAsync_Throws_OperationCanceledException_On_Cancellation(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -280,7 +281,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Null(ex);
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "LeaveRoomAsync")]
@@ -288,7 +289,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task LeaveRoomAsync_Throws_RoomLeaveException_When_Write_Throws(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -308,7 +309,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task LeaveRoomAsync_Throws_TimeoutException_On_Timeout(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -327,7 +328,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task LeaveRoomAsync_Throws_OperationCanceledException_On_Cancellation(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))

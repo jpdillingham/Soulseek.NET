@@ -14,7 +14,7 @@ namespace Soulseek.Messaging.Messages
 {
     using System;
     using System.Net;
-    
+
     /// <summary>
     ///     The response to a login request.
     /// </summary>

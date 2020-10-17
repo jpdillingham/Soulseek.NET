@@ -17,6 +17,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
@@ -107,7 +108,7 @@ namespace Soulseek.Tests.Unit.Client
                 await s.SendRoomMessageAsync(roomName, message, cancellationToken);
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
 
         [Trait("Category", "SendRoomMessageAsync")]
@@ -115,7 +116,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SendRoomMessageAsync_Throws_RoomMessageException_When_Write_Throws(string roomName, string message)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -135,7 +136,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SendRoomMessageAsync_Throws_TimeoutException_On_Timeout(string roomName, string message)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
@@ -154,7 +155,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SendRoomMessageAsync_Throws_OperationCanceledException_On_Cancellation(string roomName, string message)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))

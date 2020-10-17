@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    
+
     /// <summary>
     ///     Factory for search response messages. This class helps keep message abstractions from leaking into the public API via
     ///     <see cref="SearchResponse"/>, which is a public class.

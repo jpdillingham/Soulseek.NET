@@ -18,6 +18,7 @@ namespace Soulseek.Tests.Unit.Client
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
 
@@ -85,7 +86,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GrantUserPrivilegesAsync_Throws_TimeoutException_On_Timeout(string username, int days)
         {
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient(serverConnection: serverConn.Object))
@@ -104,7 +105,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GrantUserPrivilegesAsync_Throws_OperationCanceledException_On_Cancel(string username, int days)
         {
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient(serverConnection: serverConn.Object))
@@ -123,7 +124,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GrantUserPrivilegesAsync_Throws_PrivilegeGrantException_On_Throw(string username, int days)
         {
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (var s = new SoulseekClient(serverConnection: serverConn.Object))
@@ -142,7 +143,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GrantUserPrivilegesAsync_Does_Not_Throw_On_Wait_Completion(string username, int days)
         {
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();
@@ -166,7 +167,7 @@ namespace Soulseek.Tests.Unit.Client
             var cancellationToken = new CancellationToken();
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken))
                 .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();
@@ -180,7 +181,7 @@ namespace Soulseek.Tests.Unit.Client
                 await s.GrantUserPrivilegesAsync(username, days, cancellationToken);
             }
 
-            serverConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.Once);
+            serverConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
         }
     }
 }

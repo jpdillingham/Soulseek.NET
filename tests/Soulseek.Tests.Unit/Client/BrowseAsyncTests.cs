@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -124,7 +124,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -142,7 +142,7 @@ namespace Soulseek.Tests.Unit.Client
                 await s.BrowseAsync(username, cancellationToken: cancellationToken);
             }
 
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), cancellationToken), Times.AtLeastOnce);
+            conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.AtLeastOnce);
         }
 
         [Trait("Category", "BrowseAsync")]
@@ -160,7 +160,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -202,7 +202,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -241,7 +241,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -275,7 +275,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -306,7 +306,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.Is<byte[]>(n => new MessageReader<MessageCode.Peer>(n).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => new MessageReader<MessageCode.Peer>(msg.ToByteArray()).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -335,7 +335,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.Is<byte[]>(n => new MessageReader<MessageCode.Peer>(n).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => new MessageReader<MessageCode.Peer>(msg.ToByteArray()).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -392,7 +392,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Raises(m => m.Disconnected += null, conn.Object, new ConnectionDisconnectedEventArgs(string.Empty));
 
@@ -432,7 +432,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
