@@ -158,9 +158,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 c.SetProperty("State", ConnectionState.Disconnected);
 
-#pragma warning disable CS0618 // Type or member is obsolete
                 var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
-#pragma warning restore CS0618 // Type or member is obsolete
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -232,9 +230,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 c.SetProperty("State", ConnectionState.Disconnecting);
 
-#pragma warning disable CS0618 // Type or member is obsolete
                 var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
-#pragma warning restore CS0618 // Type or member is obsolete
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -278,9 +274,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
                 {
-#pragma warning disable CS0618 // Type or member is obsolete
                     await c.WriteAsync(msg);
-#pragma warning restore CS0618 // Type or member is obsolete
 
                     streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
@@ -395,9 +389,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 using (var c = new MessageConnection(endpoint, tcpClient: tcpMock.Object))
                 {
-#pragma warning disable CS0618 // Type or member is obsolete
                     var ex = await Record.ExceptionAsync(() => c.WriteAsync(msg));
-#pragma warning restore CS0618 // Type or member is obsolete
 
                     Assert.NotNull(ex);
                     Assert.IsType<ConnectionWriteException>(ex);

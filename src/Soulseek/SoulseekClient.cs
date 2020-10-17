@@ -2502,9 +2502,7 @@ namespace Soulseek
                 Searches.TryAdd(search.Token, search);
                 UpdateState(SearchStates.Requested);
 
-#pragma warning disable CS0618 // Type or member is obsolete
                 await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
-#pragma warning restore CS0618 // Type or member is obsolete
                 UpdateState(SearchStates.InProgress);
 
                 await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);

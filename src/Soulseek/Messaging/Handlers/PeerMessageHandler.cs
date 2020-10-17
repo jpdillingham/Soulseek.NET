@@ -114,9 +114,7 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Failed to resolve user info response: {ex.Message}", ex);
                         }
 
-#pragma warning disable CS0618 // Type or member is obsolete
                         await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
-#pragma warning restore CS0618 // Type or member is obsolete
                         break;
 
                     case MessageCode.Peer.BrowseRequest:
@@ -134,9 +132,7 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Failed to resolve browse response: {ex.Message}", ex);
                         }
 
-#pragma warning disable CS0618 // Type or member is obsolete
                         await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
-#pragma warning restore CS0618 // Type or member is obsolete
                         break;
 
                     case MessageCode.Peer.FolderContentsRequest:
