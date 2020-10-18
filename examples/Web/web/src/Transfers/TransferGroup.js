@@ -64,9 +64,24 @@ class TransferGroup extends Component {
                     .then(() => this.removeFileSelection(file))));
     }
 
+    retry = async (file) => {
+        const { username, filename } = file;
+        
+        try {
+            await api.post(`/transfers/downloads/${username}/${encodeURIComponent(filename)}`);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     fetchPlaceInQueue = async (file) => {
         const { username, filename } = file;
-        await api.get(`/transfers/downloads/${username}/${encodeURIComponent(filename)}/position`);
+
+        try {
+            await api.get(`/transfers/downloads/${username}/${encodeURIComponent(filename)}/position`);
+        } catch (error) {
+            console.log(error);
+        }
     }
     
     render = () => {
@@ -93,6 +108,7 @@ class TransferGroup extends Component {
                             onSelectionChange={this.onSelectionChange}
                             direction={this.props.direction}
                             onPlaceInQueueRequested={this.fetchPlaceInQueue}
+                            onRetryRequested={this.retry}
                         />
                     )}
                 </Card.Content>
