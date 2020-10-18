@@ -82,22 +82,6 @@ namespace Soulseek.Network
         void StartReadingContinuously();
 
         /// <summary>
-        ///     Asynchronously writes the specified bytes to the connection.
-        /// </summary>
-        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
-        /// <param name="bytes">The bytes to write.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
-        ///     is not connected.
-        /// </exception>
-        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        [Obsolete("Use WriteAsync(IOutgoingMessage).")]
-        new Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null);
-
-        /// <summary>
         ///     Asynchronously writes the specified <paramref name="message"/> to the connection.
         /// </summary>
         /// <param name="message">The message to write.</param>
