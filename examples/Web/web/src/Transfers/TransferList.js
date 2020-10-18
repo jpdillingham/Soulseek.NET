@@ -33,7 +33,7 @@ const getColor = (state) => {
 
 class TransferList extends Component {
     render = () => {
-        const { directoryName, onSelectionChange, files } = this.props;
+        const { directoryName, onSelectionChange, files, onPlaceInQueueRequested } = this.props;
 
         return (
             <div>
@@ -72,11 +72,21 @@ class TransferList extends Component {
                                     </Table.Cell>
                                     <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
                                     <Table.Cell className='transferlist-progress'>
-                                        {f.state === 'InProgress' ? <Progress 
+                                        {f.state === 'InProgress' ? 
+                                        <Progress 
                                             style={{ margin: 0 }}
                                             percent={Math.round(f.percentComplete)} 
                                             progress color={getColor(f.state).color}
-                                        /> : <Button fluid size='mini' style={{ margin: 0, padding: 7 }} {...getColor(f.state)}>{f.state}</Button>}
+                                        /> : 
+                                        <Button 
+                                            fluid 
+                                            size='mini' 
+                                            style={{ margin: 0, padding: 7 }} 
+                                            {...getColor(f.state)} 
+                                            onClick={() => onPlaceInQueueRequested(f)}
+                                        >
+                                            {f.state}{f.placeInQueue ? ` (#${f.placeInQueue})` : ''}
+                                        </Button>}
                                     </Table.Cell>
                                     <Table.Cell className='transferlist-size'>
                                         {f.bytesTransferred > 0 ? formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size) : ''}
