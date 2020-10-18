@@ -63,6 +63,11 @@ class TransferGroup extends Component {
                 api.delete(`/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}?remove=true`)
                     .then(() => this.removeFileSelection(file))));
     }
+
+    fetchPlaceInQueue = async (file) => {
+        const { username, filename } = file;
+        await api.get(`/transfers/downloads/${username}/${encodeURIComponent(filename)}/position`);
+    }
     
     render = () => {
         const { user, direction } = this.props;
@@ -87,6 +92,7 @@ class TransferGroup extends Component {
                             files={(dir.files || []).map(f => ({ ...f, selected: this.isSelected(dir.directory, f) }))}
                             onSelectionChange={this.onSelectionChange}
                             direction={this.props.direction}
+                            onPlaceInQueueRequested={this.fetchPlaceInQueue}
                         />
                     )}
                 </Card.Content>
