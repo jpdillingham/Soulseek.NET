@@ -194,12 +194,29 @@
         /// <param name="filename"></param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">The specified download was not found.</response>
         [HttpGet("downloads/{username}/{filename}/position")]
         [Authorize]
         [ProducesResponseType(typeof(int), 200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
-            return Ok(await Client.GetDownloadPlaceInQueueAsync(username, Uri.UnescapeDataString(filename)));
+            if (Tracker.Transfers.TryGetValue(TransferDirection.Download, out var transfers)) 
+            {
+                if (transfers.TryGetValue(username, out var userTransfers))
+                {
+                    if (userTransfers.TryGetValue(filename, out var record))
+                    {
+                        var placeInQueue = await Client.GetDownloadPlaceInQueueAsync(username, Uri.UnescapeDataString(filename));
+
+                        record.Transfer.PlaceInQueue = placeInQueue;
+
+                        return Ok(placeInQueue);
+                    }
+                }
+            }
+
+            return NotFound();
         }
 
         /// <summary>
