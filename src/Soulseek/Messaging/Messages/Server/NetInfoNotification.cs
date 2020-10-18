@@ -16,7 +16,7 @@ namespace Soulseek.Messaging.Messages
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
-    
+
     /// <summary>
     ///     An incoming list of available distributed parent candidates.
     /// </summary>

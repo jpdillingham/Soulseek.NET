@@ -602,7 +602,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Task>(new OperationCanceledException()));
 
             var transferConn = new Mock<IConnection>();
@@ -1896,7 +1896,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             var expectedBytes = new UploadFailed(filename).ToByteArray();
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]

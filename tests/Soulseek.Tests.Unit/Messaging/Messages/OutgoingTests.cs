@@ -21,6 +21,34 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     public class OutgoingTests
     {
         [Trait("Category", "Instantiation")]
+        [Trait("Request", "PrivateMessageCommand")]
+        [Theory(DisplayName = "PrivateMessageCommand instantiates properly"), AutoData]
+        public void PrivateMessageCommand_Instantiates_Properly(string message, string username)
+        {
+            var msg = new PrivateMessageCommand(username, message);
+
+            Assert.Equal(message, msg.Message);
+            Assert.Equal(username, msg.Username);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PrivateMessageCommand")]
+        [Theory(DisplayName = "PrivateMessageCommand constructs the correct message"), AutoData]
+        public void PrivateMessageCommand_Constructs_The_Correct_Message(string message, string username)
+        {
+            var msg = new PrivateMessageCommand(username, message).ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateMessage, code);
+
+            Assert.Equal(4 + 4 + 4 + username.Length + 4 + message.Length, msg.Length);
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(message, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
         [Trait("Request", "AcknowledgePrivateMessage")]
         [Fact(DisplayName = "AcknowledgePrivateMessage instantiates properly")]
         public void AcknowledgePrivateMessage_Instantiates_Properly()

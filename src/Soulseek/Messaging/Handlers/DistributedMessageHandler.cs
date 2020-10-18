@@ -76,7 +76,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.Ping:
                         Diagnostic.Debug($"PING?");
                         var pingResponse = new DistributedPingResponse(SoulseekClient.GetNextToken());
-                        await connection.WriteAsync(pingResponse.ToByteArray()).ConfigureAwait(false);
+                        await connection.WriteAsync(pingResponse).ConfigureAwait(false);
                         Diagnostic.Debug($"PONG!");
                         break;
 

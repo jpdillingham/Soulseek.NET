@@ -927,7 +927,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.CheckPrivileges);
                 var wait = Waiter.Wait<int>(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new CheckPrivilegesRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new CheckPrivilegesRequest(), cancellationToken).ConfigureAwait(false);
 
                 var result = await wait.ConfigureAwait(false);
                 return result;
@@ -957,7 +957,7 @@ namespace Soulseek
             try
             {
                 var roomListWait = Waiter.Wait<IReadOnlyCollection<RoomInfo>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new RoomListRequest().ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new RoomListRequest(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
 
                 var response = await roomListWait.ConfigureAwait(false);
 
@@ -1254,7 +1254,7 @@ namespace Soulseek
             try
             {
                 var wait = Waiter.Wait(new WaitKey(MessageCode.Server.Ping), null, cancellationToken);
-                var ping = new ServerPing().ToByteArray();
+                var ping = new ServerPing();
 
                 var sw = new Stopwatch();
                 sw.Start();
@@ -1510,7 +1510,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetSharedCountsCommand(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetSharedCountsCommand(directories, files), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1537,7 +1537,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetOnlineStatusCommand(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetOnlineStatusCommand(status), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1736,7 +1736,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new AcknowledgePrivilegeNotificationCommand(privilegeNotificationId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new AcknowledgePrivilegeNotificationCommand(privilegeNotificationId), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
@@ -1749,7 +1749,7 @@ namespace Soulseek
             try
             {
                 var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.Server.AddUser, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new AddUserRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new AddUserRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var response = await addUserWait.ConfigureAwait(false);
 
@@ -1804,7 +1804,7 @@ namespace Soulseek
                     // fetch the user's address and a connection and write the browse request to the remote user
                     var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                     var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
-                    await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await connection.WriteAsync(new BrowseRequest(), cancellationToken).ConfigureAwait(false);
 
                     // wait for the receipt of the response message. this may come back on a connection different from the one
                     // which made the request.
@@ -1857,7 +1857,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.NewPassword);
                 var wait = Waiter.Wait<string>(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new NewPassword(password).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new NewPassword(password), cancellationToken).ConfigureAwait(false);
 
                 response = await wait.ConfigureAwait(false);
             }
@@ -1988,7 +1988,7 @@ namespace Soulseek
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(transferStartRequestedWaitKey, cancellationToken);
 
                 // request the file
-                await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, filename), cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
@@ -2043,7 +2043,7 @@ namespace Soulseek
                         .AwaitTransferConnectionAsync(download.Username, download.Filename, download.RemoteToken.Value, cancellationToken);
 
                     // initiate the connection
-                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0), cancellationToken).ConfigureAwait(false);
 
                     try
                     {
@@ -2177,7 +2177,7 @@ namespace Soulseek
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
 
                 var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
-                await connection.WriteAsync(new FolderContentsRequest(token, directoryName).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteAsync(new FolderContentsRequest(token, directoryName), cancellationToken).ConfigureAwait(false);
 
                 var response = await contentsWait.ConfigureAwait(false);
 
@@ -2198,7 +2198,7 @@ namespace Soulseek
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
-                await connection.WriteAsync(new PlaceInQueueRequest(filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteAsync(new PlaceInQueueRequest(filename), cancellationToken).ConfigureAwait(false);
 
                 var response = await responseWait.ConfigureAwait(false);
 
@@ -2280,7 +2280,7 @@ namespace Soulseek
                     var waitKey = new WaitKey(MessageCode.Server.GetPeerAddress, username);
                     var addressWait = Waiter.Wait<UserAddressResponse>(waitKey, cancellationToken: cancellationToken);
 
-                    await ServerConnection.WriteAsync(new UserAddressRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new UserAddressRequest(username), cancellationToken).ConfigureAwait(false);
 
                     var response = await addressWait.ConfigureAwait(false);
 
@@ -2308,7 +2308,7 @@ namespace Soulseek
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
 
                 var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
-                await connection.WriteAsync(new UserInfoRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteAsync(new UserInfoRequest(), cancellationToken).ConfigureAwait(false);
 
                 var response = await infoWait.ConfigureAwait(false);
 
@@ -2327,7 +2327,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.UserPrivileges, username);
                 var wait = Waiter.Wait<bool>(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new UserPrivilegesRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new UserPrivilegesRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var result = await wait.ConfigureAwait(false);
                 return result;
@@ -2343,7 +2343,7 @@ namespace Soulseek
             try
             {
                 var getStatusWait = Waiter.Wait<UserStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new UserStatusRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new UserStatusRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var response = await getStatusWait.ConfigureAwait(false);
 
@@ -2359,7 +2359,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new GivePrivilegesCommand(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new GivePrivilegesCommand(username, days), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2372,7 +2372,7 @@ namespace Soulseek
             try
             {
                 var joinRoomWait = Waiter.Wait<RoomData>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new JoinRoomRequest(roomName), cancellationToken).ConfigureAwait(false);
 
                 var response = await joinRoomWait.ConfigureAwait(false);
                 return response;
@@ -2388,7 +2388,7 @@ namespace Soulseek
             try
             {
                 var leaveRoomWait = Waiter.Wait(new WaitKey(MessageCode.Server.LeaveRoom, roomName), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new LeaveRoomRequest(roomName).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new LeaveRoomRequest(roomName), cancellationToken).ConfigureAwait(false);
 
                 await leaveRoomWait.ConfigureAwait(false);
             }
@@ -2404,7 +2404,7 @@ namespace Soulseek
             {
                 var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new LoginRequest(username, password).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new LoginRequest(username, password), cancellationToken).ConfigureAwait(false);
 
                 var response = await loginWait.ConfigureAwait(false);
 
@@ -2417,12 +2417,12 @@ namespace Soulseek
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value), cancellationToken).ConfigureAwait(false);
                     }
 
                     if (Options.EnableDistributedNetwork)
                     {
-                        await ServerConnection.WriteAsync(new HaveNoParentsCommand(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
                     }
                 }
                 else
@@ -2548,7 +2548,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new PrivateMessageCommand(username, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateMessageCommand(username, message), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2560,7 +2560,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new RoomMessageCommand(roomName, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new RoomMessageCommand(roomName, message), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2672,7 +2672,7 @@ namespace Soulseek
 
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, length);
-                await messageConnection.WriteAsync(transferRequest.ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await messageConnection.WriteAsync(transferRequest, cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
@@ -2839,7 +2839,7 @@ namespace Soulseek
                             .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                             .ConfigureAwait(false);
 
-                        await messageConnection.WriteAsync(new UploadFailed(filename).ToByteArray()).ConfigureAwait(false);
+                        await messageConnection.WriteAsync(new UploadFailed(filename)).ConfigureAwait(false);
                     }
                     catch
                     {

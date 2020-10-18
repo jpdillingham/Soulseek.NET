@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     using System.Collections.Generic;
-    
+
     /// <summary>
     ///     A list of the privileged users on the server.
     /// </summary>

@@ -152,9 +152,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "WriteAsync bytes throws InvalidOperationException when disconnected"), AutoData]
         public async Task WriteAsync_Bytes_Throws_InvalidOperationException_When_Disconnected(string username, IPEndPoint endpoint)
         {
-            var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.BrowseRequest)
-                .Build();
+            var msg = new BrowseRequest().ToByteArray();
 
             using (var c = new MessageConnection(username, endpoint))
             {
@@ -226,9 +224,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "WriteAsync bytes throws InvalidOperationException when disconnected"), AutoData]
         public async Task WriteAsync_Bytes_Throws_InvalidOperationException_When_Disconnecting(string username, IPEndPoint endpoint)
         {
-            var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.BrowseRequest)
-                .Build();
+            var msg = new BrowseRequest().ToByteArray();
 
             using (var c = new MessageConnection(username, endpoint))
             {
@@ -274,9 +270,7 @@ namespace Soulseek.Tests.Unit.Network
                 tcpMock.Setup(s => s.Connected).Returns(true);
                 tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-                var msg = new MessageBuilder()
-                    .WriteCode(MessageCode.Peer.BrowseRequest)
-                    .Build();
+                var msg = new BrowseRequest().ToByteArray();
 
                 using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
                 {
@@ -391,9 +385,7 @@ namespace Soulseek.Tests.Unit.Network
                 tcpMock.Setup(s => s.Connected).Returns(true);
                 tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-                var msg = new MessageBuilder()
-                    .WriteCode(MessageCode.Peer.BrowseRequest)
-                    .Build();
+                var msg = new BrowseRequest().ToByteArray();
 
                 using (var c = new MessageConnection(endpoint, tcpClient: tcpMock.Object))
                 {

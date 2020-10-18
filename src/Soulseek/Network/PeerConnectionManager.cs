@@ -334,7 +334,7 @@ namespace Soulseek.Network
                     {
                         await connection.ConnectAsync(cts.Token).ConfigureAwait(false);
 
-                        var request = new PierceFirewall(r.Token).ToByteArray();
+                        var request = new PierceFirewall(r.Token);
                         await connection.WriteAsync(request, cts.Token).ConfigureAwait(false);
                     }
                     catch
@@ -432,7 +432,7 @@ namespace Soulseek.Network
                 {
                     if (isDirect)
                     {
-                        var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
+                        var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken());
                         await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                     }
                     else
@@ -629,7 +629,7 @@ namespace Soulseek.Network
                 PendingSolicitationDictionary.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Peer).ToByteArray(), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Peer), cancellationToken)
                     .ConfigureAwait(false);
 
                 using var incomingConnection = await SoulseekClient.Waiter
@@ -698,7 +698,7 @@ namespace Soulseek.Network
                 PendingSolicitationDictionary.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Transfer).ToByteArray(), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Transfer), cancellationToken)
                     .ConfigureAwait(false);
 
                 using var incomingConnection = await SoulseekClient.Waiter
