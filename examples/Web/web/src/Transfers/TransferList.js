@@ -23,7 +23,7 @@ const getColor = (state) => {
             return { color: 'green' };
         case 'Requested':
         case 'Queued':
-            return '';
+            return {};
         case 'Initializing':
             return { color: 'teal' };
         default:
@@ -31,7 +31,21 @@ const getColor = (state) => {
     }
 }
 
+const isRetryable = (state) => getColor(state).color === 'red';
+
 class TransferList extends Component {
+    handleClick = (file) => {
+        const { state } = file;
+        
+        if (isRetryable(state)) {
+            return this.props.onRetryRequested(file);
+        }
+
+        if (state === 'Queued') {
+            return this.props.onPlaceInQueueRequested(file);
+        }
+    }
+
     render = () => {
         const { directoryName, onSelectionChange, files } = this.props;
 
@@ -72,11 +86,23 @@ class TransferList extends Component {
                                     </Table.Cell>
                                     <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
                                     <Table.Cell className='transferlist-progress'>
-                                        {f.state === 'InProgress' ? <Progress 
+                                        {f.state === 'InProgress' ? 
+                                        <Progress 
                                             style={{ margin: 0 }}
                                             percent={Math.round(f.percentComplete)} 
                                             progress color={getColor(f.state).color}
-                                        /> : <Button fluid size='mini' style={{ margin: 0, padding: 7 }} {...getColor(f.state)}>{f.state}</Button>}
+                                        /> : 
+                                        <Button 
+                                            fluid 
+                                            size='mini' 
+                                            style={{ margin: 0, padding: 7 }} 
+                                            {...getColor(f.state)} 
+                                            onClick={() => this.handleClick(f)}
+                                        >
+                                            {f.state === 'Queued' && <Icon name='refresh'/>}
+                                            {isRetryable(f.state) && <Icon name='redo'/>}
+                                            {f.state}{f.placeInQueue ? ` (#${f.placeInQueue})` : ''}
+                                        </Button>}
                                     </Table.Cell>
                                     <Table.Cell className='transferlist-size'>
                                         {f.bytesTransferred > 0 ? formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size) : ''}

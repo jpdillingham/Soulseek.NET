@@ -1,9 +1,9 @@
 ﻿namespace WebAPI.Trackers
 {
-    using Soulseek;
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Linq;
+    using Soulseek;
 
     /// <summary>
     ///     Transfer extensions.
@@ -16,12 +16,12 @@
         /// <param name="allTransfers"></param>
         /// <param name="direction"></param>
         /// <returns></returns>
-        public static ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> WithDirection(
-            this ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> allTransfers,
+        public static ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> WithDirection(
+            this ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> allTransfers,
             TransferDirection direction)
         {
             allTransfers.TryGetValue(direction, out var transfers);
-            return transfers ?? new ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>();
+            return transfers ?? new ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>();
         }
 
         /// <summary>
@@ -30,7 +30,7 @@
         /// <param name="directedTransfers"></param>
         /// <returns></returns>
         public static object ToMap(
-            this ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> directedTransfers)
+            this ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> directedTransfers)
         {
             return directedTransfers.Select(u => new
             {
@@ -47,12 +47,12 @@
         /// <param name="directedTransfers"></param>
         /// <param name="username"></param>
         /// <returns></returns>
-        public static ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> FromUser(
-            this ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> directedTransfers,
+        public static ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)> FromUser(
+            this ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> directedTransfers,
             string username)
         {
             directedTransfers.TryGetValue(username, out var transfers);
-            return transfers ?? new ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
+            return transfers ?? new ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
         }
         
         /// <summary>
@@ -60,7 +60,7 @@
         /// </summary>
         /// <param name="userTransfers"></param>
         public static object ToMap(
-            this ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers)
+            this ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers)
         {
             return userTransfers.Values
                 .GroupBy(f => f.Transfer.Filename.DirectoryName())
@@ -73,8 +73,8 @@
         /// <param name="userTransfers"></param>
         /// <param name="filename"></param>
         /// <returns></returns>
-        public static (Transfer Transfer, CancellationTokenSource CancellationTokenSource) WithFilename(
-            this ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers,
+        public static (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) WithFilename(
+            this ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers,
             string filename)
         {
             userTransfers.TryGetValue(filename, out var transfer);
@@ -90,16 +90,16 @@
         /// <summary>
         ///     Tracked transfers.
         /// </summary>
-        public ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> Transfers { get; private set; } =
-            new ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer, CancellationTokenSource)>>>();
+        public ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> Transfers { get; private set; } =
+            new ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer, CancellationTokenSource)>>>();
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferTracker"/> class.
         /// </summary>
         public TransferTracker()
         {
-            Transfers.TryAdd(TransferDirection.Download, new ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>());
-            Transfers.TryAdd(TransferDirection.Upload, new ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>());
+            Transfers.TryAdd(TransferDirection.Download, new ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>());
+            Transfers.TryAdd(TransferDirection.Upload, new ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>());
         }
 
         /// <summary>
@@ -113,7 +113,7 @@
 
             direction.AddOrUpdate(args.Transfer.Username, GetNewDictionaryForUser(args, cancellationTokenSource), (user, dict) =>
             {
-                dict.AddOrUpdate(args.Transfer.Filename, (args.Transfer, cancellationTokenSource), (file, record) => (args.Transfer, cancellationTokenSource));
+                dict.AddOrUpdate(args.Transfer.Filename, (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource), (file, record) => (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource));
                 return dict;
             });
         }
@@ -150,7 +150,7 @@
         /// <param name="filename"></param>
         /// <param name="transfer"></param>
         /// <returns></returns>
-        public bool TryGet(TransferDirection direction, string username, string filename, out (Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer)
+        public bool TryGet(TransferDirection direction, string username, string filename, out (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer)
         {
             transfer = default;
 
@@ -168,10 +168,10 @@
             return false;
         }
 
-        private ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> GetNewDictionaryForUser(TransferEventArgs args, CancellationTokenSource cancellationTokenSource)
+        private ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)> GetNewDictionaryForUser(TransferEventArgs args, CancellationTokenSource cancellationTokenSource)
         {
-            var r = new ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
-            r.AddOrUpdate(args.Transfer.Filename, (args.Transfer, cancellationTokenSource), (file, record) => (args.Transfer, record.CancellationTokenSource));
+            var r = new ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
+            r.AddOrUpdate(args.Transfer.Filename, (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource), (file, record) => (DTO.Transfer.FromSoulseekTransfer(args.Transfer), record.CancellationTokenSource));
             return r;
         }
     }

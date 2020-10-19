@@ -12,7 +12,7 @@
         /// <summary>
         ///     Tracked transfers.
         /// </summary>
-        ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> Transfers { get; }
+        ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> Transfers { get; }
 
         /// <summary>
         ///     Adds or updates a tracked transfer.
@@ -35,6 +35,6 @@
         /// <param name="filename"></param>
         /// <param name="transfer"></param>
         /// <returns></returns>
-        bool TryGet(TransferDirection direction, string username, string filename, out (Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer);
+        bool TryGet(TransferDirection direction, string username, string filename, out (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer);
     }
 }
