@@ -31,6 +31,12 @@ class Response extends Component {
         downloadError: '' 
     }
 
+    componentDidUpdate = (prevProps) => {
+        if (this.props.response !== prevProps.response) {
+            this.setState({ tree: buildTree(this.props.response) });
+        }
+    }
+
     onFileSelectionChange = (file, state) => {
         file.selected = state;
         console.log(this.state.tree);
