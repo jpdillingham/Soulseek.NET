@@ -117,10 +117,11 @@ class Search extends Component {
     }
 
     sortAndFilterResults = () => {
-        const { results, hideNoFreeSlots, resultSort, hideLocked } = this.state;
+        const { results, hideNoFreeSlots, resultSort, hideLocked, hiddenResults } = this.state;
         const { field, order } = sortOptions[resultSort];
 
         return results
+            .filter(r => !hiddenResults.includes(r.username))
             .map(r => {
                 if (hideLocked) {
                     return { ...r, lockedFileCount: 0, lockedFiles: [] }
@@ -149,14 +150,14 @@ class Search extends Component {
     }
 
     render = () => {
-        let { searchState, searchStatus, results, displayCount, resultSort, hideNoFreeSlots, hiddenResults, hideLocked } = this.state;
+        let { searchState, searchStatus, results, displayCount, resultSort, hideNoFreeSlots, hideLocked, hiddenResults } = this.state;
         let pending = searchState === 'pending';
 
         const sortedAndFilteredResults = this.sortAndFilterResults();
 
         const remainingCount = sortedAndFilteredResults.length - displayCount;
         const showMoreCount = remainingCount >= 5 ? 5 : remainingCount;
-        const hiddenCount = results.length - sortedAndFilteredResults.length;
+        const hiddenCount = results.length - hiddenResults.length - sortedAndFilteredResults.length;
 
         return (
             <div className='search-container'>
@@ -213,8 +214,6 @@ class Search extends Component {
                         {sortedAndFilteredResults.slice(0, displayCount).map((r, i) =>
                             <Response
                                 key={i}
-                                hidden={hiddenResults.includes(r.username)}
-                                hideLocked={hideLocked}
                                 response={r}
                                 onDownload={this.props.onDownload}
                                 onHide={() => this.hideResult(r)}
