@@ -27,7 +27,8 @@ const initialState = {
     displayCount: 5,
     resultSort: 'uploadSpeed',
     hideNoFreeSlots: true,
-    hiddenResults: []
+    hiddenResults: [],
+    hideLocked: true,
 };
 
 const sortOptions = {
@@ -116,16 +117,25 @@ class Search extends Component {
     }
 
     sortAndFilterResults = () => {
-        const { results, hideNoFreeSlots, resultSort } = this.state;
+        const { results, hideNoFreeSlots, resultSort, hideLocked } = this.state;
         const { field, order } = sortOptions[resultSort];
 
-        return results.filter(r => !(hideNoFreeSlots && r.freeUploadSlots === 0)).sort((a, b) => {
-            if (order === 'asc') {
-                return a[field] - b[field];
-            }
+        return results
+            .map(r => {
+                if (hideLocked) {
+                    return { ...r, lockedFileCount: 0, lockedFiles: [] }
+                }
+                return r;
+            })
+            .filter(r => r.fileCount + r.lockedFileCount > 0)
+            .filter(r => !(hideNoFreeSlots && r.freeUploadSlots === 0))
+            .sort((a, b) => {
+                if (order === 'asc') {
+                    return a[field] - b[field];
+                }
 
-            return b[field] - a[field];
-        });
+                return b[field] - a[field];
+            });
     }
 
     hideResult = (result) => {
@@ -139,7 +149,7 @@ class Search extends Component {
     }
 
     render = () => {
-        let { searchState, searchStatus, results, displayCount, resultSort, hideNoFreeSlots, hiddenResults } = this.state;
+        let { searchState, searchStatus, results, displayCount, resultSort, hideNoFreeSlots, hiddenResults, hideLocked } = this.state;
         let pending = searchState === 'pending';
 
         const sortedAndFilteredResults = this.sortAndFilterResults();
@@ -186,6 +196,13 @@ class Search extends Component {
                                 text={sortDropdownOptions.find(o => o.value === resultSort).text}
                             />
                             <Checkbox
+                                className='search-options-hide-locked'
+                                toggle
+                                onChange={() => this.setState({ hideLocked: !hideLocked }, () => this.saveState())}
+                                checked={hideLocked}
+                                label='Hide Locked Results'
+                            />
+                            <Checkbox
                                 className='search-options-hide-no-slots'
                                 toggle
                                 onChange={() => this.setState({ hideNoFreeSlots: !hideNoFreeSlots }, () => this.saveState())}
@@ -197,6 +214,7 @@ class Search extends Component {
                             <Response
                                 key={i}
                                 hidden={hiddenResults.includes(r.username)}
+                                hideLocked={hideLocked}
                                 response={r}
                                 onDownload={this.props.onDownload}
                                 onHide={() => this.hideResult(r)}
