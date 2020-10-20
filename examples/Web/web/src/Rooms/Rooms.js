@@ -56,6 +56,10 @@ class Rooms extends Component {
     const rooms = (await api.get('/rooms/joined')).data;
     this.setState({
       rooms
+    }, () => {
+      if (!this.state.rooms.includes(this.state.active)) {
+        this.selectRoom(this.getFirstRoom());
+      }
     });
   };
 
