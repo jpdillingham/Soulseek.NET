@@ -28,15 +28,16 @@ class Rooms extends Component {
   listRef = createRef();
 
   componentDidMount = async () => {
-    await this.fetchJoinedRooms();
-
     this.setState({ 
       intervals: {
         rooms: window.setInterval(this.fetchJoinedRooms, 500),
         messages: window.setInterval(this.fetchActiveRoom, 1000)
       },
-      loading: true
-    }, () => this.selectRoom(sessionStorage.getItem(activeRoomKey) || this.getFirstRoom()));
+      active: sessionStorage.getItem(activeRoomKey) || ''
+    }, async () => {
+      await this.fetchJoinedRooms();
+      this.selectRoom(this.state.active || this.getFirstRoom())
+    });
   };
 
   componentWillUnmount = () => {
@@ -56,6 +57,10 @@ class Rooms extends Component {
     const rooms = (await api.get('/rooms/joined')).data;
     this.setState({
       rooms
+    }, () => {
+      if (!this.state.rooms.includes(this.state.active)) {
+        this.selectRoom(this.getFirstRoom());
+      }
     });
   };
 
@@ -87,10 +92,9 @@ class Rooms extends Component {
 
       await this.fetchActiveRoom();
       this.setState({ loading: false }, () => {
-        
-      try {
-        this.listRef.current.lastChild.scrollIntoView();
-      } catch {}
+        try {
+          this.listRef.current.lastChild.scrollIntoView();
+        } catch {}
       });
     });
   };

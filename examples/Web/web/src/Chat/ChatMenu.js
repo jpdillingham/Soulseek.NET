@@ -39,7 +39,7 @@ const ChatMenu = ({ conversations, active, onConversationChange, ...rest }) => {
             <Button icon className='add-button'><Icon name='plus'/></Button>
           }
           centered
-          size='mini'
+          size='small'
           {...rest}
         />
       </Menu.Menu>
