@@ -57,7 +57,11 @@ class Chat extends Component {
         };
 
         this.setState({ conversations }, () => {
-            this.acknowledgeMessages(this.state.active);
+            if (!this.state.conversations[this.state.active]) {
+                this.selectConversation(this.getFirstConversation());
+            } else {
+                this.acknowledgeMessages(this.state.active);
+            }
         });
     }
 
