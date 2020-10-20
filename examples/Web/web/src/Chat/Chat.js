@@ -23,12 +23,13 @@ class Chat extends Component {
     listRef = createRef();
 
     componentDidMount = async () => {
-        await this.fetchConversations();
-
         this.setState({ 
             interval: window.setInterval(this.fetchConversations, 5000),
-            loading: true
-        }, () => this.selectConversation(sessionStorage.getItem(activeChatKey) || this.getFirstConversation()));
+            active: sessionStorage.getItem(activeChatKey) || ''
+        }, async () => {
+            await this.fetchConversations();
+            this.selectConversation(this.state.active || this.getFirstConversation());
+        });
     }
 
     componentWillUnmount = () => {
