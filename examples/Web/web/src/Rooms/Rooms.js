@@ -91,10 +91,9 @@ class Rooms extends Component {
 
       await this.fetchActiveRoom();
       this.setState({ loading: false }, () => {
-        
-      try {
-        this.listRef.current.lastChild.scrollIntoView();
-      } catch {}
+        try {
+          this.listRef.current.lastChild.scrollIntoView();
+        } catch {}
       });
     });
   };
