@@ -28,15 +28,16 @@ class Rooms extends Component {
   listRef = createRef();
 
   componentDidMount = async () => {
-    await this.fetchJoinedRooms();
-
     this.setState({ 
       intervals: {
         rooms: window.setInterval(this.fetchJoinedRooms, 500),
         messages: window.setInterval(this.fetchActiveRoom, 1000)
       },
-      loading: true
-    }, () => this.selectRoom(sessionStorage.getItem(activeRoomKey) || this.getFirstRoom()));
+      active: sessionStorage.getItem(activeRoomKey) || ''
+    }, async () => {
+      await this.fetchJoinedRooms();
+      this.selectRoom(this.state.active || this.getFirstRoom())
+    });
   };
 
   componentWillUnmount = () => {
