@@ -2062,6 +2062,8 @@ namespace Soulseek
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
+                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive
+                    // way to be sure we conclude the transfer in a way that accurately represents what happened.
                     if (download.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(download.WaitKey);
@@ -2693,6 +2695,8 @@ namespace Soulseek
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
                 upload.Connection.Disconnected += (sender, e) =>
                 {
+                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive
+                    // way to be sure we conclude the transfer in a way that accurately represents what happened.
                     if (upload.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(upload.WaitKey);
@@ -2738,13 +2742,15 @@ namespace Soulseek
 
                     upload.State = TransferStates.Succeeded;
 
-                    // force a disconnect of the connection by trying to read. this may be unreliable if a client actually sends
-                    // data after the offset
+                    // figure out how and when to disconnect the connection.
+                    // ideally the receiving end disconnects; this way we know they've gotten all of the data.  we can encourage this by attempting to read
+                    // data, which works well for Soulseek NS and Qt, but takes some time with Nicotine+. if the receiving end won't disconnect, wait the configured MaximumLingerTime
+                    // and disconnect on our end.  the receiver may not have gotten all the data if it comes to this, so linger time shouldn't be less than a couple of seconds.
                     try
                     {
                         var lingerStartTime = DateTime.UtcNow;
 
-                        while (true)
+                        while (!cancellationToken.IsCancellationRequested)
                         {
                             if (lingerStartTime.AddMilliseconds(options.MaximumLingerTime) <= DateTime.UtcNow)
                             {
