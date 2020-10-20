@@ -115,9 +115,6 @@ class Chat extends Component {
 
             sessionStorage.setItem(activeChatKey, active);
 
-            const tasks = [this.fetchConversations(), this.acknowledgeMessages(active)];
-            await Promise.all(tasks);
-
             this.setState({ loading: false }, () => {
                 try {
                     this.listRef.current.lastChild.scrollIntoView();
