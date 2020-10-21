@@ -2,6 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import React, { Component } from 'react';
 import api from '../api';
 
+import './Search.css';
+
 import Response from './Response';
 import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
@@ -196,20 +198,22 @@ class Search extends Component {
                                 onChange={(e, { value }) => this.setState({ resultSort: value }, () => this.saveState())}
                                 text={sortDropdownOptions.find(o => o.value === resultSort).text}
                             />
-                            <Checkbox
-                                className='search-options-hide-locked'
-                                toggle
-                                onChange={() => this.setState({ hideLocked: !hideLocked }, () => this.saveState())}
-                                checked={hideLocked}
-                                label='Hide Locked Results'
-                            />
-                            <Checkbox
-                                className='search-options-hide-no-slots'
-                                toggle
-                                onChange={() => this.setState({ hideNoFreeSlots: !hideNoFreeSlots }, () => this.saveState())}
-                                checked={hideNoFreeSlots}
-                                label='Hide Results with No Free Slots'
-                            />
+                            <div className='search-option-toggles'>
+                                <Checkbox
+                                    className='search-options-hide-locked'
+                                    toggle
+                                    onChange={() => this.setState({ hideLocked: !hideLocked }, () => this.saveState())}
+                                    checked={hideLocked}
+                                    label='Hide Locked Results'
+                                />
+                                <Checkbox
+                                    className='search-options-hide-no-slots'
+                                    toggle
+                                    onChange={() => this.setState({ hideNoFreeSlots: !hideNoFreeSlots }, () => this.saveState())}
+                                    checked={hideNoFreeSlots}
+                                    label='Hide Results with No Free Slots'
+                                />
+                            </div>
                         </Segment> : <PlaceholderSegment icon='search'/>}
                         {sortedAndFilteredResults.slice(0, displayCount).map((r, i) =>
                             <Response
