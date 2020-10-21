@@ -31,35 +31,7 @@ body {
     margin-top: 5px;
 }
 
-.search-container {
-    padding-left: 15px;
-    padding-right: 15px;
-    max-width: 1200px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
-
-.search-container:last-child {
-    margin-bottom: 17px;
-}
-
-.search-segment {
-    margin-top: 15px !important;
-    height: 78px !important;
-}
-
-@media only screen and (max-width: 767px) {
-    .search-options-hide-no-slots, .search-options-hide-locked {
-        margin-left: 0px;
-        margin-top: 20px;
-    }
-}
-
 @media only screen and (min-width: 768px) {
-    .search-options-hide-no-slots, .search-options-hide-locked {
-        margin-left: 20px;
-    }
-
     .transferlist-progress {
         max-width: 300px;
         width: 300px;
@@ -67,21 +39,9 @@ body {
 }
 
 @media only screen and (max-width: 767px) {
-    .search-options-sort {
-        width: 100%;
-    }
-
     .transferlist-progress {
         width: 100%;
     }
-}
-
-.search-input {
-    width: 100%;
-}
-
-.search-loader {
-    margin-top: 50px !important;
 }
 
 .filelist-header {
