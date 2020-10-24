@@ -70,6 +70,7 @@ namespace Soulseek
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
+#pragma warning disable S3427 // Method overloads with default parameter values should not overlap
         internal SoulseekClient(
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
@@ -85,6 +86,7 @@ namespace Soulseek
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
+#pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
             ServerConnection = serverConnection;
 

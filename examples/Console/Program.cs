@@ -47,7 +47,7 @@
             o("\rConnected and logged in.    \n");
         }
 
-        public static async Task Main(string[] args)
+        public static async Task Main()
         {
             Console.OutputEncoding = Encoding.UTF8;
             
@@ -91,7 +91,7 @@
 
                     await ConnectAndLogin(client);
 
-                    var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
+                    var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime():yyyy}" : $"{artist.Name} {release.Title}";
                     responses = await SearchAsync(client, searchText, release.TrackCount);
 
                     responses = responses
@@ -157,7 +157,7 @@
                         var fn = Path.GetFileName(e.Transfer.Filename.ToLocalOSPath()).PadRight(longest);
 
                         var size = $"{e.Transfer.BytesTransferred.ToMB()}/{e.Transfer.Size.ToMB()}".PadLeft(15);
-                        var percent = $"({e.Transfer.PercentComplete.ToString("N0").PadLeft(3)}%)";
+                        var percent = $"({e.Transfer.PercentComplete,3:N0}%)";
 
                         var elapsed = e.Transfer.ElapsedTime.HasValue ? e.Transfer.ElapsedTime.Value.ToString(@"m\:ss") : "--:--";
                         var remaining = e.Transfer.RemainingTime.HasValue ? e.Transfer.RemainingTime.Value.ToString(@"m\:ss") : "--:--";
@@ -203,7 +203,7 @@
 
                 foreach (var track in disc.Tracks)
                 {
-                    o($"  {track.Position.ToString("D2")}  {track.Title.PadRight(longest)}  {TimeSpan.FromMilliseconds(track.Length ?? 0).ToString(@"m\:ss")}");
+                    o($"  {track.Position:D2}  {track.Title.PadRight(longest)}  {TimeSpan.FromMilliseconds(track.Length ?? 0):m\\:ss}");
                 }
             }
         }
@@ -220,7 +220,7 @@
                 foreach (var file in directories[key])
                 {
                     var filename = file.Filename.ToLocalOSPath();
-                    o($"    {Path.GetFileName(filename).PadRight(longest)}  {file.Size.ToMB().PadLeft(7)}  {$"{file.BitRate}kbps".PadLeft(9)}  {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss").PadLeft(7)}");
+                    o($"    {Path.GetFileName(filename).PadRight(longest)}  {file.Size.ToMB(),7}  {$"{file.BitRate}kbps",9}  {TimeSpan.FromSeconds(file.Length ?? 0),7:m\\:ss}");
                 }
             }
         }
@@ -281,7 +281,7 @@
 
             for (int i = 0; i < artistList.Count; i++)
             {
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {artistList[i].DisambiguatedName.PadRight(longest)}  {artistList[i].Score.ToString().PadLeft(3)}%");
+                o($"  {i + 1,3}.  {artistList[i].DisambiguatedName.PadRight(longest)}  {artistList[i].Score,3}%");
             }
 
             do
@@ -322,7 +322,7 @@
                 var r = releaseList[i];
                 var format = string.Join("+", r.Media.Select(m => m.Format));
                 var tracks = string.Join("+", r.Media.Select(m => m.TrackCount));
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Format.PadRight(longestFormat)}  {r.TrackCountExtended.PadRight(longestTrackCount)}  {r.Country}");
+                o($"  {i + 1,3}.  {r.Date.ToFuzzyDateTime():yyyy-MM-dd}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Format.PadRight(longestFormat)}  {r.TrackCountExtended.PadRight(longestTrackCount)}  {r.Country}");
             }
 
             do
@@ -336,7 +336,7 @@
                     var num = Int32.Parse(selection) - 1;
                     var release = releaseList[num];
 
-                    o($"\nTrack list for '{release.DisambiguatedTitle}', {release.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}, {release.Format}, {release.TrackCountExtended}, {release.Country}:");
+                    o($"\nTrack list for '{release.DisambiguatedTitle}', {release.Date.ToFuzzyDateTime():yyyy-MM-dd}, {release.Format}, {release.TrackCountExtended}, {release.Country}:");
                     ListReleaseTracks(release);
 
                     Console.Write($"\nProceed with this track list? (Y/N): ");
@@ -384,7 +384,7 @@
             {
                 var r = releaseGroupList[i];
 
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Year}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Type.PadRight(longestType)}  {(string.IsNullOrEmpty(album) ? string.Empty : Math.Round(r.Score * 100, 0).ToString().PadLeft(3) + "%")}");
+                o($"  {i + 1,3}.  {r.Year}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Type.PadRight(longestType)}  {(string.IsNullOrEmpty(album) ? string.Empty : Math.Round(r.Score * 100, 0).ToString().PadLeft(3) + "%")}");
             }
 
             do
