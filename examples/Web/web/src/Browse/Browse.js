@@ -63,7 +63,12 @@ class Browse extends Component {
   saveState = () => {
     this.inputtext.inputRef.current.value = this.state.username;
     this.inputtext.inputRef.current.disabled = this.state.browseState !== 'idle';
-    localStorage.setItem('soulseek-example-browse-state', JSON.stringify(this.state));
+
+    try {
+      localStorage.setItem('soulseek-example-browse-state', JSON.stringify(this.state));
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   loadState = () => {
