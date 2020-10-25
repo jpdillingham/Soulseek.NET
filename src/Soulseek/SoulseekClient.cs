@@ -318,7 +318,7 @@ namespace Soulseek
         {
             if (privateMessageId < 0)
             {
-                throw new ArgumentException($"The private message ID must be greater than zero", nameof(privateMessageId));
+                throw new ArgumentException("The private message ID must be greater than zero", nameof(privateMessageId));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -346,7 +346,7 @@ namespace Soulseek
         {
             if (privilegeNotificationId < 0)
             {
-                throw new ArgumentException($"The privilege notification ID must be greater than zero", nameof(privilegeNotificationId));
+                throw new ArgumentException("The privilege notification ID must be greater than zero", nameof(privilegeNotificationId));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -379,7 +379,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -414,7 +414,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -444,7 +444,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(password))
             {
-                throw new ArgumentException($"The password must not be a null or empty string, or one consisting only of whitespace", nameof(password));
+                throw new ArgumentException("The password must not be a null or empty string, or one consisting only of whitespace", nameof(password));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -471,7 +471,7 @@ namespace Soulseek
         {
             if (State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"The client is already connected");
+                throw new InvalidOperationException("The client is already connected");
             }
 
             return ConnectInternalAsync(DefaultAddress, DefaultPort, cancellationToken ?? CancellationToken.None);
@@ -512,7 +512,7 @@ namespace Soulseek
 
             if (State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"The client is already connected");
+                throw new InvalidOperationException("The client is already connected");
             }
 
             return ConnectInternalAsync(address, port, cancellationToken ?? CancellationToken.None);
@@ -547,7 +547,7 @@ namespace Soulseek
 
             if (State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"The client is already connected");
+                throw new InvalidOperationException("The client is already connected");
             }
 
             return ConnectAndLoginAsync(DefaultAddress, DefaultPort, username, password, cancellationToken ?? CancellationToken.None);
@@ -600,7 +600,7 @@ namespace Soulseek
 
             if (State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"The client is already connected");
+                throw new InvalidOperationException("The client is already connected");
             }
 
             return ConnectAndLoginAsync(address, port, username, password, cancellationToken ?? CancellationToken.None);
@@ -684,12 +684,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(filename))
             {
-                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
             if (size.HasValue && size.Value < 0)
@@ -766,12 +766,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(filename))
             {
-                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
             if (size.HasValue && size.Value < 0)
@@ -837,12 +837,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(directoryName))
             {
-                throw new ArgumentException($"The directory name must not be a null or empty string, or one consisting only of whitespace", nameof(directoryName));
+                throw new ArgumentException("The directory name must not be a null or empty string, or one consisting only of whitespace", nameof(directoryName));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -876,12 +876,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(filename))
             {
-                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -989,7 +989,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1018,7 +1018,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1043,7 +1043,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1072,7 +1072,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1090,7 +1090,7 @@ namespace Soulseek
         /// <remarks>
         ///     <para>
         ///         There is no immediate or direct response for this operation, and because error conditions may only be inferred
-        ///         by monitoring private messages as described below, this library defers this inferrence to implementing code.
+        ///         by monitoring private messages as described below, this library defers this inference to implementing code.
         ///         This method returns after the command is dispatched and does not monitor for any type of response.
         ///     </para>
         ///     <para>
@@ -1122,12 +1122,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (days <= 0)
             {
-                throw new ArgumentException($"The number of days granted must be greater than zero", nameof(days));
+                throw new ArgumentException("The number of days granted must be greater than zero", nameof(days));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1143,7 +1143,7 @@ namespace Soulseek
         /// </summary>
         /// <remarks>When successful, a corresponding <see cref="RoomJoined"/> event will be raised.</remarks>
         /// <param name="roomName">The name of the chat room to join.</param>
-        /// <param name="cancellationToken">The token to minotor for cancellation requests.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
@@ -1156,7 +1156,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
-                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1184,7 +1184,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
-                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1225,7 +1225,7 @@ namespace Soulseek
 
             if (!State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"The client must be connected to log in");
+                throw new InvalidOperationException("The client must be connected to log in");
             }
 
             if (State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1241,7 +1241,7 @@ namespace Soulseek
         /// </summary>
         /// <remarks>The server doesn't seem to be responding; this may have been deprecated.</remarks>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the response time in milliseconds.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -1302,12 +1302,12 @@ namespace Soulseek
 
             if (string.IsNullOrWhiteSpace(query.SearchText))
             {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
+                throw new ArgumentException("Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
             }
 
             if (query.Terms.Count == 0)
             {
-                throw new ArgumentException($"Search query must contain at least one non-exclusion term", nameof(query));
+                throw new ArgumentException("Search query must contain at least one non-exclusion term", nameof(query));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1332,7 +1332,7 @@ namespace Soulseek
 
             if (query.Terms.Count == 0)
             {
-                throw new ArgumentException($"Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
+                throw new ArgumentException("Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
             }
 
             return SearchToCollectionAsync(query, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -1370,12 +1370,12 @@ namespace Soulseek
 
             if (string.IsNullOrWhiteSpace(query.SearchText))
             {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
+                throw new ArgumentException("Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
             }
 
             if (query.Terms.Count == 0)
             {
-                throw new ArgumentException($"Search query must contain at least one non-exclusion term", nameof(query));
+                throw new ArgumentException("Search query must contain at least one non-exclusion term", nameof(query));
             }
 
             if (responseReceived == default)
@@ -1405,7 +1405,7 @@ namespace Soulseek
 
             if (query.Terms.Count == 0)
             {
-                throw new ArgumentException($"Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
+                throw new ArgumentException("Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
             }
 
             return SearchToCallbackAsync(query, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -1429,12 +1429,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(message))
             {
-                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
+                throw new ArgumentException("The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1463,12 +1463,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
-                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting only of whitespace", nameof(roomName));
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting only of whitespace", nameof(roomName));
             }
 
             if (string.IsNullOrWhiteSpace(message))
             {
-                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
+                throw new ArgumentException("The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1484,7 +1484,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="directories">The number of shared directories.</param>
         /// <param name="files">The number of shared files.</param>
-        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the value of <paramref name="directories"/> or <paramref name="files"/> is less than zero.
@@ -1497,12 +1497,12 @@ namespace Soulseek
         {
             if (directories < 0)
             {
-                throw new ArgumentException($"The directory count must be equal to or greater than zero", nameof(directories));
+                throw new ArgumentException("The directory count must be equal to or greater than zero", nameof(directories));
             }
 
             if (files < 0)
             {
-                throw new ArgumentException($"The file count must be equal to or greater than zero", nameof(files));
+                throw new ArgumentException("The file count must be equal to or greater than zero", nameof(files));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1578,17 +1578,17 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(filename))
             {
-                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
             if (data == null || data.Length == 0)
             {
-                throw new ArgumentException($"The data must not be a null or zero length array", nameof(data));
+                throw new ArgumentException("The data must not be a null or zero length array", nameof(data));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1648,12 +1648,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(filename))
             {
-                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
             if (length <= 0)
@@ -1771,11 +1771,11 @@ namespace Soulseek
         private async Task<BrowseResponse> BrowseInternalAsync(string username, BrowseOptions options, CancellationToken cancellationToken)
         {
             var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
-            bool completionEventFired = false;
+            var completionEventFired = false;
 
             void UpdateProgress(object sender, MessageDataEventArgs args)
             {
-                if (args.PercentComplete == 100)
+                if (Math.Abs(args.PercentComplete - 100) == 0)
                 {
                     completionEventFired = true;
                 }
@@ -1797,7 +1797,7 @@ namespace Soulseek
 
                 // prepare a wait for the receipt of the response message with the timeout value specified in options. this allows
                 // the operation to wait for the remote client to compose the response message. this wait is completed when the
-                // browse responce message is received, but before it is read entirely.
+                // browse response message is received, but before it is read entirely.
                 var responseConnectionKey = new WaitKey(Constants.WaitKey.BrowseResponseConnection, username);
                 var responseConnectionWait = Waiter.Wait<(MessageReceivedEventArgs, IMessageConnection)>(responseConnectionKey, options.ResponseTimeout, cancellationToken);
 
@@ -1870,7 +1870,7 @@ namespace Soulseek
 
             if (!response.Equals(password, StringComparison.CurrentCulture))
             {
-                throw new ChangePasswordException($"The response from the server doesn't match the specified password; the change likely failed");
+                throw new ChangePasswordException("The response from the server doesn't match the specified password; the change likely failed");
             }
         }
 
@@ -1938,7 +1938,7 @@ namespace Soulseek
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
-            using var memoryStream = new MemoryStream();
+            await using var memoryStream = new MemoryStream();
 
             await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
             return memoryStream.ToArray();
@@ -1954,7 +1954,6 @@ namespace Soulseek
 
             Downloads.TryAdd(download.Token, download);
 
-            Task downloadCompleted = null;
             var lastState = TransferStates.None;
 
             void UpdateState(TransferStates state)
@@ -1979,6 +1978,8 @@ namespace Soulseek
 
             try
             {
+                Task downloadCompleted;
+
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
 
@@ -2164,7 +2165,7 @@ namespace Soulseek
                 if (options.DisposeOutputStreamOnCompletion)
                 {
                     await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
-                    outputStream.Dispose();
+                    await outputStream.DisposeAsync().ConfigureAwait(false);
                 }
 
                 Downloads.TryRemove(download.Token, out _);
@@ -2477,22 +2478,12 @@ namespace Soulseek
 
             try
             {
-                byte[] message = null;
-
-                if (scope.Type == SearchScopeType.Room)
+                var message = scope.Type switch
                 {
-                    message = new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray();
-                }
-                else if (scope.Type == SearchScopeType.User)
-                {
-                    message = scope.Subjects
-                        .SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray())
-                        .ToArray();
-                }
-                else
-                {
-                    message = new SearchRequest(search.SearchText, search.Token).ToByteArray();
-                }
+                    SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
+                    SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
+                    _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
+                };
 
                 search.ResponseReceived = (response) =>
                 {
@@ -2604,7 +2595,7 @@ namespace Soulseek
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
-            using var memoryStream = new MemoryStream(data);
+            await using var memoryStream = new MemoryStream(data);
             await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
         }
 
@@ -2857,7 +2848,7 @@ namespace Soulseek
 
                 if (options.DisposeInputStreamOnCompletion)
                 {
-                    inputStream.Dispose();
+                    await inputStream.DisposeAsync().ConfigureAwait(false);
                 }
 
                 Uploads.TryRemove(upload.Token, out _);

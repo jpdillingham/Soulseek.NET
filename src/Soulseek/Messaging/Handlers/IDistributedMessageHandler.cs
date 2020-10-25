@@ -34,7 +34,7 @@ namespace Soulseek.Messaging.Handlers
         void HandleChildMessageRead(object sender, byte[] message);
 
         /// <summary>
-        ///     Handles outging messages to distributed children, post send.
+        ///     Handles outgoing messages to distributed children, post send.
         /// </summary>
         /// <param name="sender">The child <see cref="IMessageConnection"/> instance to which the message was sent.</param>
         /// <param name="args">The message event args.</param>

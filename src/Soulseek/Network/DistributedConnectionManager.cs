@@ -255,7 +255,7 @@ namespace Soulseek.Network
                 {
                     var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
                     cachedConnection.Disconnected -= ChildConnection_Disconnected;
-                    Diagnostic.Debug($"Superceding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
+                    Diagnostic.Debug($"Superseding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
                     cachedConnection.Disconnect("Superseded.");
                     cachedConnection.Dispose();
                     superseded = true;
@@ -793,7 +793,7 @@ namespace Soulseek.Network
             }
             catch (Exception)
             {
-                connection.Disconnect($"One or more required messages was not received.");
+                connection.Disconnect("One or more required messages was not received.");
                 throw new ConnectionException($"Failed to retrieve branch info from parent candidate connection to {connection.Username} ({connection.IPEndPoint}); one or more required messages was not received. (id: {connection.Id})");
             }
             finally

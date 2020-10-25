@@ -35,7 +35,7 @@ namespace Soulseek.Messaging.Handlers
         void HandleMessageRead(object sender, byte[] message);
 
         /// <summary>
-        ///     Handles outging messages, post send.
+        ///     Handles outgoing messages, post send.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
         /// <param name="args">The message event args.</param>

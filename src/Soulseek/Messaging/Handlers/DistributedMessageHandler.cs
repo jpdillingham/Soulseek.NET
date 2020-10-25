@@ -74,10 +74,10 @@ namespace Soulseek.Messaging.Handlers
                 switch (code)
                 {
                     case MessageCode.Distributed.Ping:
-                        Diagnostic.Debug($"PING?");
+                        Diagnostic.Debug("PING?");
                         var pingResponse = new DistributedPingResponse(SoulseekClient.GetNextToken());
                         await connection.WriteAsync(pingResponse).ConfigureAwait(false);
-                        Diagnostic.Debug($"PONG!");
+                        Diagnostic.Debug("PONG!");
                         break;
 
                     default:
@@ -92,7 +92,7 @@ namespace Soulseek.Messaging.Handlers
         }
 
         /// <summary>
-        ///     Handles outging messages to distributed children, post send.
+        ///     Handles outgoing messages to distributed children, post send.
         /// </summary>
         /// <param name="sender">The child <see cref="IMessageConnection"/> instance to which the message was sent.</param>
         /// <param name="args">The message event args.</param>
@@ -211,7 +211,7 @@ namespace Soulseek.Messaging.Handlers
         }
 
         /// <summary>
-        ///     Handles outging messages, post send.
+        ///     Handles outgoing messages, post send.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
         /// <param name="args">The message event args.</param>

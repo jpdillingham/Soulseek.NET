@@ -224,7 +224,7 @@ namespace Soulseek.Messaging.Handlers
                                     else
                                     {
                                         Diagnostic.Debug($"Transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token} does not match any waiting downloads, discarding.");
-                                        connection.Disconnect($"Unknown transfer");
+                                        connection.Disconnect("Unknown transfer");
                                     }
                                 }
                                 else
@@ -320,8 +320,6 @@ namespace Soulseek.Messaging.Handlers
                             break;
                         }
 
-                        SearchResponse searchResponse;
-
                         if (SoulseekClient.Options.SearchResponseResolver == default)
                         {
                             break;
@@ -329,7 +327,7 @@ namespace Soulseek.Messaging.Handlers
 
                         try
                         {
-                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
+                            var searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
 
                             if (searchResponse != null && searchResponse.FileCount + searchResponse.LockedFileCount > 0)
                             {
@@ -364,7 +362,7 @@ namespace Soulseek.Messaging.Handlers
         }
 
         /// <summary>
-        ///     Handles outging messages, post send.
+        ///     Handles outgoing messages, post send.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance to which the message was sent.</param>
         /// <param name="args">The message event args.</param>

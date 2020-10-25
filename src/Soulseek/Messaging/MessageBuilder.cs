@@ -37,7 +37,7 @@ namespace Soulseek.Messaging
         {
             if (CodeBytes.Count == 0)
             {
-                throw new InvalidOperationException($"Unable to build the message without having set the message Code");
+                throw new InvalidOperationException("Unable to build the message without having set the message Code");
             }
 
             var withLength = new List<byte>(BitConverter.GetBytes(CodeBytes.Count + PayloadBytes.Count));
@@ -58,7 +58,7 @@ namespace Soulseek.Messaging
         {
             if (PayloadBytes.Count == 0)
             {
-                throw new InvalidOperationException($"Unable to compress an empty message");
+                throw new InvalidOperationException("Unable to compress an empty message");
             }
 
             if (Compressed)
@@ -222,7 +222,7 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                throw new MessageCompressionException($"Failed to compress the message payload", ex);
+                throw new MessageCompressionException("Failed to compress the message payload", ex);
             }
         }
 

@@ -128,7 +128,7 @@ namespace Soulseek.Network
                 {
                     // because the cache is Lazy<>, the cached entry may be either a connected or pending connection.
                     // if we try to reference .Value before the cached function is dispositioned we'll get stuck waiting for it,
-                    // which will prevent this code from superceding the connection until the pending connection times out.
+                    // which will prevent this code from superseding the connection until the pending connection times out.
                     // to get around this the pending connection dictionary was added, allowing us to tell if the connection is still pending.
                     // if so, we can just cancel the token and move on.
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
@@ -277,7 +277,7 @@ namespace Soulseek.Network
         /// <remarks>
         ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an
         ///     unsolicited <see cref="ConnectToPeerResponse"/> of type 'P' only. This connection should only be initiated if
-        ///     there is no existing connection; superceding should be avoided if possible.
+        ///     there is no existing connection; superseding should be avoided if possible.
         /// </remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new or updated connection.</returns>

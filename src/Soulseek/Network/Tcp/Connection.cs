@@ -69,7 +69,7 @@ namespace Soulseek.Network.Tcp
             {
                 if (TcpClient == null || !TcpClient.Connected)
                 {
-                    Disconnect($"The server connection was closed unexpectedly");
+                    Disconnect("The server connection was closed unexpectedly");
                 }
             };
 
@@ -153,7 +153,7 @@ namespace Soulseek.Network.Tcp
         protected SystemTimer InactivityTimer { get; set; }
 
         /// <summary>
-        ///     Gets or sets sthe network stream for the connection.
+        ///     Gets or sets the network stream for the connection.
         /// </summary>
         protected INetworkStream Stream { get; set; }
 
@@ -215,8 +215,8 @@ namespace Soulseek.Network.Tcp
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
                     // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same
                     // TCS. either the timeout or the external token can now cancel the operation.
-                    using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
-                    using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+                    await using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
+                    await using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
                     {
                         var completedTask = await Task.WhenAny(connectTask, timeoutTaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
 
@@ -318,12 +318,12 @@ namespace Soulseek.Network.Tcp
         {
             if (length < 0)
             {
-                throw new ArgumentException($"The requested length must be greater than or equal to zero", nameof(length));
+                throw new ArgumentException("The requested length must be greater than or equal to zero", nameof(length));
             }
 
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException($"The underlying Tcp connection is closed");
+                throw new InvalidOperationException("The underlying Tcp connection is closed");
             }
 
             if (State != ConnectionState.Connected)
@@ -414,12 +414,12 @@ namespace Soulseek.Network.Tcp
         {
             if (bytes == null || bytes.Length == 0)
             {
-                throw new ArgumentException($"Invalid attempt to send empty data", nameof(bytes));
+                throw new ArgumentException("Invalid attempt to send empty data", nameof(bytes));
             }
 
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException($"The underlying Tcp connection is closed");
+                throw new InvalidOperationException("The underlying Tcp connection is closed");
             }
 
             if (State != ConnectionState.Connected)
@@ -468,7 +468,7 @@ namespace Soulseek.Network.Tcp
 
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException($"The underlying Tcp connection is closed");
+                throw new InvalidOperationException("The underlying Tcp connection is closed");
             }
 
             if (State != ConnectionState.Connected)
@@ -539,7 +539,7 @@ namespace Soulseek.Network.Tcp
 
         private async Task<byte[]> ReadInternalAsync(long length, CancellationToken cancellationToken)
         {
-            using var stream = new MemoryStream();
+            await using var stream = new MemoryStream();
 
             await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
             return stream.ToArray();
@@ -565,7 +565,7 @@ namespace Soulseek.Network.Tcp
 
                     if (bytesRead == 0)
                     {
-                        throw new ConnectionException($"Remote connection closed");
+                        throw new ConnectionException("Remote connection closed");
                     }
 
                     totalBytesRead += bytesRead;
@@ -601,7 +601,7 @@ namespace Soulseek.Network.Tcp
 
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
-            using var stream = new MemoryStream(bytes);
+            await using var stream = new MemoryStream(bytes);
 
             await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
         }
