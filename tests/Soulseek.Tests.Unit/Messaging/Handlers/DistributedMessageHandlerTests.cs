@@ -487,7 +487,9 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
         {
             var response = new SearchResponse("foo", token, 0, 1, 1, new List<File>());
+#pragma warning disable IDE0039 // Use local function
             Func<string, int, SearchQuery, Task<SearchResponse>> resolver = (u, t, q) => Task.FromResult(response);
+#pragma warning restore IDE0039 // Use local function
 
             var options = new SoulseekClientOptions(searchResponseResolver: resolver);
             var (handler, mocks) = GetFixture(options);

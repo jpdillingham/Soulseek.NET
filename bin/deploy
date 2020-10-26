@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-RELEASE_DIR=./src/Soulseek/bin/Release/
+RELEASE_DIR=./src/bin/Release/
 NUGET_API=nuget.org
 
 LATEST=$(find $RELEASE_DIR | sort -dr | grep "\.nupkg$" | head -1)

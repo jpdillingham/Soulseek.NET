@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit
     using Soulseek.Network.Tcp;
     using Xunit;
 
+#pragma warning disable IDE0039 // Use local function
     public class ConnectionFactoryTests
     {
         [Trait("Category", "GetTransferConnection")]
@@ -122,4 +123,5 @@ namespace Soulseek.Tests.Unit
             Assert.NotNull(c.Options);
         }
     }
+#pragma warning restore IDE0039 // Use local function
 }
