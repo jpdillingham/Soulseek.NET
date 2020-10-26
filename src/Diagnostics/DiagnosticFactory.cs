@@ -17,7 +17,7 @@ namespace Soulseek.Diagnostics
     /// <summary>
     ///     Creates diagnostic messages.
     /// </summary>
-    internal class DiagnosticFactory : IDiagnosticFactory
+    internal sealed class DiagnosticFactory : IDiagnosticFactory
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="DiagnosticFactory"/> class.
