@@ -18,7 +18,7 @@ namespace Soulseek
     /// <summary>
     ///     The response to request to join a chat room.
     /// </summary>
-    public sealed class RoomData
+    public class RoomData
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomData"/> class.

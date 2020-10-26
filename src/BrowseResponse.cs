@@ -18,7 +18,7 @@ namespace Soulseek
     /// <summary>
     ///     The response to a peer browse request.
     /// </summary>
-    public sealed class BrowseResponse
+    public class BrowseResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="BrowseResponse"/> class.
