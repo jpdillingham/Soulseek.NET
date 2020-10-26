@@ -23,7 +23,7 @@ namespace Soulseek.Messaging
     /// <summary>
     ///     Builds a message.
     /// </summary>
-    internal class MessageBuilder
+    internal sealed class MessageBuilder
     {
         private List<byte> CodeBytes { get; set; } = new List<byte>();
         private bool Compressed { get; set; } = false;
