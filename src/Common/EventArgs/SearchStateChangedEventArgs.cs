@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     Event arguments for events raised by a change in search state.
     /// </summary>
-    public sealed class SearchStateChangedEventArgs : SearchEventArgs
+    public class SearchStateChangedEventArgs : SearchEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchStateChangedEventArgs"/> class.

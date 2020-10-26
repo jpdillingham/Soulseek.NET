@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     Event arguments for events raised by a change in transfer state.
     /// </summary>
-    public sealed class TransferStateChangedEventArgs : TransferEventArgs
+    public class TransferStateChangedEventArgs : TransferEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferStateChangedEventArgs"/> class.

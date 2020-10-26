@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     Event arguments for events raised by an update to transfer progress.
     /// </summary>
-    public sealed class TransferProgressUpdatedEventArgs : TransferEventArgs
+    public class TransferProgressUpdatedEventArgs : TransferEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferProgressUpdatedEventArgs"/> class.

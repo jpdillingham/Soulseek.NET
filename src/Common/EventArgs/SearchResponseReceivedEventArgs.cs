@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     Event arguments for events raised when a search response is received.
     /// </summary>
-    public sealed class SearchResponseReceivedEventArgs : SearchEventArgs
+    public class SearchResponseReceivedEventArgs : SearchEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
