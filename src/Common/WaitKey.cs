@@ -17,7 +17,7 @@ namespace Soulseek
     /// <summary>
     ///     Uniquely identifies a Wait.
     /// </summary>
-    internal class WaitKey : IEquatable<WaitKey>
+    internal sealed class WaitKey : IEquatable<WaitKey>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="WaitKey"/> class.

@@ -21,7 +21,7 @@ namespace Soulseek
     /// <summary>
     ///     Enables await-able server messages.
     /// </summary>
-    internal class Waiter : IWaiter
+    internal sealed class Waiter : IWaiter
     {
         private const int DefaultTimeoutValue = 5000;
 
@@ -105,6 +105,23 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
+        /// <param name="disposing">A value indicating whether disposal is in progress.</param>
+        public void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    CancelAll();
+                }
+
+                Disposed = true;
+            }
+        }
+
+        /// <summary>
         ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="key"/>.
         /// </summary>
         /// <param name="key">The unique WaitKey for the wait.</param>
@@ -180,8 +197,8 @@ namespace Soulseek
                 recordLock.ExitReadLock();
             }
 
-            // defer registration to prevent the wait from being dispositioned prior to being successfully queued
-            // this is a concern if we are given a timeout of 0, or a cancellation token which is already cancelled
+            // defer registration to prevent the wait from being dispositioned prior to being successfully queued this is a
+            // concern if we are given a timeout of 0, or a cancellation token which is already cancelled
             wait.Register();
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
         }
@@ -207,23 +224,6 @@ namespace Soulseek
         public Task<T> WaitIndefinitely<T>(WaitKey key, CancellationToken? cancellationToken = null)
         {
             return Wait<T>(key, int.MaxValue, cancellationToken);
-        }
-
-        /// <summary>
-        ///     Disposes this instance.
-        /// </summary>
-        /// <param name="disposing">A value indicating whether disposal is in progress.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!Disposed)
-            {
-                if (disposing)
-                {
-                    CancelAll();
-                }
-
-                Disposed = true;
-            }
         }
 
         private void Disposition(WaitKey key, Action<PendingWait> action)
