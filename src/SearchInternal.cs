@@ -21,7 +21,7 @@ namespace Soulseek
     /// <summary>
     ///     A single file search.
     /// </summary>
-    internal class SearchInternal : IDisposable
+    internal sealed class SearchInternal : IDisposable
     {
         private int fileCount = 0;
         private int lockedFileCount = 0;
@@ -124,6 +124,23 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="SearchInternal"/>.
+        /// </summary>
+        /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
+        public void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    SearchTimeoutTimer.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
+
+        /// <summary>
         ///     Adds the specified <paramref name="response"/> to the list of responses after applying the filters specified in
         ///     the search options.
         /// </summary>
@@ -189,23 +206,6 @@ namespace Soulseek
             {
                 var completedTask = await Task.WhenAny(TaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
                 await completedTask.ConfigureAwait(false);
-            }
-        }
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="SearchInternal"/>.
-        /// </summary>
-        /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!Disposed)
-            {
-                if (disposing)
-                {
-                    SearchTimeoutTimer.Dispose();
-                }
-
-                Disposed = true;
             }
         }
 

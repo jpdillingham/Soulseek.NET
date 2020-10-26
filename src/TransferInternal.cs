@@ -19,7 +19,7 @@ namespace Soulseek
     /// <summary>
     ///     A single file transfer.
     /// </summary>
-    internal class TransferInternal
+    internal sealed class TransferInternal
     {
         private readonly int progressUpdateLimit = 1000;
         private readonly double speedAlpha = 2f / 10;
