@@ -24,7 +24,13 @@ const initialState = {
   interval: undefined,
   selectedDirectory: {},
   selectedFiles: [],
-  tree: []
+  tree: [],
+  info: {
+    directories: 0,
+    files: 0,
+    lockedDirectories: 0,
+    lockedFiles: 0
+  }
 };
 
 class Browse extends Component {
@@ -37,8 +43,24 @@ class Browse extends Component {
       api.get(`/user/${this.state.username}/browse`)
         .then(response => {
           let { directories, lockedDirectories } = response.data;
+          
+          const directoryCount = directories.length;
+          const fileCount = directories.reduce((acc, dir) => acc += dir.fileCount, 0);
+
+          const lockedDirectoryCount = lockedDirectories.length;
+          const lockedFileCount = lockedDirectories.reduce((acc, dir) => acc += dir.fileCount, 0);
+          
           directories = directories.concat(lockedDirectories.map(d => ({ ...d, locked: true })));
-          this.setState({ tree: this.getDirectoryTree(directories) });
+          
+          this.setState({ 
+            tree: this.getDirectoryTree(directories),
+            info: {
+              directories: directoryCount,
+              files: fileCount,
+              lockedDirectories: lockedDirectoryCount,
+              lockedFiles: lockedFileCount
+            }
+          });
         })
         .then(() => this.setState({ browseState: 'complete', browseError: undefined }, () => {
           this.saveState();
@@ -134,7 +156,7 @@ class Browse extends Component {
   sep = (directoryName) => directoryName.includes('\\') ? '\\' : '/';
 
   render = () => {
-    const { browseState, browseStatus, browseError, tree, selectedDirectory, username } = this.state;
+    const { browseState, browseStatus, browseError, tree, selectedDirectory, username, info } = this.state;
     const { directoryName, locked } = selectedDirectory;
     const pending = browseState === 'pending';
 
@@ -179,6 +201,9 @@ class Browse extends Component {
                         <Icon name='circle' color='green'/>
                         {username}
                     </Card.Header>
+                    <Card.Meta className='browse-meta'>
+                        <span>{`${info.files + info.lockedFiles} files in ${info.directories + info.lockedDirectories} directories (including ${info.lockedFiles} files in ${info.lockedDirectories} locked directories)`}</span>
+                    </Card.Meta>
                     <Segment className='browse-folderlist'>
                       <DirectoryTree 
                         tree={tree} 

@@ -62,3 +62,7 @@
 .browse-container:last-child {
   margin-bottom: 17px;
 }
+
+.browse-meta {
+  margin-top: 5px;
+}
