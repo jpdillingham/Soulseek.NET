@@ -226,6 +226,11 @@ namespace Soulseek
         public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         /// <summary>
+        ///     Occurs when the server sends session information.
+        /// </summary>
+        public event EventHandler<ServerInfo> ServerInfoReceived;
+
+        /// <summary>
         ///     Occurs when the client changes state.
         /// </summary>
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
@@ -260,6 +265,11 @@ namespace Soulseek
         ///     Gets the resolved server endpoint.
         /// </summary>
         public IPEndPoint IPEndPoint { get; private set; }
+
+        /// <summary>
+        ///     Gets information about the server.
+        /// </summary>
+        public ServerInfo ServerInfo { get; private set; } = new ServerInfo(parentMinSpeed: null, parentSpeedRatio: null, wishlistInterval: null);
 
         /// <summary>
         ///     Gets the resolved server address.
@@ -2405,9 +2415,16 @@ namespace Soulseek
 
         private async Task LoginInternalAsync(string username, string password, CancellationToken cancellationToken)
         {
+            using var failureCts = new CancellationTokenSource();
+            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, failureCts.Token);
+
             try
             {
                 var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
+
+                var parentMinSpeedWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentMinSpeed), cancellationToken: combinedCts.Token);
+                var parentSpeedRatioWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentSpeedRatio), cancellationToken: combinedCts.Token);
+                var wishlistIntervalWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.WishlistInterval), cancellationToken: combinedCts.Token);
 
                 await ServerConnection.WriteAsync(new LoginRequest(username, password), cancellationToken).ConfigureAwait(false);
 
@@ -2415,12 +2432,29 @@ namespace Soulseek
 
                 if (response.Succeeded)
                 {
+                    try
+                    {
+                        await Task.WhenAll(parentMinSpeedWait, parentSpeedRatioWait, wishlistIntervalWait).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ServerException("Did not receive one or more expected server messages upon login", ex);
+                    }
+
+                    var serverInfo = new ServerInfo(
+                        await parentMinSpeedWait.ConfigureAwait(false),
+                        await parentSpeedRatioWait.ConfigureAwait(false),
+                        await wishlistIntervalWait.ConfigureAwait(false) * 1000);
+
+                    ServerInfo = serverInfo;
+                    ServerInfoReceived?.Invoke(this, serverInfo);
+
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
 
                     if (Options.ListenPort.HasValue)
                     {
-                        // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
+                        // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
                         await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value), cancellationToken).ConfigureAwait(false);
                     }
@@ -2432,6 +2466,8 @@ namespace Soulseek
                 }
                 else
                 {
+                    failureCts.Cancel();
+
                     var ex = new LoginRejectedException($"The server rejected login attempt: {response.Message}");
                     Disconnect(ex.Message, exception: ex); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
                     throw ex;
