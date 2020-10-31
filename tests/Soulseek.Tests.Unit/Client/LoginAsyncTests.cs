@@ -17,6 +17,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
@@ -212,6 +213,98 @@ namespace Soulseek.Tests.Unit.Client
 
             var expectedBytes = new HaveNoParentsCommand(true).ToByteArray();
             conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync raises ServerInfoReceived on login"), AutoData]
+        public async Task LoginAsync_Raises_ServerInfoReceived_On_Login(string user, string password, int parentMinSpeed, int parentSpeedRatio, int wishlistInterval)
+        {
+            var port = GetPort();
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+            waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentMinSpeed)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(parentMinSpeed));
+            waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentSpeedRatio)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(parentSpeedRatio));
+            waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.WishlistInterval)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(wishlistInterval));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
+            {
+                ServerInfo args = null;
+
+                s.SetProperty("State", SoulseekClientStates.Connected);
+                s.ServerInfoReceived += (sender, e) => args = e;
+
+                await s.LoginAsync(user, password);
+
+                Assert.NotNull(args);
+                Assert.Equal(parentMinSpeed, args.ParentMinSpeed);
+                Assert.Equal(parentSpeedRatio, args.ParentSpeedRatio);
+                Assert.Equal(wishlistInterval * 1000, args.WishlistInterval);
+            }
+        }
+
+        [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync sets ServerInfo on login"), AutoData]
+        public async Task LoginAsync_Sets_ServerInfo_On_Login(string user, string password, int parentMinSpeed, int parentSpeedRatio, int wishlistInterval)
+        {
+            var port = GetPort();
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+            waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentMinSpeed)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(parentMinSpeed));
+            waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentSpeedRatio)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(parentSpeedRatio));
+            waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.WishlistInterval)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(wishlistInterval));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                await s.LoginAsync(user, password);
+
+                Assert.Equal(parentMinSpeed, s.ServerInfo.ParentMinSpeed);
+                Assert.Equal(parentSpeedRatio, s.ServerInfo.ParentSpeedRatio);
+                Assert.Equal(wishlistInterval * 1000, s.ServerInfo.WishlistInterval);
+            }
+        }
+
+        [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync throws ServerException if expected login messages are not sent"), AutoData]
+        public async Task LoginAsync_Throws_ServerException_If_Expected_Login_Messages_Are_Not_Sent(string user, string password)
+        {
+            var port = GetPort();
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+            waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.WishlistInterval)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<int>(new TimeoutException("timed out")));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(() => s.LoginAsync(user, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<LoginException>(ex);
+                Assert.IsType<ServerException>(ex.InnerException);
+                Assert.True(ex.InnerException.Message.ContainsInsensitive("did not receive one or more expected server messages"));
+                Assert.IsType<TimeoutException>(ex.InnerException.InnerException);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
