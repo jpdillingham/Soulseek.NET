@@ -97,7 +97,7 @@ namespace Soulseek
         event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         /// <summary>
-        ///     Occurs when the server sends session information.
+        ///     Occurs when the server sends information upon login.
         /// </summary>
         event EventHandler<ServerInfo> ServerInfoReceived;
 
@@ -148,7 +148,7 @@ namespace Soulseek
         int? Port { get; }
 
         /// <summary>
-        ///     Gets information about the server.
+        ///     Gets information sent by the server upon login.
         /// </summary>
         public ServerInfo ServerInfo { get; }
 

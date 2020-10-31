@@ -226,7 +226,7 @@ namespace Soulseek
         public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         /// <summary>
-        ///     Occurs when the server sends session information.
+        ///     Occurs when the server sends information upon login.
         /// </summary>
         public event EventHandler<ServerInfo> ServerInfoReceived;
 
@@ -267,11 +267,6 @@ namespace Soulseek
         public IPEndPoint IPEndPoint { get; private set; }
 
         /// <summary>
-        ///     Gets information about the server.
-        /// </summary>
-        public ServerInfo ServerInfo { get; private set; } = new ServerInfo(parentMinSpeed: null, parentSpeedRatio: null, wishlistInterval: null);
-
-        /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
         public virtual SoulseekClientOptions Options { get; }
@@ -280,6 +275,11 @@ namespace Soulseek
         ///     Gets server port.
         /// </summary>
         public int? Port => IPEndPoint?.Port;
+
+        /// <summary>
+        ///     Gets information sent by the server upon login.
+        /// </summary>
+        public ServerInfo ServerInfo { get; private set; } = new ServerInfo(parentMinSpeed: null, parentSpeedRatio: null, wishlistInterval: null);
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -2064,8 +2064,8 @@ namespace Soulseek
                     }
                     catch (ConnectionException)
                     {
-                        // if the remote user doesn't initiate a transfer connection, try to initiate one from this end.
-                        // the remote client in this scenario is most likely Nicotine+.
+                        // if the remote user doesn't initiate a transfer connection, try to initiate one from this end. the
+                        // remote client in this scenario is most likely Nicotine+.
                         download.Connection = await PeerConnectionManager
                             .GetTransferConnectionAsync(username, endpoint, download.RemoteToken.Value, cancellationToken)
                             .ConfigureAwait(false);
@@ -2075,8 +2075,8 @@ namespace Soulseek
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
-                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive
-                    // way to be sure we conclude the transfer in a way that accurately represents what happened.
+                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive way
+                    // to be sure we conclude the transfer in a way that accurately represents what happened.
                     if (download.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(download.WaitKey);
@@ -2724,8 +2724,8 @@ namespace Soulseek
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
                 upload.Connection.Disconnected += (sender, e) =>
                 {
-                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive
-                    // way to be sure we conclude the transfer in a way that accurately represents what happened.
+                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive way
+                    // to be sure we conclude the transfer in a way that accurately represents what happened.
                     if (upload.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(upload.WaitKey);
@@ -2771,10 +2771,11 @@ namespace Soulseek
 
                     upload.State = TransferStates.Succeeded;
 
-                    // figure out how and when to disconnect the connection.
-                    // ideally the receiving end disconnects; this way we know they've gotten all of the data.  we can encourage this by attempting to read
-                    // data, which works well for Soulseek NS and Qt, but takes some time with Nicotine+. if the receiving end won't disconnect, wait the configured MaximumLingerTime
-                    // and disconnect on our end.  the receiver may not have gotten all the data if it comes to this, so linger time shouldn't be less than a couple of seconds.
+                    // figure out how and when to disconnect the connection. ideally the receiving end disconnects; this way we
+                    // know they've gotten all of the data. we can encourage this by attempting to read data, which works well for
+                    // Soulseek NS and Qt, but takes some time with Nicotine+. if the receiving end won't disconnect, wait the
+                    // configured MaximumLingerTime and disconnect on our end. the receiver may not have gotten all the data if it
+                    // comes to this, so linger time shouldn't be less than a couple of seconds.
                     try
                     {
                         var lingerStartTime = DateTime.UtcNow;
