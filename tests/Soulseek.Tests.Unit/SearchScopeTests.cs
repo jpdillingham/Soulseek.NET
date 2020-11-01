@@ -20,26 +20,39 @@ namespace Soulseek.Tests.Unit
     public class SearchScopeTests
     {
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates Default")]
-        public void Instantiates_Default()
+        [Fact(DisplayName = "Instantiates Network Default")]
+        public void Instantiates_Network_Default()
         {
             SearchScope s = null;
 
-            var ex = Record.Exception(() => s = new SearchScope());
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Network));
 
             Assert.Null(ex);
 
-            Assert.Equal(SearchScopeType.Default, s.Type);
+            Assert.Equal(SearchScopeType.Network, s.Type);
             Assert.Empty(s.Subjects);
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Throws on Default when subjects is not empty"), AutoData]
-        public void Throws_On_Default_When_Subjects_Is_Not_Empty(string[] subjects)
+        [Theory(DisplayName = "Throws on Network when subjects is not empty"), AutoData]
+        public void Throws_On_Network_When_Subjects_Is_Not_Empty(string[] subjects)
         {
             SearchScope s = null;
 
-            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Default, subjects));
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Network, subjects));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("accepts no subjects"));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Throws on Wishlist when subjects is not empty"), AutoData]
+        public void Throws_On_Wishlist_When_Subjects_Is_Not_Empty(string[] subjects)
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Wishlist, subjects));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
@@ -183,12 +196,22 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Factories")]
-        [Fact(DisplayName = "Default returns default scope")]
-        public void Default_Returns_Default_Scope()
+        [Fact(DisplayName = "Network returns Network scope")]
+        public void Network_Returns_Network_Scope()
         {
-            var s = SearchScope.Default;
+            var s = SearchScope.Network;
 
-            Assert.Equal(SearchScopeType.Default, s.Type);
+            Assert.Equal(SearchScopeType.Network, s.Type);
+            Assert.Empty(s.Subjects);
+        }
+
+        [Trait("Category", "Factories")]
+        [Fact(DisplayName = "Wishlist returns Wishlist scope")]
+        public void Wishlist_Returns_Wishlist_Scope()
+        {
+            var s = SearchScope.Wishlist;
+
+            Assert.Equal(SearchScopeType.Wishlist, s.Type);
             Assert.Empty(s.Subjects);
         }
 
