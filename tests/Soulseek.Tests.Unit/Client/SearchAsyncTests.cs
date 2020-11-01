@@ -737,8 +737,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
-        [Theory(DisplayName = "SearchAsync sends SearchRequest given Default scope"), AutoData]
-        public async Task SearchAsync_Sends_SearchRequest_Given_Default_Scope(string searchText, int token)
+        [Theory(DisplayName = "SearchAsync sends SearchRequest given Network scope"), AutoData]
+        public async Task SearchAsync_Sends_SearchRequest_Given_Network_Scope(string searchText, int token)
         {
             var expected = new SearchRequest(searchText, token).ToByteArray();
 
@@ -754,6 +754,30 @@ namespace Soulseek.Tests.Unit.Client
 
                     await Record.ExceptionAsync(() =>
                         s.SearchAsync(SearchQuery.FromText(searchText), SearchScope.Network, token, cancellationToken: cts.Token));
+                }
+
+                conn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(expected)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync sends SearchRequest given Wishlist scope"), AutoData]
+        public async Task SearchAsync_Sends_WishlistSearchRequest_Given_Wishlist_Scope(string searchText, int token)
+        {
+            var expected = new WishlistSearchRequest(searchText, token).ToByteArray();
+
+            using (var cts = new CancellationTokenSource(1000))
+            {
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                    .Callback(() => cts.Cancel());
+
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    await Record.ExceptionAsync(() =>
+                        s.SearchAsync(SearchQuery.FromText(searchText), SearchScope.Wishlist, token, cancellationToken: cts.Token));
                 }
 
                 conn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(expected)), It.IsAny<CancellationToken?>()), Times.Once);
