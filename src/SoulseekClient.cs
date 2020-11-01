@@ -226,6 +226,11 @@ namespace Soulseek
         public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         /// <summary>
+        ///     Occurs when the server sends information upon login.
+        /// </summary>
+        public event EventHandler<ServerInfo> ServerInfoReceived;
+
+        /// <summary>
         ///     Occurs when the client changes state.
         /// </summary>
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
@@ -270,6 +275,11 @@ namespace Soulseek
         ///     Gets server port.
         /// </summary>
         public int? Port => IPEndPoint?.Port;
+
+        /// <summary>
+        ///     Gets information sent by the server upon login.
+        /// </summary>
+        public ServerInfo ServerInfo { get; private set; } = new ServerInfo(parentMinSpeed: null, parentSpeedRatio: null, wishlistInterval: null);
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -1322,7 +1332,7 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope ??= new SearchScope();
+            scope ??= new SearchScope(SearchScopeType.Network);
             options ??= new SearchOptions();
 
             if (options.RemoveSingleCharacterSearchTerms)
@@ -1395,7 +1405,7 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope ??= new SearchScope();
+            scope ??= new SearchScope(SearchScopeType.Network);
             options ??= new SearchOptions();
 
             if (options.RemoveSingleCharacterSearchTerms)
@@ -2054,8 +2064,8 @@ namespace Soulseek
                     }
                     catch (ConnectionException)
                     {
-                        // if the remote user doesn't initiate a transfer connection, try to initiate one from this end.
-                        // the remote client in this scenario is most likely Nicotine+.
+                        // if the remote user doesn't initiate a transfer connection, try to initiate one from this end. the
+                        // remote client in this scenario is most likely Nicotine+.
                         download.Connection = await PeerConnectionManager
                             .GetTransferConnectionAsync(username, endpoint, download.RemoteToken.Value, cancellationToken)
                             .ConfigureAwait(false);
@@ -2065,8 +2075,8 @@ namespace Soulseek
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
-                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive
-                    // way to be sure we conclude the transfer in a way that accurately represents what happened.
+                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive way
+                    // to be sure we conclude the transfer in a way that accurately represents what happened.
                     if (download.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(download.WaitKey);
@@ -2405,9 +2415,16 @@ namespace Soulseek
 
         private async Task LoginInternalAsync(string username, string password, CancellationToken cancellationToken)
         {
+            using var failureCts = new CancellationTokenSource();
+            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, failureCts.Token);
+
             try
             {
                 var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
+
+                var parentMinSpeedWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentMinSpeed), cancellationToken: combinedCts.Token);
+                var parentSpeedRatioWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentSpeedRatio), cancellationToken: combinedCts.Token);
+                var wishlistIntervalWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.WishlistInterval), cancellationToken: combinedCts.Token);
 
                 await ServerConnection.WriteAsync(new LoginRequest(username, password), cancellationToken).ConfigureAwait(false);
 
@@ -2415,12 +2432,29 @@ namespace Soulseek
 
                 if (response.Succeeded)
                 {
+                    try
+                    {
+                        await Task.WhenAll(parentMinSpeedWait, parentSpeedRatioWait, wishlistIntervalWait).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ServerException("Did not receive one or more expected server messages upon login", ex);
+                    }
+
+                    var serverInfo = new ServerInfo(
+                        await parentMinSpeedWait.ConfigureAwait(false),
+                        await parentSpeedRatioWait.ConfigureAwait(false),
+                        await wishlistIntervalWait.ConfigureAwait(false) * 1000);
+
+                    ServerInfo = serverInfo;
+                    ServerInfoReceived?.Invoke(this, serverInfo);
+
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
 
                     if (Options.ListenPort.HasValue)
                     {
-                        // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
+                        // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
                         await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value), cancellationToken).ConfigureAwait(false);
                     }
@@ -2432,6 +2466,8 @@ namespace Soulseek
                 }
                 else
                 {
+                    failureCts.Cancel();
+
                     var ex = new LoginRejectedException($"The server rejected login attempt: {response.Message}");
                     Disconnect(ex.Message, exception: ex); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
                     throw ex;
@@ -2482,6 +2518,7 @@ namespace Soulseek
                 {
                     SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
                     SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
+                    SearchScopeType.Wishlist => new WishlistSearchRequest(search.SearchText, search.Token).ToByteArray(),
                     _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
                 };
 
@@ -2688,8 +2725,8 @@ namespace Soulseek
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
                 upload.Connection.Disconnected += (sender, e) =>
                 {
-                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive
-                    // way to be sure we conclude the transfer in a way that accurately represents what happened.
+                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive way
+                    // to be sure we conclude the transfer in a way that accurately represents what happened.
                     if (upload.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(upload.WaitKey);
@@ -2735,10 +2772,11 @@ namespace Soulseek
 
                     upload.State = TransferStates.Succeeded;
 
-                    // figure out how and when to disconnect the connection.
-                    // ideally the receiving end disconnects; this way we know they've gotten all of the data.  we can encourage this by attempting to read
-                    // data, which works well for Soulseek NS and Qt, but takes some time with Nicotine+. if the receiving end won't disconnect, wait the configured MaximumLingerTime
-                    // and disconnect on our end.  the receiver may not have gotten all the data if it comes to this, so linger time shouldn't be less than a couple of seconds.
+                    // figure out how and when to disconnect the connection. ideally the receiving end disconnects; this way we
+                    // know they've gotten all of the data. we can encourage this by attempting to read data, which works well for
+                    // Soulseek NS and Qt, but takes some time with Nicotine+. if the receiving end won't disconnect, wait the
+                    // configured MaximumLingerTime and disconnect on our end. the receiver may not have gotten all the data if it
+                    // comes to this, so linger time shouldn't be less than a couple of seconds.
                     try
                     {
                         var lingerStartTime = DateTime.UtcNow;

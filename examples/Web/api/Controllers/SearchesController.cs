@@ -62,7 +62,7 @@
 
             try
             {
-                await Client.SearchAsync(SearchQuery.FromText(searchText), (r) => results.Add(r), SearchScope.Default, request.Token, options);
+                await Client.SearchAsync(SearchQuery.FromText(searchText), (r) => results.Add(r), SearchScope.Network, request.Token, options);
                 return Ok(results);
             }
             catch (Exception ex)

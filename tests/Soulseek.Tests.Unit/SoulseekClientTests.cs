@@ -85,6 +85,19 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "ServerInfo is not null, but contains nulls initially")]
+        public void ServerInfo_Is_Not_Null_But_Contains_Nulls_Initially()
+        {
+            using (var s = new SoulseekClient())
+            {
+                Assert.NotNull(s.ServerInfo);
+                Assert.Null(s.ServerInfo.ParentMinSpeed);
+                Assert.Null(s.ServerInfo.ParentSpeedRatio);
+                Assert.Null(s.ServerInfo.WishlistInterval);
+            }
+        }
+
         [Trait("Category", "Port")]
         [Theory(DisplayName = "Port returns IPEndPoint port if not null"), AutoData]
         public void Port_Returns_IPEndPoint_Port_If_Not_Null(IPAddress ip, int port)

@@ -227,6 +227,34 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(text, reader.ReadString());
         }
 
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "WishlistSearchRequest")]
+        [Theory(DisplayName = "WishlistSearchRequest instantiates properly"), AutoData]
+        public void WishlistSearchRequest_Instantiates_Properly(string text, int token)
+        {
+            var a = new WishlistSearchRequest(text, token);
+
+            Assert.Equal(text, a.SearchText);
+            Assert.Equal(token, a.Token);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "WishlistSearchRequest")]
+        [Theory(DisplayName = "WishlistSearchRequest constructs the correct Message"), AutoData]
+        public void WishlistSearchRequest_Constructs_The_Correct_Message(string text, int token)
+        {
+            var a = new WishlistSearchRequest(text, token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.WishlistSearch, code);
+            Assert.Equal(4 + 4 + 4 + 4 + text.Length, msg.Length);
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(text, reader.ReadString());
+        }
+
         [Trait("Category", "ToByteArray")]
         [Trait("Request", "PeerInfoRequest")]
         [Fact(DisplayName = "PeerInfoRequest constructs the correct Message")]

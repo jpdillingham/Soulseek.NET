@@ -26,15 +26,15 @@ namespace Soulseek
         /// </summary>
         /// <param name="type">The scope type.</param>
         /// <param name="subjects">The scope subjects, if applicable.</param>
-        public SearchScope(SearchScopeType type = SearchScopeType.Default, params string[] subjects)
+        public SearchScope(SearchScopeType type, params string[] subjects)
         {
             Type = type;
 
             subjects ??= Array.Empty<string>();
 
-            if (Type == SearchScopeType.Default && subjects.Length > 0)
+            if ((Type == SearchScopeType.Network || Type == SearchScopeType.Wishlist) && subjects.Length > 0)
             {
-                throw new ArgumentException($"The default search scope accepts no subjects", nameof(subjects));
+                throw new ArgumentException($"The {Type} search scope accepts no subjects", nameof(subjects));
             }
 
             if (Type == SearchScopeType.Room && (subjects.Length != 1 || string.IsNullOrEmpty(subjects[0])))
@@ -59,16 +59,19 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the default scope (network).
+        ///     Gets a <see cref="SearchScopeType.Network"/> scope.
         /// </summary>
-        public static SearchScope Default => new SearchScope();
+        public static SearchScope Network => new SearchScope(SearchScopeType.Network);
+
+        /// <summary>
+        ///     Gets a <see cref="SearchScopeType.Wishlist"/> scope.
+        /// </summary>
+        public static SearchScope Wishlist => new SearchScope(SearchScopeType.Wishlist);
 
         /// <summary>
         ///     Gets the scope subjects, if applicable.
         /// </summary>
-        /// <remarks>
-        ///     Ignored for <see cref="SearchScopeType.Default"/>.
-        /// </remarks>
+        /// <remarks>Ignored for <see cref="SearchScopeType.Network"/> and <see cref="SearchScopeType.Wishlist"/>.</remarks>
         public IEnumerable<string> Subjects { get; }
 
         /// <summary>
