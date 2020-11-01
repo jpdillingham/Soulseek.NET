@@ -31,11 +31,16 @@
             return string.Join(separator, parts.Take(parts.Length - 1));
         }
 
-        static readonly string[] SizeSuffixes =
-                   { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
-
+        /// <summary>
+        ///     Formats byte to nearest size (KB, MB, etc.)
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="decimalPlaces"></param>
+        /// <returns></returns>
         public static string SizeSuffix(this double value, int decimalPlaces = 1)
         {
+            string[] SizeSuffixes = { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
+
             if (value < 0) { return "-" + SizeSuffix(-value); }
             if (value == 0) { return string.Format("{0:n" + decimalPlaces + "} bytes", 0); }
 
