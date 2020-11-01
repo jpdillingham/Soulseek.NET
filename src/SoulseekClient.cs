@@ -1332,7 +1332,7 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope ??= new SearchScope();
+            scope ??= new SearchScope(SearchScopeType.Network);
             options ??= new SearchOptions();
 
             if (options.RemoveSingleCharacterSearchTerms)
@@ -1405,7 +1405,7 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope ??= new SearchScope();
+            scope ??= new SearchScope(SearchScopeType.Network);
             options ??= new SearchOptions();
 
             if (options.RemoveSingleCharacterSearchTerms)
@@ -2518,6 +2518,7 @@ namespace Soulseek
                 {
                     SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
                     SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
+                    SearchScopeType.Wishlist => new WishlistSearchRequest(search.SearchText, search.Token).ToByteArray(),
                     _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
                 };
 
