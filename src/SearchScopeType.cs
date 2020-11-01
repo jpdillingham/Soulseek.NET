@@ -18,9 +18,9 @@ namespace Soulseek
     public enum SearchScopeType
     {
         /// <summary>
-        ///     Default (network).
+        ///     Network.
         /// </summary>
-        Default = 0,
+        Network = 0,
 
         /// <summary>
         ///     User.
@@ -31,5 +31,10 @@ namespace Soulseek
         ///     Room.
         /// </summary>
         Room = 2,
+
+        /// <summary>
+        ///     Wishlist.
+        /// </summary>
+        Wishlist = 3,
     }
 }
