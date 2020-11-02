@@ -13,6 +13,7 @@
 namespace Soulseek.Network.Tcp
 {
     using System;
+    using System.IO;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -64,5 +65,7 @@ namespace Soulseek.Network.Tcp
         /// <exception cref="InvalidOperationException">Thrown when the TCP client is not connected to a remote host.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
         INetworkStream GetStream();
+
+        Stream GetRawStream();
     }
 }

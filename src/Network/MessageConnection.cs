@@ -13,7 +13,10 @@
 namespace Soulseek.Network
 {
     using System;
+    using System.Buffers;
     using System.Collections.Generic;
+    using System.IO;
+    using System.IO.Pipelines;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -59,12 +62,12 @@ namespace Soulseek.Network
                 // if Username is empty, this is a server connection. begin reading continuously, and throw on exception.
                 if (IsServerConnection)
                 {
-                    Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
+                    Task.Run(() => ReadFromPipeContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
                 }
                 else
                 {
                     // swallow exceptions from peer connections; these will be handled by timeouts.
-                    Task.Run(() => ReadContinuouslyAsync()).Forget();
+                    Task.Run(() => ReadFromPipeContinuouslyAsync()).Forget();
                 }
             };
         }
@@ -127,7 +130,7 @@ namespace Soulseek.Network
         {
             if (!ReadingContinuously)
             {
-                Task.Run(() => ReadContinuouslyAsync()).Forget();
+                Task.Run(() => ReadFromPipeContinuouslyAsync()).Forget();
             }
         }
 
@@ -222,6 +225,99 @@ namespace Soulseek.Network
             {
                 ReadingContinuously = false;
             }
+        }
+
+        private async Task ReadFromPipeContinuouslyAsync()
+        {
+            if (ReadingContinuously)
+            {
+                return;
+            }
+
+            ReadingContinuously = true;
+
+            void RaiseMessageDataRead(byte[] codeBytes, long currentLength, long totalLength)
+            {
+                Interlocked.CompareExchange(ref MessageDataRead, null, null)?
+                    .Invoke(this, new MessageDataEventArgs(codeBytes, currentLength, totalLength));
+            }
+
+            try
+            {
+                var reader = PipeReader.Create(TcpClient.GetRawStream());
+
+                while (true)
+                {
+                    ReadResult result = await reader.ReadAsync().ConfigureAwait(false);
+                    ReadOnlySequence<byte> buffer = result.Buffer;
+
+                    while (TryReadMessage(ref buffer, out ReadOnlySequence<byte> message))
+                    {
+                        var messageBytes = message.ToArray();
+
+                        Console.WriteLine($"Firing MessageRead with {messageBytes.Length} bytes");
+                        Interlocked.CompareExchange(ref MessageRead, null, null)?
+                            .Invoke(this, new MessageEventArgs(messageBytes));
+                    }
+
+                    reader.AdvanceTo(buffer.Start, buffer.End);
+
+                    if (result.IsCompleted)
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            finally
+            {
+                ReadingContinuously = false;
+            }
+        }
+
+        private bool Reading = false;
+
+        private bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> message)
+        {
+            if (buffer.Length < 8)
+            {
+                message = default;
+                return false;
+            }
+
+            var lengthBytes = buffer.Slice(0, 4);
+            var length = BitConverter.ToInt32(lengthBytes.ToArray(), 0);
+            var codeBytes = buffer.Slice(4, 4);
+
+            if (!Reading)
+            {
+                Console.WriteLine($"Firing MessageReceived");
+                Interlocked.CompareExchange(ref MessageReceived, null, null)?
+                    .Invoke(this, new MessageReceivedEventArgs(length, codeBytes.ToArray()));
+
+                Reading = true;
+            }
+
+            Interlocked.CompareExchange(ref MessageDataRead, null, null)?
+                .Invoke(this, new MessageDataEventArgs(codeBytes.ToArray(), buffer.Length, length));
+
+            ResetInactivityTime();
+
+            if (buffer.Length < length)
+            {
+                message = default;
+                return false;
+            }
+
+            message = buffer.Slice(0, length + 4);
+            buffer = buffer.Slice(buffer.GetPosition(length + 4));
+
+            Reading = false;
+
+            return true;
         }
 
         private async Task WriteMessageInternalAsync(byte[] bytes, CancellationToken cancellationToken)

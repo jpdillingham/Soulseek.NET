@@ -42,21 +42,21 @@ namespace Soulseek.Network.Tcp
             TcpClient.Client.ReceiveBufferSize = Options.ReadBufferSize;
             TcpClient.Client.SendBufferSize = Options.WriteBufferSize;
 
-            if (Options.InactivityTimeout > 0)
-            {
-                InactivityTimer = new SystemTimer()
-                {
-                    Enabled = false,
-                    AutoReset = false,
-                    Interval = Options.InactivityTimeout,
-                };
+            //if (Options.InactivityTimeout > 0)
+            //{
+            //    InactivityTimer = new SystemTimer()
+            //    {
+            //        Enabled = false,
+            //        AutoReset = false,
+            //        Interval = Options.InactivityTimeout,
+            //    };
 
-                InactivityTimer.Elapsed += (sender, e) =>
-                {
-                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} milliseconds was reached");
-                    Disconnect(ex.Message, ex);
-                };
-            }
+            //    InactivityTimer.Elapsed += (sender, e) =>
+            //    {
+            //        var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} milliseconds was reached");
+            //        Disconnect(ex.Message, ex);
+            //    };
+            //}
 
             WatchdogTimer = new SystemTimer()
             {
@@ -593,7 +593,7 @@ namespace Soulseek.Network.Tcp
             }
         }
 
-        private void ResetInactivityTime()
+        protected void ResetInactivityTime()
         {
             InactivityTimer?.Reset();
             LastActivityTime = DateTime.UtcNow;

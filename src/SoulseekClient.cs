@@ -1782,7 +1782,7 @@ namespace Soulseek
         {
             var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
             var completionEventFired = false;
-
+            var sw = new Stopwatch();
             void UpdateProgress(object sender, MessageDataEventArgs args)
             {
                 if (Math.Abs(args.PercentComplete - 100) == 0)
@@ -1823,6 +1823,8 @@ namespace Soulseek
                     (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
                     responseLength = responseReceivedEventArgs.Length - 4;
 
+                    sw.Start();
+
                     responseConnection.Disconnected += (sender, args) =>
                         Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
 
@@ -1851,6 +1853,9 @@ namespace Soulseek
                 {
                     UpdateProgress(responseConnection, new MessageDataEventArgs(responseReceivedEventArgs.Code, responseLength.Value, responseLength.Value));
                 }
+
+                sw.Stop();
+                Console.WriteLine($"Browse of {username} completed in {sw.ElapsedMilliseconds}ms");
 
                 return response;
             }

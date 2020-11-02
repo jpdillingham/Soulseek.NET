@@ -14,6 +14,7 @@ namespace Soulseek.Network.Tcp
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -99,6 +100,8 @@ namespace Soulseek.Network.Tcp
         {
             return new NetworkStreamAdapter(TcpClient.GetStream());
         }
+
+        public Stream GetRawStream() => TcpClient.GetStream();
 
         private void Dispose(bool disposing)
         {
