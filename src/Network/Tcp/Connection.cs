@@ -39,8 +39,6 @@ namespace Soulseek.Network.Tcp
             Options = options ?? new ConnectionOptions();
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
-            TcpClient.Client.ReceiveBufferSize = Options.ReadBufferSize;
-            TcpClient.Client.SendBufferSize = Options.WriteBufferSize;
 
             if (Options.InactivityTimeout > 0)
             {
