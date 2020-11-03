@@ -259,7 +259,18 @@
 
             // bind transfer events.  see TransferStateChangedEventArgs and TransferProgressEventArgs.
             Client.TransferStateChanged += (e, args) =>
-                Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}{(args.Transfer.State.HasFlag(TransferStates.Completed) ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%)" : string.Empty)}");
+            {
+                var direction = args.Transfer.Direction.ToString().ToUpper();
+                var user = args.Transfer.Username;
+                var file = Path.GetFileName(args.Transfer.Filename);
+                var oldState = args.PreviousState;
+                var state = args.Transfer.State;
+
+                var completed = args.Transfer.State.HasFlag(TransferStates.Completed);
+
+                Console.WriteLine($"[{direction}] [{user}/{file}] {oldState} => {state}{(completed ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%) @ {args.Transfer.AverageSpeed.SizeSuffix()}/s" : string.Empty)}");
+            };
+
             Client.TransferProgressUpdated += (e, args) =>
             {
                 // this is really verbose.
