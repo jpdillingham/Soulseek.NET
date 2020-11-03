@@ -28,8 +28,9 @@ namespace Soulseek.Messaging.Messages
         /// <param name="ipAddress">The IP address to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="token">The unique connection token.</param>
-        public ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token)
-            : this(username, type, new IPEndPoint(ipAddress, port), token)
+        /// <param name="isPrivileged">A value indicating whether the user is privileged.</param>
+        public ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token, bool isPrivileged)
+            : this(username, type, new IPEndPoint(ipAddress, port), token, isPrivileged)
         {
         }
 
@@ -40,12 +41,14 @@ namespace Soulseek.Messaging.Messages
         /// <param name="type">The connection type ('P' for message or 'F' for transfer).</param>
         /// <param name="endpoint">The IP endpoint to which to connect.</param>
         /// <param name="token">The unique connection token.</param>
-        public ConnectToPeerResponse(string username, string type, IPEndPoint endpoint, int token)
+        /// <param name="isPrivileged">A value indicating whether the user is privileged.</param>
+        public ConnectToPeerResponse(string username, string type, IPEndPoint endpoint, int token, bool isPrivileged)
         {
             Username = username;
             Type = type;
             Token = token;
             IPEndPoint = endpoint;
+            IsPrivileged = isPrivileged;
         }
 
         /// <summary>
@@ -57,6 +60,11 @@ namespace Soulseek.Messaging.Messages
         ///     Gets the IP endpoint to which to connect.
         /// </summary>
         public IPEndPoint IPEndPoint { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether the user is privileged.
+        /// </summary>
+        public bool IsPrivileged { get; }
 
         /// <summary>
         ///     Gets the port to which to connect.
@@ -102,8 +110,9 @@ namespace Soulseek.Messaging.Messages
 
             var port = reader.ReadInteger();
             var token = reader.ReadInteger();
+            var isPrivileged = reader.ReadByte() > 1;
 
-            return new ConnectToPeerResponse(username, type, ipAddress, port, token);
+            return new ConnectToPeerResponse(username, type, ipAddress, port, token, isPrivileged);
         }
     }
 }

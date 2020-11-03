@@ -23,11 +23,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string username, string type, IPEndPoint endpoint, int token)
+        public void Instantiates_With_The_Given_Data(string username, string type, IPEndPoint endpoint, int token, bool isPrivileged)
         {
             ConnectToPeerResponse response = null;
 
-            var ex = Record.Exception(() => response = new ConnectToPeerResponse(username, type, endpoint, token));
+            var ex = Record.Exception(() => response = new ConnectToPeerResponse(username, type, endpoint, token, isPrivileged));
 
             Assert.Null(ex);
 
@@ -36,6 +36,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(endpoint.Address, response.IPEndPoint.Address);
             Assert.Equal(endpoint.Port, response.IPEndPoint.Port);
             Assert.Equal(token, response.Token);
+            Assert.Equal(isPrivileged, response.IsPrivileged);
         }
 
         [Trait("Category", "Parse")]

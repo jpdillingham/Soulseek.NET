@@ -576,9 +576,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetTransferConnectionAsync")]
         [Theory(DisplayName = "GetTransferConnectionAsync CTPR connects and pierces firewall"), AutoData]
-        internal async Task GetTransferConnectionAsync_CTPR_Connects_And_Pierces_Firewall(string username, IPEndPoint endpoint, int token)
+        internal async Task GetTransferConnectionAsync_CTPR_Connects_And_Pierces_Firewall(string username, IPEndPoint endpoint, int token, bool isPrivileged)
         {
-            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token, isPrivileged);
             var expectedBytes = new PierceFirewall(token).ToByteArray();
             byte[] actualBytes = Array.Empty<byte>();
 
@@ -617,7 +617,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionAsync CTPR disposes connection if connect fails"), AutoData]
         internal async Task GetTransferConnectionAsync_CTPR_Disposes_Connection_If_Connect_Fails(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token, false);
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
@@ -645,7 +645,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionAsync adds diagnostic on disconnect"), AutoData]
         internal async Task GetTransferConnectionAsync_Adds_Diagnostic_On_Disconnect(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token, false);
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
@@ -674,7 +674,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionAsync CTPR sets type to inbound indirect"), AutoData]
         public async Task GetTransferConnectionAsync_CTPR_Sets_Type_To_Inbound_Indirect(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token, false);
 
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ReadAsync(4, null))
@@ -697,7 +697,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionAsync CTPR produces expected diagnostic on failure"), AutoData]
         public async Task GetTransferConnectionAsync_CTPR_Produces_Expected_Diagnostic_On_Failure(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token, false);
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
@@ -1734,7 +1734,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns existing connection if exists"), AutoData]
         internal async Task GetOrAddMessageConnectionAsyncCTPR_Returns_Existing_Connection_If_Exists(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
@@ -1759,7 +1759,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync updates PendingInboundDirectConnectionDictionary if key exists"), AutoData]
         internal async Task GetOrAddMessageConnectionAsyncCTPR_Updates_PendingInboundDirectConnectionDictionary_If_Key_Exists(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1791,7 +1791,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync connects and returns new if not existing"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_Connects_And_Returns_New_If_Not_Existing(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1818,7 +1818,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetOrAddMessageConnectionAsync_Disposes_Connection_And_Throws_On_Connect_Failure(string username, IPEndPoint endpoint, int token)
         {
             var expectedEx = new Exception();
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1846,7 +1846,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetOrAddMessageConnectionAsync_Disposes_Connection_And_Throws_On_Write_Failure(string username, IPEndPoint endpoint, int token)
         {
             var expectedEx = new Exception();
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1876,7 +1876,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetOrAddMessageConnectionAsync_Pierces_Firewall_With_Correct_Token(string username, IPEndPoint endpoint, int token)
         {
             var expectedMessage = new PierceFirewall(token).ToByteArray();
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1901,7 +1901,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR generates expected diagnostic on successful connection"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Generates_Expected_Diagnostic_On_Successful_Connection(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1927,7 +1927,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR purges cache on failure"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Purges_Cache_On_Failure(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1954,7 +1954,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR produces expected diagnostics on failure"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Produces_Expected_Diagnostics_On_Failure(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1979,7 +1979,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR throws expected exception on failure"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Throws_Expected_Exception_On_Failure(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
             var expectedEx = new Exception("foo");
 
             var conn = GetMessageConnectionMock(username, endpoint);
@@ -2005,7 +2005,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR caches connection if uncached"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Caches_Connection_If_Uncached(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -2039,7 +2039,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR returns cached connection if cached"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Returns_Cached_Connection_If_Cached(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
@@ -2064,7 +2064,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR sets connection type to inbound indirect"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Sets_Connection_Type_To_Inbound_Indirect(string username, IPEndPoint endpoint, int token)
         {
-            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
