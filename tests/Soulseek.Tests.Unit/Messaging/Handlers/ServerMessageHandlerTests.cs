@@ -385,6 +385,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteBytes(ipBytes)
                 .WriteInteger(port)
                 .WriteInteger(token)
+                .WriteByte(0)
                 .Build();
 
             handler.HandleMessageRead(null, msg);
@@ -443,6 +444,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteBytes(ipBytes)
                 .WriteInteger(port)
                 .WriteInteger(token)
+                .WriteByte(0)
                 .Build();
 
             var diagnostics = new List<DiagnosticEventArgs>();
@@ -480,6 +482,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteBytes(ipBytes)
                 .WriteInteger(port)
                 .WriteInteger(token)
+                .WriteByte(0)
                 .Build();
 
             var diagnostics = new List<DiagnosticEventArgs>();
@@ -526,6 +529,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteBytes(ipBytes)
                 .WriteInteger(port)
                 .WriteInteger(token)
+                .WriteByte(0)
                 .Build();
 
             var conn = new Mock<IConnection>();
@@ -569,6 +573,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteBytes(ipBytes)
                 .WriteInteger(port)
                 .WriteInteger(token)
+                .WriteByte(0)
                 .Build();
 
             var conn = new Mock<IConnection>();
@@ -607,6 +612,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteBytes(ipBytes)
                 .WriteInteger(port)
                 .WriteInteger(token)
+                .WriteByte(0)
                 .Build();
 
             handler.HandleMessageRead(null, msg);
