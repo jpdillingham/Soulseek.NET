@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string username, string type, IPEndPoint endpoint, int token)
+        public void Parse_Returns_Expected_Data(string username, string type, IPEndPoint endpoint, int token, bool isPrivileged)
         {
             var ipBytes = endpoint.Address.GetAddressBytes();
             Array.Reverse(ipBytes);
@@ -83,6 +83,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteBytes(ipBytes)
                 .WriteInteger(endpoint.Port)
                 .WriteInteger(token)
+                .WriteByte((byte)(isPrivileged ? 1 : 0))
                 .Build();
 
             var response = ConnectToPeerResponse.FromByteArray(msg);
@@ -92,6 +93,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(endpoint.Address, response.IPAddress);
             Assert.Equal(endpoint.Port, response.Port);
             Assert.Equal(token, response.Token);
+            Assert.Equal(isPrivileged, response.IsPrivileged);
         }
     }
 }

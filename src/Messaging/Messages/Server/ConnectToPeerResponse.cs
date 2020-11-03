@@ -110,7 +110,7 @@ namespace Soulseek.Messaging.Messages
 
             var port = reader.ReadInteger();
             var token = reader.ReadInteger();
-            var isPrivileged = reader.ReadByte() > 1;
+            var isPrivileged = reader.ReadByte() > 0;
 
             return new ConnectToPeerResponse(username, type, ipAddress, port, token, isPrivileged);
         }
