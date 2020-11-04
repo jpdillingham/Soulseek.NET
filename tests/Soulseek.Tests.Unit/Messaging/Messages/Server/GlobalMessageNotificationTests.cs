@@ -19,19 +19,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
     public class GlobalMessageNotificationTests
     {
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string message)
-        {
-            GlobalMessageNotification response = null;
-
-            var ex = Record.Exception(() => response = new GlobalMessageNotification(message));
-
-            Assert.Null(ex);
-
-            Assert.Equal(message, response.Message);
-        }
-
         [Trait("Category", "Parse")]
         [Fact(DisplayName = "Parse throws MessageExcepton on code mismatch")]
         public void Parse_Throws_MessageException_On_Code_Mismatch()
@@ -71,7 +58,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var response = GlobalMessageNotification.FromByteArray(msg);
 
-            Assert.Equal(message, response.Message);
+            Assert.Equal(message, response);
         }
     }
 }

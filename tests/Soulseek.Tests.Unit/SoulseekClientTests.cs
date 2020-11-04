@@ -14,6 +14,8 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -1017,13 +1019,13 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
             {
-                GlobalMessageReceivedEventArgs args = default;
+                string args = default;
                 s.GlobalMessageReceived += (sender, e) => args = e;
 
-                handlerMock.Raise(m => m.GlobalMessageReceived += null, new GlobalMessageReceivedEventArgs(msg));
+                handlerMock.Raise(m => m.GlobalMessageReceived += null, this, msg);
 
                 Assert.NotNull(args);
-                Assert.Equal(msg, args.Message);
+                Assert.Equal(msg, args);
             }
         }
 
@@ -1035,7 +1037,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
             {
-                var ex = Record.Exception(() => handlerMock.Raise(m => m.GlobalMessageReceived += null, new GlobalMessageReceivedEventArgs(msg)));
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.GlobalMessageReceived += null, this, msg));
 
                 Assert.Null(ex);
             }
@@ -1357,8 +1359,8 @@ namespace Soulseek.Tests.Unit
         public void PrivilegedUserListReceived_Fires_When_Handler_Raises(string[] usernames)
         {
             var mock = new Mock<IServerMessageHandler>();
-            var expectedArgs = new PrivilegedUserListReceivedEventArgs(usernames);
-            PrivilegedUserListReceivedEventArgs actualArgs = null;
+            var expectedArgs = usernames.ToList().AsReadOnly();
+            IReadOnlyCollection<string> actualArgs = null;
 
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
             {
@@ -1375,7 +1377,7 @@ namespace Soulseek.Tests.Unit
         public void PrivilegedUserListReceived_Does_Not_Throw_If_Event_Not_Bound(string[] usernames)
         {
             var mock = new Mock<IServerMessageHandler>();
-            var expectedArgs = new PrivilegedUserListReceivedEventArgs(usernames);
+            var expectedArgs = usernames.ToList().AsReadOnly();
 
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
             {

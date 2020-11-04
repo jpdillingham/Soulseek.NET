@@ -13,6 +13,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Threading;
@@ -63,7 +64,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
-        public event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+        public event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
 
         /// <summary>
         ///     Occurs when the server sends a notification of new user privileges.
@@ -140,7 +141,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.GlobalAdminMessage:
                         var msg = GlobalMessageNotification.FromByteArray(message);
-                        GlobalMessageReceived?.Invoke(this, msg.Message);
+                        GlobalMessageReceived?.Invoke(this, msg);
                         break;
 
                     case MessageCode.Server.Ping:
@@ -160,7 +161,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.PrivilegedUsers:
                         var privilegedUserList = PrivilegedUserListNotification.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code), privilegedUserList);
-                        PrivilegedUserListReceived?.Invoke(this, new PrivilegedUserListReceivedEventArgs(privilegedUserList));
+                        PrivilegedUserListReceived?.Invoke(this, privilegedUserList);
                         break;
 
                     case MessageCode.Server.AddPrivilegedUser:

@@ -353,7 +353,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var msg = builder.Build();
 
-            handler.PrivilegedUserListReceived += (sender, e) => result = e.Usernames;
+            handler.PrivilegedUserListReceived += (sender, e) => result = e;
 
             handler.HandleMessageRead(null, msg);
 
@@ -1078,12 +1078,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(msg)
                 .Build();
 
-            GlobalMessageReceivedEventArgs args = default;
+            string args = default;
             handler.GlobalMessageReceived += (sender, e) => args = e;
             handler.HandleMessageRead(null, message);
 
             Assert.NotNull(args);
-            Assert.Equal(msg, args.Message);
+            Assert.Equal(msg, args);
         }
 
         [Trait("Category", "Message")]

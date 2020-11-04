@@ -13,6 +13,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
+    using System.Collections.Generic;
 
     /// <summary>
     ///     Handles incoming messages from the server connection.
@@ -38,7 +39,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
-        event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+        event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
 
         /// <summary>
         ///     Occurs when the server sends a notification of new user privileges.
