@@ -59,7 +59,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
+        event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.

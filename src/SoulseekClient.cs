@@ -208,7 +208,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        public event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
+        public event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.

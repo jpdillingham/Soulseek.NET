@@ -293,7 +293,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            handler.RoomListReceived += (sender, e) => result = e.Rooms;
+            handler.RoomListReceived += (sender, e) => result = e;
 
             handler.HandleMessageRead(null, builder.Build());
 

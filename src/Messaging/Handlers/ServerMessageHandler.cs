@@ -84,7 +84,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        public event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
+        public event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -155,7 +155,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.RoomList:
                         var roomList = RoomListResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code), roomList);
-                        RoomListReceived?.Invoke(this, new RoomListReceivedEventArgs(roomList));
+                        RoomListReceived?.Invoke(this, roomList);
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
