@@ -44,7 +44,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
+        event EventHandler<string> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is logged in.

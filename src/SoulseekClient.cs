@@ -167,7 +167,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        public event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
+        public event EventHandler<string> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with

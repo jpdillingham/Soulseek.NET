@@ -22,7 +22,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
+        event EventHandler<string> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with

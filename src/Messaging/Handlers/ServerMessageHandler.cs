@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        public event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
+        public event EventHandler<string> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
@@ -140,7 +140,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.GlobalAdminMessage:
                         var msg = GlobalMessageNotification.FromByteArray(message);
-                        GlobalMessageReceived?.Invoke(this, new GlobalMessageReceivedEventArgs(msg));
+                        GlobalMessageReceived?.Invoke(this, msg.Message);
                         break;
 
                     case MessageCode.Server.Ping:
