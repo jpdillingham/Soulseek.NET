@@ -18,25 +18,11 @@ namespace Soulseek.Messaging.Messages
     internal sealed class GlobalMessageNotification : IIncomingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="GlobalMessageNotification"/> class.
-        /// </summary>
-        /// <param name="message">The message content.</param>
-        public GlobalMessageNotification(string message)
-        {
-            Message = message;
-        }
-
-        /// <summary>
-        ///     Gets the message content.
-        /// </summary>
-        public string Message { get; }
-
-        /// <summary>
         ///     Creates a new instance of <see cref="GlobalMessageNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static GlobalMessageNotification FromByteArray(byte[] bytes)
+        public static string FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -48,7 +34,7 @@ namespace Soulseek.Messaging.Messages
 
             var msg = reader.ReadString();
 
-            return new GlobalMessageNotification(msg);
+            return msg;
         }
     }
 }

@@ -167,7 +167,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        public event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
+        public event EventHandler<string> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
@@ -188,7 +188,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
-        public event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+        public event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
 
         /// <summary>
         ///     Occurs when the server sends a notification of new user privileges.
@@ -208,7 +208,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        public event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
+        public event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.

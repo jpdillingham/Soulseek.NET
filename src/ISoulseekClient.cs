@@ -44,7 +44,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
+        event EventHandler<string> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is logged in.
@@ -59,7 +59,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
-        event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+        event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
 
         /// <summary>
         ///     Occurs when the server sends a notification of new user privileges.
@@ -79,7 +79,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
+        event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
