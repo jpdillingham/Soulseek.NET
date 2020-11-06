@@ -86,7 +86,7 @@
         /// <response code="201">The download was successfully enqueued.</response>
         /// <response code="403">The download was rejected.</response>
         /// <response code="500">An unexpected error was encountered.</response>
-        [HttpPost("downloads/{username}/{filename}")]
+        [HttpPost("downloads/{username}/{*filename}")]
         [Authorize]
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(string), 403)]
