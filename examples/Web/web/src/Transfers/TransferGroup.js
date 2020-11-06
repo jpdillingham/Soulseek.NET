@@ -78,7 +78,7 @@ class TransferGroup extends Component {
         const { username, filename } = file;
 
         try {
-            await api.get(`/transfers/downloads/${username}/${encodeURIComponent(filename)}/position`);
+            await api.get(`/transfers/downloads/${username}/${encodeURIComponent(filename)}`);
         } catch (error) {
             console.log(error);
         }
