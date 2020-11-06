@@ -48,7 +48,7 @@
         /// <returns></returns>
         /// <response code="204">The download was cancelled successfully.</response>
         /// <response code="404">The specified download was not found.</response>
-        [HttpDelete("downloads/{username}/{filename}")]
+        [HttpDelete("downloads/{username}/{*filename}")]
         [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -66,7 +66,7 @@
         /// <returns></returns>
         /// <response code="204">The upload was cancelled successfully.</response>
         /// <response code="404">The specified upload was not found.</response>
-        [HttpDelete("uploads/{username}/{filename}")]
+        [HttpDelete("uploads/{username}/{*filename}")]
         [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
@@ -86,15 +86,13 @@
         /// <response code="201">The download was successfully enqueued.</response>
         /// <response code="403">The download was rejected.</response>
         /// <response code="500">An unexpected error was encountered.</response>
-        [HttpPost("downloads/{username}/{filename}")]
+        [HttpPost("downloads/{username}/{*filename}")]
         [Authorize]
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(string), 403)]
         [ProducesResponseType(typeof(string), 500)]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]long? size, [FromQuery]int? token)
         {
-            filename = Uri.UnescapeDataString(filename);
-
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
             var stream = GetLocalFileStream(filename, OutputDirectory);
 
@@ -170,34 +168,17 @@
         }
 
         /// <summary>
-        ///     Gets the download for the specified username matching the specified filename.
-        /// </summary>
-        /// <param name="username"></param>
-        /// <param name="filename"></param>
-        /// <returns></returns>
-        /// <response code="200">The request completed successfully.</response>
-        [HttpGet("downloads/{username}/{filename}")]
-        [Authorize]
-        [ProducesResponseType(typeof(Transfer), 200)]
-        public IActionResult GetDownloads([FromRoute, Required]string username, [FromRoute, Required]string filename)
-        {
-            return Ok(Tracker.Transfers
-                .WithDirection(TransferDirection.Download)
-                .FromUser(username)
-                .WithFilename(Uri.UnescapeDataString(filename)).Transfer);
-        }
-
-        /// <summary>
-        ///     Gets the current place in the remote queue of the specified download.
+        ///     Gets the downlaod for the specified username matching the specified filename, and requests 
+        ///     the current place in the remote queue of the specified download.
         /// </summary>
         /// <param name="username"></param>
         /// <param name="filename"></param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         /// <response code="404">The specified download was not found.</response>
-        [HttpGet("downloads/{username}/{filename}/position")]
+        [HttpGet("downloads/{username}/{*filename}")]
         [Authorize]
-        [ProducesResponseType(typeof(int), 200)]
+        [ProducesResponseType(typeof(Transfer), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
@@ -211,7 +192,7 @@
 
                         record.Transfer.PlaceInQueue = placeInQueue;
 
-                        return Ok(placeInQueue);
+                        return Ok(record.Transfer);
                     }
                 }
             }
