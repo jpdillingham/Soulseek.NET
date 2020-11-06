@@ -179,8 +179,15 @@
 
             // remove any errant double forward slashes which may have been introduced
             // by a reverse proxy or having the base path removed
-            app.Use(async (context, next) => {
-                context.Request.Path = context.Request.Path.ToString().Replace("//", "/");
+            app.Use(async (context, next) => 
+            {
+                var path = context.Request.Path.ToString();
+
+                if (path.StartsWith("//"))
+                {
+                    context.Request.Path = new string(path.Skip(1).ToArray());
+                }
+
                 await next();
             });
 
