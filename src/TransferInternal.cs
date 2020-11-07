@@ -178,7 +178,7 @@ namespace Soulseek
 
             var ts = DateTime.UtcNow - (lastProgressTime ?? StartTime);
 
-            if (ts.HasValue && ts.Value.TotalMilliseconds >= progressUpdateLimit)
+            if (ts.HasValue && ((!speedInitialized && bytesTransferred > 0) || ts.Value.TotalMilliseconds >= progressUpdateLimit || State.HasFlag(TransferStates.Completed)))
             {
                 var currentSpeed = (bytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
