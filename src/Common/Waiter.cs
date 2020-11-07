@@ -177,7 +177,7 @@ namespace Soulseek
                 cancellationToken.Value);
 
             // obtain a read lock for the key. this is necessary to prevent this code from adding a wait to the ConcurrentQueue
-            // while the containing dictionary entry is being cleaned up in MonitorWaits(), effectively discarding the new wait.
+            // while the containing dictionary entry is being cleaned up in Disposition(), effectively discarding the new wait.
 #pragma warning disable IDE0067, CA2000 // Dispose objects before losing scope
             var recordLock = Locks.GetOrAdd(key, new ReaderWriterLockSlim());
 #pragma warning restore IDE0067, CA2000 // Dispose objects before losing scope
