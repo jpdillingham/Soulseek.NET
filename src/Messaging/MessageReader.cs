@@ -193,11 +193,21 @@ namespace Soulseek.Messaging
 
             if (length > Payload.Length - Position)
             {
-                throw new MessageReadException("Specified string extends beyond the length of the message payload");
+                throw new MessageReadException("Specified string length extends beyond the length of the message payload");
             }
 
             var bytes = Payload.Slice(Position, length).ToArray();
-            var retVal = Encoding.UTF8.GetString(bytes);
+            string retVal;
+
+            try
+            {
+                retVal = Encoding.GetEncoding("UTF-8", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetString(bytes);
+            }
+            catch (Exception)
+            {
+                retVal = Encoding.GetEncoding("ISO-8859-1").GetString(bytes);
+            }
+
             Position += length;
             return retVal;
         }
