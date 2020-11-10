@@ -189,7 +189,16 @@ namespace Soulseek.Messaging
         /// </exception>
         public MessageBuilder WriteString(string value)
         {
-            var bytes = Encoding.UTF8.GetBytes(value);
+            byte[] bytes;
+
+            try
+            {
+                bytes = Encoding.GetEncoding("ISO-8859-1", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetBytes(value);
+            }
+            catch (Exception)
+            {
+                bytes = Encoding.GetEncoding("UTF-8").GetBytes(value);
+            }
 
             return WriteBytes(BitConverter.GetBytes(bytes.Length))
                 .WriteBytes(bytes);
