@@ -3,6 +3,8 @@
     using System;
     using System.IO;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
 
     /// <summary>
     ///     Extensions.
@@ -29,6 +31,19 @@
             var separator = path.Contains('\\') ? '\\' : '/';
             var parts = path.Split(separator);
             return string.Join(separator, parts.Take(parts.Length - 1));
+        }
+
+        /// <summary>
+        ///     Returns the SHA1 hash of the given string.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string Sha1(this string str)
+        {
+            using (var sha1 = new SHA1Managed())
+            {
+                return BitConverter.ToString(sha1.ComputeHash(Encoding.UTF8.GetBytes(str))).Remove('-');
+            }
         }
 
         /// <summary>
