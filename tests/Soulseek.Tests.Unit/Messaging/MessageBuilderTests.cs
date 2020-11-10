@@ -308,6 +308,42 @@ namespace Soulseek.Tests.Unit.Messaging
         }
 
         [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteString prefers ISO-8859-1")]
+        public void WriteString_Prefers_ISO()
+        {
+            var data = "foo";
+
+            var builder = new MessageBuilder();
+            builder.WriteString(data);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            var expectedBytes = new List<byte>();
+            expectedBytes.AddRange(BitConverter.GetBytes(data.Length));
+            expectedBytes.AddRange(Encoding.GetEncoding("ISO-8859-1").GetBytes(data));
+
+            Assert.Equal(expectedBytes.Count, payload.Count);
+            Assert.Equal(expectedBytes, payload);
+        }
+
+        [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteString writes UTF8 if ISO-8859-1 is not supported")]
+        public void WriteString_Writes_UTF8_If_ISO_Is_Not_Supported()
+        {
+            var data = "බ";
+
+            var builder = new MessageBuilder();
+            builder.WriteString(data);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            var expectedBytes = Encoding.UTF8.GetBytes(data);
+
+            Assert.Equal(4 + expectedBytes.Length, payload.Count);
+            Assert.Equal(expectedBytes, payload.Skip(4));
+        }
+
+        [Trait("Category", "WriteBytes")]
         [Fact(DisplayName = "WriteString writes correct length for strings containing UTF16")]
         public void WriteString_Writes_Correct_Length_For_Strings_Containing_UTF16()
         {

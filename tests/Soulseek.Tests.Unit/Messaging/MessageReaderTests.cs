@@ -383,6 +383,20 @@ namespace Soulseek.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadString")]
+        [Fact(DisplayName = "ReadString returns iso-8859-1 encoded string given string which can not be decoded to utf-8")]
+        public void ReadString_Returns_ISO_String_Given_String_Which_Can_Not_Be_Decoded_To_UTF8()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteString("Ð")
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+
+            Assert.Equal("Ð", reader.ReadString());
+        }
+
+        [Trait("Category", "ReadString")]
         [Fact(DisplayName = "ReadString from nonzero position returns expected data")]
         public void ReadString_From_Nonzero_Position_Returns_Expected_Data()
         {
