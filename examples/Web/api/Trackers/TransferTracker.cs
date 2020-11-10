@@ -113,7 +113,8 @@
 
             direction.AddOrUpdate(args.Transfer.Username, GetNewDictionaryForUser(args, cancellationTokenSource), (user, dict) =>
             {
-                dict.AddOrUpdate(args.Transfer.Filename.Sha1(), (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource), (id, record) => (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource));
+                var transfer = DTO.Transfer.FromSoulseekTransfer(args.Transfer);
+                dict.AddOrUpdate(transfer.Id, (transfer, cancellationTokenSource), (id, record) => (transfer, cancellationTokenSource));
                 return dict;
             });
         }
@@ -171,7 +172,8 @@
         private ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)> GetNewDictionaryForUser(TransferEventArgs args, CancellationTokenSource cancellationTokenSource)
         {
             var r = new ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
-            r.AddOrUpdate(args.Transfer.Filename.Sha1(), (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource), (id, record) => (DTO.Transfer.FromSoulseekTransfer(args.Transfer), record.CancellationTokenSource));
+            var transfer = DTO.Transfer.FromSoulseekTransfer(args.Transfer);
+            r.AddOrUpdate(transfer.Id, (transfer, cancellationTokenSource), (id, record) => (transfer, record.CancellationTokenSource));
             return r;
         }
     }
