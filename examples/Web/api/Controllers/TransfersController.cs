@@ -44,36 +44,36 @@
         ///     Cancels the specified download.
         /// </summary>
         /// <param name="username">The username of the download source.</param>
-        /// <param name="filenameSha1">The SHA1 hash of the download filename.</param>
+        /// <param name="id">The id of the download.</param>
         /// <param name="remove">A value indicating whether the tracked download should be removed after cancellation.</param>
         /// <returns></returns>
         /// <response code="204">The download was cancelled successfully.</response>
         /// <response code="404">The specified download was not found.</response>
-        [HttpDelete("downloads/{username}/{filenameSha1}")]
+        [HttpDelete("downloads/{username}/{id}")]
         [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string filenameSha1, [FromQuery]bool remove = false)
+        public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string id, [FromQuery]bool remove = false)
         {
-            return CancelTransfer(TransferDirection.Download, username, filenameSha1, remove);
+            return CancelTransfer(TransferDirection.Download, username, id, remove);
         }
 
         /// <summary>
         ///     Cancels the specified upload.
         /// </summary>
         /// <param name="username">The username of the upload destination.</param>
-        /// <param name="filenameSha1">The SHA1 hash of the upload filename.</param>
+        /// <param name="id">The id of the upload.</param>
         /// <param name="remove">A value indicating whether the tracked upload should be removed after cancellation.</param>
         /// <returns></returns>
         /// <response code="204">The upload was cancelled successfully.</response>
         /// <response code="404">The specified upload was not found.</response>
-        [HttpDelete("uploads/{username}/{filenameSha1}")]
+        [HttpDelete("uploads/{username}/{id}")]
         [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string filenameSha1, [FromQuery]bool remove = false)
+        public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string id, [FromQuery]bool remove = false)
         {
-            return CancelTransfer(TransferDirection.Upload, username, filenameSha1, remove);
+            return CancelTransfer(TransferDirection.Upload, username, id, remove);
         }
 
         /// <summary>
@@ -170,22 +170,22 @@
         ///     Gets the downlaod for the specified username matching the specified filename, and requests 
         ///     the current place in the remote queue of the specified download.
         /// </summary>
-        /// <param name="username"></param>
-        /// <param name="filenameSha1"></param>
+        /// <param name="username">The username of the download source.</param>
+        /// <param name="id">The id of the download.</param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         /// <response code="404">The specified download was not found.</response>
-        [HttpGet("downloads/{username}/{filenameSha1}")]
+        [HttpGet("downloads/{username}/{id}")]
         [Authorize]
         [ProducesResponseType(typeof(DTO.Transfer), 200)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filenameSha1)
+        public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string id)
         {
             if (Tracker.Transfers.TryGetValue(TransferDirection.Download, out var transfers)) 
             {
                 if (transfers.TryGetValue(username, out var userTransfers))
                 {
-                    if (userTransfers.TryGetValue(filenameSha1, out var record))
+                    if (userTransfers.TryGetValue(id, out var record))
                     {
                         var placeInQueue = await Client.GetDownloadPlaceInQueueAsync(username, record.Transfer.Filename);
 
@@ -234,23 +234,23 @@
         /// <summary>
         ///     Gets the upload for the specified username matching the specified filename.
         /// </summary>
-        /// <param name="username"></param>
-        /// <param name="filenameSha1"></param>
+        /// <param name="username">The username of the upload destination.</param>
+        /// <param name="id">The id of the upload.</param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
-        [HttpGet("uploads/{username}/{filenameSha1}")]
+        [HttpGet("uploads/{username}/{id}")]
         [Authorize]
         [ProducesResponseType(200)]
-        public IActionResult GetUploads([FromRoute, Required]string username, [FromRoute, Required]string filenameSha1)
+        public IActionResult GetUploads([FromRoute, Required]string username, [FromRoute, Required]string id)
         {
             return Ok(Tracker.Transfers
                 .WithDirection(TransferDirection.Upload)
                 .FromUser(username)
-                .WithId(filenameSha1).Transfer);
+                .WithId(id).Transfer);
         }
 
         private static FileStream GetLocalFileStream(string remoteFilename, string saveDirectory)
-       {
+        {
             var localFilename = remoteFilename.ToLocalOSPath();
             var path = $"{saveDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(localFilename).Replace(Path.GetDirectoryName(Path.GetDirectoryName(localFilename)), "")}";
 
@@ -264,15 +264,15 @@
             return new FileStream(localFilename, FileMode.Create);
         }
 
-        private IActionResult CancelTransfer(TransferDirection direction, string username, string filenameSha1, bool remove = false)
+        private IActionResult CancelTransfer(TransferDirection direction, string username, string id, bool remove = false)
         {
-            if (Tracker.TryGet(direction, username, filenameSha1, out var transfer))
+            if (Tracker.TryGet(direction, username, id, out var transfer))
             {
                 transfer.CancellationTokenSource.Cancel();
 
                 if (remove)
                 {
-                    Tracker.TryRemove(direction, username, filenameSha1);
+                    Tracker.TryRemove(direction, username, id);
                 }
 
                 return NoContent();
