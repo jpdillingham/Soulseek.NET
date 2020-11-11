@@ -92,23 +92,23 @@
         [ProducesResponseType(typeof(string), 500)]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromBody]EnqueueDownloadRequest request)
         {
-            var waitUntilEnqueue = new TaskCompletionSource<bool>();
-            var stream = GetLocalFileStream(request.Filename, OutputDirectory);
-
-            var cts = new CancellationTokenSource();
-
-            var downloadTask = Client.DownloadAsync(username, request.Filename, stream, request.Size, 0, request.Token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
-            {
-                Tracker.AddOrUpdate(e, cts);
-
-                if (e.Transfer.State == TransferStates.Queued || e.Transfer.State == TransferStates.Initializing)
-                {
-                    waitUntilEnqueue.TrySetResult(true);
-                }
-            }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
-
             try
             {
+                var waitUntilEnqueue = new TaskCompletionSource<bool>();
+                var stream = GetLocalFileStream(request.Filename, OutputDirectory);
+
+                var cts = new CancellationTokenSource();
+
+                var downloadTask = Client.DownloadAsync(username, request.Filename, stream, request.Size, 0, request.Token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
+                {
+                    Tracker.AddOrUpdate(e, cts);
+
+                    if (e.Transfer.State == TransferStates.Queued || e.Transfer.State == TransferStates.Initializing)
+                    {
+                        waitUntilEnqueue.TrySetResult(true);
+                    }
+                }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
+
                 // wait until either the waitUntilEnqueue task completes because the download was successfully queued, or the
                 // downloadTask throws due to an error prior to successfully queueing.
                 var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
@@ -130,7 +130,7 @@
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -252,7 +252,14 @@
                 System.IO.Directory.CreateDirectory(path);
             }
 
-            localFilename = Path.Combine(path, Path.GetFileName(localFilename));
+            var sanitizedFilename = Path.GetFileName(localFilename);
+
+            foreach (var c in Path.GetInvalidFileNameChars())
+            {
+                sanitizedFilename = sanitizedFilename.Replace(c, '_');
+            }
+
+            localFilename = Path.Combine(path, sanitizedFilename);
 
             return new FileStream(localFilename, FileMode.Create);
         }
