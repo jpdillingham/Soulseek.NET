@@ -181,22 +181,15 @@
         [ProducesResponseType(404)]
         public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string id)
         {
-            if (Tracker.Transfers.TryGetValue(TransferDirection.Download, out var transfers)) 
+            var record = Tracker.Transfers.WithDirection(TransferDirection.Download).FromUser(username).WithId(id);
+            
+            if (record == default)
             {
-                if (transfers.TryGetValue(username, out var userTransfers))
-                {
-                    if (userTransfers.TryGetValue(id, out var record))
-                    {
-                        var placeInQueue = await Client.GetDownloadPlaceInQueueAsync(username, record.Transfer.Filename);
-
-                        record.Transfer.PlaceInQueue = placeInQueue;
-
-                        return Ok(record.Transfer);
-                    }
-                }
+                return NotFound();
             }
-
-            return NotFound();
+            
+            record.Transfer.PlaceInQueue = await Client.GetDownloadPlaceInQueueAsync(username, record.Transfer.Filename);
+            return Ok(record.Transfer);
         }
 
         /// <summary>
