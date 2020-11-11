@@ -51,9 +51,7 @@ class Search extends Component {
         const searchId = uuidv4();
 
         this.setState({ searchPhrase, searchId, searchState: 'pending' }, () => {
-            api.post('/searches', JSON.stringify({ id: searchId, searchText: searchPhrase }), {
-                headers: {'Content-Type': 'application/json; charset=utf-8'}
-            })
+            api.post('/searches', { id: searchId, searchText: searchPhrase })
             .then(response => this.setState({ results: response.data }))
             .then(() => this.setState({ searchState: 'complete' }, () => {
                 this.saveState();
