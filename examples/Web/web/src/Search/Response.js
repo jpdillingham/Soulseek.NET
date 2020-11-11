@@ -52,8 +52,9 @@ class Response extends Component {
     }
 
     downloadOne = (username, file) => {
-        return api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}?size=${file.size}`);
-    }
+        const { filename, size } = file;
+        return api.post(`/transfers/downloads/${username}`, { filename, size });
+      }
 
     render = () => {
         let response = this.props.response;

@@ -51,34 +51,34 @@ class TransferGroup extends Component {
     isStateRemovable = (state) => state.includes('Completed');
 
     retryAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`)));
+        await Promise.all(selected.map(file => this.retry(file)));
     }
 
     cancelAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => api.delete(`/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}`)));
+        await Promise.all(selected.map(file => api.delete(`/transfers/${direction}s/${username}/${file.id}`)));
     }
 
     removeAll = async (direction, username, selected) => {
         await Promise.all(selected.map(file => 
-                api.delete(`/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}?remove=true`)
+                api.delete(`/transfers/${direction}s/${username}/${file.id}?remove=true`)
                     .then(() => this.removeFileSelection(file))));
     }
 
     retry = async (file) => {
-        const { username, filename } = file;
+        const { username, filename, size } = file;
         
         try {
-            await api.post(`/transfers/downloads/${username}/${encodeURIComponent(filename)}`);
+            await api.post(`/transfers/downloads/${username}`, { filename, size });
         } catch (error) {
             console.log(error);
         }
     }
 
     fetchPlaceInQueue = async (file) => {
-        const { username, filename } = file;
+        const { username, id } = file;
 
         try {
-            await api.get(`/transfers/downloads/${username}/${encodeURIComponent(filename)}`);
+            await api.get(`/transfers/downloads/${username}/${id}`);
         } catch (error) {
             console.log(error);
         }
