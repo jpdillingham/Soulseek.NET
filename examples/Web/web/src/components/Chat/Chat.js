@@ -1,6 +1,6 @@
 import React, { Component, createRef } from 'react';
 import { activeChatKey } from '../../config';
-import api from '../../lib/api';
+import * as chat from '../../lib/chat';
 import './Chat.css';
 import {
     Segment,
@@ -44,7 +44,7 @@ class Chat extends Component {
 
     fetchConversations = async () => {
         const { active } = this.state;
-        let conversations = (await api.get('/conversations')).data;
+        let conversations = await chat.getAll();
 
         const unAckedActiveMessages = (conversations[active] || [])
             .filter(message => !message.acknowledged);
@@ -74,11 +74,11 @@ class Chat extends Component {
 
         if (!force && unAckedMessages.length === 0) return;
 
-        await api.put(`/conversations/${username}`);
+        await chat.acknowledge({ username });
     }
 
     sendMessage = async (username, message) => {
-        await api.post(`/conversations/${username}`, JSON.stringify(message));
+        await chat.send({ username, message });
     }
 
     sendReply = async () => {
@@ -135,7 +135,7 @@ class Chat extends Component {
     }
 
     deleteConversation = async (username) => {
-        await api.delete(`/conversations/${username}`);
+        await chat.remove({ username });
         await this.fetchConversations();
         this.selectConversation(this.getFirstConversation());
     }

@@ -42,7 +42,7 @@ class Browse extends Component {
     this.setState({ username , browseState: 'pending', browseError: undefined }, () => {
       user.browse({ username })
         .then(response => {
-          let { directories, lockedDirectories } = response.data;
+          let { directories, lockedDirectories } = response;
           
           const directoryCount = directories.length;
           const fileCount = directories.reduce((acc, dir) => acc += dir.fileCount, 0);

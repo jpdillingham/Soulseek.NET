@@ -1,7 +1,7 @@
 import api from './api';
 
-export const browse = ({ username }) => {
-  return api.get(`/user/${username}/browse`);
+export const browse = async ({ username }) => {
+  return (await api.get(`/user/${username}/browse`)).data;
 };
 
 export const getBrowseStatus = ({ username }) => {
