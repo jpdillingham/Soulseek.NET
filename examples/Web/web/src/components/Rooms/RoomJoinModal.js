@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import api from '../../api';
+import api from '../../lib/api';
 import './Rooms.css';
 
 import {

@@ -1,5 +1,5 @@
 import React, { Component, createRef } from 'react';
-import api from '../../api';
+import api from '../../lib/api';
 import { activeRoomKey } from '../../config';
 
 import { Segment, Card, Icon, Input, Ref, List, Loader, Dimmer } from 'semantic-ui-react';

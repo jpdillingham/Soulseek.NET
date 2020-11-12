@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { baseUrl, tokenKey, tokenPassthroughValue } from './config';
+import { baseUrl, tokenKey, tokenPassthroughValue } from '../config';
 
 const getToken = () => {
   return JSON.parse(sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey));

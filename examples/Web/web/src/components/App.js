@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Route, Link, Switch } from "react-router-dom";
 import { tokenKey, tokenPassthroughValue } from '../config';
-import api from '../api';
+import api from '../lib/api';
 
 import './App.css';
 import Search from './Search/Search';

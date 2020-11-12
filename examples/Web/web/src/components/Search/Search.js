@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import React, { Component } from 'react';
-import api from '../../api';
+import api from '../../lib/api';
 
 import './Search.css';
 

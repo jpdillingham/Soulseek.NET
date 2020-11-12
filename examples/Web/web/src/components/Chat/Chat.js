@@ -1,6 +1,6 @@
 import React, { Component, createRef } from 'react';
 import { activeChatKey } from '../../config';
-import api from '../../api';
+import api from '../../lib/api';
 import './Chat.css';
 import {
     Segment,

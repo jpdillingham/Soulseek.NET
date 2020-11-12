@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import api from '../../api';
+import api from '../../lib/api';
 
-import { formatBytes, getDirectoryName } from '../../util';
+import { formatBytes, getDirectoryName } from '../../lib/util';
 
 import FileList from '../Shared/FileList'
 
