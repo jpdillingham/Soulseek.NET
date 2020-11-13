@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import api from '../../lib/api';
+import * as transfers from '../../lib/transfers';
 
 import {
     Card,
@@ -50,17 +50,17 @@ class TransferGroup extends Component {
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
 
-    retryAll = async (direction, username, selected) => {
+    retryAll = async (selected) => {
         await Promise.all(selected.map(file => this.retry(file)));
     }
 
     cancelAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => api.delete(`/transfers/${direction}s/${username}/${file.id}`)));
+        await Promise.all(selected.map(file => transfers.cancel({ direction, username, id: file.id})));
     }
 
     removeAll = async (direction, username, selected) => {
         await Promise.all(selected.map(file => 
-                api.delete(`/transfers/${direction}s/${username}/${file.id}?remove=true`)
+                transfers.cancel({ direction, username, id: file.id, remove: true })
                     .then(() => this.removeFileSelection(file))));
     }
 
@@ -68,7 +68,7 @@ class TransferGroup extends Component {
         const { username, filename, size } = file;
         
         try {
-            await api.post(`/transfers/downloads/${username}`, { filename, size });
+            await transfers.download({username, filename, size });
         } catch (error) {
             console.log(error);
         }
@@ -78,7 +78,7 @@ class TransferGroup extends Component {
         const { username, id } = file;
 
         try {
-            await api.get(`/transfers/downloads/${username}/${id}`);
+            await transfers.getPlaceInQueue({ username, id });
         } catch (error) {
             console.log(error);
         }
