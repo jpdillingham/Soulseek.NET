@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import api from '../../lib/api';
+import * as rooms from '../../lib/rooms';
 import './Rooms.css';
 
 import {
@@ -18,7 +18,7 @@ const RoomJoinModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
   useEffect(() => {
     const getAvailableRooms = async () => {
       setLoading(true);
-      const available = (await api.get('/rooms/available')).data;
+      const available = await rooms.getAvailable();
       setAvailable(available);
       setLoading(false);
     }
