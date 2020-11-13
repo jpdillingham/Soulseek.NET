@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import api from '../../lib/api';
+import * as transfers from '../../lib/transfers';
 
 import { formatBytes, getDirectoryName } from '../../lib/util';
 
@@ -53,8 +53,8 @@ class Response extends Component {
 
     downloadOne = (username, file) => {
         const { filename, size } = file;
-        return api.post(`/transfers/downloads/${username}`, { filename, size });
-      }
+        return transfers.download({ username, filename, size });
+    }
 
     render = () => {
         let response = this.props.response;
