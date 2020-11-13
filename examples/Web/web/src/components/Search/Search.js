@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import React, { Component } from 'react';
-import api from '../api';
+import * as search from '../../lib/search';
 
 import './Search.css';
 
@@ -51,9 +51,7 @@ class Search extends Component {
         const searchId = uuidv4();
 
         this.setState({ searchPhrase, searchId, searchState: 'pending' }, () => {
-            api.post('/searches', JSON.stringify({ id: searchId, searchText: searchPhrase }), {
-                headers: {'Content-Type': 'application/json; charset=utf-8'}
-            })
+            search.search({ id: searchId, searchText: searchPhrase })
             .then(response => this.setState({ results: response.data }))
             .then(() => this.setState({ searchState: 'complete' }, () => {
                 this.saveState();
@@ -111,9 +109,9 @@ class Search extends Component {
 
     fetchStatus = () => {
         if (this.state.searchState === 'pending') {
-            api.get('/searches/' + encodeURIComponent(this.state.searchId))
+            search.getStatus({ id: this.state.searchId })
             .then(response => this.setState({
-                searchStatus: response.data
+                searchStatus: response
             }));
         }
     }

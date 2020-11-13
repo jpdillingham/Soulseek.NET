@@ -68,16 +68,16 @@
         }
 
         /// <summary>
-        ///     Retrieves a Transfer from a Transfer collection by filename.
+        ///     Retrieves a Transfer from a Transfer collection by id.
         /// </summary>
         /// <param name="userTransfers"></param>
-        /// <param name="filename"></param>
+        /// <param name="id"></param>
         /// <returns></returns>
-        public static (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) WithFilename(
+        public static (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) WithId(
             this ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers,
-            string filename)
+            string id)
         {
-            userTransfers.TryGetValue(filename, out var transfer);
+            userTransfers.TryGetValue(id, out var transfer);
             return transfer;
         }
     }
@@ -113,7 +113,8 @@
 
             direction.AddOrUpdate(args.Transfer.Username, GetNewDictionaryForUser(args, cancellationTokenSource), (user, dict) =>
             {
-                dict.AddOrUpdate(args.Transfer.Filename, (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource), (file, record) => (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource));
+                var transfer = DTO.Transfer.FromSoulseekTransfer(args.Transfer);
+                dict.AddOrUpdate(transfer.Id, (transfer, cancellationTokenSource), (id, record) => (transfer, cancellationTokenSource));
                 return dict;
             });
         }
@@ -121,19 +122,19 @@
         /// <summary>
         ///     Removes a tracked transfer.
         /// </summary>
-        /// <remarks>Omitting a filename will remove ALL transfers associated with the specified username.</remarks>
-        public void TryRemove(TransferDirection direction, string username, string filename = null)
+        /// <remarks>Omitting an id will remove ALL transfers associated with the specified username.</remarks>
+        public void TryRemove(TransferDirection direction, string username, string id = null)
         {
             Transfers.TryGetValue(direction, out var directionDict);
 
-            if (string.IsNullOrEmpty(filename))
+            if (string.IsNullOrEmpty(id))
             {
                 directionDict.TryRemove(username, out _);
             }
             else
             {
                 directionDict.TryGetValue(username, out var userDict);
-                userDict.TryRemove(filename, out _);
+                userDict.TryRemove(id, out _);
 
                 if (userDict.IsEmpty)
                 {
@@ -147,10 +148,10 @@
         /// </summary>
         /// <param name="direction"></param>
         /// <param name="username"></param>
-        /// <param name="filename"></param>
+        /// <param name="id"></param>
         /// <param name="transfer"></param>
         /// <returns></returns>
-        public bool TryGet(TransferDirection direction, string username, string filename, out (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer)
+        public bool TryGet(TransferDirection direction, string username, string id, out (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer)
         {
             transfer = default;
 
@@ -158,7 +159,7 @@
             {
                 if (transfers.TryGetValue(username, out var user))
                 {
-                    if (user.TryGetValue(filename, out transfer))
+                    if (user.TryGetValue(id, out transfer))
                     {
                         return true;
                     }
@@ -171,7 +172,8 @@
         private ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)> GetNewDictionaryForUser(TransferEventArgs args, CancellationTokenSource cancellationTokenSource)
         {
             var r = new ConcurrentDictionary<string, (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
-            r.AddOrUpdate(args.Transfer.Filename, (DTO.Transfer.FromSoulseekTransfer(args.Transfer), cancellationTokenSource), (file, record) => (DTO.Transfer.FromSoulseekTransfer(args.Transfer), record.CancellationTokenSource));
+            var transfer = DTO.Transfer.FromSoulseekTransfer(args.Transfer);
+            r.AddOrUpdate(transfer.Id, (transfer, cancellationTokenSource), (id, record) => (transfer, record.CancellationTokenSource));
             return r;
         }
     }

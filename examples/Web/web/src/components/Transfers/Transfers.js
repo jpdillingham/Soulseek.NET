@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import api from '../api';
+import * as transfers from '../../lib/transfers';
 import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 import TransferGroup from './TransferGroup';
@@ -19,9 +19,9 @@ class Transfers extends Component {
 
     fetch = () => {
         this.setState({ fetchState: 'pending' }, () => {
-            api.get(`/transfers/${this.props.direction}s`)
+            transfers.getAll({ direction: this.props.direction })
             .then(response => this.setState({ 
-                fetchState: 'complete', downloads: response.data
+                fetchState: 'complete', downloads: response
             }))
             .catch(err => this.setState({ fetchState: 'failed' }))
         })

@@ -6,8 +6,8 @@ import {
 } from 'semantic-ui-react';
 import RoomJoinModal from './RoomJoinModal';
 
-const RoomMenu = ({ rooms, active, onRoomChange, ...rest }) => {
-  const names = [...rooms];
+const RoomMenu = ({ joined, active, onRoomChange, ...rest }) => {
+  const names = [...joined];
   const isActive = (name) => active === name;
 
   return (
