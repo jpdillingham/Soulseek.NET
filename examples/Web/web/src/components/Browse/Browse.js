@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import api from '../api';
+import * as user from '../../lib/user';
 
 import './Browse.css';
 
@@ -40,9 +40,9 @@ class Browse extends Component {
     let username = this.inputtext.inputRef.current.value;
 
     this.setState({ username , browseState: 'pending', browseError: undefined }, () => {
-      api.get(`/user/${this.state.username}/browse`)
+      user.browse({ username })
         .then(response => {
-          let { directories, lockedDirectories } = response.data;
+          let { directories, lockedDirectories } = response;
           
           const directoryCount = directories.length;
           const fileCount = directories.reduce((acc, dir) => acc += dir.fileCount, 0);
@@ -114,8 +114,9 @@ class Browse extends Component {
   }
 
   fetchStatus = () => {
-    if (this.state.browseState === 'pending') {
-      api.get(`/user/${this.state.username}/browse/status`)
+    const { browseState, username } = this.state;
+    if (browseState === 'pending') {
+      user.getBrowseStatus({ username })
         .then(response => this.setState({
           browseStatus: response.data
         }));

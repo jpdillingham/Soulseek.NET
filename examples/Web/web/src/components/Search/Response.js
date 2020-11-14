@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import api from '../api';
+import * as transfers from '../../lib/transfers';
 
-import { formatBytes, getDirectoryName } from '../util';
+import { formatBytes, getDirectoryName } from '../../lib/util';
 
 import FileList from '../Shared/FileList'
 
@@ -52,7 +52,8 @@ class Response extends Component {
     }
 
     downloadOne = (username, file) => {
-        return api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}?size=${file.size}`);
+        const { filename, size } = file;
+        return transfers.download({ username, filename, size });
     }
 
     render = () => {

@@ -45,6 +45,11 @@
         public string Filename { get; set; }
 
         /// <summary>
+        ///     Gets the transfer id.
+        /// </summary>
+        public string Id => Filename.Sha1();
+
+        /// <summary>
         ///     Gets the ip endpoint of the remote transfer connection, if one has been established.
         /// </summary>
         public IPEndPoint IPEndPoint { get; set; }
@@ -53,6 +58,11 @@
         ///     Gets the current progress in percent.
         /// </summary>
         public double PercentComplete { get; set; }
+
+        /// <summary>
+        ///     Gets the current place in queue, if it has been fetched.
+        /// </summary>
+        public int? PlaceInQueue { get; set; }
 
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.
@@ -93,11 +103,6 @@
         ///     Gets the username of the peer to or from which the file is to be transferred.
         /// </summary>
         public string Username { get; set; }
-
-        /// <summary>
-        ///     Gets the current place in queue, if it has been fetched.
-        /// </summary>
-        public int? PlaceInQueue { get; set; }
 
         public static Transfer FromSoulseekTransfer(Soulseek.Transfer transfer)
         {

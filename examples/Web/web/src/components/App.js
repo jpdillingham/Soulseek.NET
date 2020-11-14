@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Route, Link, Switch } from "react-router-dom";
-import { tokenKey, tokenPassthroughValue } from './config';
-import api from './api';
+import { tokenKey, tokenPassthroughValue } from '../config';
+import * as session from '../lib/session';
 
 import './App.css';
 import Search from './Search/Search';
@@ -34,7 +34,7 @@ class App extends Component {
 
     componentDidMount = async () => {
         const { login } = this.state;
-        const securityEnabled = (await api.get('/session/enabled')).data;
+        const securityEnabled = await session.getSecurityEnabled();
 
         if (!securityEnabled) {
             this.setToken(sessionStorage, tokenPassthroughValue)
@@ -53,7 +53,7 @@ class App extends Component {
 
     checkToken = async () => {
         try {
-            await api.get('/session');
+            await session.check();
         } catch (error) {
             this.logout();
         }
@@ -65,7 +65,7 @@ class App extends Component {
     login = (username, password, rememberMe) => {
         this.setState({ login: { ...this.state.login, pending: true, error: undefined }}, async () => {
             try {
-                const response = await api.post('/session', { username, password });
+                const response = await session.login({ username, password });
                 this.setToken(rememberMe ? localStorage : sessionStorage, response.data.token);
                 window.location.reload();
             } catch (error) {

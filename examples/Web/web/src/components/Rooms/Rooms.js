@@ -1,6 +1,6 @@
 import React, { Component, createRef } from 'react';
-import api from '../api';
-import { activeRoomKey } from '../config';
+import * as rooms from '../../lib/rooms';
+import { activeRoomKey } from '../../config';
 
 import { Segment, Card, Icon, Input, Ref, List, Loader, Dimmer } from 'semantic-ui-react';
 
@@ -10,7 +10,7 @@ import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 const initialState = {
   active: '',
-  rooms: [],
+  joined: [],
   room: {
     messages: [],
     users: []
@@ -50,15 +50,15 @@ class Rooms extends Component {
   }
 
   getFirstRoom = () => {
-    return this.state.rooms.length > 0 ? this.state.rooms[0] : '';
+    return this.state.joined.length > 0 ? this.state.joined[0] : '';
   }
 
   fetchJoinedRooms = async () => {
-    const rooms = (await api.get('/rooms/joined')).data;
+    const joined = await rooms.getJoined();;
     this.setState({
-      rooms
+      joined
     }, () => {
-      if (!this.state.rooms.includes(this.state.active)) {
+      if (!this.state.joined.includes(this.state.active)) {
         this.selectRoom(this.getFirstRoom());
       }
     });
@@ -69,8 +69,8 @@ class Rooms extends Component {
 
     if (active.length === 0) return;
 
-    const messages = (await api.get(`/rooms/joined/${active}/messages`)).data;
-    const users = (await api.get(`/rooms/joined/${active}/users`)).data;
+    const messages = await rooms.getMessages({ roomName: active });
+    const users = await rooms.getUsers({ roomName: active });
 
     this.setState({
       room: {
@@ -100,13 +100,13 @@ class Rooms extends Component {
   };
 
   joinRoom = async (roomName) => {
-    await api.post(`/rooms/joined/${roomName}`);
+    await rooms.join({ roomName });
     await this.fetchJoinedRooms();
     this.selectRoom(roomName);
   };
 
   leaveRoom = async (roomName) => {
-    await api.delete(`/rooms/joined/${roomName}`);
+    await rooms.leave({ roomName });
     await this.fetchJoinedRooms();
     this.selectRoom(this.getFirstRoom());
   };
@@ -137,18 +137,18 @@ class Rooms extends Component {
       return;
     }
 
-    await api.post(`/rooms/joined/${active}/messages`, JSON.stringify(message));
+    await rooms.sendMessage({ roomName: active, message });
     this.messageRef.current.value = '';
   };
 
   render = () => {
-    const { rooms, active, room, loading } = this.state;
+    const { joined, active, room, loading } = this.state;
 
     return (
       <div className='rooms'>
         <Segment raised>
           <RoomMenu
-            rooms={rooms}
+            joined={joined}
             active={active}
             onRoomChange={(name) => this.selectRoom(name)}
             joinRoom={this.joinRoom}

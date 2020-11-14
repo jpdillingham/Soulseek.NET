@@ -24,17 +24,17 @@
         /// <summary>
         ///     Removes a tracked transfer.
         /// </summary>
-        /// <remarks>Omitting a filename will remove ALL transfers associated with the specified username.</remarks>
-        void TryRemove(TransferDirection direction, string username, string filename = null);
+        /// <remarks>Omitting an id will remove ALL transfers associated with the specified username.</remarks>
+        void TryRemove(TransferDirection direction, string username, string id = null);
 
         /// <summary>
         ///     Gets the specified transfer.
         /// </summary>
         /// <param name="direction"></param>
         /// <param name="username"></param>
-        /// <param name="filename"></param>
+        /// <param name="id"></param>
         /// <param name="transfer"></param>
         /// <returns></returns>
-        bool TryGet(TransferDirection direction, string username, string filename, out (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer);
+        bool TryGet(TransferDirection direction, string username, string id, out (DTO.Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer);
     }
 }

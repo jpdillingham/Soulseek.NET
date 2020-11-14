@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import api from '../api';
+import * as transfers from '../../lib/transfers';
 
 import {
     Card,
@@ -50,35 +50,35 @@ class TransferGroup extends Component {
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
 
-    retryAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => api.post(`/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`)));
+    retryAll = async (selected) => {
+        await Promise.all(selected.map(file => this.retry(file)));
     }
 
     cancelAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => api.delete(`/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}`)));
+        await Promise.all(selected.map(file => transfers.cancel({ direction, username, id: file.id})));
     }
 
     removeAll = async (direction, username, selected) => {
         await Promise.all(selected.map(file => 
-                api.delete(`/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}?remove=true`)
+                transfers.cancel({ direction, username, id: file.id, remove: true })
                     .then(() => this.removeFileSelection(file))));
     }
 
     retry = async (file) => {
-        const { username, filename } = file;
+        const { username, filename, size } = file;
         
         try {
-            await api.post(`/transfers/downloads/${username}/${encodeURIComponent(filename)}`);
+            await transfers.download({username, filename, size });
         } catch (error) {
             console.log(error);
         }
     }
 
     fetchPlaceInQueue = async (file) => {
-        const { username, filename } = file;
+        const { username, id } = file;
 
         try {
-            await api.get(`/transfers/downloads/${username}/${encodeURIComponent(filename)}`);
+            await transfers.getPlaceInQueue({ username, id });
         } catch (error) {
             console.log(error);
         }
