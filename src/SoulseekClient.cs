@@ -2442,7 +2442,7 @@ namespace Soulseek
                     }
                     catch (Exception ex)
                     {
-                        throw new SoulseekClientException("Did not receive one or more expected server messages upon login", ex);
+                        throw new ConnectionException("Did not receive one or more expected server messages upon login", ex);
                     }
 
                     var serverInfo = new ServerInfo(
@@ -2477,7 +2477,7 @@ namespace Soulseek
                     throw ex;
                 }
             }
-            catch (Exception ex) when (!(ex is SoulseekClientException) && !(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to log in as {username}: {ex.Message}", ex);
             }
