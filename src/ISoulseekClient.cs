@@ -507,7 +507,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -621,7 +621,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
-        /// <exception cref="LoginException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -633,7 +633,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PingException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<long> PingServerAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -711,7 +711,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomMessageException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -727,7 +727,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SharedCountsException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -739,7 +739,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null);
 
         /// <summary>

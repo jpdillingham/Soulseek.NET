@@ -112,8 +112,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync throws RoomMessageException when write throws"), AutoData]
-        public async Task SendRoomMessageAsync_Throws_RoomMessageException_When_Write_Throws(string roomName, string message)
+        [Theory(DisplayName = "SendRoomMessageAsync throws SoulseekClientException when write throws"), AutoData]
+        public async Task SendRoomMessageAsync_Throws_SoulseekClientException_When_Write_Throws(string roomName, string message)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -126,7 +126,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SendRoomMessageAsync(roomName, message));
 
                 Assert.NotNull(ex);
-                Assert.IsType<RoomMessageException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

@@ -21,7 +21,7 @@ namespace Soulseek
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class LoginRejectedException : LoginException
+    public class LoginRejectedException : SoulseekClientException
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="LoginRejectedException"/> class.

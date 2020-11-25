@@ -232,8 +232,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserInfoAsync")]
-        [Theory(DisplayName = "GetUserInfoAsync throws UserInfoException on throw"), AutoData]
-        public async Task GetUserInfoAsync_Throws_UserInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        [Theory(DisplayName = "GetUserInfoAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task GetUserInfoAsync_Throws_SoulseekClientException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
             var result = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot);
 
@@ -263,7 +263,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<UserInfoException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }

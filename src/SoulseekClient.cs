@@ -1023,7 +1023,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1220,7 +1220,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
-        /// <exception cref="LoginException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrEmpty(username))
@@ -1255,7 +1255,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PingException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<long> PingServerAsync(CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1280,7 +1280,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new PingException($"Failed to ping the server: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to ping the server: {ex.Message}", ex);
             }
         }
 
@@ -1468,7 +1468,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomMessageException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(roomName))
@@ -1502,7 +1502,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SharedCountsException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
         {
             if (directories < 0)
@@ -1526,7 +1526,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new SharedCountsException($"Failed to set shared counts to {directories} directories and {files} files: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to set shared counts to {directories} directories and {files} files: {ex.Message}", ex);
             }
         }
 
@@ -2329,7 +2329,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new UserInfoException($"Failed to retrieve information for user {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to retrieve information for user {username}: {ex.Message}", ex);
             }
         }
 
@@ -2473,7 +2473,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to log in as {username}: {ex.Message}", ex);
             }
         }
 
@@ -2594,7 +2594,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new RoomMessageException($"Failed to send message to room {roomName}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to send message to room {roomName}: {ex.Message}", ex);
             }
         }
 
