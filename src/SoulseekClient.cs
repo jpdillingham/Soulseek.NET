@@ -2254,9 +2254,7 @@ namespace Soulseek
                     return endPoint;
                 }
 
-#pragma warning disable CA2000 // Dispose objects before losing scope
                 var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
-#pragma warning restore CA2000 // Dispose objects before losing scope
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 try
@@ -2667,9 +2665,7 @@ namespace Soulseek
 
             // fetch (or create) the semaphore for this user. the official client can't handle concurrent downloads, so we need to
             // enforce this regardless of what downstream implementations do.
-#pragma warning disable IDE0067, CA2000 // Dispose objects before losing scope
             var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
-#pragma warning restore IDE0067, CA2000 // Dispose objects before losing scope
 
             IPEndPoint endpoint = null;
             bool semaphoreAcquired = false;

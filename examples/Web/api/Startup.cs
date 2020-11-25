@@ -425,7 +425,7 @@
 
             // create a new cancellation token source so that we can cancel the upload from the UI.
             var cts = new CancellationTokenSource();
-            var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts), governor: (t, c) => Task.Delay(1));
+            var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts), governor: (t, c) => Task.Delay(1, c));
 
             // accept all download requests, and begin the upload immediately.
             // normally there would be an internal queue, and uploads would be handled separately.
@@ -470,7 +470,7 @@
 
             var results = SharedFileCache.Search(query);
 
-            if (results.Count() > 0)
+            if (results.Any())
             {
                 Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query.SearchText}");
 
