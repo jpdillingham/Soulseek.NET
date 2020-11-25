@@ -107,8 +107,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetRoomListAsync")]
-        [Fact(DisplayName = "GetRoomListAsync throws RoomListException when write throws")]
-        public async Task GetRoomListAsync_Throws_RoomListException_When_Write_Throws()
+        [Fact(DisplayName = "GetRoomListAsync throws SoulseekClientException when write throws")]
+        public async Task GetRoomListAsync_Throws_SoulseekClientException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.GetRoomListAsync());
 
                 Assert.NotNull(ex);
-                Assert.IsType<RoomListException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

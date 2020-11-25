@@ -133,8 +133,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserStatusAsync")]
-        [Theory(DisplayName = "GetUserStatusAsync throws UserStatusException on throw"), AutoData]
-        public async Task GetUserStatusAsync_Throws_UserStatusException_On_Throw(string username, UserPresence status, bool privileged)
+        [Theory(DisplayName = "GetUserStatusAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task GetUserStatusAsync_Throws_SoulseekClientExceptionn_On_Throw(string username, UserPresence status, bool privileged)
         {
             var result = new UserStatusResponse(username, status, privileged);
 
@@ -153,7 +153,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.GetUserStatusAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<UserStatusException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }

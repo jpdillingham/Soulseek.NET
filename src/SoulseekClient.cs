@@ -384,7 +384,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
-        /// <exception cref="UserAddException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -449,7 +449,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ChangePasswordException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(password))
@@ -842,7 +842,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="DirectoryContentsException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<Directory> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -881,7 +881,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="DownloadPlaceInQueueException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -958,7 +958,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomListException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<IReadOnlyCollection<RoomInfo>> GetRoomListAsync(CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -977,7 +977,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new RoomListException($"Failed to fetch the list of chat rooms from the server: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to fetch the list of chat rooms from the server: {ex.Message}", ex);
             }
         }
 
@@ -1077,7 +1077,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserStatus> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1161,7 +1161,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<RoomData> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(roomName))
@@ -1189,7 +1189,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomLeaveException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(roomName))
@@ -1539,7 +1539,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1553,7 +1553,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new UserStatusException($"Failed to set user status to {status}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to set user status to {status}: {ex.Message}", ex);
             }
         }
 
@@ -1774,7 +1774,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new UserAddException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
             }
         }
 
@@ -1875,12 +1875,12 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new ChangePasswordException($"Failed to change password: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to change password: {ex.Message}", ex);
             }
 
             if (!response.Equals(password, StringComparison.CurrentCulture))
             {
-                throw new ChangePasswordException("The response from the server doesn't match the specified password; the change likely failed");
+                throw new SoulseekClientException("Probably failed to change password; the response from the server doesn't match the specified password");
             }
         }
 
@@ -2200,7 +2200,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new DirectoryContentsException($"Failed to retrieve directory contents for {directoryName} from {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to retrieve directory contents for {directoryName} from {username}: {ex.Message}", ex);
             }
         }
 
@@ -2221,7 +2221,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new DownloadPlaceInQueueException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
             }
         }
 
@@ -2364,7 +2364,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new UserStatusException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
             }
         }
 
@@ -2392,7 +2392,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new RoomJoinException($"Failed to join chat room {roomName}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to join chat room {roomName}: {ex.Message}", ex);
             }
         }
 
@@ -2407,7 +2407,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new RoomLeaveException($"Failed to leave chat room {roomName}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to leave chat room {roomName}: {ex.Message}", ex);
             }
         }
 

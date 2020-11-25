@@ -234,8 +234,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
-        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws DownloadPlaceInQueueException on exception"), AutoData]
-        public async Task GetDownloadPlaceInQueueAsync_Throws_DownloadPlaceInQueueException_On_Exception(string username, string filename)
+        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws SoulseekClientException on exception"), AutoData]
+        public async Task GetDownloadPlaceInQueueAsync_Throws_SoulseekClientException_On_Exception(string username, string filename)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -267,7 +267,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 
                 Assert.NotNull(ex);
-                Assert.IsType<DownloadPlaceInQueueException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
             }
         }
 
