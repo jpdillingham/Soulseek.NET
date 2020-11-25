@@ -644,7 +644,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
@@ -888,8 +888,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws DownloadRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_DownloadRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
+        public async Task DownloadToByteArrayAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -936,8 +936,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<TransferRejectedException>(ex.InnerException);
+                Assert.IsType<TransferRejectedException>(ex);
             }
         }
 
@@ -1500,7 +1499,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => task);
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.Contains("Failed to download file", ex.Message, StringComparison.InvariantCultureIgnoreCase);
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.Equal("Transfer failed: some exception", ex.InnerException.Message);
@@ -1981,7 +1980,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<MessageReadException>(ex.InnerException);
 
                 Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
@@ -2133,7 +2132,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.IsType<NullReferenceException>(ex.InnerException.InnerException);
             }
@@ -2248,8 +2247,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferException on transfer rejection"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferRejectedException on transfer rejection"), AutoData]
+        public async Task DownloadToByteArrayAsync_Throws_TransferRejectedException_On_Transfer_Rejection(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2296,8 +2295,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<TransferRejectedException>(ex.InnerException);
+                Assert.IsType<TransferRejectedException>(ex);
             }
         }
 
@@ -2350,7 +2348,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<Exception>(ex.InnerException);
                 Assert.Equal(expected, ex.InnerException);
             }

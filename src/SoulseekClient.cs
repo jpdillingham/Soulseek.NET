@@ -419,7 +419,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<BrowseResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -476,7 +476,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task ConnectAsync(CancellationToken? cancellationToken = null)
         {
             if (State.HasFlag(SoulseekClientStates.Connected))
@@ -507,7 +507,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task ConnectAsync(string address, int port, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(address))
@@ -542,7 +542,8 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrEmpty(username))
@@ -585,7 +586,8 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task ConnectAsync(string address, int port, string username, string password, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(address))
@@ -689,7 +691,8 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<byte[]> DownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -771,7 +774,8 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task DownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -951,7 +955,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously fetches the list of chat rooms from the server.
+        ///     Asynchronously fetches the list of chat rooms on the server.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the list of server rooms.</returns>
@@ -1100,7 +1104,7 @@ namespace Soulseek
         /// <remarks>
         ///     <para>
         ///         There is no immediate or direct response for this operation, and because error conditions may only be inferred
-        ///         by monitoring private messages as described below, this library defers this inference to implementing code.
+        ///         by monitoring private messages as described below, this library defers this inferrence to implementing code.
         ///         This method returns after the command is dispatched and does not monitor for any type of response.
         ///     </para>
         ///     <para>
@@ -1153,7 +1157,7 @@ namespace Soulseek
         /// </summary>
         /// <remarks>When successful, a corresponding <see cref="RoomJoined"/> event will be raised.</remarks>
         /// <param name="roomName">The name of the chat room to join.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="cancellationToken">The token to minotor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
@@ -1251,7 +1255,7 @@ namespace Soulseek
         /// </summary>
         /// <remarks>The server doesn't seem to be responding; this may have been deprecated.</remarks>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the response time in milliseconds.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -1302,7 +1306,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (query == null)
@@ -1370,7 +1374,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public Task SearchAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (query == null)
@@ -1494,7 +1498,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="directories">The number of shared directories.</param>
         /// <param name="files">The number of shared files.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the value of <paramref name="directories"/> or <paramref name="files"/> is less than zero.
@@ -1583,7 +1587,8 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1653,7 +1658,8 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, long length, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1856,7 +1862,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to browse user {username}: {ex.Message}", ex);
             }
         }
 
@@ -1932,7 +1938,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to connect: {ex.Message}", ex);
             }
         }
 
@@ -2126,7 +2132,7 @@ namespace Soulseek
             {
                 download.State = TransferStates.Rejected;
 
-                throw new TransferException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
+                throw new TransferRejectedException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
@@ -2156,7 +2162,7 @@ namespace Soulseek
                     throw;
                 }
 
-                throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             finally
             {
@@ -2550,7 +2556,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 search.Complete(SearchStates.Errored);
-                throw new SearchException($"Failed to search for {query.SearchText} ({token}): {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to search for {query.SearchText} ({token}): {ex.Message}", ex);
             }
             finally
             {
@@ -2808,7 +2814,7 @@ namespace Soulseek
             {
                 upload.State = TransferStates.Rejected;
 
-                throw new TransferException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
+                throw new TransferRejectedException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
@@ -2838,7 +2844,7 @@ namespace Soulseek
                     throw;
                 }
 
-                throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
             }
             finally
             {

@@ -184,7 +184,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), token: 0, options: options));
 
                 Assert.NotNull(ex);
-                Assert.IsType<SearchException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
             }
         }
 
@@ -249,7 +249,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), responseReceived: (r) => { }, options: options));
 
                 Assert.NotNull(ex);
-                Assert.IsType<SearchException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
             }
         }
 
@@ -599,8 +599,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
-        [Theory(DisplayName = "SearchAsync throws SearchException on error"), AutoData]
-        public async Task SearchInternalAsync_Throws_SearchException_On_Error(string searchText, int token)
+        [Theory(DisplayName = "SearchAsync throws SoulseekClientException on error"), AutoData]
+        public async Task SearchInternalAsync_Throws_SoulseekClientException_On_Error(string searchText, int token)
         {
             var options = new SearchOptions(searchTimeout: 1000);
 
@@ -615,7 +615,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText(searchText), SearchScope.Network, token, options, null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<SearchException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
             }
         }
 
