@@ -120,8 +120,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GrantUserPrivilegesAsync")]
-        [Theory(DisplayName = "GrantUserPrivilegesAsync throws PrivilegeGrantException on throw"), AutoData]
-        public async Task GrantUserPrivilegesAsync_Throws_PrivilegeGrantException_On_Throw(string username, int days)
+        [Theory(DisplayName = "GrantUserPrivilegesAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task GrantUserPrivilegesAsync_Throws_SoulseekClientException_On_Throw(string username, int days)
         {
             var serverConn = new Mock<IMessageConnection>();
             serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -134,7 +134,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.GrantUserPrivilegesAsync(username, days));
 
                 Assert.NotNull(ex);
-                Assert.IsType<PrivilegeGrantException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
             }
         }
 

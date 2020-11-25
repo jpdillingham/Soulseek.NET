@@ -323,7 +323,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public virtual Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
         {
             if (privateMessageId < 0)
@@ -351,7 +351,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PrivilegeNotificationException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public virtual Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken? cancellationToken = null)
         {
             if (privilegeNotificationId < 0)
@@ -926,7 +926,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PrivilegeCheckException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<int> GetPrivilegesAsync(CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -946,7 +946,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new PrivilegeCheckException($"Failed to get privileges: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to get privileges: {ex.Message}", ex);
             }
         }
 
@@ -1048,7 +1048,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PrivilegeGrantException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<bool> GetUserPrivilegedAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1127,7 +1127,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PrivilegeGrantException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task GrantUserPrivilegesAsync(string username, int days, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1434,7 +1434,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -1740,7 +1740,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new PrivateMessageException($"Failed to acknowledge private message with ID {privateMessageId}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to acknowledge private message with ID {privateMessageId}: {ex.Message}", ex);
             }
         }
 
@@ -1752,7 +1752,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new PrivilegeNotificationException($"Failed to acknowledge privilege notification with ID {privilegeNotificationId}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to acknowledge privilege notification with ID {privilegeNotificationId}: {ex.Message}", ex);
             }
         }
 
@@ -2347,7 +2347,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new PrivilegeCheckException($"Failed to get privileges for {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to get privileges for {username}: {ex.Message}", ex);
             }
         }
 
@@ -2376,7 +2376,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new PrivilegeGrantException($"Failed to grant {days} days of privileges to {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to grant {days} days of privileges to {username}: {ex.Message}", ex);
             }
         }
 
@@ -2582,7 +2582,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to send private message to user {username}: {ex.Message}", ex);
             }
         }
 
