@@ -280,8 +280,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
-        [Theory(DisplayName = "LoginAsync throws ServerException if expected login messages are not sent"), AutoData]
-        public async Task LoginAsync_Throws_ServerException_If_Expected_Login_Messages_Are_Not_Sent(string user, string password)
+        [Theory(DisplayName = "LoginAsync throws SoulseekClientException if expected login messages are not sent"), AutoData]
+        public async Task LoginAsync_Throws_SoulseekClientException_If_Expected_Login_Messages_Are_Not_Sent(string user, string password)
         {
             var port = GetPort();
 
@@ -301,9 +301,8 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
-                Assert.IsType<ServerException>(ex.InnerException);
-                Assert.True(ex.InnerException.Message.ContainsInsensitive("did not receive one or more expected server messages"));
-                Assert.IsType<TimeoutException>(ex.InnerException.InnerException);
+                Assert.True(ex.Message.ContainsInsensitive("did not receive one or more expected server messages"));
+                Assert.IsType<TimeoutException>(ex.InnerException);
             }
         }
 
