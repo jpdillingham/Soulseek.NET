@@ -44,8 +44,10 @@
         internal static int ConnectTimeout { get; set; }
         internal static int InactivityTimeout { get; set; }
         internal static bool EnableSecurity { get; set; }
-        internal static int TokenTTL { get; set; }
+        internal static int SecurityTokenTTL { get; set; }
         internal static int RoomMessageLimit { get; set; }
+        internal static int ReadBufferSize { get; set; }
+        internal static int WriteBufferSize { get; set; }
 
         internal static SymmetricSecurityKey JwtSigningKey { get; set; }
 
@@ -64,15 +66,17 @@
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT", 50000);
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
-            SharedCacheTTL = Configuration.GetValue<long>("SHARED_CACHE_TTL", 900000); // 15 minutes
+            SharedCacheTTL = Configuration.GetValue<long>("SHARED_CACHE_TTL", 3600000); // 1 hour
             EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", true);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
-            TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000); // 24 hours
-            RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 100);
+            SecurityTokenTTL = Configuration.GetValue<int>("SECURITY_TOKEN_TTL", 604800000); // 7 days
+            RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 250);
+            ReadBufferSize = Configuration.GetValue<int>("READ_BUFFER_SIZE", 16384);
+            WriteBufferSize = Configuration.GetValue<int>("WRITE_BUFFER_SIZE", 16384);
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
 
@@ -230,6 +234,12 @@
             // begin SoulseekClient implementation
             // ---------------------------------------------------------------------------------------------------------------------------------------------
 
+            var connectionOptions = new ConnectionOptions(
+                readBufferSize: ReadBufferSize,
+                writeBufferSize: WriteBufferSize,
+                connectTimeout: ConnectTimeout,
+                inactivityTimeout: InactivityTimeout);
+
             // create options for the client.
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
@@ -239,9 +249,9 @@
                 enableDistributedNetwork: EnableDistributedNetwork,
                 minimumDiagnosticLevel: DiagnosticLevel,
                 autoAcknowledgePrivateMessages: false,
-                serverConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
-                peerConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
+                serverConnectionOptions: connectionOptions,
+                peerConnectionOptions: connectionOptions,
+                transferConnectionOptions: connectionOptions,
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
                 directoryContentsResponseResolver: DirectoryContentsResponseResolver,
@@ -425,7 +435,7 @@
 
             // create a new cancellation token source so that we can cancel the upload from the UI.
             var cts = new CancellationTokenSource();
-            var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts), governor: (t, c) => Task.Delay(1));
+            var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts), governor: (t, c) => Task.Delay(1, c));
 
             // accept all download requests, and begin the upload immediately.
             // normally there would be an internal queue, and uploads would be handled separately.
@@ -470,7 +480,7 @@
 
             var results = SharedFileCache.Search(query);
 
-            if (results.Count() > 0)
+            if (results.Any())
             {
                 Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query.SearchText}");
 
