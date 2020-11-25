@@ -298,8 +298,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseAsync")]
-        [Theory(DisplayName = "BrowseAsync throws BrowseException on write exception"), AutoData]
-        public async Task BrowseAsync_Throws_BrowseException_On_Write_Exception(string username, IPEndPoint endpoint, string localUsername)
+        [Theory(DisplayName = "BrowseAsync throws SoulseekClientException on write exception"), AutoData]
+        public async Task BrowseAsync_Throws_SoulseekClientException_On_Write_Exception(string username, IPEndPoint endpoint, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -321,7 +321,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<BrowseException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
@@ -382,8 +382,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseAsync")]
-        [Theory(DisplayName = "BrowseAsync throws BrowseException on disconnect"), AutoData]
-        public async Task BrowseAsync_Throws_BrowseException_On_Disconnect(string username, IPEndPoint endpoint, string localUsername)
+        [Theory(DisplayName = "BrowseAsync throws SoulseekClientException on disconnect"), AutoData]
+        public async Task BrowseAsync_Throws_SoulseekClientException_On_Disconnect(string username, IPEndPoint endpoint, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -411,15 +411,15 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<BrowseException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.Contains("disconnected unexpectedly", ex.InnerException.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
 
         [Trait("Category", "BrowseAsync")]
-        [Theory(DisplayName = "BrowseAsync throws ConnectionException on unexpected disconnect"), AutoData]
-        public async Task BrowseAsync_Throws_ConnectionException_On_Unexpected_Disconnect(string username, IPEndPoint endpoint, string localUsername)
+        [Theory(DisplayName = "BrowseAsync throws SoulseekClientException on unexpected disconnect"), AutoData]
+        public async Task BrowseAsync_Throws_SoulseekClientException_On_Unexpected_Disconnect(string username, IPEndPoint endpoint, string localUsername)
         {
             var tcs = new TaskCompletionSource<BrowseResponse>();
 
@@ -456,7 +456,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => task);
 
                 Assert.NotNull(ex);
-                Assert.IsType<BrowseException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }

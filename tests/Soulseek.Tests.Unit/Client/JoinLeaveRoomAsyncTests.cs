@@ -131,8 +131,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "JoinRoomAsync")]
-        [Theory(DisplayName = "JoinRoomAsync throws RoomJoinException when write throws"), AutoData]
-        public async Task JoinRoomAsync_Throws_RoomJoinException_When_Write_Throws(string roomName)
+        [Theory(DisplayName = "JoinRoomAsync throws SoulseekClientException when write throws"), AutoData]
+        public async Task JoinRoomAsync_Throws_SoulseekClientException_When_Write_Throws(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -145,7 +145,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
-                Assert.IsType<RoomJoinException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
@@ -285,8 +285,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "LeaveRoomAsync")]
-        [Theory(DisplayName = "LeaveRoomAsync throws RoomLeaveException when write throws"), AutoData]
-        public async Task LeaveRoomAsync_Throws_RoomLeaveException_When_Write_Throws(string roomName)
+        [Theory(DisplayName = "LeaveRoomAsync throws SoulseekClientException when write throws"), AutoData]
+        public async Task LeaveRoomAsync_Throws_SoulseekClientException_When_Write_Throws(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -299,7 +299,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.NotNull(ex);
-                Assert.IsType<RoomLeaveException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

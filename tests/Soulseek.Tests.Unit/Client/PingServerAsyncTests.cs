@@ -74,8 +74,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "PingServerAsync")]
-        [Fact(DisplayName = "PingServerAsync throws PingException when write throws")]
-        public async Task PingServerAsync_Throws_PrivateMessageException_When_Write_Throws()
+        [Fact(DisplayName = "PingServerAsync throws SoulseekClientException when write throws")]
+        public async Task PingServerAsync_Throws_SoulseekClientException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.PingServerAsync(CancellationToken.None));
 
                 Assert.NotNull(ex);
-                Assert.IsType<PingException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

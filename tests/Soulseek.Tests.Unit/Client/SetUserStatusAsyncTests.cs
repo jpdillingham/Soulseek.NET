@@ -70,8 +70,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws UserStatusException when write throws")]
-        public async Task SetUserStatusAsync_Throws_Exception_When_Write_Throws()
+        [Fact(DisplayName = "SetUserStatusAsync throws SoulseekClientException when write throws")]
+        public async Task SetUserStatusAsync_Throws_SoulseekClientException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -84,7 +84,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SetStatusAsync(UserPresence.Online, CancellationToken.None));
 
                 Assert.NotNull(ex);
-                Assert.IsType<UserStatusException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

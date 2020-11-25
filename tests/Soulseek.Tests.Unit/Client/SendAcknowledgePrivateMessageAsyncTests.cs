@@ -83,8 +83,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
-        [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws PrivateMessageException when write throws")]
-        public async Task AcknowledgePrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
+        [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws SoulseekClientException when write throws")]
+        public async Task AcknowledgePrivateMessageAsync_Throws_SoulseekClientException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -97,7 +97,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
-                Assert.IsType<PrivateMessageException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
@@ -228,8 +228,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
-        [Fact(DisplayName = "SendPrivateMessageAsync throws PrivateMessageException when write throws")]
-        public async Task SendPrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
+        [Fact(DisplayName = "SendPrivateMessageAsync throws SoulseekClientException when write throws")]
+        public async Task SendPrivateMessageAsync_Throws_SoulseekClientException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -242,7 +242,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SendPrivateMessageAsync("foo", "bar"));
 
                 Assert.NotNull(ex);
-                Assert.IsType<PrivateMessageException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

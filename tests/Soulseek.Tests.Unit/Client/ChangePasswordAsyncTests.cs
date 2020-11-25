@@ -124,14 +124,14 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.ChangePasswordAsync(password));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ChangePasswordException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.True(ex.Message.ContainsInsensitive("doesn't match the specified password"));
             }
         }
 
         [Trait("Category", "ChangePasswordAsync")]
-        [Theory(DisplayName = "ChangePasswordAsync throws ChangePasswordException on throw"), AutoData]
-        public async Task ChangePasswordAsync_Throws_ChangePasswordException_On_Throw(string password)
+        [Theory(DisplayName = "ChangePasswordAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task ChangePasswordAsync_Throws_SoulseekClientException_On_Throw(string password)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<string>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -148,7 +148,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.ChangePasswordAsync(password));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ChangePasswordException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }

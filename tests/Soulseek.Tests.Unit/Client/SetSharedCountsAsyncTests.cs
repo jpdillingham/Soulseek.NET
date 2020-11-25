@@ -102,7 +102,7 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SetSharedCountsAsync")]
-        [Fact(DisplayName = "SetSharedCountsAsync throws SharedCountsException when write throws")]
+        [Fact(DisplayName = "SetSharedCountsAsync throws SoulseekClientException when write throws")]
         public async Task SetSharedCountsAsync_Throws_Exception_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
@@ -116,7 +116,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, 0));
 
                 Assert.NotNull(ex);
-                Assert.IsType<SharedCountsException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

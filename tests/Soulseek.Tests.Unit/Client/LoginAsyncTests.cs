@@ -280,8 +280,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
-        [Theory(DisplayName = "LoginAsync throws ServerException if expected login messages are not sent"), AutoData]
-        public async Task LoginAsync_Throws_ServerException_If_Expected_Login_Messages_Are_Not_Sent(string user, string password)
+        [Theory(DisplayName = "LoginAsync throws SoulseekClientException if expected login messages are not sent"), AutoData]
+        public async Task LoginAsync_Throws_SoulseekClientException_If_Expected_Login_Messages_Are_Not_Sent(string user, string password)
         {
             var port = GetPort();
 
@@ -300,9 +300,9 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
-                Assert.IsType<LoginException>(ex);
-                Assert.IsType<ServerException>(ex.InnerException);
-                Assert.True(ex.InnerException.Message.ContainsInsensitive("did not receive one or more expected server messages"));
+                Assert.IsType<SoulseekClientException>(ex);
+                Assert.True(ex.Message.ContainsInsensitive("did not receive one or more expected server messages"));
+                Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.IsType<TimeoutException>(ex.InnerException.InnerException);
             }
         }
@@ -373,8 +373,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
-        [Theory(DisplayName = "LoginAsync throws LoginException on message write exception"), AutoData]
-        public async Task LoginAsync_Throws_LoginException_On_Message_Write_Exception(string user, string password)
+        [Theory(DisplayName = "LoginAsync throws SoulseekClientException on message write exception"), AutoData]
+        public async Task LoginAsync_Throws_SoulseekClientException_On_Message_Write_Exception(string user, string password)
         {
             var waiter = new Mock<IWaiter>();
 
@@ -389,7 +389,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
-                Assert.IsType<LoginException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }

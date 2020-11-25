@@ -207,7 +207,8 @@ namespace Soulseek.Tests.Unit
                 var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
 
                 Assert.NotNull(ex);
-                Assert.IsType<ConnectionException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }
 
@@ -467,7 +468,7 @@ namespace Soulseek.Tests.Unit
                 var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ConnectionException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<AddressException>(ex.InnerException);
             }
         }

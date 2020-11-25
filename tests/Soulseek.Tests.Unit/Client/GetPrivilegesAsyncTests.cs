@@ -81,8 +81,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetPrivilegesAsync")]
-        [Fact(DisplayName = "GetPrivilegesAsync throws PrivilegeCheckException on error other than cancel or timeout")]
-        public async Task GetPrivilegesAsync_Throws_PrivilegeCheckException_On_Error_Other_Than_Cancel_Or_Timeout()
+        [Fact(DisplayName = "GetPrivilegesAsync throws SoulseekClientException on error other than cancel or timeout")]
+        public async Task GetPrivilegesAsync_Throws_SoulseekClientException_On_Error_Other_Than_Cancel_Or_Timeout()
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -95,7 +95,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.GetPrivilegesAsync());
 
                 Assert.NotNull(ex);
-                Assert.IsType<PrivilegeCheckException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
             }
         }
 

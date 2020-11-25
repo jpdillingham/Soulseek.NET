@@ -177,8 +177,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetDirectoryContentsAsync")]
-        [Theory(DisplayName = "GetDirectoryContentsAsync throws DirectoryContentsException on throw"), AutoData]
-        public async Task GetDirectoryContentsAsync_Throws_DirectoryContentsException_On_Throw(string username, string directory)
+        [Theory(DisplayName = "GetDirectoryContentsAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task GetDirectoryContentsAsync_Throws_SoulseekClientException_On_Throw(string username, string directory)
         {
             var result = new Directory(directory);
 
@@ -208,7 +208,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => dir = await s.GetDirectoryContentsAsync(username, directory));
 
                 Assert.NotNull(ex);
-                Assert.IsType<DirectoryContentsException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<NullReferenceException>(ex.InnerException);
             }
         }

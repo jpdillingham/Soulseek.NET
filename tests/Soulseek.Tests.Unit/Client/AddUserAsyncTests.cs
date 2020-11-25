@@ -135,8 +135,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "AddUserAsyncAsync")]
-        [Theory(DisplayName = "AddUserAsyncAsync throws AddUserException on throw"), AutoData]
-        public async Task AddUserAsyncAsync_Throws_UserStatusException_On_Throw(string username, bool exists, UserData userData)
+        [Theory(DisplayName = "AddUserAsyncAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task AddUserAsyncAsync_Throws_SoulseekClientException_On_Throw(string username, bool exists, UserData userData)
         {
             var result = new AddUserResponse(username, exists, userData);
 
@@ -155,7 +155,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.AddUserAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<UserAddException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }

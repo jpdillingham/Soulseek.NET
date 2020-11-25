@@ -858,7 +858,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => task);
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.Contains("Failed to upload file", ex.Message, StringComparison.InvariantCultureIgnoreCase);
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.Equal("Transfer failed: some exception", ex.InnerException.Message);
@@ -1191,8 +1191,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromStreamAsync")]
-        [Theory(DisplayName = "UploadFromStreamAsync throws TransferException if seek is longer than file"), AutoData]
-        public async Task UploadFromStreamAsync_Throws_TransferException_If_Seek_Is_Longer_Than_File(string username, IPEndPoint endpoint, string filename, int token)
+        [Theory(DisplayName = "UploadFromStreamAsync throws SoulseekClientException if seek is longer than file"), AutoData]
+        public async Task UploadFromStreamAsync_Throws_SoulseekClientException_If_Seek_Is_Longer_Than_File(string username, IPEndPoint endpoint, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
             long size = new Random().Next(1000);
@@ -1205,7 +1205,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<Task>(new ConnectionException("foo", new NullReferenceException())));
+                .Returns(Task.FromException<Task>(new TransferException("foo", new NullReferenceException())));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
@@ -1233,7 +1233,8 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, stream, token, txoptions, null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
+                Assert.IsType<TransferException>(ex.InnerException);
             }
 
             transferConn.Verify(m => m.Disconnect(It.IsAny<string>(), It.Is<TransferException>(ex => ex.Message.ContainsInsensitive("exceeds file length"))), Times.Once);
@@ -1324,8 +1325,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<TransferRejectedException>(ex.InnerException);
+                Assert.IsType<TransferRejectedException>(ex);
             }
         }
 
@@ -1549,7 +1549,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(maximumLingerTime: 0), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<MessageReadException>(ex.InnerException);
 
                 Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
@@ -1612,7 +1612,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<MessageReadException>(ex.InnerException);
 
                 Assert.Equal(TransferStates.Initializing, events[events.Count - 1].PreviousState);
@@ -1715,8 +1715,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]
-        [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferException and ConnectionException on transfer exception"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TransferException_And_ConnectionException_On_Transfer_Exception(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        [Theory(DisplayName = "UploadFromByteArrayAsync throws SoulseekClientException and ConnectionException on transfer exception"), AutoData]
+        public async Task UploadFromByteArrayAsync_Throws_SoulseekClientException_And_ConnectionException_On_Transfer_Exception(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1762,15 +1762,15 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.IsType<NullReferenceException>(ex.InnerException.InnerException);
             }
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]
-        [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferException on failure to read offset data"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TransferException_On_Failure_To_Read_Offset_Data(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        [Theory(DisplayName = "UploadFromByteArrayAsync throws SoulseekClientException on failure to read offset data"), AutoData]
+        public async Task UploadFromByteArrayAsync_Throws_SoulseekClientException_On_Failure_To_Read_Offset_Data(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1811,15 +1811,15 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.IsType<NullReferenceException>(ex.InnerException.InnerException);
             }
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]
-        [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferException on bad offset data"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TransferException_On_Bad_Offset_Data(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        [Theory(DisplayName = "UploadFromByteArrayAsync throws SoulseekClientException on bad offset data"), AutoData]
+        public async Task UploadFromByteArrayAsync_Throws_SoulseekClientException_On_Bad_Offset_Data(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1855,7 +1855,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex.InnerException);
             }
         }
@@ -1967,8 +1967,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]
-        [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferException on transfer rejection"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
+        [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferRejectedException on transfer rejection"), AutoData]
+        public async Task UploadFromByteArrayAsync_Throws_TransferRejectedException_On_Transfer_Rejection(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2002,8 +2002,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<TransferRejectedException>(ex.InnerException);
+                Assert.IsType<TransferRejectedException>(ex);
             }
         }
 
@@ -2041,7 +2040,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
+                Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }
