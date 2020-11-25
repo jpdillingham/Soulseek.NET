@@ -94,7 +94,7 @@
         private JwtSecurityToken GetJwtSecurityToken()
         {
             var issuedUtc = DateTime.UtcNow;
-            var expiresUtc = DateTime.UtcNow.AddMilliseconds(Startup.TokenTTL);
+            var expiresUtc = DateTime.UtcNow.AddMilliseconds(Startup.SecurityTokenTTL);
 
             var claims = new List<Claim>()
             {
