@@ -52,8 +52,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SetSharedCountsAsync")]
-        [Fact(DisplayName = "SetSharedCountsAsync throws ArgumentException when directories is negative")]
-        public async Task SetSharedCountsAsync_Throws_ArgumentException_When_Directories_Is_Negative()
+        [Fact(DisplayName = "SetSharedCountsAsync throws ArgumentOutOfRangeException when directories is negative")]
+        public async Task SetSharedCountsAsync_Throws_ArgumentOutOfRangeException_When_Directories_Is_Negative()
         {
             using (var s = new SoulseekClient())
             {
@@ -62,14 +62,14 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(-1, 0));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
                 Assert.Equal("directories", ((ArgumentException)ex).ParamName);
             }
         }
 
         [Trait("Category", "SetSharedCountsAsync")]
-        [Fact(DisplayName = "SetSharedCountsAsync throws ArgumentException when files is negative")]
-        public async Task SetSharedCountsAsync_Throws_ArgumentException_When_Files_Is_Negative()
+        [Fact(DisplayName = "SetSharedCountsAsync throws ArgumentOutOfRangeException when files is negative")]
+        public async Task SetSharedCountsAsync_Throws_ArgumentOutOfRangeException_When_Files_Is_Negative()
         {
             using (var s = new SoulseekClient())
             {
@@ -78,7 +78,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SetSharedCountsAsync(0, -1));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
                 Assert.Equal("files", ((ArgumentException)ex).ParamName);
             }
         }
