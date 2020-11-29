@@ -36,6 +36,8 @@ Note: `SearchAsync` accepts a `SearchQuery` with the constructor `SearchQuery(st
 ```c#
 int FileCount
 IReadOnlyCollection<File> Files
+int LockedFileCount
+IReadOnlyCollection<File> LockedFiles
 int FreeUploadSlots
 long QueueLength
 int Token
@@ -43,37 +45,39 @@ int UploadSpeed
 string Username
 ```
 
-`File` has a number of properties; the one you'll need for downloading is `Filename`.
+`File` has a number of properties; you'll need for `Filename` and `Size` for downloading.
 
 ## Download a file
 
 ```c#
-byte[] file = await Client.DownloadAsync("some username", "some fully qualified filename");
+byte[] file = await Client.DownloadAsync(username: "some username", filename: "some fully qualified filename", size: 42);
 ```
 
 OR (ideally)
 
 ```c#
 var fs = new FileStream("c:\downloads\local filename", FileMode.Create);
-await Client.DownloadAsync("some username", "some fully qualified filename", fs);
+await Client.DownloadAsync(username: "some username", filename: "some fully qualified filename", outputStream: fs, size: 42);
 ```
 
 Note: Download to a stream where possible to reduce memory overhead.
 
 # Documentation
 
-Coming soon!
+The external interface of the library is sparse and well documented; the best resource is the code itself.  Of particular interest:
+
+* [ISoulseekClient](https://github.com/jpdillingham/Soulseek.NET/blob/master/src/ISoulseekClient.cs)
+* [SoulseekClientOptions](https://github.com/jpdillingham/Soulseek.NET/blob/master/src/Options/SoulseekClientOptions.cs)
+* [SearchOptions](https://github.com/jpdillingham/Soulseek.NET/blob/master/src/Options/SearchOptions.cs)
+* [TransferOptions](https://github.com/jpdillingham/Soulseek.NET/blob/master/src/Options/TransferOptions.cs)
 
 # Example Web Application
 
-Included is a small web application with a limited feature set:
+Included is a small [web application](https://github.com/jpdillingham/Soulseek.NET/tree/master/examples/Web) which serves as an example.
 
-* File search
-* User browsing
-* File downloads
-* File uploads
+It's important to note that there are currently no controls over uploads; anything you share can be downloaded by any number of people at any given time.  With this in mind, consider sharing a small number of files from the example.
 
-It's important to note that there are currently no controls over uploads; anything you share can be downloaded by any number of people at any given time.  With this in mind, consider sharing a small number of files (or none at all) from the example.
+It's also important to note that some displays in the application poll the daemon for updates; this is inefficient, and you really shouldn't use this application over a mobile data connection.
 
 ## Running with Docker
 
@@ -104,20 +108,31 @@ docker run -i \
     -e "SLSK_USERNAME=<your username>" \
     -e "SLSK_PASSWORD=<your password>" \
     -e "SLSK_LISTEN_PORT=50000" \
+    -e "SLSK_CONNECT_TIMEOUT=5000" \
+    -e "SLSK_INACTIVITY_TIMEOUT=15000" \
+    -e "SLSK_READ_BUFFER_SIZE=16384" \
+    -e "SLSK_WRITE_BUFFER_SIZE=16384" \
     -e "SLSK_ENABLE_DNET=true" \
     -e "SLSK_DNET_CHILD_LIMIT=10" \
     -e "SLSK_DIAGNOSTIC=Info" \
-    -e "SLSK_CONNECT_TIMEOUT=5000" \
-    -e "SLSK_INACTIVITY_TIMEOUT=15000" \
+    -e "SLSK_SHARED_CACHE_TTL=3600000" \
+    -e "SLSK_ENABLE_SECURITY=true" \
+    -e "SLSK_SECURITY_TOKEN_TTL=604800000" \
+    -e "SLSK_ROOM_MESSAGE_LIMIT=250" \
+    -e "SLSK_BASE_PATH=/"
     jpdillingham/slsk-web-example:latest
 ```
 
 With this configuration the application will listen on port 50000 and will connect to the distributed network, allowing up to 10 child connections.  The application shouldn't have any trouble connecting provided you've forwarded port 50000 properly, and will receive and respond to distributed search requests.
 
+If `SLSK_ENABLE_SECURITY` is `true`, you will be prompted to log in.  Supply the values you specified for the `SLSK_USERNAME` and `SLSK_PASSWORD` fields.  Setting this option to `false` will disable the prompt.
+
+If you would like to run the application behind a reverse proxy, set `SLSK_BASE_PATH` to your proxied path.
+
 For convenience, two scripts, `run` and `start`, have been included in `examples/Web/bin` for running the example interactively and as a daemon, respectively.
 
 ## Running without Docker
 
-The example application is split into two projects; a .NET Core 2.2 WebAPI and a React application bootstrapped with create-react-app.  If you'd like to run these outside of Docker you'll need to start both applications; `dotnet run` for the API and `yarn|npm start` for the React application.  You can connect to http://localhost:3000, or the API serves Swagger UI at http://localhost:5000/swagger.
+The example application is split into two projects; a .NET 5.0 WebAPI and a React application bootstrapped with create-react-app.  If you'd like to run these outside of Docker you'll need to start both applications; `dotnet run` for the API and `yarn|npm start` for the React application.  You can connect to http://localhost:3000, or the API serves Swagger UI at http://localhost:5000/swagger.
 
 A build script included in the `bin` directory of the example which will build the React app, copy the static files to the wwwroot directory of the API, build the API, then attempt to build the Docker image.
