@@ -278,6 +278,7 @@ namespace Soulseek
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the <paramref name="port"/> is not within the valid port range 0-65535.
         /// </exception>
+        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -321,6 +322,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
+        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -355,7 +357,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -392,7 +394,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
         /// </exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
@@ -441,8 +443,8 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="TransferNotFoundException">Thrown when a corresponding download is not active.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TransferNotFoundException">Thrown when a corresponding download is not active.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
@@ -520,6 +522,9 @@ namespace Soulseek
         /// <param name="username">The username of the user for which to fetch privileges.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -573,6 +578,12 @@ namespace Soulseek
         /// <param name="days">The number of days of privileged status to grant.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="days"/> are less than zero.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -725,7 +736,7 @@ namespace Soulseek
         /// <param name="files">The number of shared files.</param>
         /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value of <paramref name="directories"/> or <paramref name="files"/> is less than zero.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>

@@ -460,7 +460,7 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws ArgumentException on bad input"), AutoData]
+        [Theory(DisplayName = "Connect throws AddressException on bad address"), AutoData]
         public async Task Connect_Throws_ArgumentException_On_Bad_Address(string address)
         {
             using (var s = new SoulseekClient())
@@ -468,8 +468,7 @@ namespace Soulseek.Tests.Unit
                 var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
 
                 Assert.NotNull(ex);
-                Assert.IsType<SoulseekClientException>(ex);
-                Assert.IsType<AddressException>(ex.InnerException);
+                Assert.IsType<AddressException>(ex);
             }
         }
 
