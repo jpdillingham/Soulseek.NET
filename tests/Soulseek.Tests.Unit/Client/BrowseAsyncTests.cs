@@ -421,7 +421,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "BrowseAsync throws SoulseekClientException on unexpected disconnect"), AutoData]
         public async Task BrowseAsync_Throws_SoulseekClientException_On_Unexpected_Disconnect(string username, IPEndPoint endpoint, string localUsername)
         {
-            var tcs = new TaskCompletionSource<BrowseResponse>();
+            var tcs = new TaskCompletionSource<BrowseResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))

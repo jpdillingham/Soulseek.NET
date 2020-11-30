@@ -170,7 +170,7 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         protected DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
-        private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>();
+        private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
@@ -198,8 +198,8 @@ namespace Soulseek.Network.Tcp
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
             // that ends when the result is set programmatically. create another for cancellation via the externally provided token.
-            var timeoutTaskCompletionSource = new TaskCompletionSource<bool>();
-            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
+            var timeoutTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             try
             {
