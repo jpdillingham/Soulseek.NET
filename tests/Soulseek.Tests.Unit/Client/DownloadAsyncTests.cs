@@ -1262,7 +1262,7 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var tcs = new TaskCompletionSource<byte[]>();
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
             var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
@@ -1325,7 +1325,7 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception())); // fake an exception to move execution to the indefinite wait
 
-            var tcs = new TaskCompletionSource<byte[]>();
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1389,7 +1389,7 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception())); // fake an exception to move execution to the indefinite wait
 
-            var tcs = new TaskCompletionSource<byte[]>();
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1453,7 +1453,7 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception())); // fake an exception to move execution to the indefinite wait
 
-            var tcs = new TaskCompletionSource<byte[]>();
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))

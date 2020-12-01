@@ -94,7 +94,7 @@
         {
             try
             {
-                var waitUntilEnqueue = new TaskCompletionSource<bool>();
+                var waitUntilEnqueue = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var stream = GetLocalFileStream(request.Filename, OutputDirectory);
 
                 var cts = new CancellationTokenSource();

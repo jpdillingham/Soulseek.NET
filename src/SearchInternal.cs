@@ -93,7 +93,7 @@ namespace Soulseek
 
         private bool Disposed { get; set; } = false;
         private SystemTimer SearchTimeoutTimer { get; set; }
-        private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>();
+        private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         /// <summary>
         ///     Cancels the search.
@@ -200,7 +200,7 @@ namespace Soulseek
         /// <returns>The collection of received search responses.</returns>
         public async Task WaitForCompletion(CancellationToken cancellationToken)
         {
-            var cancellationTaskCompletionSource = new TaskCompletionSource<object>();
+            var cancellationTaskCompletionSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetException(new OperationCanceledException("Operation cancelled"))))
             {
