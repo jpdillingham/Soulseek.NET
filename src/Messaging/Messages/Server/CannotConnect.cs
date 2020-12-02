@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     A message indicating an unsuccessful attempt to connect to a peer.
+    ///     A message indicating an unsuccessful attempt to connect by a peer.
     /// </summary>
     internal sealed class CannotConnect : IIncomingMessage, IOutgoingMessage
     {
