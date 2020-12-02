@@ -67,6 +67,11 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
+        ///     Occurs when a user fails to connect.
+        /// </summary>
+        event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
