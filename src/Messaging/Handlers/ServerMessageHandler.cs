@@ -206,6 +206,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.CannotConnect:
                         var cannotConnect = CannotConnect.FromByteArray(message);
+                        Diagnostic.Debug($"Received CannotConnect message from {cannotConnect.Username} for token {cannotConnect.Token}");
                         UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
                         break;
 
