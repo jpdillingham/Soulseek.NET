@@ -158,6 +158,9 @@ namespace Soulseek.Network
                 Diagnostic.Debug(msg);
                 Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
                 ChildConnectionDictionary.TryRemove(r.Username, out _);
+
+                await SoulseekClient.ServerConnection.WriteAsync(new CannotConnect(r.Token, r.Username)).ConfigureAwait(false);
+
                 throw new ConnectionException(msg, ex);
             }
 
