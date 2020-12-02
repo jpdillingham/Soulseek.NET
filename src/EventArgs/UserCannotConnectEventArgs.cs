@@ -22,12 +22,12 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserCannotConnectEventArgs"/> class.
         /// </summary>
-        /// <param name="username">The username of the peer.</param>
+        /// <param name="username">The username of the user.</param>
         /// <param name="token">The unique connection token.</param>
         public UserCannotConnectEventArgs(int token, string username)
+            : base(username)
         {
             Token = token;
-            Username = username;
         }
 
         /// <summary>
@@ -43,10 +43,5 @@ namespace Soulseek
         ///     Gets the unique connection token.
         /// </summary>
         public int Token { get; }
-
-        /// <summary>
-        ///     Gets the username of the peer.
-        /// </summary>
-        public string Username { get; }
     }
 }
