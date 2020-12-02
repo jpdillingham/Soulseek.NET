@@ -15,13 +15,13 @@ namespace Soulseek
     /// <summary>
     ///     Generic event arguments for search events.
     /// </summary>
-    public class SearchEventArgs : SoulseekClientEventArgs
+    public abstract class SearchEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.
         /// </summary>
         /// <param name="search">The search which raised the event.</param>
-        internal SearchEventArgs(Search search)
+        protected SearchEventArgs(Search search)
         {
             Search = search;
         }
