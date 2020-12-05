@@ -92,6 +92,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
+        ///     Occurs when a user fails to connect.
+        /// </summary>
+        public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
@@ -197,6 +202,12 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Debug($"Error handling NetInfo message: {ex.Message}");
                         }
 
+                        break;
+
+                    case MessageCode.Server.CannotConnect:
+                        var cannotConnect = CannotConnect.FromByteArray(message);
+                        Diagnostic.Debug($"Received CannotConnect message from {cannotConnect.Username} for token {cannotConnect.Token}");
+                        UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
                         break;
 
                     case MessageCode.Server.ConnectToPeer:

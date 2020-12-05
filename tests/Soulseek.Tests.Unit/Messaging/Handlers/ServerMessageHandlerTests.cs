@@ -173,6 +173,45 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises UserCannotConnect event on CannotConnect"), AutoData]
+        public void Raises_UserCannotConnect_Event_On_CannotConnect(int token, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotConnect)
+                .WriteInteger(token)
+                .WriteString(username)
+                .Build();
+
+            UserCannotConnectEventArgs response = null;
+            handler.UserCannotConnect += (_, cannotConnect) => response = cannotConnect;
+
+            handler.HandleMessageRead(null, msg);
+
+            Assert.NotNull(response);
+            Assert.Equal(token, response.Token);
+            Assert.Equal(username, response.Username);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on CannotConnect if UserCannotConnect event is unbound"), AutoData]
+        public void Does_Not_Throw_On_CannotConnect_If_UserCannotConnect_Event_Is_Unbound(int token, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotConnect)
+                .WriteInteger(token)
+                .WriteString(username)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, msg));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
         internal void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {

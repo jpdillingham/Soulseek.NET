@@ -117,6 +117,11 @@ namespace Soulseek
         event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
 
         /// <summary>
+        ///     Occurs when a user fails to connect.
+        /// </summary>
+        event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         /// <remarks>Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.</remarks>

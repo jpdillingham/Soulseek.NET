@@ -125,6 +125,7 @@ namespace Soulseek
             DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
+            ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
@@ -244,6 +245,11 @@ namespace Soulseek
         ///     Occurs when a transfer changes state.
         /// </summary>
         public event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
+
+        /// <summary>
+        ///     Occurs when a user fails to connect.
+        /// </summary>
+        public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.

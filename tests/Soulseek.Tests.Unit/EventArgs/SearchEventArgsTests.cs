@@ -14,25 +14,10 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Collections.Generic;
-    using AutoFixture.Xunit2;
     using Xunit;
 
     public class SearchEventArgsTests
     {
-        [Trait("Category", "Instantiation")]
-        [Trait("Class", "SearchEventArgs")]
-        [Theory(DisplayName = "Instantiates with valid Search"), AutoData]
-        public void SearchEventArgs_Instantiates_With_Valid_Search(string searchText, int token, SearchOptions options)
-        {
-            using (var search = new SearchInternal(searchText, token, options))
-            {
-                var s = new Search(search);
-                var e = new SearchEventArgs(s);
-
-                Assert.Equal(s, e.Search);
-            }
-        }
-
         [Trait("Category", "Instantiation")]
         [Trait("Class", "SearchResponseReceivedEventArgs")]
         [Fact(DisplayName = "Instantiates with valid Search and SearchResponse")]

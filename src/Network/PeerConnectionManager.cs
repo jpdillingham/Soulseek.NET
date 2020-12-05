@@ -305,6 +305,7 @@ namespace Soulseek.Network
                 Diagnostic.Debug(msg);
                 Diagnostic.Debug($"Purging message connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
                 MessageConnectionDictionary.TryRemove(r.Username, out _);
+
                 throw new ConnectionException(msg, ex);
             }
 
@@ -487,6 +488,7 @@ namespace Soulseek.Network
                 var msg = $"Failed to establish an inbound indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
                 connection.Dispose();
+
                 throw new ConnectionException(msg, ex);
             }
 

@@ -28,5 +28,15 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(status, e.Status);
             Assert.Equal(privileged, e.IsPrivileged);
         }
+
+        [Trait("Category", "UserCannotConnectEventArgs Instantiation")]
+        [Theory(DisplayName = "UserCannotConnectEventArgs Instantiates with the given data"), AutoData]
+        public void UserCannotConnectEventArgs_Instantiates_With_The_Given_Data(int token, string username)
+        {
+            var e = new UserCannotConnectEventArgs(new CannotConnect(token, username));
+
+            Assert.Equal(username, e.Username);
+            Assert.Equal(token, e.Token);
+        }
     }
 }

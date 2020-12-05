@@ -17,5 +17,18 @@ namespace Soulseek
     /// </summary>
     public abstract class UserEventArgs : SoulseekClientEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserEventArgs"/> class.
+        /// </summary>
+        /// <param name="username">The username of the user.</param>
+        protected UserEventArgs(string username)
+        {
+            Username = username;
+        }
+
+        /// <summary>
+        ///     Gets the username of the user.
+        /// </summary>
+        public string Username { get; }
     }
 }
