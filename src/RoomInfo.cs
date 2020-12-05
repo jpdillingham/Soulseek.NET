@@ -12,8 +12,11 @@
 
 namespace Soulseek
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
     /// <summary>
-    ///     A chat room.
+    ///     Information about a chat room.
     /// </summary>
     public class RoomInfo
     {
@@ -22,11 +25,20 @@ namespace Soulseek
         /// </summary>
         /// <param name="name">The room name.</param>
         /// <param name="userCount">The number of users in the room.</param>
-        public RoomInfo(string name, int userCount)
+        /// <param name="moderated">A value indicating whether the included list of users are under moderation.</param>
+        /// <param name="userList">The users in the room, if available.</param>
+        public RoomInfo(string name, int userCount, bool moderated = false, IEnumerable<string> userList = null)
         {
             Name = name;
             UserCount = userCount;
+            UserList = userList;
+            Moderated = moderated;
         }
+
+        /// <summary>
+        ///     Gets a value indicating whether the included list of users are under moderation.
+        /// </summary>
+        public bool Moderated { get; }
 
         /// <summary>
         ///     Gets the room name.
@@ -37,5 +49,12 @@ namespace Soulseek
         ///     Gets the number of users in the room.
         /// </summary>
         public int UserCount { get; }
+
+        /// <summary>
+        ///     Gets the users in the room, if available.
+        /// </summary>
+        public IReadOnlyCollection<string> Users => UserList?.ToList().AsReadOnly();
+
+        private IEnumerable<string> UserList { get; }
     }
 }
