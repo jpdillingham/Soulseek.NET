@@ -57,6 +57,11 @@ namespace Soulseek
         event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when a list of users for a private room is received.
+        /// </summary>
+        event EventHandler<RoomInfo> PrivateRoomUserListReceived;
+
+        /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
         event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
