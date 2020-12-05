@@ -22,6 +22,7 @@
     using Microsoft.Extensions.Hosting;
     using Microsoft.IdentityModel.Tokens;
     using Microsoft.OpenApi.Models;
+    using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.Diagnostics;
     using WebAPI.Entities;
@@ -311,6 +312,11 @@
             Client.PrivateMessageReceived += (e, args) =>
             {
                 conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
+            };
+
+            Client.PrivateRoomUserListReceived += (e, args) =>
+            {
+                Console.WriteLine(JsonConvert.SerializeObject(args));
             };
 
             Client.RoomMessageReceived += (e, args) =>
