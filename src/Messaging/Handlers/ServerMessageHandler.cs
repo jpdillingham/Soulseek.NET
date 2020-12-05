@@ -62,6 +62,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when a list of users for a private room is received.
+        /// </summary>
+        public event EventHandler<RoomInfo> PrivateRoomUserListReceived;
+
+        /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
         public event EventHandler<IReadOnlyCollection<string>> PrivilegedUserListReceived;
@@ -166,6 +171,16 @@ namespace Soulseek.Messaging.Handlers
                         var roomList = RoomListResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code), roomList);
                         RoomListReceived?.Invoke(this, roomList);
+                        break;
+
+                    case MessageCode.Server.PrivateRoomOwned:
+                        var moderatedRoomInfo = PrivateRoomOwnedListNotification.FromByteArray(message);
+                        PrivateRoomUserListReceived?.Invoke(this, moderatedRoomInfo);
+                        break;
+
+                    case MessageCode.Server.PrivateRoomUsers:
+                        var roomInfo = PrivateRoomUserListNotification.FromByteArray(message);
+                        PrivateRoomUserListReceived?.Invoke(this, roomInfo);
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
