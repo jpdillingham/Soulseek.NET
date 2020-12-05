@@ -2482,6 +2482,8 @@ namespace Soulseek
                     {
                         await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
                     }
+
+                    await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations)).ConfigureAwait(false);
                 }
                 else
                 {

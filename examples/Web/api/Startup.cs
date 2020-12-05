@@ -249,6 +249,7 @@
                 enableDistributedNetwork: EnableDistributedNetwork,
                 minimumDiagnosticLevel: DiagnosticLevel,
                 autoAcknowledgePrivateMessages: false,
+                acceptPrivateRoomInvitations: true,
                 serverConnectionOptions: connectionOptions,
                 peerConnectionOptions: connectionOptions,
                 transferConnectionOptions: connectionOptions,
