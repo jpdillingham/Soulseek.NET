@@ -1421,6 +1421,39 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserCannotConnect fires when handler raises"), AutoData]
+        public void UserCannotConnect_Fires_When_Handler_Raises(int token, string username)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserCannotConnectEventArgs(token, username);
+            UserCannotConnectEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.UserCannotConnect += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.UserCannotConnect += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserCannotConnect does not throw if event not bound"), AutoData]
+        public void UserCannotConnect_Does_Not_Throw_If_Event_Not_Bound(int token, string username)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserCannotConnectEventArgs(token, username);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.UserCannotConnect += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "RoomMessageReceived fires when handler raises"), AutoData]
         public void RoomMessageReceived_Fires_When_Handler_Raises(string roomName, string username, string message)
         {
