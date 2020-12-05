@@ -144,6 +144,11 @@ namespace Soulseek.Messaging.Handlers
                         SoulseekClient.Waiter.Complete(new WaitKey(code), confirmedPassword);
                         break;
 
+                    case MessageCode.Server.PrivateRoomToggle:
+                        var acceptInvitations = PrivateRoomToggle.FromByteArray(message).AcceptInvitations;
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), acceptInvitations);
+                        break;
+
                     case MessageCode.Server.GlobalAdminMessage:
                         var msg = GlobalMessageNotification.FromByteArray(message);
                         GlobalMessageReceived?.Invoke(this, msg);
