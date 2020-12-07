@@ -25,6 +25,11 @@
         /// </summary>
         public ConcurrentDictionary<string, Room> Rooms { get; } = new ConcurrentDictionary<string, Room>();
 
+        /// <summary>
+        ///     Available rooms.
+        /// </summary>
+        public ConcurrentDictionary<string, RoomInfo> AvailableRooms { get; } = new ConcurrentDictionary<string, RoomInfo>();
+
         private int MessageLimit { get; }
 
         /// <summary>
@@ -51,7 +56,7 @@
         /// </summary>
         /// <param name="roomName"></param>
         /// <param name="room"></param>
-        public void TryAdd(string roomName, Room room) => Rooms.TryAdd(roomName, room);
+        public void TryAddRoom(string roomName, Room room) => Rooms.TryAdd(roomName, room);
 
         /// <summary>
         ///     Adds the specified <paramref name="userData"/> to the specified room.
@@ -71,14 +76,14 @@
         /// </summary>
         /// <param name="roomName"></param>
         /// <param name="room"></param>
-        public bool TryGet(string roomName, out Room room) => Rooms.TryGetValue(roomName, out room);
+        public bool TryGetRoom(string roomName, out Room room) => Rooms.TryGetValue(roomName, out room);
 
         /// <summary>
         ///     Returns the list of messages for the specified <paramref name="roomName"/>, if it is tracked.
         /// </summary>
         /// <param name="roomName"></param>
         /// <returns></returns>
-        public void TryRemove(string roomName) => Rooms.TryRemove(roomName, out _);
+        public void TryRemoveRoom(string roomName) => Rooms.TryRemove(roomName, out _);
 
         /// <summary>
         ///     Removes the specified <paramref name="username"/> from the specified room.
@@ -92,5 +97,17 @@
                 room.Users = room.Users.Where(u => u.Username != username).ToList();
             }
         }
+
+        /// <summary>
+        ///     Adds the specified room to the list of available rooms.
+        /// </summary>
+        /// <param name="room"></param>
+        public void AddOrUpdateAvailableRoom(RoomInfo room) => AvailableRooms.AddOrUpdate(room.Name, room, (_, existingRoom) => room);
+
+        /// <summary>
+        ///     Removes an available room.
+        /// </summary>
+        /// <param name="room"></param>
+        public void TryRemoveAvailableRoom(RoomInfo room) => AvailableRooms.TryRemove(room.Name, out _);
     }
 }

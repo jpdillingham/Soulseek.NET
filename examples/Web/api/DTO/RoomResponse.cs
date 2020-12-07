@@ -45,7 +45,7 @@
             return new RoomResponse()
             {
                 Name = room.Name,
-                IsPrivateRoom = room.IsPrivateRoom,
+                IsPrivateRoom = room.IsPrivate,
                 OperatorCount = room.OperatorCount,
                 Operators = room.Operators.ToList(),
                 Owner = room.Owner,

@@ -316,7 +316,7 @@
 
             Client.PrivateRoomUserListReceived += (e, args) =>
             {
-                Console.WriteLine(JsonConvert.SerializeObject(args));
+                roomTracker.AddOrUpdateAvailableRoom(args);
             };
 
             Client.RoomMessageReceived += (e, args) =>
@@ -336,6 +336,14 @@
             Client.RoomLeft += (e, args) =>
             {
                 roomTracker.TryRemoveUser(args.RoomName, args.Username);
+            };
+
+            Client.RoomListReceived += (e, args) =>
+            {
+                foreach (var room in args)
+                {
+                    roomTracker.AddOrUpdateAvailableRoom(room);
+                }
             };
 
             Client.Disconnected += async (e, args) =>
