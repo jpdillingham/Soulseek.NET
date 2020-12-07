@@ -185,7 +185,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(13, users[0].DirectoryCount);
             Assert.Equal(14, users[0].SlotsFree);
             Assert.Equal("US", users[0].CountryCode);
-            Assert.True(res.IsPrivateRoom);
+            Assert.True(res.IsPrivate);
             Assert.Equal("owner", res.Owner);
             Assert.Equal(2, res.OperatorCount);
             Assert.Equal("op1", res.Operators.ToList()[0]);

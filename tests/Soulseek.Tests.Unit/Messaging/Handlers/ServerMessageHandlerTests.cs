@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
                 .Callback<string>(m => msg = m);
 
-            var message = new MessageBuilder().WriteCode(MessageCode.Server.PrivateRoomOwned).Build();
+            var message = new MessageBuilder().WriteCode(MessageCode.Server.AskPublicChat).Build();
 
             handler.HandleMessageRead(null, message);
 
