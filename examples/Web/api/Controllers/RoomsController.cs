@@ -56,7 +56,7 @@
         [ProducesResponseType(404)]
         public IActionResult GetByRoomName([FromRoute]string roomName)
         {
-            if (Tracker.TryGetRoom(roomName, out var room))
+            if (Tracker.TryGet(roomName, out var room))
             {
                 return Ok(MapRoomToRoomResponse(room));
             }
@@ -78,7 +78,7 @@
         [ProducesResponseType(404)]
         public async Task<IActionResult> SendMessage([FromRoute]string roomName, [FromBody]string message)
         {
-            if (Tracker.TryGetRoom(roomName, out var _))
+            if (Tracker.TryGet(roomName, out var _))
             {
                 await Client.SendRoomMessageAsync(roomName, message);
                 return StatusCode(StatusCodes.Status201Created);
@@ -100,7 +100,7 @@
         [ProducesResponseType(404)]
         public IActionResult GetUsersByRoomName([FromRoute]string roomName)
         {
-            if (Tracker.TryGetRoom(roomName, out var room))
+            if (Tracker.TryGet(roomName, out var room))
             {
                 var response = room.Users
                     .Select(user => UserDataResponse.FromUserData(user, self: user.Username == Client.Username));
@@ -124,7 +124,7 @@
         [ProducesResponseType(404)]
         public IActionResult GetMessagesByRoomName([FromRoute]string roomName)
         {
-            if (Tracker.TryGetRoom(roomName, out var room))
+            if (Tracker.TryGet(roomName, out var room))
             {
                 var response = room.Messages
                     .Select(message => RoomMessageResponse.FromRoomMessage(message, self: message.Username == Client.Username));
@@ -144,7 +144,7 @@
         [ProducesResponseType(typeof(List<RoomInfo>), 200)]
         public async Task<IActionResult> GetRooms()
         {
-            return Ok(Tracker.AvailableRooms.Values);
+            return Ok(await Client.GetRoomListAsync());
         }
 
         /// <summary>
@@ -167,7 +167,7 @@
 
             var roomData = await Client.JoinRoomAsync(roomName);
             var room = Room.FromRoomData(roomData);
-            Tracker.TryAddRoom(roomName, room);
+            Tracker.TryAdd(roomName, room);
 
             return StatusCode(StatusCodes.Status201Created, MapRoomToRoomResponse(room));
         }
@@ -191,7 +191,7 @@
             }
 
             await Client.LeaveRoomAsync(roomName);
-            Tracker.TryRemoveRoom(roomName);
+            Tracker.TryRemove(roomName);
 
             return StatusCode(StatusCodes.Status204NoContent);
         }

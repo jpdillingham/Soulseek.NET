@@ -314,11 +314,6 @@
                 conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
             };
 
-            Client.PrivateRoomUserListReceived += (e, args) =>
-            {
-                roomTracker.AddOrUpdateAvailableRoom(args);
-            };
-
             Client.RoomMessageReceived += (e, args) =>
             {
                 var message = RoomMessage.FromEventArgs(args, DateTime.UtcNow);
@@ -336,14 +331,6 @@
             Client.RoomLeft += (e, args) =>
             {
                 roomTracker.TryRemoveUser(args.RoomName, args.Username);
-            };
-
-            Client.RoomListReceived += (e, args) =>
-            {
-                foreach (var room in args)
-                {
-                    roomTracker.AddOrUpdateAvailableRoom(room);
-                }
             };
 
             Client.Disconnected += async (e, args) =>
