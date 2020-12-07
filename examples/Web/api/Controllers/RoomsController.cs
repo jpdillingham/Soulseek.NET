@@ -144,7 +144,20 @@
         [ProducesResponseType(typeof(List<RoomInfo>), 200)]
         public async Task<IActionResult> GetRooms()
         {
-            return Ok(await Client.GetRoomListAsync());
+            var list = await Client.GetRoomListAsync();
+
+            var response = new List<RoomInfoResponse>();
+
+            response.AddRange(list.Public.Select(r => RoomInfoResponse.FromRoomInfo(r)));
+            response.AddRange(list.Private.Select(r => RoomInfoResponse.FromRoomInfo(r, isPrivate: true)));
+            response.AddRange(list.Owned.Select(r => RoomInfoResponse.FromRoomInfo(r, isPrivate: true, isOwned: true)));
+
+            foreach (var room in response)
+            {
+                room.IsModerated = list.ModeratedNames.Contains(room.Name);
+            }
+
+            return Ok(response);
         }
 
         /// <summary>
