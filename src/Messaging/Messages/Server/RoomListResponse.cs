@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<RoomInfo> FromByteArray(byte[] bytes)
+        public static RoomList FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -34,53 +34,25 @@ namespace Soulseek.Messaging.Messages
                 throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.Server.RoomList}, received: {(int)code}");
             }
 
-            //var roomCount = reader.ReadInteger();
-            //var roomNames = new List<string>();
+            var rooms = ReadRoomInfoList(reader);
+            var ownedRooms = ReadRoomInfoList(reader);
+            var privateRooms = ReadRoomInfoList(reader);
+            var moderatedRoomNames = ReadRoomNameList(reader);
 
-            //for (int i = 0; i < roomCount; i++)
-            //{
-            //    roomNames.Add(reader.ReadString());
-            //}
-
-            //var userCountCount = reader.ReadInteger();
-            //var rooms = new List<RoomInfo>();
-
-            //for (int i = 0; i < userCountCount; i++)
-            //{
-            //    var count = reader.ReadInteger();
-            //    rooms.Add(new RoomInfo(roomNames[i], count));
-            //}
-
-            var rooms = ReadRoomInfo(reader);
-            System.Console.WriteLine($"Rooms: {rooms.Count}");
-
-            var ownedRooms = ReadRoomInfo(reader);
-            System.Console.WriteLine($"Owned Rooms: {ownedRooms.Count}");
-
-            var privateRooms = ReadRoomInfo(reader);
-            System.Console.WriteLine($"Private Rooms: {privateRooms.Count}");
-
-            var moderatedRoomCount = reader.ReadInteger();
-            var moderatedRooms = new List<string>();
-            for (int i = 0; i < moderatedRoomCount; i++)
-            {
-                moderatedRooms.Add(reader.ReadString());
-            }
-
-            System.Console.WriteLine($"Moderated Rooms: {moderatedRooms.Count}");
-
-            return rooms.AsReadOnly();
+            return new RoomList(
+                publicCount: rooms.Count,
+                publicList: rooms,
+                privateCount: privateRooms.Count,
+                privateList: privateRooms,
+                ownedCount: ownedRooms.Count,
+                ownedList: ownedRooms,
+                moderatedNameCount: moderatedRoomNames.Count,
+                moderatedNameList: moderatedRoomNames);
         }
 
-        private static List<RoomInfo> ReadRoomInfo(MessageReader<MessageCode.Server> reader)
+        private static List<RoomInfo> ReadRoomInfoList(MessageReader<MessageCode.Server> reader)
         {
-            var roomCount = reader.ReadInteger();
-            var roomNames = new List<string>();
-
-            for (int i = 0; i < roomCount; i++)
-            {
-                roomNames.Add(reader.ReadString());
-            }
+            var roomNames = ReadRoomNameList(reader);
 
             var userCountCount = reader.ReadInteger();
             var rooms = new List<RoomInfo>();
@@ -92,6 +64,19 @@ namespace Soulseek.Messaging.Messages
             }
 
             return rooms;
+        }
+
+        private static List<string> ReadRoomNameList(MessageReader<MessageCode.Server> reader)
+        {
+            var roomCount = reader.ReadInteger();
+            var roomNames = new List<string>();
+
+            for (int i = 0; i < roomCount; i++)
+            {
+                roomNames.Add(reader.ReadString());
+            }
+
+            return roomNames;
         }
     }
 }
