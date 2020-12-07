@@ -13,7 +13,7 @@
         /// <summary>
         ///     A value indicating whether the room is private.
         /// </summary>
-        public bool IsPrivateRoom { get; set; }
+        public bool IsPrivate { get; set; }
 
         /// <summary>
         ///     The number of operators in the room, if private.
@@ -45,7 +45,7 @@
             return new RoomResponse()
             {
                 Name = room.Name,
-                IsPrivateRoom = room.IsPrivate,
+                IsPrivate = room.IsPrivate,
                 OperatorCount = room.OperatorCount,
                 Operators = room.Operators.ToList(),
                 Owner = room.Owner,
