@@ -89,7 +89,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
+        event EventHandler<RoomList> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -497,7 +497,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<RoomInfo>> GetRoomListAsync(CancellationToken? cancellationToken = null);
+        Task<RoomList> GetRoomListAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.

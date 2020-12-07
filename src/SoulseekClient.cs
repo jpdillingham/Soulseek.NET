@@ -221,7 +221,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        public event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
+        public event EventHandler<RoomList> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -981,7 +981,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<IReadOnlyCollection<RoomInfo>> GetRoomListAsync(CancellationToken? cancellationToken = null)
+        public async Task<RoomList> GetRoomListAsync(CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -990,7 +990,7 @@ namespace Soulseek
 
             try
             {
-                var roomListWait = Waiter.Wait<IReadOnlyCollection<RoomInfo>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
+                var roomListWait = Waiter.Wait<RoomList>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new RoomListRequest(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
 
                 var response = await roomListWait.ConfigureAwait(false);
