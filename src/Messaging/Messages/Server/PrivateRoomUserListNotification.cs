@@ -44,7 +44,7 @@ namespace Soulseek.Messaging.Messages
                 userList.Add(reader.ReadString());
             }
 
-            return new RoomInfo(roomName, userCount, isPrivate: true, userList);
+            return new RoomInfo(roomName, userCount, userList);
         }
     }
 }

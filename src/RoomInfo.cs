@@ -25,20 +25,13 @@ namespace Soulseek
         /// </summary>
         /// <param name="name">The room name.</param>
         /// <param name="userCount">The number of users in the room.</param>
-        /// <param name="isPrivate">A value indicating whether the room is private.</param>
         /// <param name="userList">The users in the room, if available.</param>
-        public RoomInfo(string name, int userCount, bool isPrivate = false, IEnumerable<string> userList = null)
+        public RoomInfo(string name, int userCount, IEnumerable<string> userList = null)
         {
             Name = name;
             UserCount = userCount;
-            IsPrivate = isPrivate;
             UserList = userList;
         }
-
-        /// <summary>
-        ///     Gets a value indicating whether the room is private.
-        /// </summary>
-        public bool IsPrivate { get; }
 
         /// <summary>
         ///     Gets the room name.
