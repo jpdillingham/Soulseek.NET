@@ -25,11 +25,6 @@
         /// </summary>
         public ConcurrentDictionary<string, Room> Rooms { get; } = new ConcurrentDictionary<string, Room>();
 
-        /// <summary>
-        ///     Available rooms.
-        /// </summary>
-        public ConcurrentDictionary<string, RoomInfo> AvailableRooms { get; } = new ConcurrentDictionary<string, RoomInfo>();
-
         private int MessageLimit { get; }
 
         /// <summary>
