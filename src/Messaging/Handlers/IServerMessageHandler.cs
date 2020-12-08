@@ -37,9 +37,29 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the currently logged in user is granted membership to a private room.
+        /// </summary>
+        event EventHandler<string> PrivateRoomMembershipAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has membership to a private room revoked.
+        /// </summary>
+        event EventHandler<string> PrivateRoomMembershipRemoved;
+
+        /// <summary>
         ///     Occurs when a list of moderated users for a private room is received.
         /// </summary>
         event EventHandler<RoomInfo> PrivateRoomModeratedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user is granted moderator status in a private room.
+        /// </summary>
+        event EventHandler<string> PrivateRoomModerationAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has moderator status removed in a private room.
+        /// </summary>
+        event EventHandler<string> PrivateRoomModerationRemoved;
 
         /// <summary>
         ///     Occurs when a list of users for a private room is received.

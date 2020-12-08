@@ -62,9 +62,29 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the currently logged in user is granted membership to a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomMembershipAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has membership to a private room revoked.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomMembershipRemoved;
+
+        /// <summary>
         ///     Occurs when a list of moderated users for a private room is received.
         /// </summary>
         public event EventHandler<RoomInfo> PrivateRoomModeratedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user is granted moderator status in a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomModerationAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has moderator status removed in a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomModerationRemoved;
 
         /// <summary>
         ///     Occurs when a list of users for a private room is received.
@@ -147,6 +167,22 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.WishlistInterval:
                     case MessageCode.Server.CheckPrivileges:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomAdded:
+                        PrivateRoomMembershipAdded?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomRemoved:
+                        PrivateRoomMembershipRemoved?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomOperatorAdded:
+                        PrivateRoomModerationAdded?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomOperatorRemoved:
+                        PrivateRoomModerationRemoved?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
                         break;
 
                     case MessageCode.Server.NewPassword:
