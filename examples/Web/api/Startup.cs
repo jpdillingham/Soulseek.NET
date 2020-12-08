@@ -314,6 +314,11 @@
                 conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
             };
 
+            Client.PrivateRoomMembershipAdded += (e, room) => Console.WriteLine($"Added to private room {room}");
+            Client.PrivateRoomMembershipRemoved += (e, room) => Console.WriteLine($"Removed from private room {room}");
+            Client.PrivateRoomModerationAdded += (e, room) => Console.WriteLine($"Promoted to moderator in private room {room}");
+            Client.PrivateRoomModerationRemoved += (e, room) => Console.WriteLine($"Demoted from moderator in private room {room}");
+
             Client.RoomMessageReceived += (e, args) =>
             {
                 var message = RoomMessage.FromEventArgs(args, DateTime.UtcNow);

@@ -128,7 +128,11 @@ namespace Soulseek
             ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomMembershipAdded += (sender, e) => PrivateRoomMembershipAdded?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomMembershipRemoved += (sender, e) => PrivateRoomMembershipRemoved?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomModeratedUserListReceived += (sender, e) => PrivateRoomModeratedUserListReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomModerationAdded += (sender, e) => PrivateRoomModerationAdded?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomModerationRemoved += (sender, e) => PrivateRoomModerationRemoved?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomUserListReceived += (sender, e) => PrivateRoomUserListReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
@@ -189,9 +193,29 @@ namespace Soulseek
         public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the currently logged in user is granted membership to a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomMembershipAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has membership to a private room revoked.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomMembershipRemoved;
+
+        /// <summary>
         ///     Occurs when a list of moderated users for a private room is received.
         /// </summary>
         public event EventHandler<RoomInfo> PrivateRoomModeratedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user is granted moderator status in a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomModerationAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has moderator status removed in a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomModerationRemoved;
 
         /// <summary>
         ///     Occurs when a list of users for a private room is received.
