@@ -562,7 +562,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => messages.Add(msg));
 
-            var message = new EnqueueDownloadRequest(filename).ToByteArray();
+            var message = new QueueDownloadRequest(filename).ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
@@ -579,7 +579,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
-            var message = new EnqueueDownloadRequest(filename).ToByteArray();
+            var message = new QueueDownloadRequest(filename).ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
@@ -597,7 +597,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
-            var message = new EnqueueDownloadRequest(filename).ToByteArray();
+            var message = new QueueDownloadRequest(filename).ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
@@ -739,7 +739,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
             var expectedTransferResponse = new TransferResponse(token, "Enqueue failed due to internal error").ToByteArray();
-            var expectedQueueFailedResponse = new EnqueueFailedResponse(filename, "Enqueue failed due to internal error").ToByteArray();
+            var expectedQueueFailedResponse = new QueueFailedResponse(filename, "Enqueue failed due to internal error").ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
@@ -756,7 +756,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
             var expectedTransferResponse = new TransferResponse(token, rejectMessage).ToByteArray();
-            var expectedQueueFailedResponse = new EnqueueFailedResponse(filename, rejectMessage).ToByteArray();
+            var expectedQueueFailedResponse = new QueueFailedResponse(filename, rejectMessage).ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
