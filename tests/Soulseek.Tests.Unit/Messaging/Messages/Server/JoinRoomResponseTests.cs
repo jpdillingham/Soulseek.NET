@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.LeaveRoom)
                 .Build();
 
-            var ex = Record.Exception(() => RoomJoinResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => JoinRoomResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => RoomJoinResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => JoinRoomResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -62,7 +62,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(0) // slots free count
                 .WriteInteger(0); // country count
 
-            var response = RoomJoinResponse.FromByteArray(builder.Build());
+            var response = JoinRoomResponse.FromByteArray(builder.Build());
 
             Assert.Equal(roomName, response.Name);
             Assert.Equal(0, response.UserCount);
@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1) // country count
                 .WriteString("US");
 
-            var res = RoomJoinResponse.FromByteArray(builder.Build());
+            var res = JoinRoomResponse.FromByteArray(builder.Build());
             var users = res.Users.ToList();
 
             Assert.Equal(roomName, res.Name);
@@ -133,7 +133,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("US")
                 .WriteString("EN");
 
-            var res = RoomJoinResponse.FromByteArray(builder.Build());
+            var res = JoinRoomResponse.FromByteArray(builder.Build());
             var users = res.Users.ToList();
 
             Assert.Equal(roomName, res.Name);
@@ -172,7 +172,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("op1")
                 .WriteString("op2");
 
-            var res = RoomJoinResponse.FromByteArray(builder.Build());
+            var res = JoinRoomResponse.FromByteArray(builder.Build());
             var users = res.Users.ToList();
 
             Assert.Equal(roomName, res.Name);

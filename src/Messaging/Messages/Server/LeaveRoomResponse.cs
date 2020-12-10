@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomLeftNotification.cs" company="JP Dillingham">
+﻿// <copyright file="LeaveRoomResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,50 +13,42 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     An incoming notification that a user has left a chat room.
+    ///     The response to a request to leave a chat room.
     /// </summary>
-    internal sealed class RoomLeftNotification : IIncomingMessage
+    internal sealed class LeaveRoomResponse : IIncomingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomLeftNotification"/> class.
+        ///     Initializes a new instance of the <see cref="LeaveRoomResponse"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the room from which the user left.</param>
-        /// <param name="username">The username of the user that left.</param>
-        public RoomLeftNotification(string roomName, string username)
+        /// <param name="roomName">The name of the room that was left.</param>
+        public LeaveRoomResponse(string roomName)
         {
             RoomName = roomName;
-            Username = username;
         }
 
         /// <summary>
-        ///     Gets the name of the room from which the user left.
+        ///     Gets the name of the room that was left.
         /// </summary>
         public string RoomName { get; }
 
         /// <summary>
-        ///     Gets the username of the user that left.
-        /// </summary>
-        public string Username { get; }
-
-        /// <summary>
-        ///     Creates a new instance of <see cref="RoomLeftNotification"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="LeaveRoomResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static RoomLeftNotification FromByteArray(byte[] bytes)
+        public static LeaveRoomResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Server.UserLeftRoom)
+            if (code != MessageCode.Server.LeaveRoom)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(RoomLeftNotification)} (expected: {(int)MessageCode.Server.UserLeftRoom}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating Leave Room response (expected: {(int)MessageCode.Server.LeaveRoom}, received: {(int)code}");
             }
 
             var roomName = reader.ReadString();
-            var username = reader.ReadString();
 
-            return new RoomLeftNotification(roomName, username);
+            return new LeaveRoomResponse(roomName);
         }
     }
 }

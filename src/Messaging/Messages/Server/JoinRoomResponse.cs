@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomJoinResponse.cs" company="JP Dillingham">
+﻿// <copyright file="JoinRoomResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to request to join a chat room.
     /// </summary>
-    internal sealed class RoomJoinResponse : IIncomingMessage
+    internal sealed class JoinRoomResponse : IIncomingMessage
     {
         /// <summary>
         ///     Creates a new instance of <see cref="RoomData"/> from the specified <paramref name="bytes"/>.
