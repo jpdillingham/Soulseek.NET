@@ -31,7 +31,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.RoomList)
             {
-                throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.Server.RoomList}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(RoomListResponse)} (expected: {(int)MessageCode.Server.RoomList}, received: {(int)code}");
             }
 
             var rooms = ReadRoomInfoList(reader);

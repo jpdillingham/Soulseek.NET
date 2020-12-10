@@ -43,7 +43,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.LeaveRoom)
             {
-                throw new MessageException($"Message Code mismatch creating Leave Room response (expected: {(int)MessageCode.Server.LeaveRoom}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(LeaveRoomResponse)} (expected: {(int)MessageCode.Server.LeaveRoom}, received: {(int)code}");
             }
 
             var roomName = reader.ReadString();

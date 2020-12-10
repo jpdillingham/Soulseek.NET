@@ -62,7 +62,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Distributed.ServerSearchRequest)
             {
-                throw new MessageException($"Message Code mismatch creating Distributed Search Request (expected: {(int)MessageCode.Distributed.ServerSearchRequest}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(DistributedServerSearchRequest)} (expected: {(int)MessageCode.Distributed.ServerSearchRequest}, received: {(int)code})");
             }
 
             // nobody knows what this is.  always 0000000331000000 in hex.

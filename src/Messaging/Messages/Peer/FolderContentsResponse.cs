@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.FolderContentsResponse)
             {
-                throw new MessageException($"Message Code mismatch creating folder contents response (expected: {(int)MessageCode.Peer.FolderContentsResponse}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(FolderContentsResponse)} (expected: {(int)MessageCode.Peer.FolderContentsResponse}, received: {(int)code}");
             }
 
             reader.Decompress();

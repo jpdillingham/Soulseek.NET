@@ -31,7 +31,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.JoinRoom)
             {
-                throw new MessageException($"Message Code mismatch creating Join Room response (expected: {(int)MessageCode.Server.JoinRoom}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(JoinRoomResponse)} (expected: {(int)MessageCode.Server.JoinRoom}, received: {(int)code}");
             }
 
             var roomName = reader.ReadString();

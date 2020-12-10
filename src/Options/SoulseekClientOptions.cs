@@ -76,7 +76,7 @@ namespace Soulseek
         /// <param name="userInfoResponseResolver">
         ///     The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.
         /// </param>
-        /// <param name="enqueueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="EnqueueDownloadRequest"/>.</param>
+        /// <param name="enqueueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
         /// <param name="placeInQueueResponseResolver">
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </param>
@@ -198,7 +198,7 @@ namespace Soulseek
         public bool EnableDistributedNetwork { get; }
 
         /// <summary>
-        ///     Gets the delegate invoked upon an receipt of an incoming <see cref="EnqueueDownloadRequest"/>. (Default = do nothing).
+        ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).
         /// </summary>
         /// <remarks>
         ///     This delegate must throw an Exception to indicate a rejected download. If the thrown Exception is of type
