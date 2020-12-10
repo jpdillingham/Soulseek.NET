@@ -355,12 +355,12 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.JoinRoom:
-                        var roomData = RoomJoinResponse.FromByteArray(message);
+                        var roomData = JoinRoomResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, roomData.Name), roomData);
                         break;
 
                     case MessageCode.Server.LeaveRoom:
-                        var leaveRoomResponse = RoomLeaveResponse.FromByteArray(message);
+                        var leaveRoomResponse = LeaveRoomResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, leaveRoomResponse.RoomName));
                         break;
 
@@ -370,13 +370,33 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.UserJoinedRoom:
-                        var joinNotification = RoomJoinedNotification.FromByteArray(message);
+                        var joinNotification = UserJoinedRoomNotification.FromByteArray(message);
                         RoomJoined?.Invoke(this, new RoomJoinedEventArgs(joinNotification));
                         break;
 
                     case MessageCode.Server.UserLeftRoom:
-                        var leftNotification = RoomLeftNotification.FromByteArray(message);
+                        var leftNotification = UserLeftRoomNotification.FromByteArray(message);
                         RoomLeft?.Invoke(this, new RoomLeftEventArgs(leftNotification));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomAddUser:
+                        var privateRoomAddUserResponse = PrivateRoomAddUser.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddUserResponse));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomRemoveUser:
+                        var privateRoomRemoveUserResponse = PrivateRoomRemoveUser.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveUserResponse));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomAddOperator:
+                        var privateRoomAddOperatorResponse = PrivateRoomAddOperator.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddOperatorResponse));
+                        break;
+
+                    case MessageCode.Server.PrivateRoomRemoveOperator:
+                        var privateRoomRemoveOperatorResponse = PrivateRoomRemoveOperator.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveOperatorResponse));
                         break;
 
                     case MessageCode.Server.KickedFromServer:
