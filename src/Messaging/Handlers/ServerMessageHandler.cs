@@ -210,6 +210,14 @@ namespace Soulseek.Messaging.Handlers
                         UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
                         break;
 
+                    case MessageCode.Server.CannotJoinRoom:
+                        var cannotJoinRoom = CannotJoinRoom.FromByteArray(message);
+                        SoulseekClient.Waiter.Throw(
+                            new WaitKey(MessageCode.Server.JoinRoom, cannotJoinRoom.RoomName),
+                            new RoomJoinForbiddenException($"The server rejected the request to join room {cannotJoinRoom.RoomName}"));
+
+                        break;
+
                     case MessageCode.Server.ConnectToPeer:
                         ConnectToPeerResponse connectToPeerResponse = default;
 
