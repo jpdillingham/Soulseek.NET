@@ -40,14 +40,10 @@ namespace Soulseek.Messaging.Messages
             var moderatedRoomNames = ReadRoomNameList(reader);
 
             return new RoomList(
-                publicCount: rooms.Count,
                 publicList: rooms,
-                privateCount: privateRooms.Count,
                 privateList: privateRooms,
-                ownedCount: ownedRooms.Count,
                 ownedList: ownedRooms,
-                moderatedNameCount: moderatedRoomNames.Count,
-                moderatedNameList: moderatedRoomNames);
+                moderatedRoomNameList: moderatedRoomNames);
         }
 
         private static List<RoomInfo> ReadRoomInfoList(MessageReader<MessageCode.Server> reader)

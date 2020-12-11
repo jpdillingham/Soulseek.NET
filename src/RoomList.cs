@@ -23,32 +23,24 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomList"/> class.
         /// </summary>
-        /// <param name="publicCount">The number of public rooms.</param>
         /// <param name="publicList">The list of public rooms.</param>
-        /// <param name="privateCount">The number of private rooms.</param>
         /// <param name="privateList">The list of private rooms.</param>
-        /// <param name="ownedCount">The number of rooms owned by the currently logged in user.</param>
         /// <param name="ownedList">The list of rooms owned by the currently logged in user.</param>
-        /// <param name="moderatedNameCount">The number of rooms in which the currently logged in user has moderator status.</param>
-        /// <param name="moderatedNameList">The list of room names in which the currently logged in user has moderator status.</param>
+        /// <param name="moderatedRoomNameList">The list of room names in which the currently logged in user has moderator status.</param>
         public RoomList(
-            int publicCount,
             IEnumerable<RoomInfo> publicList,
-            int privateCount,
             IEnumerable<RoomInfo> privateList,
-            int ownedCount,
             IEnumerable<RoomInfo> ownedList,
-            int moderatedNameCount,
-            IEnumerable<string> moderatedNameList)
+            IEnumerable<string> moderatedRoomNameList)
         {
-            PublicCount = publicCount;
             PublicList = publicList ?? Enumerable.Empty<RoomInfo>();
-            PrivateCount = privateCount;
+            PublicCount = PublicList.Count();
             PrivateList = privateList ?? Enumerable.Empty<RoomInfo>();
-            OwnedCount = ownedCount;
+            PrivateCount = PrivateList.Count();
             OwnedList = ownedList ?? Enumerable.Empty<RoomInfo>();
-            ModeratedNameCount = moderatedNameCount;
-            ModeratedNameList = moderatedNameList ?? Enumerable.Empty<string>();
+            OwnedCount = OwnedList.Count();
+            ModeratedRoomNameList = moderatedRoomNameList ?? Enumerable.Empty<string>();
+            ModeratedRoomNameCount = ModeratedRoomNameList.Count();
         }
 
         /// <summary>
@@ -69,7 +61,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of room names in which the currently logged in user has moderator status.
         /// </summary>
-        public int ModeratedNameCount { get; }
+        public int ModeratedRoomNameCount { get; }
 
         /// <summary>
         ///     Gets the list of public rooms.
@@ -89,11 +81,11 @@ namespace Soulseek
         /// <summary>
         ///     Gets the list of room names in which the currently logged in user has moderator status.
         /// </summary>
-        public IReadOnlyCollection<string> ModeratedNames => ModeratedNameList.ToList().AsReadOnly();
+        public IReadOnlyCollection<string> ModeratedRoomNames => ModeratedRoomNameList.ToList().AsReadOnly();
 
         private IEnumerable<RoomInfo> PublicList { get; }
         private IEnumerable<RoomInfo> PrivateList { get; }
         private IEnumerable<RoomInfo> OwnedList { get; }
-        private IEnumerable<string> ModeratedNameList { get; }
+        private IEnumerable<string> ModeratedRoomNameList { get; }
     }
 }
