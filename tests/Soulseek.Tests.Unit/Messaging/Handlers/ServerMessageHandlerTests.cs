@@ -290,26 +290,54 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerRoomList"), AutoData]
         public void Handles_ServerRoomList(List<(string Name, int UserCount)> rooms)
         {
-            IReadOnlyCollection<RoomInfo> result = null;
+            RoomList result = null;
 
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<RoomInfo>>()))
-                .Callback<WaitKey, IReadOnlyCollection<RoomInfo>>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<RoomList>()))
+                .Callback<WaitKey, RoomList>((key, response) => result = response);
 
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Server.RoomList)
-                .WriteInteger(rooms.Count);
+                .WriteCode(MessageCode.Server.RoomList);
 
+            builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteString(room.Name));
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
 
             handler.HandleMessageRead(null, builder.Build());
 
             foreach (var (name, userCount) in rooms)
             {
-                Assert.Contains(result, r => r.Name == name);
+                Assert.Contains(result.Public, r => r.Name == name);
+            }
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result.Private, r => r.Name == name);
+            }
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result.Owned, r => r.Name == name);
+            }
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result.ModeratedNames, r => r == name);
             }
         }
 
@@ -317,20 +345,35 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises RoomListReceived"), AutoData]
         public void Raises_RoomListReceived(List<(string Name, int UserCount)> rooms)
         {
-            IReadOnlyCollection<RoomInfo> result = null;
+            RoomList result = null;
 
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<RoomInfo>>()))
-                .Callback<WaitKey, IReadOnlyCollection<RoomInfo>>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<RoomList>()))
+                .Callback<WaitKey, RoomList>((key, response) => result = response);
 
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Server.RoomList)
-                .WriteInteger(rooms.Count);
+                .WriteCode(MessageCode.Server.RoomList);
 
+            builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteString(room.Name));
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+
+            handler.HandleMessageRead(null, builder.Build());
 
             handler.RoomListReceived += (sender, e) => result = e;
 
@@ -338,7 +381,22 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             foreach (var (name, userCount) in rooms)
             {
-                Assert.Contains(result, r => r.Name == name);
+                Assert.Contains(result.Public, r => r.Name == name);
+            }
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result.Private, r => r.Name == name);
+            }
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result.Owned, r => r.Name == name);
+            }
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result.ModeratedNames, r => r == name);
             }
         }
 

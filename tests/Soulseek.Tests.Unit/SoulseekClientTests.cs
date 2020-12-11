@@ -1554,11 +1554,11 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "RoomListReceived fires when handler raises"), AutoData]
-        public void RoomListReceived_Fires_When_Handler_Raises(RoomInfo[] rooms)
+        public void RoomListReceived_Fires_When_Handler_Raises(RoomList rooms)
         {
             var mock = new Mock<IServerMessageHandler>();
-            var expectedArgs = rooms.ToList().AsReadOnly();
-            IReadOnlyCollection<RoomInfo> actualArgs = null;
+            var expectedArgs = rooms;
+            RoomList actualArgs = null;
 
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
             {
@@ -1572,10 +1572,10 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "RoomListReceived does not throw if event not bound"), AutoData]
-        public void RoomListReceived_Does_Not_Throw_If_Event_Not_Bound(RoomInfo[] rooms)
+        public void RoomListReceived_Does_Not_Throw_If_Event_Not_Bound(RoomList rooms)
         {
             var mock = new Mock<IServerMessageHandler>();
-            var expectedArgs = rooms.ToList().AsReadOnly();
+            var expectedArgs = rooms;
 
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
             {

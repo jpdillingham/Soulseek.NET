@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetRoomListAsync")]
         [Theory(DisplayName = "GetRoomListAsync returns expected response on success"), AutoData]
-        public async Task GetRoomListAsync_Returns_Expected_Response_On_Success(IReadOnlyCollection<RoomInfo> rooms)
+        public async Task GetRoomListAsync_Returns_Expected_Response_On_Success(RoomList rooms)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -64,14 +64,14 @@ namespace Soulseek.Tests.Unit.Client
 
             var key = new WaitKey(MessageCode.Server.RoomList);
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<IReadOnlyCollection<RoomInfo>>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+            waiter.Setup(m => m.Wait<RoomList>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(rooms));
 
             using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                IReadOnlyCollection<RoomInfo> response;
+                RoomList response;
 
                 response = await s.GetRoomListAsync();
 
@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetRoomListAsync")]
         [Theory(DisplayName = "GetRoomListAsync uses given CancellationToken"), AutoData]
-        public async Task GetRoomListAsync_Uses_Given_CancellationToken(IReadOnlyCollection<RoomInfo> rooms, CancellationToken cancellationToken)
+        public async Task GetRoomListAsync_Uses_Given_CancellationToken(RoomList rooms, CancellationToken cancellationToken)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -89,14 +89,14 @@ namespace Soulseek.Tests.Unit.Client
 
             var key = new WaitKey(MessageCode.Server.RoomList);
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<IReadOnlyCollection<RoomInfo>>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+            waiter.Setup(m => m.Wait<RoomList>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(rooms));
 
             using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                IReadOnlyCollection<RoomInfo> response;
+                RoomList response;
 
                 response = await s.GetRoomListAsync(cancellationToken);
 
