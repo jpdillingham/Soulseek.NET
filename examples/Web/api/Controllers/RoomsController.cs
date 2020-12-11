@@ -4,6 +4,7 @@
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -178,11 +179,23 @@
                 return StatusCode(StatusCodes.Status304NotModified);
             }
 
-            var roomData = await Client.JoinRoomAsync(roomName);
-            var room = Room.FromRoomData(roomData);
-            Tracker.TryAdd(roomName, room);
+            try
+            {
+                var roomData = await Client.JoinRoomAsync(roomName);
+                var room = Room.FromRoomData(roomData);
+                Tracker.TryAdd(roomName, room);
 
-            return StatusCode(StatusCodes.Status201Created, MapRoomToRoomResponse(room));
+                return StatusCode(StatusCodes.Status201Created, MapRoomToRoomResponse(room));
+            }
+            catch (Exception ex)
+            {
+                if (ex is RoomJoinForbiddenException)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, $"The server rejected your request to join {roomName}");
+                }
+
+                throw;
+            }
         }
 
         /// <summary>

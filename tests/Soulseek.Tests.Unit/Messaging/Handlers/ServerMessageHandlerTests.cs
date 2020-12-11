@@ -1199,6 +1199,22 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles CannotJoinRoom"), AutoData]
+        public void Handles_CannotJoinRoom(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotJoinRoom)
+                .WriteString(roomName)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Server.JoinRoom, roomName), It.IsAny<RoomJoinForbiddenException>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Fact(DisplayName = "Forwards distributed search requests")]
         public void Forwards_Distributed_Search_Requests()
         {
