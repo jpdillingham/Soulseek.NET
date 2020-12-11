@@ -593,9 +593,19 @@ namespace Soulseek.Messaging
             RelatedSearch = 153,
 
             /// <summary>
-            ///     1
+            ///     1001
             /// </summary>
             CannotConnect = 1001,
+
+            /// <summary>
+            ///     1002
+            /// </summary>
+            CannotCreateRoom = 1002,
+
+            /// <summary>
+            ///     1003
+            /// </summary>
+            CannotJoinRoom = 1003,
         }
     }
 }
