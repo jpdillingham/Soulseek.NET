@@ -189,7 +189,7 @@
             }
             catch (Exception ex)
             {
-                if (ex is RoomJoinForbiddenException)
+                if (ex.InnerException is RoomJoinForbiddenException)
                 {
                     return StatusCode(StatusCodes.Status403Forbidden, $"The server rejected your request to join {roomName}");
                 }
