@@ -154,7 +154,7 @@
 
             foreach (var room in response)
             {
-                room.IsModerated = list.ModeratedNames.Contains(room.Name);
+                room.IsModerated = list.ModeratedRoomNames.Contains(room.Name);
             }
 
             return Ok(response);

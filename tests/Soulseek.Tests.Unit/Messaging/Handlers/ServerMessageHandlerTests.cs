@@ -337,7 +337,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             foreach (var (name, userCount) in rooms)
             {
-                Assert.Contains(result.ModeratedNames, r => r == name);
+                Assert.Contains(result.ModeratedRoomNames, r => r == name);
             }
         }
 
@@ -396,7 +396,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             foreach (var (name, userCount) in rooms)
             {
-                Assert.Contains(result.ModeratedNames, r => r == name);
+                Assert.Contains(result.ModeratedRoomNames, r => r == name);
             }
         }
 
