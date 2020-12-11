@@ -178,7 +178,7 @@
             {
                 if (ex is RoomJoinForbiddenException)
                 {
-                    return StatusCode(StatusCodes.Status403Forbidden, $"You are not a member of private room {roomName}");
+                    return StatusCode(StatusCodes.Status403Forbidden, $"The server rejected your request to join {roomName}");
                 }
 
                 throw;
