@@ -13,21 +13,21 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Adds a peer to the server-side watch list.
+    ///     Adds a user to the server-side watch list.
     /// </summary>
     internal sealed class AddUserRequest : IOutgoingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="AddUserRequest"/> class.
         /// </summary>
-        /// <param name="username">The username of the peer to add.</param>
+        /// <param name="username">The username of the user to add.</param>
         public AddUserRequest(string username)
         {
             Username = username;
         }
 
         /// <summary>
-        ///     Gets the username of the peer to add.
+        ///     Gets the username of the user to add.
         /// </summary>
         public string Username { get; }
 

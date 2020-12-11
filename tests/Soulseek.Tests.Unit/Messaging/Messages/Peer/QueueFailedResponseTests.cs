@@ -27,9 +27,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var file = Guid.NewGuid().ToString();
             var reason = Guid.NewGuid().ToString();
 
-            EnqueueFailedResponse response = null;
+            QueueFailedResponse response = null;
 
-            var ex = Record.Exception(() => response = new EnqueueFailedResponse(file, reason));
+            var ex = Record.Exception(() => response = new QueueFailedResponse(file, reason));
 
             Assert.Null(ex);
 
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => EnqueueFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => QueueFailedResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.QueueFailed)
                 .Build();
 
-            var ex = Record.Exception(() => EnqueueFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => QueueFailedResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -78,7 +78,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(reason)
                 .Build();
 
-            var response = EnqueueFailedResponse.FromByteArray(msg);
+            var response = QueueFailedResponse.FromByteArray(msg);
 
             Assert.Equal(file, response.Filename);
             Assert.Equal(reason, response.Message);
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
         public void ToByteArray_Returns_Expected_Data(string filename, string message)
         {
-            var m = new EnqueueFailedResponse(filename, message).ToByteArray();
+            var m = new QueueFailedResponse(filename, message).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(m);
             var code = reader.ReadCode();

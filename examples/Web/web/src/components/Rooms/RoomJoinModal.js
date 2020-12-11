@@ -115,6 +115,9 @@ const RoomJoinModal = ({ joinRoom: parentJoinRoom, ...modalOptions }) => {
                 >
                   <Table.Cell>
                     {isSelected(room) && <Icon name='check' color='green'/>}
+                    {room.isPrivate && <Icon name='lock'/>}
+                    {room.isOwned && <Icon name='chess queen'/>}
+                    {room.isModerated && <Icon name='gavel'/>}
                     {room.name}
                   </Table.Cell>
                   <Table.Cell>{room.userCount}</Table.Cell>

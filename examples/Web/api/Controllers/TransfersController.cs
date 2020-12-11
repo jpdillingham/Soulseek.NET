@@ -90,7 +90,7 @@
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(string), 403)]
         [ProducesResponseType(typeof(string), 500)]
-        public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromBody]EnqueueDownloadRequest request)
+        public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromBody]QueueDownloadRequest request)
         {
             try
             {

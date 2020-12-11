@@ -35,7 +35,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="RoomJoinedEventArgs"/> class.
         /// </summary>
         /// <param name="notification">The notification which raised the event.</param>
-        internal RoomJoinedEventArgs(RoomJoinedNotification notification)
+        internal RoomJoinedEventArgs(UserJoinedRoomNotification notification)
             : this(notification.RoomName, notification.Username, notification.UserData)
         {
         }

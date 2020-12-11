@@ -33,7 +33,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.SearchResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.Peer.SearchResponse}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(SearchResponse)} (expected: {(int)MessageCode.Peer.SearchResponse}, received: {(int)code}");
             }
 
             reader.Decompress();

@@ -128,7 +128,11 @@ namespace Soulseek
             ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomMembershipAdded += (sender, e) => PrivateRoomMembershipAdded?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomMembershipRemoved += (sender, e) => PrivateRoomMembershipRemoved?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomModeratedUserListReceived += (sender, e) => PrivateRoomModeratedUserListReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomModerationAdded += (sender, e) => PrivateRoomModerationAdded?.Invoke(this, e);
+            ServerMessageHandler.PrivateRoomModerationRemoved += (sender, e) => PrivateRoomModerationRemoved?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomUserListReceived += (sender, e) => PrivateRoomUserListReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
@@ -189,9 +193,29 @@ namespace Soulseek
         public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the currently logged in user is granted membership to a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomMembershipAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has membership to a private room revoked.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomMembershipRemoved;
+
+        /// <summary>
         ///     Occurs when a list of moderated users for a private room is received.
         /// </summary>
         public event EventHandler<RoomInfo> PrivateRoomModeratedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user is granted moderator status in a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomModerationAdded;
+
+        /// <summary>
+        ///     Occurs when the currently logged in user has moderator status removed in a private room.
+        /// </summary>
+        public event EventHandler<string> PrivateRoomModerationRemoved;
 
         /// <summary>
         ///     Occurs when a list of users for a private room is received.
@@ -221,7 +245,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the server sends a list of chat rooms.
         /// </summary>
-        public event EventHandler<IReadOnlyCollection<RoomInfo>> RoomListReceived;
+        public event EventHandler<RoomList> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -383,6 +407,46 @@ namespace Soulseek
             }
 
             return AcknowledgePrivilegeNotificationInternalAsync(privilegeNotificationId, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously adds the specified <paramref name="username"/> to the list of members in the specified private <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The room to which to add the user.</param>
+        /// <param name="username">The username of the user to add.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task AddPrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        {
+            // todo: implementation
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        ///     Asynchronously adds the specified <paramref name="username"/> to the list of moderators in the specified private <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The room to which to add the user.</param>
+        /// <param name="username">The username of the user to add.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task AddPrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        {
+            // todo: implementation
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -849,6 +913,44 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously removes the currently logged in user from the list of members in the specified private <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The room for which the membership is to be dropped.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task DropPrivateRoomMembershipAsync(string roomName, CancellationToken? cancellationToken = null)
+        {
+            // todo: implementation
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        ///     Asynchronously removes the currently logged in user from the ownership of the specified private <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The room for which the ownership is to be dropped.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task DropPrivateRoomOwnershipAsync(string roomName, CancellationToken? cancellationToken = null)
+        {
+            // todo: implementation
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the directory contents.</param>
@@ -981,7 +1083,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<IReadOnlyCollection<RoomInfo>> GetRoomListAsync(CancellationToken? cancellationToken = null)
+        public async Task<RoomList> GetRoomListAsync(CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -990,7 +1092,7 @@ namespace Soulseek
 
             try
             {
-                var roomListWait = Waiter.Wait<IReadOnlyCollection<RoomInfo>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
+                var roomListWait = Waiter.Wait<RoomList>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new RoomListRequest(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
 
                 var response = await roomListWait.ConfigureAwait(false);
@@ -1313,6 +1415,47 @@ namespace Soulseek
             {
                 throw new SoulseekClientException($"Failed to ping the server: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        ///     Asynchronously removes the specified <paramref name="username"/> from the list of members in the specified private <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The room from which to remove the user.</param>
+        /// <param name="username">The username of the user to remove.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task RemovePrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        {
+            // todo: implementation
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        ///     Asynchronously removes the specified <paramref name="username"/> from the list of moderators in the specified
+        ///     private <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The room from which to remove the user.</param>
+        /// <param name="username">The username of the user to remove.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task RemovePrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        {
+            // todo: implementation
+            return Task.CompletedTask;
         }
 
         /// <summary>

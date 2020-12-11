@@ -177,14 +177,14 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.QueueDownload:
-                        var queueDownloadRequest = EnqueueDownloadRequest.FromByteArray(message);
+                        var queueDownloadRequest = QueueDownloadRequest.FromByteArray(message);
 
                         var (queueRejected, queueRejectionMessage) =
                             await TryEnqueueDownloadAsync(connection.Username, connection.IPEndPoint, queueDownloadRequest.Filename).ConfigureAwait(false);
 
                         if (queueRejected)
                         {
-                            await connection.WriteAsync(new EnqueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
+                            await connection.WriteAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
                         }
                         else
                         {
@@ -215,7 +215,7 @@ namespace Soulseek.Messaging.Handlers
                             if (transferRejected)
                             {
                                 await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage)).ConfigureAwait(false);
-                                await connection.WriteAsync(new EnqueueFailedResponse(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
+                                await connection.WriteAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
                             }
                             else
                             {
@@ -227,7 +227,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.QueueFailed:
-                        var queueFailedResponse = EnqueueFailedResponse.FromByteArray(message);
+                        var queueFailedResponse = QueueFailedResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
                         break;
 

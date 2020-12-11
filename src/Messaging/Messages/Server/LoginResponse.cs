@@ -60,7 +60,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.Login)
             {
-                throw new MessageException($"Message Code mismatch creating Login response (expected: {(int)MessageCode.Server.Login}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(LoginResponse)} (expected: {(int)MessageCode.Server.Login}, received: {(int)code}");
             }
 
             var succeeded = reader.ReadByte() == 1;

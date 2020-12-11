@@ -1,4 +1,4 @@
-﻿// <copyright file="DistributedBranchRoot.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateRoomAddUser.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,42 +13,50 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs distributed children of the current branch root.
+    ///     The command and response to a password change.
     /// </summary>
-    internal sealed class DistributedBranchRoot : IIncomingMessage, IOutgoingMessage
+    internal sealed class PrivateRoomAddUser : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DistributedBranchRoot"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateRoomAddUser"/> class.
         /// </summary>
-        /// <param name="username">The username of the current branch root.</param>
-        public DistributedBranchRoot(string username)
+        /// <param name="roomName">The room to which to add the user.</param>
+        /// <param name="username">The username of the user to add.</param>
+        public PrivateRoomAddUser(string roomName, string username)
         {
+            RoomName = roomName;
             Username = username;
         }
 
         /// <summary>
-        ///     Gets the username of the current branch root.
+        ///     Gets the room to which to add the user.
+        /// </summary>
+        public string RoomName { get; }
+
+        /// <summary>
+        ///     Gets the username of the user to add.
         /// </summary>
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="DistributedBranchRoot"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PrivateRoomAddUser"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
-        /// <returns>The created instance.</returns>
-        public static DistributedBranchRoot FromByteArray(byte[] bytes)
+        /// <returns>The parsed instance.</returns>
+        public static PrivateRoomAddUser FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Distributed>(bytes);
+            var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Distributed.BranchRoot)
+            if (code != MessageCode.Server.PrivateRoomAddUser)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(DistributedBranchRoot)} (expected: {(int)MessageCode.Distributed.BranchRoot}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(MessageCode.Server.PrivateRoomAddUser)} (expected: {(int)MessageCode.Server.PrivateRoomAddUser}, received: {(int)code})");
             }
 
+            var roomName = reader.ReadString();
             var username = reader.ReadString();
 
-            return new DistributedBranchRoot(username);
+            return new PrivateRoomAddUser(roomName, username);
         }
 
         /// <summary>
@@ -58,7 +66,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.BranchRoot)
+                .WriteCode(MessageCode.Server.PrivateRoomAddUser)
+                .WriteString(RoomName)
                 .WriteString(Username)
                 .Build();
         }

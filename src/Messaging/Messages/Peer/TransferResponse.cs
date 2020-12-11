@@ -83,7 +83,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.TransferResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.Peer.TransferResponse}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(TransferResponse)} (expected: {(int)MessageCode.Peer.TransferResponse}, received: {(int)code})");
             }
 
             var token = reader.ReadInteger();
