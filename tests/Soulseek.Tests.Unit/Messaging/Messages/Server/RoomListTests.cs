@@ -93,7 +93,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             foreach (var room in rooms)
             {
-                Assert.Contains(response.ModeratedNames, r => r == room.Name);
+                Assert.Contains(response.ModeratedRoomNames, r => r == room.Name);
             }
         }
     }

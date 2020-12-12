@@ -36,7 +36,7 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "RoomList")]
-        [Theory(DisplayName = "RoomList instantiates with empty lists if not given"), AutoData]
+        [Fact(DisplayName = "RoomList instantiates with empty lists if not given")]
         public void RoomList_Instantiates_With_Null_User_List_If_Not_Given()
         {
             var list = new RoomList(null, null, null, null);

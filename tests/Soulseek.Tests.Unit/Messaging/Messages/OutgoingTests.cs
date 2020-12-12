@@ -456,19 +456,20 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Trait("Category", "Instantiation")]
         [Trait("Request", "JoinRoomRequest")]
         [Theory(DisplayName = "JoinRoomRequest instantiates properly"), AutoData]
-        public void JoinRoomRequest_Instantiates_Properly(string room)
+        public void JoinRoomRequest_Instantiates_Properly(string room, bool isPrivate)
         {
-            var a = new JoinRoomRequest(room);
+            var a = new JoinRoomRequest(room, isPrivate);
 
             Assert.Equal(room, a.RoomName);
+            Assert.Equal(isPrivate, a.IsPrivate);
         }
 
         [Trait("Category", "ToByteArray")]
         [Trait("Request", "JoinRoomRequest")]
         [Theory(DisplayName = "JoinRoomRequest constructs the correct message"), AutoData]
-        public void JoinRoomRequest_Constructs_The_Correct_Message(string room)
+        public void JoinRoomRequest_Constructs_The_Correct_Message(string room, bool isPrivate)
         {
-            var a = new JoinRoomRequest(room);
+            var a = new JoinRoomRequest(room, isPrivate);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -476,6 +477,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.JoinRoom, code);
             Assert.Equal(room, reader.ReadString());
+            Assert.Equal(isPrivate ? 1 : 0, reader.ReadInteger());
         }
 
         [Trait("Category", "Instantiation")]
