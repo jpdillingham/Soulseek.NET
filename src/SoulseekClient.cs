@@ -425,8 +425,39 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task AddPrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null)
         {
-            // todo: implementation
-            return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
+            }
+
+            return AddPrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task AddPrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddUser, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomAddUser(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to add {username} as member of {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -2050,7 +2081,7 @@ namespace Soulseek
 
                 response = await wait.ConfigureAwait(false);
             }
-            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to change password: {ex.Message}", ex);
             }

@@ -89,6 +89,29 @@
         }
 
         /// <summary>
+        ///     Adds a member to a private room.
+        /// </summary>
+        /// <param name="roomName"></param>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        /// <response code="201">The request completed successfully.</response>
+        /// <response code="404">The specified roomName could not be found.</response>
+        [HttpPost("joined/{roomName}/members")]
+        [Authorize]
+        [ProducesResponseType(201)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> AddRoomMember([FromRoute]string roomName, [FromBody]string username)
+        {
+            if (Tracker.TryGet(roomName, out  var _))
+            {
+                await Client.AddPrivateRoomMemberAsync(roomName, username);
+                return StatusCode(StatusCodes.Status201Created);
+            }
+
+            return NotFound();
+        }
+
+        /// <summary>
         ///     Gets the current list of users for the specified room.
         /// </summary>
         /// <param name="roomName"></param>
