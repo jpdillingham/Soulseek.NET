@@ -43,7 +43,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PrivateRoomAddUser FromByteArray(byte[] bytes)
+        public static PrivateRoomRemoveUser FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -56,7 +56,7 @@ namespace Soulseek.Messaging.Messages
             var roomName = reader.ReadString();
             var username = reader.ReadString();
 
-            return new PrivateRoomAddUser(roomName, username);
+            return new PrivateRoomRemoveUser(roomName, username);
         }
 
         /// <summary>
