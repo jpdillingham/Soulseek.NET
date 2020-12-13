@@ -466,10 +466,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "ToByteArray")]
         [Trait("Request", "JoinRoomRequest")]
-        [Theory(DisplayName = "JoinRoomRequest constructs the correct message"), AutoData]
-        public void JoinRoomRequest_Constructs_The_Correct_Message(string room, bool isPrivate)
+        [Theory(DisplayName = "JoinRoomRequest constructs the correct message when not private"), AutoData]
+        public void JoinRoomRequest_Constructs_The_Correct_Message_When_Not_Private(string room)
         {
-            var a = new JoinRoomRequest(room, isPrivate);
+            var a = new JoinRoomRequest(room);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -477,7 +477,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.JoinRoom, code);
             Assert.Equal(room, reader.ReadString());
-            Assert.Equal(isPrivate ? 1 : 0, reader.ReadInteger());
+            Assert.Equal(0, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "JoinRoomRequest")]
+        [Theory(DisplayName = "JoinRoomRequest constructs the correct message when private"), AutoData]
+        public void JoinRoomRequest_Constructs_The_Correct_Message_When_Private(string room)
+        {
+            var a = new JoinRoomRequest(room, true);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.JoinRoom, code);
+            Assert.Equal(room, reader.ReadString());
+            Assert.Equal(1, reader.ReadInteger());
         }
 
         [Trait("Category", "Instantiation")]
@@ -611,6 +627,100 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.UserPrivileges, code);
             Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomAddOperator")]
+        [Theory(DisplayName = "PrivateRoomAddOperator constructs the correct message"), AutoData]
+        public void PrivateRoomAddOperator_Constructs_The_Correct_Message(string roomName, string username)
+        {
+            var a = new PrivateRoomAddOperator(roomName, username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomAddOperator, code);
+            Assert.Equal(roomName, reader.ReadString());
+            Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomRemoveOperator")]
+        [Theory(DisplayName = "PrivateRoomRemoveOperator constructs the correct message"), AutoData]
+        public void PrivateRoomRemoveOperator_Constructs_The_Correct_Message(string roomName, string username)
+        {
+            var a = new PrivateRoomRemoveOperator(roomName, username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomRemoveOperator, code);
+            Assert.Equal(roomName, reader.ReadString());
+            Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomAddMember")]
+        [Theory(DisplayName = "PrivateRoomAddMember constructs the correct message"), AutoData]
+        public void PrivateRoomAddMember_Constructs_The_Correct_Message(string roomName, string username)
+        {
+            var a = new PrivateRoomAddUser(roomName, username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomAddUser, code);
+            Assert.Equal(roomName, reader.ReadString());
+            Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomRemoveMember")]
+        [Theory(DisplayName = "PrivateRoomRemoveMember constructs the correct message"), AutoData]
+        public void PrivateRoomRemoveMember_Constructs_The_Correct_Message(string roomName, string username)
+        {
+            var a = new PrivateRoomRemoveUser(roomName, username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomRemoveUser, code);
+            Assert.Equal(roomName, reader.ReadString());
+            Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomDropMembership")]
+        [Theory(DisplayName = "PrivateRoomDropMembership constructs the correct message"), AutoData]
+        public void PrivateRoomDropMembership_Constructs_The_Correct_Message(string roomName)
+        {
+            var a = new PrivateRoomDropMembership(roomName);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomDropMembership, code);
+            Assert.Equal(roomName, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomDropOwnership")]
+        [Theory(DisplayName = "PrivateRoomDropOwnership constructs the correct message"), AutoData]
+        public void PrivateRoomDropOwnership_Constructs_The_Correct_Message(string roomName)
+        {
+            var a = new PrivateRoomDropOwnership(roomName);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomDropOwnership, code);
+            Assert.Equal(roomName, reader.ReadString());
         }
     }
 }
