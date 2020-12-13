@@ -174,7 +174,9 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.PrivateRoomRemoved:
-                        PrivateRoomMembershipRemoved?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
+                        var privateRoomRemoved = StringResponse.FromByteArray<MessageCode.Server>(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoved));
+                        PrivateRoomMembershipRemoved?.Invoke(this, privateRoomRemoved);
                         break;
 
                     case MessageCode.Server.PrivateRoomOperatorAdded:
@@ -182,7 +184,9 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.PrivateRoomOperatorRemoved:
-                        PrivateRoomModerationRemoved?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
+                        var privateRoomOperatorRemoved = StringResponse.FromByteArray<MessageCode.Server>(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomOperatorRemoved));
+                        PrivateRoomModerationRemoved?.Invoke(this, privateRoomOperatorRemoved);
                         break;
 
                     case MessageCode.Server.NewPassword:
