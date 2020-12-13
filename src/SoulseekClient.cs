@@ -456,7 +456,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new SoulseekClientException($"Failed to add user {username} as member of {roomName}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to add user {username} as member of private room {roomName}: {ex.Message}", ex);
             }
         }
 
@@ -507,7 +507,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new SoulseekClientException($"Failed to add user {username} as moderator of {roomName}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to add user {username} as moderator of private room {roomName}: {ex.Message}", ex);
             }
         }
 
@@ -999,19 +999,19 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to drop private room membership (currently: {State})");
             }
 
-            return Task.CompletedTask;
+            return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
         }
 
         public async Task DropPrivateRoomOwnershipInternalAsync(string roomName, CancellationToken cancellationToken)
         {
             try
             {
-                //var waitKey = new WaitKey(MessageCode.Server.PrivateRoomDropOwnership, roomName);
-                //var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteAsync(new PrivateRoomDropOwnership(roomName), cancellationToken).ConfigureAwait(false);
 
-                //await wait.ConfigureAwait(false);
+                await wait.ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1044,19 +1044,19 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to drop private room ownership (currently: {State})");
             }
 
-            return Task.CompletedTask;
+            return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
         }
 
         public async Task DropPrivateRoomMembershipInternalAsync(string roomName, CancellationToken cancellationToken)
         {
             try
             {
-                //var waitKey = new WaitKey(MessageCode.Server.PrivateRoomDropOwnership, roomName);
-                //var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteAsync(new PrivateRoomDropMembership(roomName), cancellationToken).ConfigureAwait(false);
 
-                //await wait.ConfigureAwait(false);
+                await wait.ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1579,7 +1579,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new SoulseekClientException($"Failed to remove user {username} as member of {roomName}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to remove user {username} as member of private room {roomName}: {ex.Message}", ex);
             }
         }
 
@@ -1631,7 +1631,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new SoulseekClientException($"Failed to remove user {username} as moderator of {roomName}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to remove user {username} as moderator of private room {roomName}: {ex.Message}", ex);
             }
         }
 
