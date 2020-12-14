@@ -456,17 +456,18 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Trait("Category", "Instantiation")]
         [Trait("Request", "JoinRoomRequest")]
         [Theory(DisplayName = "JoinRoomRequest instantiates properly"), AutoData]
-        public void JoinRoomRequest_Instantiates_Properly(string room)
+        public void JoinRoomRequest_Instantiates_Properly(string room, bool isPrivate)
         {
-            var a = new JoinRoomRequest(room);
+            var a = new JoinRoomRequest(room, isPrivate);
 
             Assert.Equal(room, a.RoomName);
+            Assert.Equal(isPrivate, a.IsPrivate);
         }
 
         [Trait("Category", "ToByteArray")]
         [Trait("Request", "JoinRoomRequest")]
-        [Theory(DisplayName = "JoinRoomRequest constructs the correct message"), AutoData]
-        public void JoinRoomRequest_Constructs_The_Correct_Message(string room)
+        [Theory(DisplayName = "JoinRoomRequest constructs the correct message when not private"), AutoData]
+        public void JoinRoomRequest_Constructs_The_Correct_Message_When_Not_Private(string room)
         {
             var a = new JoinRoomRequest(room);
             var msg = a.ToByteArray();
@@ -476,6 +477,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.JoinRoom, code);
             Assert.Equal(room, reader.ReadString());
+            Assert.Equal(0, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "JoinRoomRequest")]
+        [Theory(DisplayName = "JoinRoomRequest constructs the correct message when private"), AutoData]
+        public void JoinRoomRequest_Constructs_The_Correct_Message_When_Private(string room)
+        {
+            var a = new JoinRoomRequest(room, true);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.JoinRoom, code);
+            Assert.Equal(room, reader.ReadString());
+            Assert.Equal(1, reader.ReadInteger());
         }
 
         [Trait("Category", "Instantiation")]
@@ -609,6 +627,36 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.UserPrivileges, code);
             Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomDropMembership")]
+        [Theory(DisplayName = "PrivateRoomDropMembership constructs the correct message"), AutoData]
+        public void PrivateRoomDropMembership_Constructs_The_Correct_Message(string roomName)
+        {
+            var a = new PrivateRoomDropMembership(roomName);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomDropMembership, code);
+            Assert.Equal(roomName, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PrivateRoomDropOwnership")]
+        [Theory(DisplayName = "PrivateRoomDropOwnership constructs the correct message"), AutoData]
+        public void PrivateRoomDropOwnership_Constructs_The_Correct_Message(string roomName)
+        {
+            var a = new PrivateRoomDropOwnership(roomName);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.PrivateRoomDropOwnership, code);
+            Assert.Equal(roomName, reader.ReadString());
         }
     }
 }

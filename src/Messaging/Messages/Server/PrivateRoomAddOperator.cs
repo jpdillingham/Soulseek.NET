@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     The command and response to a password change.
+    ///     The command and response to add a moderator to a private chat room.
     /// </summary>
     internal sealed class PrivateRoomAddOperator : IIncomingMessage, IOutgoingMessage
     {

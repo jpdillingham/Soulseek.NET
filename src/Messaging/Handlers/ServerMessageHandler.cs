@@ -174,7 +174,9 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.PrivateRoomRemoved:
-                        PrivateRoomMembershipRemoved?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
+                        var privateRoomRemoved = StringResponse.FromByteArray<MessageCode.Server>(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoved));
+                        PrivateRoomMembershipRemoved?.Invoke(this, privateRoomRemoved);
                         break;
 
                     case MessageCode.Server.PrivateRoomOperatorAdded:
@@ -182,7 +184,9 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.PrivateRoomOperatorRemoved:
-                        PrivateRoomModerationRemoved?.Invoke(this, StringResponse.FromByteArray<MessageCode.Server>(message));
+                        var privateRoomOperatorRemoved = StringResponse.FromByteArray<MessageCode.Server>(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomOperatorRemoved));
+                        PrivateRoomModerationRemoved?.Invoke(this, privateRoomOperatorRemoved);
                         break;
 
                     case MessageCode.Server.NewPassword:
@@ -389,22 +393,22 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.PrivateRoomAddUser:
                         var privateRoomAddUserResponse = PrivateRoomAddUser.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddUserResponse));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddUserResponse.RoomName, privateRoomAddUserResponse.Username));
                         break;
 
                     case MessageCode.Server.PrivateRoomRemoveUser:
                         var privateRoomRemoveUserResponse = PrivateRoomRemoveUser.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveUserResponse));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveUserResponse.RoomName, privateRoomRemoveUserResponse.Username));
                         break;
 
                     case MessageCode.Server.PrivateRoomAddOperator:
                         var privateRoomAddOperatorResponse = PrivateRoomAddOperator.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddOperatorResponse));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddOperatorResponse.RoomName, privateRoomAddOperatorResponse.Username));
                         break;
 
                     case MessageCode.Server.PrivateRoomRemoveOperator:
                         var privateRoomRemoveOperatorResponse = PrivateRoomRemoveOperator.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveOperatorResponse));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveOperatorResponse.RoomName, privateRoomRemoveOperatorResponse.Username));
                         break;
 
                     case MessageCode.Server.KickedFromServer:

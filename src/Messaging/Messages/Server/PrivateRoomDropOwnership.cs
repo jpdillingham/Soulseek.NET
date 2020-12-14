@@ -1,4 +1,4 @@
-﻿// <copyright file="JoinRoomRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateRoomDropOwnership.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,30 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Joins a chat room.
+    ///     The command to drop ownership of a private room.
     /// </summary>
-    internal sealed class JoinRoomRequest : IOutgoingMessage
+    internal sealed class PrivateRoomDropOwnership : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JoinRoomRequest"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateRoomDropOwnership"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the room to join.</param>
-        /// <param name="isPrivate">A value indicating whether the room is private.</param>
-        public JoinRoomRequest(string roomName, bool isPrivate = false)
+        /// <param name="roomName">The room for which to drop ownership.</param>
+        public PrivateRoomDropOwnership(string roomName)
         {
             RoomName = roomName;
-            IsPrivate = isPrivate;
         }
 
         /// <summary>
-        ///     Gets the name of the room to join.
+        ///     Gets the room for which to drop ownership.
         /// </summary>
         public string RoomName { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether the room is private.
-        /// </summary>
-        public bool IsPrivate { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -45,9 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.JoinRoom)
+                .WriteCode(MessageCode.Server.PrivateRoomDropOwnership)
                 .WriteString(RoomName)
-                .WriteInteger(IsPrivate ? 1 : 0)
                 .Build();
         }
     }

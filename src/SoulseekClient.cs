@@ -425,8 +425,39 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task AddPrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null)
         {
-            // todo: implementation
-            return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add members to private rooms (currently: {State})");
+            }
+
+            return AddPrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task AddPrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddUser, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomAddUser(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to add user {username} as member of private room {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -445,8 +476,39 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task AddPrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null)
         {
-            // todo: implementation
-            return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add moderators to private rooms (currently: {State})");
+            }
+
+            return AddPrivateRoomModeratorAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task AddPrivateRoomModeratorInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddOperator, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomAddOperator(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to add user {username} as moderator of private room {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -927,8 +989,34 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task DropPrivateRoomMembershipAsync(string roomName, CancellationToken? cancellationToken = null)
         {
-            // todo: implementation
-            return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to drop private room membership (currently: {State})");
+            }
+
+            return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task DropPrivateRoomOwnershipInternalAsync(string roomName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomDropOwnership(roomName), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to drop membership of private room {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -946,8 +1034,34 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task DropPrivateRoomOwnershipAsync(string roomName, CancellationToken? cancellationToken = null)
         {
-            // todo: implementation
-            return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to drop private room ownership (currently: {State})");
+            }
+
+            return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task DropPrivateRoomMembershipInternalAsync(string roomName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomDropMembership(roomName), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to drop ownership of private room {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -1128,7 +1242,7 @@ namespace Soulseek
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user information (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user endpoint (currently: {State})");
             }
 
             return GetUserEndPointInternalAsync(username, cancellationToken ?? CancellationToken.None);
@@ -1286,6 +1400,7 @@ namespace Soulseek
         /// </summary>
         /// <remarks>When successful, a corresponding <see cref="RoomJoined"/> event will be raised.</remarks>
         /// <param name="roomName">The name of the chat room to join.</param>
+        /// <param name="isPrivate">A value indicating whether the room is private.</param>
         /// <param name="cancellationToken">The token to minotor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
         /// <exception cref="ArgumentException">
@@ -1295,7 +1410,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<RoomData> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        public Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -1307,7 +1422,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to join a chat room (currently: {State})");
             }
 
-            return JoinRoomInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+            return JoinRoomInternalAsync(roomName, isPrivate, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1393,7 +1508,7 @@ namespace Soulseek
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to send a ping (currently: {State})");
             }
 
             try
@@ -1433,8 +1548,39 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task RemovePrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null)
         {
-            // todo: implementation
-            return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to remove users from private rooms (currently: {State})");
+            }
+
+            return RemovePrivateRoomMemberAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task RemovePrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveUser, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomRemoveUser(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to remove user {username} as member of private room {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -1454,8 +1600,39 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task RemovePrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null)
         {
-            // todo: implementation
-            return Task.CompletedTask;
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to remove moderators from private rooms (currently: {State})");
+            }
+
+            return RemovePrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task RemovePrivateRoomModeratorInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveOperator, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomRemoveOperator(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to remove user {username} as moderator of private room {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -1657,7 +1834,7 @@ namespace Soulseek
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to send a private message (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to send a chat room message (currently: {State})");
             }
 
             return SendRoomMessageInternalAsync(roomName, message, cancellationToken ?? CancellationToken.None);
@@ -1950,7 +2127,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new SoulseekClientException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to add user {username}: {ex.Message}", ex);
             }
         }
 
@@ -2049,7 +2226,7 @@ namespace Soulseek
 
                 response = await wait.ConfigureAwait(false);
             }
-            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to change password: {ex.Message}", ex);
             }
@@ -2556,12 +2733,12 @@ namespace Soulseek
             }
         }
 
-        private async Task<RoomData> JoinRoomInternalAsync(string roomName, CancellationToken cancellationToken)
+        private async Task<RoomData> JoinRoomInternalAsync(string roomName, bool isPrivate, CancellationToken cancellationToken)
         {
             try
             {
                 var joinRoomWait = Waiter.Wait<RoomData>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new JoinRoomRequest(roomName), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new JoinRoomRequest(roomName, isPrivate), cancellationToken).ConfigureAwait(false);
 
                 var response = await joinRoomWait.ConfigureAwait(false);
                 return response;
