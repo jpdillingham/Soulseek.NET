@@ -1469,6 +1469,74 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait on PrivateRoomAddUser"), AutoData]
+        public void Completes_Wait_On_PrivateRoomAddUser(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomAddUser)
+                .WriteString(roomName)
+                .WriteString(username)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.PrivateRoomAddUser, roomName, username)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait on PrivateRoomRemoveUser"), AutoData]
+        public void Completes_Wait_On_PrivateRoomRemoveUser(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomRemoveUser)
+                .WriteString(roomName)
+                .WriteString(username)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.PrivateRoomRemoveUser, roomName, username)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait on PrivateRoomAddOperator"), AutoData]
+        public void Completes_Wait_On_PrivateRoomAddOperator(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomAddOperator)
+                .WriteString(roomName)
+                .WriteString(username)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.PrivateRoomAddOperator, roomName, username)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait on PrivateRoomRemoveOperator"), AutoData]
+        public void Completes_Wait_On_PrivateRoomRemoveOperator(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomRemoveOperator)
+                .WriteString(roomName)
+                .WriteString(username)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.PrivateRoomRemoveOperator, roomName, username)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Fact(DisplayName = "Forwards distributed search requests")]
         public void Forwards_Distributed_Search_Requests()
         {
