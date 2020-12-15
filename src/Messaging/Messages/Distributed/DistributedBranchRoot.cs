@@ -43,7 +43,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Distributed.BranchRoot)
             {
-                throw new MessageException($"Message Code mismatch creating Distributed Branch Root (expected: {(int)MessageCode.Distributed.BranchRoot}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(DistributedBranchRoot)} (expected: {(int)MessageCode.Distributed.BranchRoot}, received: {(int)code})");
             }
 
             var username = reader.ReadString();

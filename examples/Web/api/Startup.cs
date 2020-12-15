@@ -22,6 +22,7 @@
     using Microsoft.Extensions.Hosting;
     using Microsoft.IdentityModel.Tokens;
     using Microsoft.OpenApi.Models;
+    using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.Diagnostics;
     using WebAPI.Entities;
@@ -249,6 +250,7 @@
                 enableDistributedNetwork: EnableDistributedNetwork,
                 minimumDiagnosticLevel: DiagnosticLevel,
                 autoAcknowledgePrivateMessages: false,
+                acceptPrivateRoomInvitations: true,
                 serverConnectionOptions: connectionOptions,
                 peerConnectionOptions: connectionOptions,
                 transferConnectionOptions: connectionOptions,
@@ -311,6 +313,11 @@
             {
                 conversationTracker.AddOrUpdate(args.Username, PrivateMessage.FromEventArgs(args));
             };
+
+            Client.PrivateRoomMembershipAdded += (e, room) => Console.WriteLine($"Added to private room {room}");
+            Client.PrivateRoomMembershipRemoved += (e, room) => Console.WriteLine($"Removed from private room {room}");
+            Client.PrivateRoomModerationAdded += (e, room) => Console.WriteLine($"Promoted to moderator in private room {room}");
+            Client.PrivateRoomModerationRemoved += (e, room) => Console.WriteLine($"Demoted from moderator in private room {room}");
 
             Client.RoomMessageReceived += (e, args) =>
             {

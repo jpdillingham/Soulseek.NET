@@ -26,16 +26,16 @@ namespace Soulseek
         /// <param name="name">The name of the room that was joined.</param>
         /// <param name="userCount">The number of users in the room.</param>
         /// <param name="userList">The users in the room.</param>
-        /// <param name="isPrivateRoom">A value indicating whether the room is private.</param>
+        /// <param name="isPrivate">A value indicating whether the room is private.</param>
         /// <param name="owner">The owner of the room, if private.</param>
         /// <param name="operatorCount">The number of operators in the room, if private.</param>
         /// <param name="operatorList">The operators in the room, if private.</param>
-        public RoomData(string name, int userCount, IEnumerable<UserData> userList, bool isPrivateRoom = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
+        public RoomData(string name, int userCount, IEnumerable<UserData> userList, bool isPrivate = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
         {
             Name = name;
             UserCount = userCount;
             UserList = userList ?? Enumerable.Empty<UserData>();
-            IsPrivateRoom = isPrivateRoom;
+            IsPrivate = isPrivate;
             Owner = owner;
             OperatorCount = operatorCount;
             OperatorList = operatorList ?? Enumerable.Empty<string>();
@@ -44,7 +44,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets a value indicating whether the room is private.
         /// </summary>
-        public bool IsPrivateRoom { get; }
+        public bool IsPrivate { get; }
+
+        /// <summary>
+        ///     Gets the name of the room that was joined.
+        /// </summary>
+        public string Name { get; }
 
         /// <summary>
         ///     Gets the number of operators in the room, if private.
@@ -60,11 +65,6 @@ namespace Soulseek
         ///     Gets the owner of the room, if private.
         /// </summary>
         public string Owner { get; }
-
-        /// <summary>
-        ///     Gets the name of the room that was joined.
-        /// </summary>
-        public string Name { get; }
 
         /// <summary>
         ///     Gets the number of users in the room.

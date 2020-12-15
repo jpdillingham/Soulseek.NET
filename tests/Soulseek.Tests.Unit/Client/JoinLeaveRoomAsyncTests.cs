@@ -101,7 +101,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "JoinRoomAsync")]
         [Theory(DisplayName = "JoinRoomAsync uses given CancellationToken"), AutoData]
-        public async Task JoinRoomAsync_Uses_Given_CancellationToken(string roomName)
+        public async Task JoinRoomAsync_Uses_Given_CancellationToken(string roomName, bool isPrivate)
         {
             var cancellationToken = new CancellationToken();
 
@@ -122,7 +122,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 RoomData response;
 
-                response = await s.JoinRoomAsync(roomName, cancellationToken);
+                response = await s.JoinRoomAsync(roomName, isPrivate, cancellationToken);
 
                 Assert.Equal(expectedResponse, response);
             }

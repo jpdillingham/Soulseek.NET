@@ -13,7 +13,7 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System.Collections.Generic;
-    using System.Linq;
+    using AutoFixture.Xunit2;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;
@@ -50,33 +50,50 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse returns expected data")]
-        public void Parse_Returns_Expected_Data()
+        [Theory(DisplayName = "Parse returns expected data"), AutoData]
+        public void Parse_Returns_Expected_Data(List<RoomInfo> rooms)
         {
-            var rooms = new List<(string Name, int UserCount)>()
-            {
-                ("larry", 1),
-                ("moe", 2),
-                ("curly", 3),
-                ("shemp", 4),
-            };
-
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Server.RoomList)
-                .WriteInteger(rooms.Count);
+                .WriteCode(MessageCode.Server.RoomList);
 
+            builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteString(room.Name));
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            var response = RoomListResponse.FromByteArray(builder.Build()).ToList();
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            Assert.Equal(rooms.Count, response.Count);
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            for (int i = 0; i < rooms.Count; i++)
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteString(room.Name));
+
+            var response = RoomListResponse.FromByteArray(builder.Build());
+
+            foreach (var room in rooms)
             {
-                Assert.Equal(rooms[i].Name, response[i].Name);
-                Assert.Equal(rooms[i].UserCount, response[i].UserCount);
+                Assert.Contains(response.Public, r => r.Name == room.Name && r.UserCount == room.UserCount);
+            }
+
+            foreach (var room in rooms)
+            {
+                Assert.Contains(response.Private, r => r.Name == room.Name && r.UserCount == room.UserCount);
+            }
+
+            foreach (var room in rooms)
+            {
+                Assert.Contains(response.Owned, r => r.Name == room.Name && r.UserCount == room.UserCount);
+            }
+
+            foreach (var room in rooms)
+            {
+                Assert.Contains(response.ModeratedRoomNames, r => r == room.Name);
             }
         }
     }

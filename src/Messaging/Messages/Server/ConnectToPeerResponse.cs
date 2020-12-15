@@ -98,7 +98,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.ConnectToPeer)
             {
-                throw new MessageException($"Message Code mismatch creating Connect To Peer response (expected: {(int)MessageCode.Server.ConnectToPeer}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(ConnectToPeerResponse)} (expected: {(int)MessageCode.Server.ConnectToPeer}, received: {(int)code}");
             }
 
             var username = reader.ReadString();

@@ -33,7 +33,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="RoomLeftEventArgs"/> class.
         /// </summary>
         /// <param name="notification">The notification which raised the event.</param>
-        internal RoomLeftEventArgs(RoomLeftNotification notification)
+        internal RoomLeftEventArgs(UserLeftRoomNotification notification)
             : this(notification.RoomName, notification.Username)
         {
         }

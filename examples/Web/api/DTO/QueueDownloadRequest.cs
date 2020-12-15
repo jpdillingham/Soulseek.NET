@@ -1,6 +1,6 @@
 ﻿namespace WebAPI.DTO
 {
-    public class EnqueueDownloadRequest
+    public class QueueDownloadRequest
     {
         /// <summary>
         ///     Gets or sets the filename to download.

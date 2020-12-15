@@ -50,7 +50,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.FolderContentsRequest)
             {
-                throw new MessageException($"Message Code mismatch creating Folder Contents Request (expected: {(int)MessageCode.Peer.FolderContentsRequest}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(FolderContentsRequest)} (expected: {(int)MessageCode.Peer.FolderContentsRequest}, received: {(int)code})");
             }
 
             var token = reader.ReadInteger();

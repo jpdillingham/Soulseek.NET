@@ -61,7 +61,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.FileSearch)
             {
-                throw new MessageException($"Message Code mismatch creating Server Search Request (expected: {(int)MessageCode.Server.FileSearch}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(ServerSearchRequest)} (expected: {(int)MessageCode.Server.FileSearch}, received: {(int)code})");
             }
 
             var username = reader.ReadString();

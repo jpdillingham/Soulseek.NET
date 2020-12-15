@@ -89,6 +89,29 @@
         }
 
         /// <summary>
+        ///     Adds a member to a private room.
+        /// </summary>
+        /// <param name="roomName"></param>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        /// <response code="201">The request completed successfully.</response>
+        /// <response code="404">The specified roomName could not be found.</response>
+        [HttpPost("joined/{roomName}/members")]
+        [Authorize]
+        [ProducesResponseType(201)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> AddRoomMember([FromRoute]string roomName, [FromBody]string username)
+        {
+            if (Tracker.TryGet(roomName, out  var _))
+            {
+                await Client.AddPrivateRoomMemberAsync(roomName, username);
+                return StatusCode(StatusCodes.Status201Created);
+            }
+
+            return NotFound();
+        }
+
+        /// <summary>
         ///     Gets the current list of users for the specified room.
         /// </summary>
         /// <param name="roomName"></param>
@@ -145,7 +168,20 @@
         [ProducesResponseType(typeof(List<RoomInfo>), 200)]
         public async Task<IActionResult> GetRooms()
         {
-            return Ok(await Client.GetRoomListAsync());
+            var list = await Client.GetRoomListAsync();
+
+            var response = new List<RoomInfoResponse>();
+
+            response.AddRange(list.Public.Select(r => RoomInfoResponse.FromRoomInfo(r)));
+            response.AddRange(list.Private.Select(r => RoomInfoResponse.FromRoomInfo(r, isPrivate: true)));
+            response.AddRange(list.Owned.Select(r => RoomInfoResponse.FromRoomInfo(r, isPrivate: true, isOwned: true)));
+
+            foreach (var room in response)
+            {
+                room.IsModerated = list.ModeratedRoomNames.Contains(room.Name);
+            }
+
+            return Ok(response);
         }
 
         /// <summary>
@@ -176,7 +212,7 @@
             }
             catch (Exception ex)
             {
-                if (ex is RoomJoinForbiddenException)
+                if (ex.InnerException is RoomJoinForbiddenException)
                 {
                     return StatusCode(StatusCodes.Status403Forbidden, $"The server rejected your request to join {roomName}");
                 }

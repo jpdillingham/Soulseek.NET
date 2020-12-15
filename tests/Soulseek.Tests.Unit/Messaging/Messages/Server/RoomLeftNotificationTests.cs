@@ -27,7 +27,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.JoinRoom)
                 .Build();
 
-            var ex = Record.Exception(() => RoomLeftNotification.FromByteArray(msg));
+            var ex = Record.Exception(() => UserLeftRoomNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -42,7 +42,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => RoomLeftNotification.FromByteArray(msg));
+            var ex = Record.Exception(() => UserLeftRoomNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(roomName)
                 .WriteString(username);
 
-            var response = RoomLeftNotification.FromByteArray(builder.Build());
+            var response = UserLeftRoomNotification.FromByteArray(builder.Build());
 
             Assert.Equal(roomName, response.RoomName);
             Assert.Equal(username, response.Username);
