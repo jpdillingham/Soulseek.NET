@@ -443,23 +443,6 @@ namespace Soulseek
             return AddPrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task AddPrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddUser, roomName, username);
-                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
-
-                await ServerConnection.WriteAsync(new PrivateRoomAddUser(roomName, username), cancellationToken).ConfigureAwait(false);
-
-                await wait.ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
-            {
-                throw new SoulseekClientException($"Failed to add user {username} as member of private room {roomName}: {ex.Message}", ex);
-            }
-        }
-
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the list of moderators in the specified private <paramref name="roomName"/>.
         /// </summary>
@@ -491,24 +474,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to add moderators to private rooms (currently: {State})");
             }
 
-            return AddPrivateRoomModeratorAsync(roomName, username, cancellationToken ?? CancellationToken.None);
-        }
-
-        public async Task AddPrivateRoomModeratorInternalAsync(string roomName, string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddOperator, roomName, username);
-                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
-
-                await ServerConnection.WriteAsync(new PrivateRoomAddOperator(roomName, username), cancellationToken).ConfigureAwait(false);
-
-                await wait.ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
-            {
-                throw new SoulseekClientException($"Failed to add user {username} as moderator of private room {roomName}: {ex.Message}", ex);
-            }
+            return AddPrivateRoomModeratorInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1002,23 +968,6 @@ namespace Soulseek
             return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task DropPrivateRoomOwnershipInternalAsync(string roomName, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
-                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
-
-                await ServerConnection.WriteAsync(new PrivateRoomDropOwnership(roomName), cancellationToken).ConfigureAwait(false);
-
-                await wait.ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
-            {
-                throw new SoulseekClientException($"Failed to drop membership of private room {roomName}: {ex.Message}", ex);
-            }
-        }
-
         /// <summary>
         ///     Asynchronously removes the currently logged in user from the ownership of the specified private <paramref name="roomName"/>.
         /// </summary>
@@ -1044,24 +993,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to drop private room ownership (currently: {State})");
             }
 
-            return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
-        }
-
-        public async Task DropPrivateRoomMembershipInternalAsync(string roomName, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
-                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
-
-                await ServerConnection.WriteAsync(new PrivateRoomDropMembership(roomName), cancellationToken).ConfigureAwait(false);
-
-                await wait.ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
-            {
-                throw new SoulseekClientException($"Failed to drop ownership of private room {roomName}: {ex.Message}", ex);
-            }
+            return DropPrivateRoomOwnershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1563,24 +1495,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to remove users from private rooms (currently: {State})");
             }
 
-            return RemovePrivateRoomMemberAsync(roomName, username, cancellationToken ?? CancellationToken.None);
-        }
-
-        public async Task RemovePrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveUser, roomName, username);
-                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
-
-                await ServerConnection.WriteAsync(new PrivateRoomRemoveUser(roomName, username), cancellationToken).ConfigureAwait(false);
-
-                await wait.ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
-            {
-                throw new SoulseekClientException($"Failed to remove user {username} as member of private room {roomName}: {ex.Message}", ex);
-            }
+            return RemovePrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1615,24 +1530,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to remove moderators from private rooms (currently: {State})");
             }
 
-            return RemovePrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
-        }
-
-        public async Task RemovePrivateRoomModeratorInternalAsync(string roomName, string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveOperator, roomName, username);
-                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
-
-                await ServerConnection.WriteAsync(new PrivateRoomRemoveOperator(roomName, username), cancellationToken).ConfigureAwait(false);
-
-                await wait.ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
-            {
-                throw new SoulseekClientException($"Failed to remove user {username} as moderator of private room {roomName}: {ex.Message}", ex);
-            }
+            return RemovePrivateRoomModeratorInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2109,6 +2007,40 @@ namespace Soulseek
             }
         }
 
+        private async Task AddPrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddUser, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomAddUser(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to add user {username} as member of private room {roomName}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task AddPrivateRoomModeratorInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddOperator, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomAddOperator(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to add user {username} as moderator of private room {roomName}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<UserData> AddUserInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
@@ -2535,6 +2467,40 @@ namespace Soulseek
             }
         }
 
+        private async Task DropPrivateRoomMembershipInternalAsync(string roomName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomDropMembership(roomName), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to drop membership of private room {roomName}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task DropPrivateRoomOwnershipInternalAsync(string roomName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomDropOwnership(roomName), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to drop ownership of private room {roomName}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<Directory> GetDirectoryContentsInternalAsync(string username, string directoryName, int token, CancellationToken cancellationToken)
         {
             try
@@ -2829,6 +2795,40 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to log in as {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task RemovePrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveUser, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomRemoveUser(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to remove user {username} as member of private room {roomName}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task RemovePrivateRoomModeratorInternalAsync(string roomName, string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveOperator, roomName, username);
+                var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PrivateRoomRemoveOperator(roomName, username), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to remove user {username} as moderator of private room {roomName}: {ex.Message}", ex);
             }
         }
 
