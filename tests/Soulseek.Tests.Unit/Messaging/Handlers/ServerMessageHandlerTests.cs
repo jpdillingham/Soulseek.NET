@@ -1215,6 +1215,260 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivateRoomMembershipAdded on PrivateRoomAdded"), AutoData]
+        public void Raises_PrivateRoomMembershipAdded_On_PrivateRoomAdded(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomAdded)
+                .WriteString(roomName)
+                .Build();
+
+            string room = default;
+
+            handler.PrivateRoomMembershipAdded += (sender, args) => room = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, room);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on PrivateRoomAdded when PrivateRoomMembershipAdded is unbound"), AutoData]
+        public void Does_Not_Throw_On_PrivateRoomAdded_When_PrivateRoomMembershipAdded_Is_Unbound(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomAdded)
+                .WriteString(roomName)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivateRoomModeratorAdded on PrivateRoomOperatorAdded"), AutoData]
+        public void Raises_PrivateRoomModerationAdded_On_PrivateRoomOperatorAdded(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomOperatorAdded)
+                .WriteString(roomName)
+                .Build();
+
+            string room = default;
+
+            handler.PrivateRoomModerationAdded += (sender, args) => room = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, room);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on PrivateRoomOperatorAdded when PrivateRoomModerationAdded is unbound"), AutoData]
+        public void Does_Not_Throw_On_PrivateRoomOperatorAdded_When_PrivateRoomModerationAdded_Is_Unbound(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomOperatorAdded)
+                .WriteString(roomName)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivateRoomMembershipRemoved on PrivateRoomRemoved"), AutoData]
+        public void Raises_PrivateRoomMembershipRemoved_On_PrivateRoomRemoved(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomRemoved)
+                .WriteString(roomName)
+                .Build();
+
+            string room = default;
+
+            handler.PrivateRoomMembershipRemoved += (sender, args) => room = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, room);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on PrivateRoomRemoved when PrivateRoomMembershipRemoved is unbound"), AutoData]
+        public void Does_Not_Throw_On_PrivateRoomRemoved_When_PrivateRoomMembershipRemoved_Is_Unbound(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomRemoved)
+                .WriteString(roomName)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait on PrivateRoomRemoved"), AutoData]
+        public void Completes_Wait_On_PrivateRoomRemoved(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomRemoved)
+                .WriteString(roomName)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait on PrivateRoomToggle"), AutoData]
+        public void Completes_Wait_On_PrivateRoomToggle(bool acceptInvitations)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomToggle)
+                .WriteByte((byte)(acceptInvitations ? 1 : 0))
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.PrivateRoomToggle), acceptInvitations), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivateRoomModerationRemoved on PrivateRoomOperatorRemoved"), AutoData]
+        public void Raises_PrivateRoomModerationRemoved_On_PrivateRoomOperatorRemoved(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomOperatorRemoved)
+                .WriteString(roomName)
+                .Build();
+
+            string room = default;
+
+            handler.PrivateRoomModerationRemoved += (sender, args) => room = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, room);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on PrivateRoomOperatorRemoved when PrivateRoomModerationRemoved is unbound"), AutoData]
+        public void Does_Not_Throw_On_PrivateRoomOperatorRemoved_When_PrivateRoomModerationRemoved_Is_Unbound(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomOperatorRemoved)
+                .WriteString(roomName)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait on PrivateRoomOperatorRemoved"), AutoData]
+        public void Completes_Wait_On_PrivateRoomOperatorRemoved(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomOperatorRemoved)
+                .WriteString(roomName)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.PrivateRoomOperatorRemoved, roomName)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivateRoomUserListReceived on PrivateRoomUsers"), AutoData]
+        public void Raises_PrivateRoomUserListReceived_On_PrivateRoomUsers(string roomName, List<string> users)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomUsers)
+                .WriteString(roomName)
+                .WriteInteger(users.Count);
+
+            users.ForEach(user => builder.WriteString(user));
+
+            var message = builder.Build();
+
+            RoomInfo room = default;
+
+            handler.PrivateRoomUserListReceived += (sender, args) => room = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(room);
+            Assert.Equal(roomName, room.Name);
+            Assert.Equal(users.Count, room.UserCount);
+
+            foreach (var expected in users)
+            {
+                Assert.Contains(room.Users, actualUser => actualUser == expected);
+            }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivateRoomModeratorListReceived on PrivateRoomOwned"), AutoData]
+        public void Raises_PrivateRoomModeratedUserListReceived_On_PrivateRoomOwned(string roomName, List<string> users)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivateRoomOwned)
+                .WriteString(roomName)
+                .WriteInteger(users.Count);
+
+            users.ForEach(user => builder.WriteString(user));
+
+            var message = builder.Build();
+
+            RoomInfo room = default;
+
+            handler.PrivateRoomModeratedUserListReceived += (sender, args) => room = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(room);
+            Assert.Equal(roomName, room.Name);
+            Assert.Equal(users.Count, room.UserCount);
+
+            foreach (var expected in users)
+            {
+                Assert.Contains(room.Users, actualUser => actualUser == expected);
+            }
+        }
+
+        [Trait("Category", "Message")]
         [Fact(DisplayName = "Forwards distributed search requests")]
         public void Forwards_Distributed_Search_Requests()
         {
