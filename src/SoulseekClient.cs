@@ -137,6 +137,7 @@ namespace Soulseek
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.PublicChatMessageReceived += (sender, e) => PublicChatMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
             ServerMessageHandler.RoomListReceived += (sender, e) => RoomListReceived?.Invoke(this, e);
@@ -231,6 +232,11 @@ namespace Soulseek
         ///     Occurs when the server sends a notification of new user privileges.
         /// </summary>
         public event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
+
+        /// <summary>
+        ///     Occurs when a public chat message is received.
+        /// </summary>
+        public event EventHandler<PublicChatMessageReceivedEventArgs> PublicChatMessageReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
@@ -1803,6 +1809,58 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to set user status to {status}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        ///     Asynchronously starts receiving public chat messages.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task StartPublicChatAsync(CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to start public chat (currently: {State})");
+            }
+
+            try
+            {
+                return ServerConnection.WriteAsync(new StartPublicChat(), cancellationToken ?? CancellationToken.None);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to start public chat: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        ///     Asynchronously stops receiving public chat messages.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task StopPublicChatAsync(CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to stop public chat (currently: {State})");
+            }
+
+            try
+            {
+                return ServerConnection.WriteAsync(new StopPublicChat(), cancellationToken ?? CancellationToken.None);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to stop public chat: {ex.Message}", ex);
             }
         }
 
