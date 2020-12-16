@@ -968,6 +968,48 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles PublicChat"), AutoData]
+        public void Handles_PublicChatMessage(string roomName, string username, string msg)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PublicChat)
+                .WriteString(roomName)
+                .WriteString(username)
+                .WriteString(msg);
+
+            var message = builder.Build();
+
+            PublicChatMessageReceivedEventArgs actual = default;
+            handler.PublicChatMessageReceived += (sender, args) => actual = args;
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, actual.RoomName);
+            Assert.Equal(username, actual.Username);
+            Assert.Equal(msg, actual.Message);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on PublicChat if PublicChatMessageReceived is not bound"), AutoData]
+        public void Does_Not_Throw_On_PublicChat_If_PublicChatMessageReceived_Is_Not_Bound(string roomName, string username, string msg)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PublicChat)
+                .WriteString(roomName)
+                .WriteString(username)
+                .WriteString(msg);
+
+            var message = builder.Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles UserJoinedRoom"), AutoData]
         public void Handles_UserJoinedRoom(string roomName, string username, UserData data)
         {

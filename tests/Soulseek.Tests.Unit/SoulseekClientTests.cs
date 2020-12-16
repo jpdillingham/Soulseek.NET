@@ -1487,6 +1487,39 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PublicChatMessageReceived fires when handler raises"), AutoData]
+        public void PublicChatMessageReceived_Fires_When_Handler_Raises(string roomName, string username, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PublicChatMessageReceivedEventArgs(roomName, username, message);
+            PublicChatMessageReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.PublicChatMessageReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.PublicChatMessageReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "PublicChatMessageReceived does not throw if event not bound"), AutoData]
+        public void PublicChatMessageReceived_Does_Not_Throw_If_Event_Not_Bound(string roomName, string username, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new PublicChatMessageReceivedEventArgs(roomName, username, message);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.PublicChatMessageReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "RoomJoined fires when handler raises"), AutoData]
         public void RoomJoined_Fires_When_Handler_Raises(string roomName, string username, UserData userData)
         {
