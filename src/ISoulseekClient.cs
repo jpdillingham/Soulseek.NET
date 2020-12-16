@@ -97,6 +97,11 @@ namespace Soulseek
         event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
 
         /// <summary>
+        ///     Occurs when a public chat message is received.
+        /// </summary>
+        event EventHandler<PublicChatMessageReceivedEventArgs> PublicChatMessageReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         event EventHandler<RoomJoinedEventArgs> RoomJoined;
@@ -887,6 +892,28 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously starts receiving public chat messages.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task StartPublicChatAsync(CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously stops receiving public chat messages.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task StopPublicChatAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the

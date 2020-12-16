@@ -658,5 +658,33 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(MessageCode.Server.PrivateRoomDropOwnership, code);
             Assert.Equal(roomName, reader.ReadString());
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "StartPublicChat")]
+        [Fact(DisplayName = "StartPublicChat constructs the correct message")]
+        public void StartPublicChat_Constructs_The_Correct_Message()
+        {
+            var a = new StartPublicChat();
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.AskPublicChat, code);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "StopPublicChat")]
+        [Fact(DisplayName = "StopPublicChat constructs the correct message")]
+        public void StopPublicChat_Constructs_The_Correct_Message()
+        {
+            var a = new StopPublicChat();
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.StopPublicChat, code);
+        }
     }
 }
