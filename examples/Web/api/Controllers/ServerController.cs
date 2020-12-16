@@ -1,6 +1,7 @@
 ﻿namespace WebAPI.Controllers
 {
     using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using System.Threading.Tasks;
