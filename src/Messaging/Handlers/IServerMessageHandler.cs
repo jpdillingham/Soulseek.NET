@@ -77,6 +77,11 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
 
         /// <summary>
+        ///     Occurs when a public chat message is received.
+        /// </summary>
+        event EventHandler<PublicChatMessageReceivedEventArgs> PublicChatMessageReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         event EventHandler<RoomJoinedEventArgs> RoomJoined;

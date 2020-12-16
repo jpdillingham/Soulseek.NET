@@ -102,6 +102,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
 
         /// <summary>
+        ///     Occurs when a public chat message is received.
+        /// </summary>
+        public event EventHandler<PublicChatMessageReceivedEventArgs> PublicChatMessageReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         public event EventHandler<RoomJoinedEventArgs> RoomJoined;
@@ -379,6 +384,11 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.SayInChatRoom:
                         var roomMessage = RoomMessageNotification.FromByteArray(message);
                         RoomMessageReceived?.Invoke(this, new RoomMessageReceivedEventArgs(roomMessage));
+                        break;
+
+                    case MessageCode.Server.PublicChat:
+                        var publicChatMessage = PublicChatMessageNotification.FromByteArray(message);
+                        PublicChatMessageReceived?.Invoke(this, new PublicChatMessageReceivedEventArgs(publicChatMessage));
                         break;
 
                     case MessageCode.Server.UserJoinedRoom:
