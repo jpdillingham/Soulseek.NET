@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     The command and response to a password change.
+    ///     The command and response to a request to toggle receipt of private room invitations.
     /// </summary>
     internal sealed class PrivateRoomToggle : IIncomingMessage, IOutgoingMessage
     {

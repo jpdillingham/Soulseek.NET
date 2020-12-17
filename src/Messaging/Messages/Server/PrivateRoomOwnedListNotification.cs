@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     using System.Collections.Generic;
 
     /// <summary>
-    ///     An incoming notification that a user has joined a chat room.
+    ///     An incoming list of users in a private chat room over which the currently logged in user has moderation rights.
     /// </summary>
     internal sealed class PrivateRoomOwnedListNotification : IIncomingMessage
     {
