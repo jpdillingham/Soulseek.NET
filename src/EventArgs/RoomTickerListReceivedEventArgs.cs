@@ -12,7 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Soulseek.Messaging.Messages;
@@ -20,7 +19,7 @@ namespace Soulseek
     /// <summary>
     ///     Event arguments for events raised upon the join of a user to a chat room.
     /// </summary>
-    public class RoomTickerListReceivedEventArgs : EventArgs
+    public class RoomTickerListReceivedEventArgs : RoomTickerEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomTickerListReceivedEventArgs"/> class.
@@ -29,8 +28,8 @@ namespace Soulseek
         /// <param name="tickerCount">The number of tickers.</param>
         /// <param name="tickers">The list of room tickers.</param>
         public RoomTickerListReceivedEventArgs(string roomName, int tickerCount, IEnumerable<RoomTicker> tickers)
+            : base(roomName)
         {
-            RoomName = roomName;
             TickerCount = tickerCount;
             Tickers = tickers.ToList().AsReadOnly();
         }
@@ -43,11 +42,6 @@ namespace Soulseek
             : this(notification.RoomName, notification.TickerCount, notification.Tickers)
         {
         }
-
-        /// <summary>
-        ///     Gets the name of the room to which the list applies.
-        /// </summary>
-        public string RoomName { get; }
 
         /// <summary>
         ///     Gets the number of tickers.
