@@ -122,6 +122,11 @@ namespace Soulseek
         event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a list of tickers for a chat room.
+        /// </summary>
+        event EventHandler<RoomTickerListReceivedEventArgs> RoomTickerListReceived;
+
+        /// <summary>
         ///     Occurs when a new search response is received.
         /// </summary>
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;

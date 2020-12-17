@@ -137,6 +137,7 @@ namespace Soulseek
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomTickerListReceived += (sender, e) => RoomTickerListReceived?.Invoke(this, e);
             ServerMessageHandler.PublicChatMessageReceived += (sender, e) => PublicChatMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
@@ -257,6 +258,11 @@ namespace Soulseek
         ///     Occurs when a chat room message is received.
         /// </summary>
         public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
+
+        /// <summary>
+        ///     Occurs when the server sends a list of tickers for a chat room.
+        /// </summary>
+        public event EventHandler<RoomTickerListReceivedEventArgs> RoomTickerListReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.

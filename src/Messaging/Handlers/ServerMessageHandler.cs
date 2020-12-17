@@ -127,6 +127,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a list of tickers for a chat room.
+        /// </summary>
+        public event EventHandler<RoomTickerListReceivedEventArgs> RoomTickerListReceived;
+
+        /// <summary>
         ///     Occurs when a user fails to connect.
         /// </summary>
         public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
@@ -399,6 +404,11 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.UserLeftRoom:
                         var leftNotification = UserLeftRoomNotification.FromByteArray(message);
                         RoomLeft?.Invoke(this, new RoomLeftEventArgs(leftNotification));
+                        break;
+
+                    case MessageCode.Server.RoomTickers:
+                        var roomTickers = RoomTickerListNotification.FromByteArray(message);
+                        RoomTickerListReceived?.Invoke(this, new RoomTickerListReceivedEventArgs(roomTickers));
                         break;
 
                     case MessageCode.Server.PrivateRoomAddUser:
