@@ -881,6 +881,22 @@ namespace Soulseek
         Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously sets a chat room ticker containing the specified <paramref name="message"/> in the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the room in which the ticker is to be set.</param>
+        /// <param name="message">The ticker message.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task SetRoomTickerAsync(string roomName, string message, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
         /// </summary>
         /// <param name="directories">The number of shared directories.</param>
