@@ -21,7 +21,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="RoomTicker"/> class.
         /// </summary>
         /// <param name="username">The username of the user to which the ticker belongs.</param>
-        /// <param name="message">The ticker content.</param>
+        /// <param name="message">The ticker message.</param>
         public RoomTicker(string username, string message)
         {
             Username = username;
@@ -34,7 +34,7 @@ namespace Soulseek
         public string Username { get; }
 
         /// <summary>
-        ///     Gets the ticker content.
+        ///     Gets the ticker message.
         /// </summary>
         public string Message { get; }
     }
