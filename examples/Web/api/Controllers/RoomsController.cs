@@ -89,6 +89,29 @@
         }
 
         /// <summary>
+        ///     Sets a ticker for the specified room.
+        /// </summary>
+        /// <param name="roomName"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        /// <response code="201">The request completed successfully.</response>
+        /// <response code="404">The specified roomName could not be found.</response>
+        [HttpPost("joined/{roomName}/ticker")]
+        [Authorize]
+        [ProducesResponseType(201)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> SetTicker([FromRoute] string roomName, [FromBody] string message)
+        {
+            if (Tracker.TryGet(roomName, out var _))
+            {
+                await Client.SetRoomTickerAsync(roomName, message);
+                return StatusCode(StatusCodes.Status201Created);
+            }
+
+            return NotFound();
+        }
+
+        /// <summary>
         ///     Adds a member to a private room.
         /// </summary>
         /// <param name="roomName"></param>
