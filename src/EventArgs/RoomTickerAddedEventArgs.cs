@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomTickerEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="RoomTickerAddedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,22 +13,24 @@
 namespace Soulseek
 {
     /// <summary>
-    ///     Event arguments for events related to chat room tickers.
+    ///     Event arguments for events raised when a new ticker is added to a chat room.
     /// </summary>
-    public abstract class RoomTickerEventArgs : SoulseekClientEventArgs
+    public class RoomTickerAddedEventArgs : RoomTickerEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomTickerEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="RoomTickerAddedEventArgs"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the chat room associated with the event.</param>
-        protected RoomTickerEventArgs(string roomName)
+        /// <param name="roomName">The name of the chat room to which the ticker was added.</param>
+        /// <param name="ticker">The ticker.</param>
+        public RoomTickerAddedEventArgs(string roomName, RoomTicker ticker)
+            : base(roomName)
         {
-            RoomName = roomName;
+            Ticker = ticker;
         }
 
         /// <summary>
-        ///     Gets the name of the chat room associated with the event.
+        ///     Gets the ticker.
         /// </summary>
-        public string RoomName { get; }
+        public RoomTicker Ticker { get; }
     }
 }
