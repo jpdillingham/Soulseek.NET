@@ -23,9 +23,9 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomTickerListNotification"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the room to which the list applies.</param>
+        /// <param name="roomName">The name of the chat room to which the list applies.</param>
         /// <param name="tickerCount">The number of tickers.</param>
-        /// <param name="tickers">The list of room tickers.</param>
+        /// <param name="tickers">The list of tickers.</param>
         public RoomTickerListNotification(
             string roomName,
             int tickerCount,
@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public int TickerCount { get; }
 
         /// <summary>
-        ///     Gets the list of room tickers.
+        ///     Gets the list of tickers.
         /// </summary>
         public IReadOnlyCollection<RoomTicker> Tickers { get; }
 
