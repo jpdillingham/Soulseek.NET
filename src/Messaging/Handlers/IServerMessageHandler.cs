@@ -102,9 +102,19 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
+        ///     Occurs when a chat room ticker is added.
+        /// </summary>
+        event EventHandler<RoomTickerAddedEventArgs> RoomTickerAdded;
+
+        /// <summary>
         ///     Occurs when the server sends a list of tickers for a chat room.
         /// </summary>
         event EventHandler<RoomTickerListReceivedEventArgs> RoomTickerListReceived;
+
+        /// <summary>
+        ///     Occurs when a chat room ticker is removed.
+        /// </summary>
+        event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
         ///     Occurs when a user fails to connect.

@@ -127,9 +127,19 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
+        ///     Occurs when a chat room ticker is added.
+        /// </summary>
+        public event EventHandler<RoomTickerAddedEventArgs> RoomTickerAdded;
+
+        /// <summary>
         ///     Occurs when the server sends a list of tickers for a chat room.
         /// </summary>
         public event EventHandler<RoomTickerListReceivedEventArgs> RoomTickerListReceived;
+
+        /// <summary>
+        ///     Occurs when a chat room ticker is removed.
+        /// </summary>
+        public event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
         ///     Occurs when a user fails to connect.
@@ -409,6 +419,16 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.RoomTickers:
                         var roomTickers = RoomTickerListNotification.FromByteArray(message);
                         RoomTickerListReceived?.Invoke(this, new RoomTickerListReceivedEventArgs(roomTickers));
+                        break;
+
+                    case MessageCode.Server.RoomTickerAdd:
+                        var roomTickerAdded = RoomTickerAddedNotification.FromByteArray(message);
+                        RoomTickerAdded?.Invoke(this, new RoomTickerAddedEventArgs(roomTickerAdded.RoomName, roomTickerAdded.Ticker));
+                        break;
+
+                    case MessageCode.Server.RoomTickerRemove:
+                        var roomTickerRemoved = RoomTickerRemovedNotification.FromByteArray(message);
+                        RoomTickerRemoved?.Invoke(this, new RoomTickerRemovedEventArgs(roomTickerRemoved.RoomName, roomTickerRemoved.Username));
                         break;
 
                     case MessageCode.Server.PrivateRoomAddUser:

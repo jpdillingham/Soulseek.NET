@@ -138,6 +138,8 @@ namespace Soulseek
             ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomTickerListReceived += (sender, e) => RoomTickerListReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomTickerAdded += (sender, e) => RoomTickerAdded?.Invoke(this, e);
+            ServerMessageHandler.RoomTickerRemoved += (sender, e) => RoomTickerRemoved?.Invoke(this, e);
             ServerMessageHandler.PublicChatMessageReceived += (sender, e) => PublicChatMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
@@ -260,9 +262,19 @@ namespace Soulseek
         public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
+        ///     Occurs when a chat room ticker is added.
+        /// </summary>
+        public event EventHandler<RoomTickerAddedEventArgs> RoomTickerAdded;
+
+        /// <summary>
         ///     Occurs when the server sends a list of tickers for a chat room.
         /// </summary>
         public event EventHandler<RoomTickerListReceivedEventArgs> RoomTickerListReceived;
+
+        /// <summary>
+        ///     Occurs when a chat room ticker is removed.
+        /// </summary>
+        public event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
         ///     Occurs when a new search result is received.
