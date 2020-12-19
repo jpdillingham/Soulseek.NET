@@ -10,10 +10,11 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tests.Unit.EventArgs
+namespace Soulseek.Tests.Unit
 {
     using System.Collections.Generic;
     using AutoFixture.Xunit2;
+    using Soulseek.Messaging.Messages;
     using Xunit;
 
     public class RoomTickerEventArgs
@@ -50,6 +51,19 @@ namespace Soulseek.Tests.Unit.EventArgs
             Assert.Equal(roomName, x.RoomName);
             Assert.Equal(tickerCount, x.TickerCount);
             Assert.Equal(tickers, x.Tickers);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "RoomTickerListReceivedEventArgs")]
+        [Theory(DisplayName = "Instantiates with expected values"), AutoData]
+        public void RoomTickerListReceivedEventArgs_Instantiates_With_FromNotification(string roomName, int tickerCount, IEnumerable<RoomTicker> tickers)
+        {
+            var x = new RoomTickerListNotification(roomName, tickerCount, tickers);
+            var y = new RoomTickerListReceivedEventArgs(x);
+
+            Assert.Equal(roomName, y.RoomName);
+            Assert.Equal(tickerCount, y.TickerCount);
+            Assert.Equal(tickers, y.Tickers);
         }
     }
 }
