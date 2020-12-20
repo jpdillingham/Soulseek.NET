@@ -1755,6 +1755,66 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Server message sent: FileSearch"))), Times.Once);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises RoomTickerListReceived on RoomTickers"), AutoData]
+        public void Raises_RoomTickerListRecieved_On_RoomTickers(string roomName, List<RoomTicker> tickers)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickers)
+                .WriteString(roomName)
+                .WriteInteger(tickers.Count);
+
+            tickers.ForEach(ticker =>
+            {
+                builder
+                    .WriteString(ticker.Username)
+                    .WriteString(ticker.Message);
+            });
+
+            var message = builder.Build();
+
+            RoomTickerListReceivedEventArgs actualArgs = default;
+
+            handler.RoomTickerListReceived += (sender, args) => actualArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, actualArgs.RoomName);
+            Assert.Equal(tickers.Count, actualArgs.TickerCount);
+
+            foreach (var ticker in tickers)
+            {
+                Assert.Contains(actualArgs.Tickers, t => ticker.Username == t.Username && ticker.Message == t.Message);
+            }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on RoomTickers when RoomTickerListReceived is unbound"), AutoData]
+        public void Does_Not_Throw_On_RoomTickers_When_RoomTickerListReceived_Is_Unbound(string roomName, List<RoomTicker> tickers)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickers)
+                .WriteString(roomName)
+                .WriteInteger(tickers.Count);
+
+            tickers.ForEach(ticker =>
+            {
+                builder
+                    .WriteString(ticker.Username)
+                    .WriteString(ticker.Message);
+            });
+
+            var message = builder.Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
         private byte[] GetServerSearchRequest(string username, int token, string query)
         {
             return new MessageBuilder()
