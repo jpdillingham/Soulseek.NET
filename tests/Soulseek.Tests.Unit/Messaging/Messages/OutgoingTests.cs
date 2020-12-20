@@ -686,5 +686,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.StopPublicChat, code);
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "SetRoomTickerCommand")]
+        [Theory(DisplayName = "SetRoomTickerCommand constructs the correct message"), AutoData]
+        public void SetRoomTickerCommand_Constructs_The_Correct_Message(string roomName, string message)
+        {
+            var a = new SetRoomTickerCommand(roomName, message);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.SetRoomTicker, code);
+            Assert.Equal(roomName, reader.ReadString());
+            Assert.Equal(message, reader.ReadString());
+        }
     }
 }
