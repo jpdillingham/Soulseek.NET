@@ -57,7 +57,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the users in the room, if available.
         /// </summary>
-        public IReadOnlyCollection<string> Users => UserList?.ToList().AsReadOnly();
+        public IReadOnlyCollection<string> Users => UserList.ToList().AsReadOnly();
 
         private IEnumerable<string> UserList { get; }
     }
