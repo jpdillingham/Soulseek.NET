@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using System.Collections.Generic;
+    using System.Linq;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging.Messages;
     using Xunit;
@@ -44,25 +45,25 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Trait("Class", "RoomTickerListReceivedEventArgs")]
         [Theory(DisplayName = "Instantiates with expected values"), AutoData]
-        public void RoomTickerListReceivedEventArgs_Instantiates_With_Expected_Values(string roomName, int tickerCount, IEnumerable<RoomTicker> tickers)
+        public void RoomTickerListReceivedEventArgs_Instantiates_With_Expected_Values(string roomName, IEnumerable<RoomTicker> tickers)
         {
-            var x = new RoomTickerListReceivedEventArgs(roomName, tickerCount, tickers);
+            var x = new RoomTickerListReceivedEventArgs(roomName, tickers);
 
             Assert.Equal(roomName, x.RoomName);
-            Assert.Equal(tickerCount, x.TickerCount);
+            Assert.Equal(tickers.Count(), x.TickerCount);
             Assert.Equal(tickers, x.Tickers);
         }
 
         [Trait("Category", "Instantiation")]
         [Trait("Class", "RoomTickerListReceivedEventArgs")]
         [Theory(DisplayName = "Instantiates with expected values"), AutoData]
-        public void RoomTickerListReceivedEventArgs_Instantiates_With_FromNotification(string roomName, int tickerCount, IEnumerable<RoomTicker> tickers)
+        public void RoomTickerListReceivedEventArgs_Instantiates_With_FromNotification(string roomName, IEnumerable<RoomTicker> tickers)
         {
-            var x = new RoomTickerListNotification(roomName, tickerCount, tickers);
+            var x = new RoomTickerListNotification(roomName, tickers.Count(), tickers);
             var y = new RoomTickerListReceivedEventArgs(x);
 
             Assert.Equal(roomName, y.RoomName);
-            Assert.Equal(tickerCount, y.TickerCount);
+            Assert.Equal(tickers.Count(), y.TickerCount);
             Assert.Equal(tickers, y.Tickers);
         }
     }

@@ -25,12 +25,11 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="RoomTickerListReceivedEventArgs"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room to which the list applies.</param>
-        /// <param name="tickerCount">The number of tickers.</param>
         /// <param name="tickers">The list of tickers.</param>
-        public RoomTickerListReceivedEventArgs(string roomName, int tickerCount, IEnumerable<RoomTicker> tickers)
+        public RoomTickerListReceivedEventArgs(string roomName, IEnumerable<RoomTicker> tickers)
             : base(roomName)
         {
-            TickerCount = tickerCount;
+            TickerCount = tickers.Count();
             Tickers = tickers.ToList().AsReadOnly();
         }
 
@@ -39,7 +38,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="notification">The notification which raised the event.</param>
         internal RoomTickerListReceivedEventArgs(RoomTickerListNotification notification)
-            : this(notification.RoomName, notification.TickerCount, notification.Tickers)
+            : this(notification.RoomName, notification.Tickers)
         {
         }
 

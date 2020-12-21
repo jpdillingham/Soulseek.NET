@@ -1487,6 +1487,105 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomTickerAdded fires when handler raises"), AutoData]
+        public void RoomTickerAdded_Fires_When_Handler_Raises(string roomName, string username, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomTickerAddedEventArgs(roomName, new RoomTicker(username, message));
+            RoomTickerAddedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.RoomTickerAdded += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.RoomTickerAdded += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomTickerAdded does not throw if event not bound"), AutoData]
+        public void RoomTickerAdded_Does_Not_Throw_If_Event_Not_Bound(string roomName, string username, string message)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomTickerAddedEventArgs(roomName, new RoomTicker(username, message));
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RoomTickerAdded += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomTickerRemoved fires when handler raises"), AutoData]
+        public void RoomTickerRemoved_Fires_When_Handler_Raises(string roomName, string username)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomTickerRemovedEventArgs(roomName, username);
+            RoomTickerRemovedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.RoomTickerRemoved += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.RoomTickerRemoved += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomTickerRemoved does not throw if event not bound"), AutoData]
+        public void RoomTickerRemoved_Does_Not_Throw_If_Event_Not_Bound(string roomName, string username)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomTickerRemovedEventArgs(roomName, username);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RoomTickerRemoved += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomTickerListReceived fires when handler raises"), AutoData]
+        public void RoomTickerListReceived_Fires_When_Handler_Raises(string roomName, List<RoomTicker> tickers)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomTickerListReceivedEventArgs(roomName, tickers);
+            RoomTickerListReceivedEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.RoomTickerListReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.RoomTickerListReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "RoomTickerListReceived does not throw if event not bound"), AutoData]
+        public void RoomTickerListReceived_Does_Not_Throw_If_Event_Not_Bound(string roomName, List<RoomTicker> tickers)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new RoomTickerListReceivedEventArgs(roomName, tickers);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RoomTickerListReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "PublicChatMessageReceived fires when handler raises"), AutoData]
         public void PublicChatMessageReceived_Fires_When_Handler_Raises(string roomName, string username, string message)
         {
