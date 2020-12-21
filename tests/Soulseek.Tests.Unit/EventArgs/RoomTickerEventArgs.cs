@@ -56,6 +56,18 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Instantiation")]
         [Trait("Class", "RoomTickerListReceivedEventArgs")]
+        [Theory(DisplayName = "Instantiates with expected values given null tickers"), AutoData]
+        public void RoomTickerListReceivedEventArgs_Instantiates_With_Expected_Values_Given_Null_Tickers(string roomName)
+        {
+            var x = new RoomTickerListReceivedEventArgs(roomName, null);
+
+            Assert.Equal(roomName, x.RoomName);
+            Assert.Equal(0, x.TickerCount);
+            Assert.Empty(x.Tickers);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "RoomTickerListReceivedEventArgs")]
         [Theory(DisplayName = "Instantiates with expected values"), AutoData]
         public void RoomTickerListReceivedEventArgs_Instantiates_With_FromNotification(string roomName, IEnumerable<RoomTicker> tickers)
         {

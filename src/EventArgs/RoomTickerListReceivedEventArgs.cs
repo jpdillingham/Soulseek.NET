@@ -29,8 +29,8 @@ namespace Soulseek
         public RoomTickerListReceivedEventArgs(string roomName, IEnumerable<RoomTicker> tickers)
             : base(roomName)
         {
-            TickerCount = tickers.Count();
-            Tickers = tickers.ToList().AsReadOnly();
+            Tickers = (tickers?.ToList() ?? Enumerable.Empty<RoomTicker>()).ToList().AsReadOnly();
+            TickerCount = Tickers.Count;
         }
 
         /// <summary>

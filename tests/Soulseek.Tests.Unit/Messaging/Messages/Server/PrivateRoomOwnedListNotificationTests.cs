@@ -12,6 +12,7 @@
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
+    using System.Collections.Generic;
     using System.Linq;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging;
@@ -51,20 +52,20 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(RoomInfo room)
+        public void Parse_Returns_Expected_Data(string roomName, List<string> users)
         {
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomOwned);
 
-            builder.WriteString(room.Name);
-            builder.WriteInteger(room.Users.Count);
-            room.Users.ToList().ForEach(user => builder.WriteString(user));
+            builder.WriteString(roomName);
+            builder.WriteInteger(users.Count);
+            users.ToList().ForEach(user => builder.WriteString(user));
 
             var response = PrivateRoomOwnedListNotification.FromByteArray(builder.Build());
 
-            Assert.Equal(room.Users.Count, response.UserCount);
+            Assert.Equal(users.Count, response.UserCount);
 
-            foreach (var user in room.Users)
+            foreach (var user in users)
             {
                 Assert.Contains(response.Users, u => u == user);
             }

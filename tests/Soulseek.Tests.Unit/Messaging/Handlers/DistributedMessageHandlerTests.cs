@@ -311,7 +311,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
         public void Responds_To_SearchRequest(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
@@ -341,7 +341,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Deduplicates SearchRequest when deduplicate option is set"), AutoData]
         public void Deduplicates_SearchRequest_When_Deduplicate_Option_Is_Set(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response), deduplicateSearchRequests: true);
             var (handler, mocks) = GetFixture(options);
 
@@ -368,7 +368,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not deduplicate SearchRequest when deduplicate option is unset"), AutoData]
         public void Does_Not_Deduplicate_SearchRequest_When_Deduplicate_Option_Is_Unset(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response), deduplicateSearchRequests: false);
             var (handler, mocks) = GetFixture(options);
 
@@ -396,7 +396,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Generates diagnostic on failure to send search results"), AutoData]
         public void Generates_Diagnostic_On_Failure_To_Send_Search_Results(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
@@ -423,7 +423,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Responds to ServerSearchRequest"), AutoData]
         public void Responds_To_ServerSearchRequest(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 

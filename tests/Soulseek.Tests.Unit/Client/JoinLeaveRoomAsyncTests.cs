@@ -80,7 +80,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var expectedResponse = new RoomData(roomName, 0, Enumerable.Empty<UserData>(), false, null, null, null);
+            var expectedResponse = new RoomData(roomName, Enumerable.Empty<UserData>(), false, null, null);
 
             var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
             var waiter = new Mock<IWaiter>();
@@ -109,7 +109,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var expectedResponse = new RoomData(roomName, 0, Enumerable.Empty<UserData>(), false, null, null, null);
+            var expectedResponse = new RoomData(roomName, Enumerable.Empty<UserData>(), false, null, null);
 
             var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
             var waiter = new Mock<IWaiter>();

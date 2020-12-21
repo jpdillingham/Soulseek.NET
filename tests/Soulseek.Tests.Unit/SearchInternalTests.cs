@@ -253,7 +253,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.InProgress,
             };
 
-            s.TryAddResponse(new SearchResponse("bar", 42, 1, 1, 1, new List<File>() { new File(1, "a", 1, "b", 0) }));
+            s.TryAddResponse(new SearchResponse("bar", 42, 1, 1, 1, new List<File>() { new File(1, "a", 1, "b") }));
 
             var invoked = false;
             s.ResponseReceived = (r) => invoked = true;
@@ -274,7 +274,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.InProgress,
             };
 
-            s.TryAddResponse(new SearchResponse("bar", 42, 1, 1, 1, null, lockedFileList: new List<File>() { new File(1, "a", 1, "b", 0) }));
+            s.TryAddResponse(new SearchResponse("bar", 42, 1, 1, 1, null, lockedFileList: new List<File>() { new File(1, "a", 1, "b") }));
 
             var invoked = false;
             s.ResponseReceived = (r) => invoked = true;

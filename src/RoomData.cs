@@ -24,21 +24,19 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="RoomData"/> class.
         /// </summary>
         /// <param name="name">The name of the room that was joined.</param>
-        /// <param name="userCount">The number of users in the room.</param>
         /// <param name="userList">The users in the room.</param>
         /// <param name="isPrivate">A value indicating whether the room is private.</param>
         /// <param name="owner">The owner of the room, if private.</param>
-        /// <param name="operatorCount">The number of operators in the room, if private.</param>
         /// <param name="operatorList">The operators in the room, if private.</param>
-        public RoomData(string name, int userCount, IEnumerable<UserData> userList, bool isPrivate = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
+        public RoomData(string name, IEnumerable<UserData> userList, bool isPrivate = false, string owner = null, IEnumerable<string> operatorList = null)
         {
             Name = name;
-            UserCount = userCount;
             UserList = userList ?? Enumerable.Empty<UserData>();
+            UserCount = UserList.Count();
             IsPrivate = isPrivate;
             Owner = owner;
-            OperatorCount = operatorCount;
-            OperatorList = operatorList ?? Enumerable.Empty<string>();
+            OperatorList = operatorList;
+            OperatorCount = OperatorList?.Count();
         }
 
         /// <summary>
@@ -59,7 +57,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the operators in the room, if private.
         /// </summary>
-        public IReadOnlyCollection<string> Operators => OperatorList.ToList().AsReadOnly();
+        public IReadOnlyCollection<string> Operators => OperatorList?.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the owner of the room, if private.

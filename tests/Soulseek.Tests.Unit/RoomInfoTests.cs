@@ -20,12 +20,12 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "RoomInfo")]
         [Theory(DisplayName = "RoomInfo instantiates properly"), AutoData]
-        public void RoomInfo_Instantiates_Properly(string roomName, int count, List<string> users)
+        public void RoomInfo_Instantiates_Properly(string roomName, List<string> users)
         {
-            var info = new RoomInfo(roomName, count, users);
+            var info = new RoomInfo(roomName, users);
 
             Assert.Equal(roomName, info.Name);
-            Assert.Equal(count, info.UserCount);
+            Assert.Equal(users.Count, info.UserCount);
             Assert.Equal(users, info.Users);
         }
 

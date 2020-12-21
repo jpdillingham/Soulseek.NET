@@ -110,7 +110,7 @@ namespace Soulseek.Messaging.Messages
                 }
             }
 
-            return new RoomData(roomName, userCount, users, owner != null, owner, operatorCount, operatorList);
+            return new RoomData(roomName, users, owner != null, owner, operatorList);
         }
     }
 }
