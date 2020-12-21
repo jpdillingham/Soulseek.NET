@@ -67,6 +67,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var response = RoomTickerListNotification.FromByteArray(builder.Build());
 
+            Assert.Equal(roomName, response.RoomName);
+            Assert.Equal(tickers.Count, response.TickerCount);
+
             foreach (var ticker in tickers)
             {
                 Assert.Contains(response.Tickers, t => ticker.Username == t.Username && ticker.Message == t.Message);
