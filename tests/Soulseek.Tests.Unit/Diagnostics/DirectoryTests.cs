@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Instantiates with given File list given list"), AutoData]
         public void Instantiates_With_Given_File_List_Given_List(string directoryname, int fileCount)
         {
-            var files = new List<File>() { new File(1, "a", 2, "b", 0) };
+            var files = new List<File>() { new File(1, "a", 2, "b") };
 
             var d = new Directory(directoryname, fileCount, files);
 

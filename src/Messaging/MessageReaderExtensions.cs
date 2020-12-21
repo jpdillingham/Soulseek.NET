@@ -33,12 +33,12 @@ namespace Soulseek.Messaging
                 code: reader.ReadByte(),
                 filename: reader.ReadString(),
                 size: reader.ReadLong(),
-                extension: reader.ReadString(),
-                attributeCount: reader.ReadInteger());
+                extension: reader.ReadString());
 
+            var attributeCount = reader.ReadInteger();
             var attributeList = new List<FileAttribute>();
 
-            for (int i = 0; i < file.AttributeCount; i++)
+            for (int i = 0; i < attributeCount; i++)
             {
                 var attribute = new FileAttribute(
                     type: (FileAttributeType)reader.ReadInteger(),
@@ -52,7 +52,6 @@ namespace Soulseek.Messaging
                 filename: file.Filename,
                 size: file.Size,
                 extension: file.Extension,
-                attributeCount: file.AttributeCount,
                 attributeList: attributeList);
         }
 

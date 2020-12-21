@@ -464,8 +464,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var files = new List<File>()
             {
-                new File(1, "1", 1, "1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
-                new File(2, "2", 2, "2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+                new File(1, "1", 1, "1", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, "2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
             IEnumerable<Directory> dirs = new List<Directory>()
@@ -512,8 +512,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var files = new List<File>()
             {
-                new File(1, "1", 1, "1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
-                new File(2, "2", 2, "2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+                new File(1, "1", 1, "1", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, "2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
             var dir = new Directory(dirname, 2, files);

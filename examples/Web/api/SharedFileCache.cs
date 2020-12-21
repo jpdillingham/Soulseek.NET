@@ -49,7 +49,7 @@
                 CreateTable();
 
                 Files = System.IO.Directory.GetFiles(Directory, "*", SearchOption.AllDirectories)
-                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))
+                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f)))
                     .ToDictionary(f => f.Filename, f => f);
 
                 // potentially optimize with multi-valued insert
@@ -66,7 +66,7 @@
 
             sw.Stop();
 
-            Console.WriteLine($"[SHARED FILE CACHE]: Refreshed in {sw.ElapsedMilliseconds}ms.  Found {Files.Count()} files.");
+            Console.WriteLine($"[SHARED FILE CACHE]: Refreshed in {sw.ElapsedMilliseconds}ms.  Found {Files.Count} files.");
             LastFill = DateTime.UtcNow;
         }
 
@@ -90,18 +90,14 @@
             SQLite = new SqliteConnection("Data Source=:memory:");
             SQLite.Open();
 
-            using (var cmd = new SqliteCommand("CREATE VIRTUAL TABLE cache USING fts5(filename)", SQLite))
-            {
-                cmd.ExecuteNonQuery();
-            }
+            using var cmd = new SqliteCommand("CREATE VIRTUAL TABLE cache USING fts5(filename)", SQLite);
+            cmd.ExecuteNonQuery();
         }
 
         private void InsertFilename(string filename)
         {
-            using (var cmd = new SqliteCommand($"INSERT INTO cache(filename) VALUES('{filename.Replace("'", "''")}')", SQLite))
-            {
-                cmd.ExecuteNonQuery();
-            }
+            using var cmd = new SqliteCommand($"INSERT INTO cache(filename) VALUES('{filename.Replace("'", "''")}')", SQLite);
+            cmd.ExecuteNonQuery();
         }
 
         private IEnumerable<Soulseek.File> QueryTable(string text)
@@ -119,18 +115,16 @@
 
             try
             {
-                using (var cmd = new SqliteCommand(query, SQLite))
+                using var cmd = new SqliteCommand(query, SQLite);
+                var results = new List<string>();
+                var reader = cmd.ExecuteReader();
+
+                while (reader.Read())
                 {
-                    var results = new List<string>();
-                    var reader = cmd.ExecuteReader();
-
-                    while (reader.Read())
-                    {
-                        results.Add(reader.GetString(0));
-                    }
-
-                    return results.Select(r => Files[r.Replace("''", "'")]);
+                    results.Add(reader.GetString(0));
                 }
+
+                return results.Select(r => Files[r.Replace("''", "'")]);
             }
             catch (Exception ex)
             {

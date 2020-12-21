@@ -422,8 +422,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var list = new List<File>()
             {
-                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
-                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+                new File(1, "1", 1, ".1", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, ".2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
             var s = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list);
@@ -466,12 +466,12 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var list = new List<File>()
             {
-                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(1, "1", 1, ".1", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
             };
 
             var locked = new List<File>()
             {
-                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+                new File(2, "2", 2, ".2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
             var s = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list, locked);

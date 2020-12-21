@@ -348,8 +348,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var list = new List<File>()
             {
-                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
-                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+                new File(1, "1", 1, ".1", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, ".2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
             var dirs = new List<Directory>()
@@ -399,8 +399,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var list = new List<File>()
             {
-                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
-                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+                new File(1, "1", 1, ".1", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, ".2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
             var dirs = new List<Directory>()
@@ -492,7 +492,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 filename: Guid.NewGuid().ToString(),
                 size: Random.Next(),
                 extension: Guid.NewGuid().ToString(),
-                attributeCount: attributeCount,
                 attributeList: attributeList);
         }
 

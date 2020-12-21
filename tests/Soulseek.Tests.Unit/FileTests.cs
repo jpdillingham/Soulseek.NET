@@ -21,11 +21,11 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName ="Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(int code, string filename, long size, string extension, int attributeCount, List<FileAttribute> attributeList)
+        public void Instantiates_With_The_Given_Data(int code, string filename, long size, string extension, List<FileAttribute> attributeList)
         {
             var f = default(File);
 
-            var ex = Record.Exception(() => f = new File(code, filename, size, extension, attributeCount, attributeList));
+            var ex = Record.Exception(() => f = new File(code, filename, size, extension, attributeList));
 
             Assert.Null(ex);
 
@@ -33,17 +33,17 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(filename, f.Filename);
             Assert.Equal(size, f.Size);
             Assert.Equal(extension, f.Extension);
-            Assert.Equal(attributeCount, f.AttributeCount);
+            Assert.Equal(attributeList.Count, f.AttributeCount);
             Assert.Equal(attributeList, f.Attributes);
         }
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with empty Attributes given no attributeList"), AutoData]
-        public void Instantiates_With_Empty_Attributes_Given_No_AttributeList(int code, string filename, long size, string extension, int attributeCount)
+        public void Instantiates_With_Empty_Attributes_Given_No_AttributeList(int code, string filename, long size, string extension)
         {
             var f = default(File);
 
-            var ex = Record.Exception(() => f = new File(code, filename, size, extension, attributeCount));
+            var ex = Record.Exception(() => f = new File(code, filename, size, extension));
 
             Assert.Null(ex);
 
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, value) };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.Equal(list[0], f.Attributes.ToList()[0]);
             Assert.Equal(value, f.BitDepth);
@@ -67,7 +67,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "BitDepth attribute returns null when no value"), AutoData]
         public void BitDepth_Attribute_Returns_Null_When_No_Value(int code, string filename, long size, string extension)
         {
-            var f = new File(code, filename, size, extension, 0);
+            var f = new File(code, filename, size, extension);
 
             Assert.Empty(f.Attributes);
             Assert.Null(f.BitDepth);
@@ -79,7 +79,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, value) };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.Equal(list[0], f.Attributes.ToList()[0]);
             Assert.Equal(value, f.BitRate);
@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "BitRate attribute returns null when no value"), AutoData]
         public void BitRate_Attribute_Returns_Null_When_No_Value(int code, string filename, long size, string extension)
         {
-            var f = new File(code, filename, size, extension, 0);
+            var f = new File(code, filename, size, extension);
 
             Assert.Empty(f.Attributes);
             Assert.Null(f.BitRate);
@@ -101,7 +101,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.SampleRate, value) };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.Equal(list[0], f.Attributes.ToList()[0]);
             Assert.Equal(value, f.SampleRate);
@@ -111,7 +111,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "SampleRate attribute returns null when no value"), AutoData]
         public void SampleRate_Attribute_Returns_Null_When_No_Value(int code, string filename, long size, string extension)
         {
-            var f = new File(code, filename, size, extension, 0);
+            var f = new File(code, filename, size, extension);
 
             Assert.Empty(f.Attributes);
             Assert.Null(f.SampleRate);
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.Length, value) };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.Equal(list[0], f.Attributes.ToList()[0]);
             Assert.Equal(value, f.Length);
@@ -133,7 +133,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Length attribute returns null when no value"), AutoData]
         public void Length_Attribute_Returns_Null_When_No_Value(int code, string filename, long size, string extension)
         {
-            var f = new File(code, filename, size, extension, 0);
+            var f = new File(code, filename, size, extension);
 
             Assert.Empty(f.Attributes);
             Assert.Null(f.Length);
@@ -145,7 +145,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.Null(f.GetAttributeValue(FileAttributeType.BitDepth));
         }
@@ -156,7 +156,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { new FileAttribute(type, value) };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.Equal(value, f.GetAttributeValue(type));
         }
@@ -167,7 +167,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.VariableBitRate, 1) };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.True(f.IsVariableBitRate);
         }
@@ -178,7 +178,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.VariableBitRate, 0) };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.False(f.IsVariableBitRate);
         }
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit
         {
             var list = new List<FileAttribute>() { };
 
-            var f = new File(code, filename, size, extension, 1, list);
+            var f = new File(code, filename, size, extension, list);
 
             Assert.Null(f.IsVariableBitRate);
         }

@@ -25,12 +25,23 @@ namespace Soulseek
         /// </summary>
         /// <param name="name">The room name.</param>
         /// <param name="userCount">The number of users in the room.</param>
-        /// <param name="userList">The users in the room, if available.</param>
-        public RoomInfo(string name, int userCount, IEnumerable<string> userList = null)
+        public RoomInfo(string name, int userCount)
         {
             Name = name;
+            UserList = Enumerable.Empty<string>();
             UserCount = userCount;
-            UserList = userList;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomInfo"/> class.
+        /// </summary>
+        /// <param name="name">The room name.</param>
+        /// <param name="userList">The users in the room, if available.</param>
+        public RoomInfo(string name, IEnumerable<string> userList)
+        {
+            Name = name;
+            UserList = userList ?? Enumerable.Empty<string>();
+            UserCount = UserList.Count();
         }
 
         /// <summary>
@@ -46,7 +57,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the users in the room, if available.
         /// </summary>
-        public IReadOnlyCollection<string> Users => UserList?.ToList().AsReadOnly();
+        public IReadOnlyCollection<string> Users => UserList.ToList().AsReadOnly();
 
         private IEnumerable<string> UserList { get; }
     }

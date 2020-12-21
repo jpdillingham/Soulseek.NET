@@ -21,18 +21,19 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "RoomData uses empty list if one is omitted"), AutoData]
         public void RoomData_Users_Uses_Empty_List_If_One_Is_Omitted(string roomName)
         {
-            var data = new RoomData(roomName, 0, null, false, null, null, null);
+            var data = new RoomData(roomName, null, false, null, null);
 
             Assert.NotNull(data.Users);
         }
 
         [Trait("Category", "RoomData")]
-        [Theory(DisplayName = "RoomData uses empty list if one is omitted"), AutoData]
-        public void RoomData_Operators_Uses_Empty_List_If_One_Is_Omitted(string roomName)
+        [Theory(DisplayName = "RoomData uses null list if one is omitted"), AutoData]
+        public void RoomData_Operators_Uses_Null_List_If_One_Is_Omitted(string roomName)
         {
-            var data = new RoomData(roomName, 0, null, false, null, null, null);
+            var data = new RoomData(roomName, null, false, null, null);
 
-            Assert.NotNull(data.Operators);
+            Assert.Null(data.Operators);
+            Assert.Null(data.OperatorCount);
         }
     }
 }

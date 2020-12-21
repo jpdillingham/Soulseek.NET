@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit
         {
             var r1 = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, null);
 
-            var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext", 0) });
+            var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext") });
 
             Assert.Empty(r1.Files);
             Assert.Single(r2.Files);
