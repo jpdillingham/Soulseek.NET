@@ -30,14 +30,25 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "RoomInfo")]
-        [Theory(DisplayName = "RoomInfo instantiates with null user list if none is given"), AutoData]
-        public void RoomInfo_Instantiates_With_Null_User_List_If_Not_Given(string roomName, int count)
+        [Theory(DisplayName = "RoomInfo instantiates properly with count only"), AutoData]
+        public void RoomInfo_Instantiates_Properly_With_Count_Only(string roomName, int count)
         {
             var info = new RoomInfo(roomName, count);
 
             Assert.Equal(roomName, info.Name);
             Assert.Equal(count, info.UserCount);
-            Assert.Null(info.Users);
+            Assert.Empty(info.Users);
+        }
+
+        [Trait("Category", "RoomInfo")]
+        [Theory(DisplayName = "RoomInfo instantiates with null user list if none is given"), AutoData]
+        public void RoomInfo_Instantiates_With_Null_User_List_If_Not_Given(string roomName)
+        {
+            var info = new RoomInfo(roomName, userList: null);
+
+            Assert.Equal(roomName, info.Name);
+            Assert.Equal(0, info.UserCount);
+            Assert.Empty(info.Users);
         }
     }
 }

@@ -28,6 +28,7 @@ namespace Soulseek
         public RoomInfo(string name, int userCount)
         {
             Name = name;
+            UserList = Enumerable.Empty<string>();
             UserCount = userCount;
         }
 
