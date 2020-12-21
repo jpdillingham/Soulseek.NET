@@ -20,7 +20,7 @@ namespace Soulseek.Messaging.Messages
     internal sealed class PrivilegedUserListNotification : IIncomingMessage
     {
         /// <summary>
-        ///     Creates a new list of privileged users from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PrivilegedUserListNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>

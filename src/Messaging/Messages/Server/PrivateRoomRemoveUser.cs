@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     The command and response to a password change.
+    ///     The command and response to a removal of a member from a private room.
     /// </summary>
     internal sealed class PrivateRoomRemoveUser : IIncomingMessage, IOutgoingMessage
     {

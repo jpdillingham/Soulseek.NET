@@ -137,6 +137,9 @@ namespace Soulseek
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomTickerListReceived += (sender, e) => RoomTickerListReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomTickerAdded += (sender, e) => RoomTickerAdded?.Invoke(this, e);
+            ServerMessageHandler.RoomTickerRemoved += (sender, e) => RoomTickerRemoved?.Invoke(this, e);
             ServerMessageHandler.PublicChatMessageReceived += (sender, e) => PublicChatMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
@@ -257,6 +260,21 @@ namespace Soulseek
         ///     Occurs when a chat room message is received.
         /// </summary>
         public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
+
+        /// <summary>
+        ///     Occurs when a chat room ticker is added.
+        /// </summary>
+        public event EventHandler<RoomTickerAddedEventArgs> RoomTickerAdded;
+
+        /// <summary>
+        ///     Occurs when the server sends a list of tickers for a chat room.
+        /// </summary>
+        public event EventHandler<RoomTickerListReceivedEventArgs> RoomTickerListReceived;
+
+        /// <summary>
+        ///     Occurs when a chat room ticker is removed.
+        /// </summary>
+        public event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -1742,6 +1760,47 @@ namespace Soulseek
             }
 
             return SendRoomMessageInternalAsync(roomName, message, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously sets a chat room ticker containing the specified <paramref name="message"/> in the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the room in which the ticker is to be set.</param>
+        /// <param name="message">The ticker message.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SetRoomTickerAsync(string roomName, string message, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException("The room name must not be a null or empty string, or one consisting only of whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException("The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set chat room tickers (currently: {State})");
+            }
+
+            try
+            {
+                return ServerConnection.WriteAsync(new SetRoomTickerCommand(roomName, message), cancellationToken ?? CancellationToken.None);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to set chat room ticker in room {roomName}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>

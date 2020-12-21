@@ -1755,6 +1755,147 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Server message sent: FileSearch"))), Times.Once);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises RoomTickerListReceived on RoomTickers"), AutoData]
+        public void Raises_RoomTickerListRecieved_On_RoomTickers(string roomName, List<RoomTicker> tickers)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickers)
+                .WriteString(roomName)
+                .WriteInteger(tickers.Count);
+
+            tickers.ForEach(ticker =>
+            {
+                builder
+                    .WriteString(ticker.Username)
+                    .WriteString(ticker.Message);
+            });
+
+            var message = builder.Build();
+
+            RoomTickerListReceivedEventArgs actualArgs = default;
+
+            handler.RoomTickerListReceived += (sender, args) => actualArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, actualArgs.RoomName);
+            Assert.Equal(tickers.Count, actualArgs.TickerCount);
+
+            foreach (var ticker in tickers)
+            {
+                Assert.Contains(actualArgs.Tickers, t => ticker.Username == t.Username && ticker.Message == t.Message);
+            }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on RoomTickers when RoomTickerListReceived is unbound"), AutoData]
+        public void Does_Not_Throw_On_RoomTickers_When_RoomTickerListReceived_Is_Unbound(string roomName, List<RoomTicker> tickers)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickers)
+                .WriteString(roomName)
+                .WriteInteger(tickers.Count);
+
+            tickers.ForEach(ticker =>
+            {
+                builder
+                    .WriteString(ticker.Username)
+                    .WriteString(ticker.Message);
+            });
+
+            var message = builder.Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises RoomTickerAdded on RoomTickerAdd"), AutoData]
+        public void Raises_RoomTickerAdded_On_RoomTickerAdd(string roomName, string username, string msg)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickerAdd)
+                .WriteString(roomName)
+                .WriteString(username)
+                .WriteString(msg)
+                .Build();
+
+            RoomTickerAddedEventArgs actualArgs = default;
+
+            handler.RoomTickerAdded += (sender, args) => actualArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, actualArgs.RoomName);
+            Assert.Equal(username, actualArgs.Ticker.Username);
+            Assert.Equal(msg, actualArgs.Ticker.Message);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on RoomTickerAdd when RoomTickerAdded is unbound"), AutoData]
+        public void Does_Not_Throw_On_RoomTickerAdd_When_RoomTickerAdded_Is_Unbound(string roomName, string username, string msg)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickerAdd)
+                .WriteString(roomName)
+                .WriteString(username)
+                .WriteString(msg)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises RoomTickerRemoved on RoomTickerRemove"), AutoData]
+        public void Raises_RoomTickerRemoved_On_RoomTickerRemove(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickerRemove)
+                .WriteString(roomName)
+                .WriteString(username)
+                .Build();
+
+            RoomTickerRemovedEventArgs actualArgs = default;
+
+            handler.RoomTickerRemoved += (sender, args) => actualArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(roomName, actualArgs.RoomName);
+            Assert.Equal(username, actualArgs.Username);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on RoomTickerRemove when RoomTickerRemoved is unbound"), AutoData]
+        public void Does_Not_Throw_On_RoomTickerRemove_When_RoomTickerRemoved_Is_Unbound(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomTickerRemove)
+                .WriteString(roomName)
+                .WriteString(username)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, message));
+
+            Assert.Null(ex);
+        }
+
         private byte[] GetServerSearchRequest(string username, int token, string query)
         {
             return new MessageBuilder()
