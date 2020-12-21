@@ -177,7 +177,7 @@
 
             app.UseCors("AllowAll");
 
-            BasePath = BasePath ?? "/";
+            BasePath ??= "/";
             BasePath = BasePath.StartsWith("/") ? BasePath : $"/{BasePath}";
 
             app.UsePathBase(BasePath);
@@ -196,7 +196,7 @@
                 await next();
             });
 
-            WebRoot = WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
+            WebRoot ??= Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
             Console.WriteLine($"Serving static content from {WebRoot}");
 
             var fileServerOptions = new FileServerOptions
@@ -394,7 +394,7 @@
             var directories = System.IO.Directory
                 .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
                 .Select(dir => new Soulseek.Directory(dir, System.IO.Directory.GetFiles(dir)
-                    .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0))));
+                    .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f)))));
 
             return Task.FromResult(new BrowseResponse(directories));
         }
@@ -410,7 +410,7 @@
         private Task<Soulseek.Directory> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
         {
             var result = new Soulseek.Directory(directory, System.IO.Directory.GetFiles(directory)
-                    .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0)));
+                    .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f))));
 
             return Task.FromResult(result);
         }
@@ -453,10 +453,8 @@
             // normally there would be an internal queue, and uploads would be handled separately.
             Task.Run(async () =>
             {
-                using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read))
-                {
-                    await Client.UploadAsync(username, fileInfo.FullName, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
-                }
+                using var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read);
+                await Client.UploadAsync(username, fileInfo.FullName, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
             }).ContinueWith(t =>
             {
                 Console.WriteLine($"[UPLOAD FAILED] {t.Exception}");
