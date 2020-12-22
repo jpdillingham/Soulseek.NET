@@ -61,21 +61,7 @@ namespace Soulseek.Messaging.Messages
             reader.ReadString(); // directory name, should always match that of the first directory
             reader.ReadInteger(); // directory count, should always be 1
 
-            var dir = new Directory(
-                directoryName: reader.ReadString(),
-                fileCount: reader.ReadInteger());
-
-            var fileList = new List<File>();
-
-            for (int j = 0; j < dir.FileCount; j++)
-            {
-                fileList.Add(reader.ReadFile());
-            }
-
-            var directory = new Directory(
-                directoryName: dir.DirectoryName,
-                fileCount: dir.FileCount,
-                fileList: fileList);
+            var directory = reader.ReadDirectory();
 
             return new FolderContentsResponse(token, directory);
         }

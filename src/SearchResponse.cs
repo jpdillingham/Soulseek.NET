@@ -38,11 +38,11 @@ namespace Soulseek
             UploadSpeed = uploadSpeed;
             QueueLength = queueLength;
 
-            FileList = fileList ?? Enumerable.Empty<File>();
-            FileCount = FileList.Count();
+            Files = (fileList?.ToList() ?? new List<File>()).AsReadOnly();
+            FileCount = Files.Count;
 
-            LockedFileList = lockedFileList ?? Enumerable.Empty<File>();
-            LockedFileCount = LockedFileList.Count();
+            LockedFiles = (lockedFileList?.ToList() ?? new List<File>()).AsReadOnly();
+            LockedFileCount = LockedFiles.Count;
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the list of files.
         /// </summary>
-        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
+        public IReadOnlyCollection<File> Files { get; }
 
         /// <summary>
         ///     Gets the number of free upload slots for the peer.
@@ -81,7 +81,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the list of locked files.
         /// </summary>
-        public IReadOnlyCollection<File> LockedFiles => LockedFileList.ToList().AsReadOnly();
+        public IReadOnlyCollection<File> LockedFiles { get; }
 
         /// <summary>
         ///     Gets the length of the peer's upload queue.
@@ -102,8 +102,5 @@ namespace Soulseek
         ///     Gets the username of the responding peer.
         /// </summary>
         public string Username { get; }
-
-        private IEnumerable<File> FileList { get; }
-        private IEnumerable<File> LockedFileList { get; }
     }
 }

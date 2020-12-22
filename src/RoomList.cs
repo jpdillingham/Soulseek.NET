@@ -33,14 +33,17 @@ namespace Soulseek
             IEnumerable<RoomInfo> ownedList,
             IEnumerable<string> moderatedRoomNameList)
         {
-            PublicList = publicList ?? Enumerable.Empty<RoomInfo>();
-            PublicCount = PublicList.Count();
-            PrivateList = privateList ?? Enumerable.Empty<RoomInfo>();
-            PrivateCount = PrivateList.Count();
-            OwnedList = ownedList ?? Enumerable.Empty<RoomInfo>();
-            OwnedCount = OwnedList.Count();
-            ModeratedRoomNameList = moderatedRoomNameList ?? Enumerable.Empty<string>();
-            ModeratedRoomNameCount = ModeratedRoomNameList.Count();
+            Public = (publicList?.ToList() ?? new List<RoomInfo>()).AsReadOnly();
+            PublicCount = Public.Count;
+
+            Private = (privateList?.ToList() ?? new List<RoomInfo>()).AsReadOnly();
+            PrivateCount = Private.Count;
+
+            Owned = (ownedList?.ToList() ?? new List<RoomInfo>()).AsReadOnly();
+            OwnedCount = Owned.Count;
+
+            ModeratedRoomNames = (moderatedRoomNameList?.ToList() ?? new List<string>()).AsReadOnly();
+            ModeratedRoomNameCount = ModeratedRoomNames.Count;
         }
 
         /// <summary>
@@ -66,26 +69,21 @@ namespace Soulseek
         /// <summary>
         ///     Gets the list of public rooms.
         /// </summary>
-        public IReadOnlyCollection<RoomInfo> Public => PublicList.ToList().AsReadOnly();
+        public IReadOnlyCollection<RoomInfo> Public { get; }
 
         /// <summary>
         ///     Gets the list of private rooms.
         /// </summary>
-        public IReadOnlyCollection<RoomInfo> Private => PrivateList.ToList().AsReadOnly();
+        public IReadOnlyCollection<RoomInfo> Private { get; }
 
         /// <summary>
         ///     Gets the list of rooms owned by the currently logged in user.
         /// </summary>
-        public IReadOnlyCollection<RoomInfo> Owned => OwnedList.ToList().AsReadOnly();
+        public IReadOnlyCollection<RoomInfo> Owned { get; }
 
         /// <summary>
         ///     Gets the list of room names in which the currently logged in user has moderator status.
         /// </summary>
-        public IReadOnlyCollection<string> ModeratedRoomNames => ModeratedRoomNameList.ToList().AsReadOnly();
-
-        private IEnumerable<RoomInfo> PublicList { get; }
-        private IEnumerable<RoomInfo> PrivateList { get; }
-        private IEnumerable<RoomInfo> OwnedList { get; }
-        private IEnumerable<string> ModeratedRoomNameList { get; }
+        public IReadOnlyCollection<string> ModeratedRoomNames { get; }
     }
 }

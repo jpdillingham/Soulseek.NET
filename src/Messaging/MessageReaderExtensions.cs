@@ -80,20 +80,18 @@ namespace Soulseek.Messaging
         /// <returns>The directory.</returns>
         internal static Directory ReadDirectory(this MessageReader<MessageCode.Peer> reader)
         {
-            var dir = new Directory(
-                directoryName: reader.ReadString(),
-                fileCount: reader.ReadInteger());
+            var directoryName = reader.ReadString();
+            var fileCount = reader.ReadInteger();
 
             var fileList = new List<File>();
 
-            for (int j = 0; j < dir.FileCount; j++)
+            for (int j = 0; j < fileCount; j++)
             {
                 fileList.Add(reader.ReadFile());
             }
 
             return new Directory(
-                directoryName: dir.DirectoryName,
-                fileCount: dir.FileCount,
+                directoryName: directoryName,
                 fileList: fileList);
         }
     }

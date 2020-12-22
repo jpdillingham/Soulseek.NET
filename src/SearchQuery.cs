@@ -31,8 +31,8 @@ namespace Soulseek
         /// <param name="exclusions">The list of excluded terms.</param>
         public SearchQuery(IEnumerable<string> terms, IEnumerable<string> exclusions = null)
         {
-            TermList = terms ?? Enumerable.Empty<string>();
-            ExclusionList = exclusions ?? Enumerable.Empty<string>();
+            Terms = (terms?.ToList() ?? new List<string>()).AsReadOnly();
+            Exclusions = (exclusions?.ToList() ?? new List<string>()).AsReadOnly();
         }
 
         /// <summary>
@@ -54,20 +54,20 @@ namespace Soulseek
             IEnumerable<string> tokens = searchText?.Split(' ') ?? Enumerable.Empty<string>();
 
             var excludedTokens = tokens.Where(t => t.StartsWith("-", IgnoreCase));
-            ExclusionList = excludedTokens.Select(t => t.TrimStart('-')).Distinct();
+            Exclusions = excludedTokens.Select(t => t.TrimStart('-')).Distinct().ToList().AsReadOnly();
 
-            TermList = tokens.Except(excludedTokens);
+            Terms = tokens.Except(excludedTokens).ToList().AsReadOnly();
         }
 
         /// <summary>
         ///     Gets the list of excluded terms.
         /// </summary>
-        public IReadOnlyCollection<string> Exclusions => ExclusionList.ToList().AsReadOnly();
+        public IReadOnlyCollection<string> Exclusions { get; }
 
         /// <summary>
         ///     Gets the query text, concatenated from <see cref="Terms"/>.
         /// </summary>
-        public string Query => string.Join(" ", TermList);
+        public string Query => string.Join(" ", Terms);
 
         /// <summary>
         ///     Gets the full search text, including both <see cref="Terms"/> and <see cref="Exclusions"/>.
@@ -77,10 +77,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the list of search terms.
         /// </summary>
-        public IReadOnlyCollection<string> Terms => TermList.ToList().AsReadOnly();
-
-        private IEnumerable<string> ExclusionList { get; }
-        private IEnumerable<string> TermList { get; }
+        public IReadOnlyCollection<string> Terms { get; }
 
         /// <summary>
         ///     Returns a new instance of <see cref="SearchQuery"/> from the specified search text.

@@ -35,8 +35,8 @@ namespace Soulseek
             Size = size;
             Extension = extension;
 
-            AttributeList = attributeList ?? Enumerable.Empty<FileAttribute>();
-            AttributeCount = AttributeList.Count();
+            Attributes = (attributeList?.ToList() ?? new List<FileAttribute>()).AsReadOnly();
+            AttributeCount = Attributes.Count;
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the file attributes.
         /// </summary>
-        public IReadOnlyCollection<FileAttribute> Attributes => AttributeList.ToList().AsReadOnly();
+        public IReadOnlyCollection<FileAttribute> Attributes { get; }
 
         /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.BitDepth"/> attribute.
@@ -103,18 +103,13 @@ namespace Soulseek
         public long Size { get; }
 
         /// <summary>
-        ///     Gets the internal list of file attributes.
-        /// </summary>
-        private IEnumerable<FileAttribute> AttributeList { get; }
-
-        /// <summary>
         ///     Returns the value of the specified attribute <paramref name="type"/>.
         /// </summary>
         /// <param name="type">The attribute to return.</param>
         /// <returns>The value of the specified attribute.</returns>
         public int? GetAttributeValue(FileAttributeType type)
         {
-            return AttributeList.FirstOrDefault(a => a.Type == type)?.Value;
+            return Attributes.FirstOrDefault(a => a.Type == type)?.Value;
         }
     }
 }

@@ -29,22 +29,8 @@ namespace Soulseek
         {
             DirectoryName = directoryName;
 
-            FileList = fileList ?? Enumerable.Empty<File>();
-            FileCount = FileList.Count();
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="Directory"/> class.
-        /// </summary>
-        /// <param name="directoryName">The directory name.</param>
-        /// <param name="fileCount">The number of files.</param>
-        /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
-        public Directory(string directoryName, int fileCount, IEnumerable<File> fileList = null)
-        {
-            DirectoryName = directoryName;
-            FileCount = fileCount;
-
-            FileList = fileList ?? Enumerable.Empty<File>();
+            Files = (fileList?.ToList() ?? new List<File>()).AsReadOnly();
+            FileCount = Files.Count;
         }
 
         /// <summary>
@@ -60,11 +46,6 @@ namespace Soulseek
         /// <summary>
         ///     Gets the collection of files contained within the directory.
         /// </summary>
-        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
-
-        /// <summary>
-        ///     Gets the list of files contained within the directory.
-        /// </summary>
-        private IEnumerable<File> FileList { get; }
+        public IReadOnlyCollection<File> Files { get; }
     }
 }

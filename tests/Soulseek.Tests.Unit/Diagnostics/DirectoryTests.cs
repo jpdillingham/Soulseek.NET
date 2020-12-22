@@ -20,20 +20,10 @@ namespace Soulseek.Tests.Unit
     public class DirectoryTests
     {
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string directoryname, int fileCount)
-        {
-            var d = new Directory(directoryname, fileCount);
-
-            Assert.Equal(directoryname, d.DirectoryName);
-            Assert.Equal(fileCount, d.FileCount);
-        }
-
-        [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with empty File list given no list"), AutoData]
-        public void Instantiates_With_Empty_File_List_Given_No_List(string directoryname, int fileCount)
+        public void Instantiates_With_Empty_File_List_Given_No_List(string directoryname)
         {
-            var d = new Directory(directoryname, fileCount);
+            var d = new Directory(directoryname);
 
             Assert.NotNull(d.Files);
             Assert.Empty(d.Files);
@@ -41,11 +31,11 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given File list given list"), AutoData]
-        public void Instantiates_With_Given_File_List_Given_List(string directoryname, int fileCount)
+        public void Instantiates_With_Given_File_List_Given_List(string directoryname)
         {
             var files = new List<File>() { new File(1, "a", 2, "b") };
 
-            var d = new Directory(directoryname, fileCount, files);
+            var d = new Directory(directoryname, files);
 
             Assert.NotNull(d.Files);
             Assert.Single(d.Files);
