@@ -36,7 +36,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Instantiates with the given directory list")]
         public void Instantiates_With_The_Given_Directory_List()
         {
-            var dir = new Directory("foo", 1);
+            var dir = new Directory("foo");
             var list = new List<Directory>(new[] { dir });
 
             var a = new BrowseResponse(list);
@@ -51,7 +51,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Instantiates with the given locked directory list")]
         public void Instantiates_With_The_Given_Locked_Directory_List()
         {
-            var dir = new Directory("foo", 1);
+            var dir = new Directory("foo");
             var list = new List<Directory>(new[] { dir });
 
             var a = new BrowseResponse(lockedDirectoryList: list);

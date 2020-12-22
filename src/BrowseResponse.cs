@@ -27,17 +27,17 @@ namespace Soulseek
         /// <param name="lockedDirectoryList">The optional locked directory list.</param>
         public BrowseResponse(IEnumerable<Directory> directoryList = null, IEnumerable<Directory> lockedDirectoryList = null)
         {
-            DirectoryList = directoryList ?? Enumerable.Empty<Directory>();
-            DirectoryCount = DirectoryList.Count();
+            Directories = (directoryList?.ToList() ?? new List<Directory>()).AsReadOnly();
+            DirectoryCount = Directories.Count;
 
-            LockedDirectoryList = lockedDirectoryList ?? Enumerable.Empty<Directory>();
-            LockedDirectoryCount = LockedDirectoryList.Count();
+            LockedDirectories = (lockedDirectoryList?.ToList() ?? new List<Directory>()).AsReadOnly();
+            LockedDirectoryCount = LockedDirectories.Count;
         }
 
         /// <summary>
         ///     Gets the list of directories.
         /// </summary>
-        public IReadOnlyCollection<Directory> Directories => DirectoryList.ToList().AsReadOnly();
+        public IReadOnlyCollection<Directory> Directories { get; }
 
         /// <summary>
         ///     Gets the number of directories.
@@ -47,14 +47,11 @@ namespace Soulseek
         /// <summary>
         ///     Gets the list of locked directories.
         /// </summary>
-        public IReadOnlyCollection<Directory> LockedDirectories => LockedDirectoryList.ToList().AsReadOnly();
+        public IReadOnlyCollection<Directory> LockedDirectories { get; }
 
         /// <summary>
         ///     Gets the number of locked directories.
         /// </summary>
         public int LockedDirectoryCount { get; }
-
-        private IEnumerable<Directory> DirectoryList { get; }
-        private IEnumerable<Directory> LockedDirectoryList { get; }
     }
 }

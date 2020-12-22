@@ -354,8 +354,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var dirs = new List<Directory>()
             {
-                new Directory("dir1", 2, list),
-                new Directory("dir2", 2, list),
+                new Directory("dir1", list),
+                new Directory("dir2", list),
             };
 
             var r = new BrowseResponse(dirs);
@@ -405,7 +405,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var dirs = new List<Directory>()
             {
-                new Directory("dir1", 2, list),
+                new Directory("dir1", list),
             };
 
             var r = new BrowseResponse(lockedDirectoryList: dirs);
@@ -506,7 +506,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             return new Directory(
                 directoryName: Guid.NewGuid().ToString(),
-                fileCount: fileCount,
                 fileList: fileList);
         }
     }

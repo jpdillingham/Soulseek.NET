@@ -31,12 +31,12 @@ namespace Soulseek
         public RoomData(string name, IEnumerable<UserData> userList, bool isPrivate = false, string owner = null, IEnumerable<string> operatorList = null)
         {
             Name = name;
-            UserList = userList ?? Enumerable.Empty<UserData>();
-            UserCount = UserList.Count();
+            Users = (userList?.ToList() ?? new List<UserData>()).AsReadOnly();
+            UserCount = Users.Count;
             IsPrivate = isPrivate;
             Owner = owner;
-            OperatorList = operatorList;
-            OperatorCount = OperatorList?.Count();
+            Operators = operatorList?.ToList().AsReadOnly();
+            OperatorCount = Operators?.Count;
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the operators in the room, if private.
         /// </summary>
-        public IReadOnlyCollection<string> Operators => OperatorList?.ToList().AsReadOnly();
+        public IReadOnlyCollection<string> Operators { get; }
 
         /// <summary>
         ///     Gets the owner of the room, if private.
@@ -72,9 +72,6 @@ namespace Soulseek
         /// <summary>
         ///     Gets the users in the room.
         /// </summary>
-        public IReadOnlyCollection<UserData> Users => UserList.ToList().AsReadOnly();
-
-        private IEnumerable<string> OperatorList { get; }
-        private IEnumerable<UserData> UserList { get; }
+        public IReadOnlyCollection<UserData> Users { get; }
     }
 }

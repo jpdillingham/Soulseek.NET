@@ -28,7 +28,7 @@ namespace Soulseek
         public RoomInfo(string name, int userCount)
         {
             Name = name;
-            UserList = Enumerable.Empty<string>();
+            Users = new List<string>().AsReadOnly();
             UserCount = userCount;
         }
 
@@ -40,8 +40,8 @@ namespace Soulseek
         public RoomInfo(string name, IEnumerable<string> userList)
         {
             Name = name;
-            UserList = userList ?? Enumerable.Empty<string>();
-            UserCount = UserList.Count();
+            Users = (userList?.ToList() ?? new List<string>()).AsReadOnly();
+            UserCount = Users.Count;
         }
 
         /// <summary>
@@ -57,8 +57,6 @@ namespace Soulseek
         /// <summary>
         ///     Gets the users in the room, if available.
         /// </summary>
-        public IReadOnlyCollection<string> Users => UserList.ToList().AsReadOnly();
-
-        private IEnumerable<string> UserList { get; }
+        public IReadOnlyCollection<string> Users { get; }
     }
 }

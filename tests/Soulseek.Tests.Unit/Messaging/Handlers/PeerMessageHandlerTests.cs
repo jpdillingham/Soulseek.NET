@@ -470,8 +470,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             IEnumerable<Directory> dirs = new List<Directory>()
             {
-                new Directory("1", 2, files),
-                new Directory("2", 2, files),
+                new Directory("1", files),
+                new Directory("2", files),
             };
 
             var response = new BrowseResponse(dirs);
@@ -516,7 +516,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 new File(2, "2", 2, "2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
-            var dir = new Directory(dirname, 2, files);
+            var dir = new Directory(dirname, files);
 
             var response = new FolderContentsResponse(token, dir);
             var options = new SoulseekClientOptions(directoryContentsResponseResolver: (u, i, t, d) => Task.FromResult(dir));

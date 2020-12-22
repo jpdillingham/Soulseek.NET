@@ -216,7 +216,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 new File(2, "2", 2, ".2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
-            var dir = new Directory(dirname, 2, list);
+            var dir = new Directory(dirname, list);
 
             var r = new FolderContentsResponse(token, dir);
 
@@ -305,7 +305,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             return new Directory(
                 directoryName: Guid.NewGuid().ToString(),
-                fileCount: fileCount,
                 fileList: fileList);
         }
     }
