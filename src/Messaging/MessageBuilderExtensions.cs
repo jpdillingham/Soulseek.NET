@@ -60,7 +60,7 @@ namespace Soulseek.Messaging
             directory = directory ?? throw new ArgumentNullException(nameof(directory));
 
             builder
-                .WriteString(directory.DirectoryName)
+                .WriteString(directory.Name)
                 .WriteInteger(directory.FileCount);
 
             foreach (var file in directory.Files)

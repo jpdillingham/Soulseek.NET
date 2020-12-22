@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
             Assert.Equal(token, r.Token);
-            Assert.Equal(dirname, r.Directory.DirectoryName);
+            Assert.Equal(dirname, r.Directory.Name);
             Assert.Equal(0, r.Directory.FileCount);
         }
 
@@ -140,7 +140,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
 
-            Assert.Equal(dirname, r.Directory.DirectoryName);
+            Assert.Equal(dirname, r.Directory.Name);
             Assert.Equal(1, r.Directory.FileCount);
             Assert.Single(r.Directory.Files);
 
@@ -164,7 +164,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.FolderContentsResponse)
                 .WriteInteger(token)
-                .WriteString(dir.DirectoryName)
+                .WriteString(dir.Name)
                 .WriteInteger(1);
 
             BuildDirectory(builder, dir);
@@ -181,7 +181,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var d = r.Directory;
 
-            Assert.Equal(dir.DirectoryName, d.DirectoryName);
+            Assert.Equal(dir.Name, d.Name);
             Assert.Equal(dir.FileCount, d.FileCount);
 
             var files = d.Files.ToList();
@@ -247,7 +247,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
         {
             builder
-                .WriteString(dir.DirectoryName)
+                .WriteString(dir.Name)
                 .WriteInteger(dir.FileCount);
 
             foreach (var file in dir.Files)
@@ -304,7 +304,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             }
 
             return new Directory(
-                directoryName: Guid.NewGuid().ToString(),
+                name: Guid.NewGuid().ToString(),
                 fileList: fileList);
         }
     }

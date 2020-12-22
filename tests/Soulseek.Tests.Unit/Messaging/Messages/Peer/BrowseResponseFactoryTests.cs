@@ -101,7 +101,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var d = r.Directories.ToList();
 
-            Assert.Equal(name, d[0].DirectoryName);
+            Assert.Equal(name, d[0].Name);
             Assert.Equal(0, d[0].FileCount);
             Assert.Empty(d[0].Files);
         }
@@ -157,7 +157,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var d = r.Directories.ToList();
 
-            Assert.Equal(name, d[0].DirectoryName);
+            Assert.Equal(name, d[0].Name);
             Assert.Equal(1, d[0].FileCount);
             Assert.Single(d[0].Files);
 
@@ -213,7 +213,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             for (int i = 0; i < msgDirs.Count; i++)
             {
-                Assert.Equal(dirs[i].DirectoryName, msgDirs[i].DirectoryName);
+                Assert.Equal(dirs[i].Name, msgDirs[i].Name);
                 Assert.Equal(dirs[i].FileCount, msgDirs[i].FileCount);
 
                 var files = dirs[i].Files.ToList();
@@ -287,7 +287,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             for (int i = 0; i < msgDirs.Count; i++)
             {
-                Assert.Equal(dirs[i].DirectoryName, msgDirs[i].DirectoryName);
+                Assert.Equal(dirs[i].Name, msgDirs[i].Name);
                 Assert.Equal(dirs[i].FileCount, msgDirs[i].FileCount);
 
                 var files = dirs[i].Files.ToList();
@@ -316,7 +316,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             for (int i = 0; i < msgDirs.Count; i++)
             {
-                Assert.Equal(dirs[i].DirectoryName, msgDirs[i].DirectoryName);
+                Assert.Equal(dirs[i].Name, msgDirs[i].Name);
                 Assert.Equal(dirs[i].FileCount, msgDirs[i].FileCount);
 
                 var files = dirs[i].Files.ToList();
@@ -448,7 +448,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
         {
             builder
-                .WriteString(dir.DirectoryName)
+                .WriteString(dir.Name)
                 .WriteInteger(dir.FileCount);
 
             foreach (var file in dir.Files)
@@ -505,7 +505,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             }
 
             return new Directory(
-                directoryName: Guid.NewGuid().ToString(),
+                name: Guid.NewGuid().ToString(),
                 fileList: fileList);
         }
     }

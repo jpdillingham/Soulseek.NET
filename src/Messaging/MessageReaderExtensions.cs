@@ -91,7 +91,7 @@ namespace Soulseek.Messaging
             }
 
             return new Directory(
-                directoryName: directoryName,
+                name: directoryName,
                 fileList: fileList);
         }
     }

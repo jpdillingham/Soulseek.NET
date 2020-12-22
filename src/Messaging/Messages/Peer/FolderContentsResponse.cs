@@ -12,8 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System.Collections.Generic;
-
     /// <summary>
     ///     The response to a peer folder contents request.
     /// </summary>
@@ -75,9 +73,9 @@ namespace Soulseek.Messaging.Messages
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.FolderContentsResponse)
                 .WriteInteger(Token)
-                .WriteString(Directory.DirectoryName)
+                .WriteString(Directory.Name)
                 .WriteInteger(1) // always one directory
-                .WriteString(Directory.DirectoryName)
+                .WriteString(Directory.Name)
                 .WriteInteger(Directory.FileCount);
 
             foreach (var file in Directory.Files)

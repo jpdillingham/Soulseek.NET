@@ -23,11 +23,11 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="Directory"/> class.
         /// </summary>
-        /// <param name="directoryName">The directory name.</param>
+        /// <param name="name">The directory name.</param>
         /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
-        public Directory(string directoryName, IEnumerable<File> fileList = null)
+        public Directory(string name, IEnumerable<File> fileList = null)
         {
-            DirectoryName = directoryName;
+            Name = name;
 
             Files = (fileList?.ToList() ?? new List<File>()).AsReadOnly();
             FileCount = Files.Count;
@@ -36,7 +36,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the directory name.
         /// </summary>
-        public string DirectoryName { get; }
+        public string Name { get; }
 
         /// <summary>
         ///     Gets the number of files within the directory.

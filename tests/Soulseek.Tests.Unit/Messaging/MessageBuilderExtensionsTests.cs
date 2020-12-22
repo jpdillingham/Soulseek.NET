@@ -80,7 +80,7 @@ namespace Soulseek.Tests.Unit.Messaging
             var msg = new MessageReader<MessageCode.Peer>(builder.Build());
             msg.ReadCode();
 
-            Assert.Equal(directory.DirectoryName, msg.ReadString());
+            Assert.Equal(directory.Name, msg.ReadString());
             Assert.Equal(directory.FileCount, msg.ReadInteger());
         }
     }
