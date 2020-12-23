@@ -1,13 +1,18 @@
 ﻿// <copyright file="FolderContentsResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
 //
-//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
 //
-//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
@@ -89,7 +94,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
             Assert.Equal(token, r.Token);
-            Assert.Equal(dirname, r.Directory.DirectoryName);
+            Assert.Equal(dirname, r.Directory.Name);
             Assert.Equal(0, r.Directory.FileCount);
         }
 
@@ -140,7 +145,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
 
-            Assert.Equal(dirname, r.Directory.DirectoryName);
+            Assert.Equal(dirname, r.Directory.Name);
             Assert.Equal(1, r.Directory.FileCount);
             Assert.Single(r.Directory.Files);
 
@@ -164,7 +169,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.FolderContentsResponse)
                 .WriteInteger(token)
-                .WriteString(dir.DirectoryName)
+                .WriteString(dir.Name)
                 .WriteInteger(1);
 
             BuildDirectory(builder, dir);
@@ -181,7 +186,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var d = r.Directory;
 
-            Assert.Equal(dir.DirectoryName, d.DirectoryName);
+            Assert.Equal(dir.Name, d.Name);
             Assert.Equal(dir.FileCount, d.FileCount);
 
             var files = d.Files.ToList();
@@ -247,7 +252,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
         {
             builder
-                .WriteString(dir.DirectoryName)
+                .WriteString(dir.Name)
                 .WriteInteger(dir.FileCount);
 
             foreach (var file in dir.Files)
@@ -304,7 +309,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             }
 
             return new Directory(
-                directoryName: Guid.NewGuid().ToString(),
+                name: Guid.NewGuid().ToString(),
                 fileList: fileList);
         }
     }
