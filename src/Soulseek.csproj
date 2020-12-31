@@ -28,13 +28,13 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.0-rc3.1</Version>
+    <Version>1.0.0</Version>
     <Authors>JP Dillingham</Authors>
     <Product>Soulseek.NET</Product>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <Description>A .NET Standard client library for the Soulseek network.</Description>
-    <Copyright>Copyright (c) JP Dillingham (jp@dillingham.ws)</Copyright>
+    <Copyright>Copyright (c) JP Dillingham</Copyright>
     <RepositoryUrl>https://github.com/jpdillingham/Soulseek.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>dotnet csharp soulseek soulseek-network</PackageTags>
