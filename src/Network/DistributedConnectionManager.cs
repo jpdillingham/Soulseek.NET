@@ -188,7 +188,7 @@ namespace Soulseek.Network
                     await connection.ConnectAsync().ConfigureAwait(false);
 
                     var request = new PierceFirewall(r.Token);
-                    await connection.WriteAsync(request).ConfigureAwait(false);
+                    await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
                     await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
                 }
@@ -531,7 +531,7 @@ namespace Soulseek.Network
                 if (isDirect)
                 {
                     var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken());
-                    await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                    await connection.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
