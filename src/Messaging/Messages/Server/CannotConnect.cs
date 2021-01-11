@@ -25,9 +25,9 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="CannotConnect"/> class.
         /// </summary>
-        /// <param name="username">The username of the peer.</param>
         /// <param name="token">The unique connection token.</param>
-        public CannotConnect(int token, string username)
+        /// <param name="username">The username of the peer.</param>
+        public CannotConnect(int token, string username = null)
         {
             Token = token;
             Username = username;
@@ -59,7 +59,13 @@ namespace Soulseek.Messaging.Messages
             }
 
             var token = reader.ReadInteger();
-            var username = reader.ReadString();
+
+            string username = null;
+
+            if (reader.HasMoreData)
+            {
+                username = reader.ReadString();
+            }
 
             return new CannotConnect(token, username);
         }
@@ -70,11 +76,18 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
-            return new MessageBuilder()
+            var builder = new MessageBuilder();
+
+            builder
                 .WriteCode(MessageCode.Server.CannotConnect)
-                .WriteInteger(Token)
-                .WriteString(Username)
-                .Build();
+                .WriteInteger(Token);
+
+            if (!string.IsNullOrEmpty(Username)) 
+            {
+                builder.WriteString(Username);
+            }
+
+            return builder.Build();
         }
     }
 }

@@ -24,9 +24,29 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
     public class CannotConnectTests
     {
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates correctly given token and username"), AutoData]
+        public void Instantiates_Correctly_Given_Token_And_Username(int token, string username)
+        {
+            var msg = new CannotConnect(token, username);
+
+            Assert.Equal(token, msg.Token);
+            Assert.Equal(username, msg.Username);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates correctly given token and username"), AutoData]
+        public void Instantiates_Correctly_Given_Token_Only(int token)
+        {
+            var msg = new CannotConnect(token);
+
+            Assert.Equal(token, msg.Token);
+            Assert.Null(msg.Username);
+        }
+
         [Trait("Category", "ToByteArray")]
-        [Theory(DisplayName = "ToByteArray Constructs the correct Message"), AutoData]
-        public void ToByteArray_Constructs_The_Correct_Message(int token, string username)
+        [Theory(DisplayName = "ToByteArray Constructs the correct Message given token and username"), AutoData]
+        public void ToByteArray_Constructs_The_Correct_Message_Given_Token_And_Username(int token, string username)
         {
             var msg = new CannotConnect(token, username).ToByteArray();
 
@@ -35,6 +55,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.CannotConnect, code);
             Assert.Equal(8 + 4 + 4 + username.Length, msg.Length);
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray Constructs the correct Message given token only"), AutoData]
+        public void ToByteArray_Constructs_The_Correct_Message_Given_Token_Only(int token)
+        {
+            var msg = new CannotConnect(token).ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.CannotConnect, code);
+            Assert.Equal(8 + 4, msg.Length);
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.False(reader.HasMoreData);
         }
 
         [Trait("Category", "FromByteArray")]
@@ -51,6 +88,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(token, m.Token);
             Assert.Equal(username, m.Username);
+        }
+
+        [Trait("Category", "FromByteArray")]
+        [Theory(DisplayName = "FromByteArray returns the expected data given message with only token"), AutoData]
+        public void FromByteArray_Returns_Expected_Data_Given_Message_With_Only_Token(int token)
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotConnect)
+                .WriteInteger(token)
+                .Build();
+
+            var m = CannotConnect.FromByteArray(msg);
+
+            Assert.Equal(token, m.Token);
+            Assert.Null(m.Username);
         }
 
         [Trait("Category", "FromByteArray")]
