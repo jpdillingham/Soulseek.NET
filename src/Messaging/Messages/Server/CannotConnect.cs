@@ -82,7 +82,7 @@ namespace Soulseek.Messaging.Messages
                 .WriteCode(MessageCode.Server.CannotConnect)
                 .WriteInteger(Token);
 
-            if (!string.IsNullOrEmpty(Username)) 
+            if (!string.IsNullOrEmpty(Username))
             {
                 builder.WriteString(Username);
             }
