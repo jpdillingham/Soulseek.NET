@@ -1734,7 +1734,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var peerInit = new PeerInit(localUser, Constants.ConnectionType.Distributed, token).ToByteArray();
 
-            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(peerInit)), It.IsAny<CancellationToken>()));
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(peerInit)), It.IsAny<CancellationToken>()));
         }
 
         [Trait("Category", "GetParentCandidateConnectionAsync")]

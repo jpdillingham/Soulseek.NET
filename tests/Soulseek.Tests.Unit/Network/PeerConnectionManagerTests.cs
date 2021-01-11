@@ -1856,7 +1856,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -1886,7 +1886,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -1899,7 +1899,7 @@ namespace Soulseek.Tests.Unit.Network
                 (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
             }
 
-            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(expectedMessage)), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(expectedMessage)), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
@@ -2379,7 +2379,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(ConnectionTypes.Direct);
             direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
-            direct.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Throws(new ConnectionException());
 
             var (manager, mocks) = GetFixture();
@@ -2417,7 +2417,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(ConnectionTypes.Direct);
             direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
-            direct.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Throws(exception);
 
             var (manager, mocks) = GetFixture();
@@ -2579,7 +2579,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(direct.Object, newConn);
                 Assert.Equal(ConnectionTypes.Direct, newConn.Type);
 
-                direct.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(o => o.ToByteArray().Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
             }
         }
 
