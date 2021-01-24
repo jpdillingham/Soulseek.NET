@@ -27,6 +27,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptionsPatch"/> class.
         /// </summary>
+        /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
         /// <param name="deduplicateSearchRequests">
@@ -38,22 +39,28 @@ namespace Soulseek
         /// <param name="autoAcknowledgePrivilegeNotifications">
         ///     A value indicating whether to automatically send a privilege notification acknowledgement upon receipt.
         /// </param>
+        /// <param name="acceptPrivateRoomInvitations">A value indicating whether to accept private room invitations.</param>
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
+        /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptionsPatch(
+            bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
             int? distributedChildLimit = null,
             bool? deduplicateSearchRequests = null,
             bool? autoAcknowledgePrivateMessages = null,
             bool? autoAcknowledgePrivilegeNotifications = null,
+            bool? acceptPrivateRoomInvitations = null,
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
+            ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null)
         {
+            EnableDistributedNetwork = enableDistributedNetwork;
             AcceptDistributedChildren = acceptDistributedChildren;
             DistributedChildLimit = distributedChildLimit;
 
@@ -66,6 +73,7 @@ namespace Soulseek
 
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
             AutoAcknowledgePrivilegeNotifications = autoAcknowledgePrivilegeNotifications;
+            AcceptPrivateRoomInvitations = acceptPrivateRoomInvitations;
 
             PeerConnectionOptions = peerConnectionOptions;
             TransferConnectionOptions = transferConnectionOptions;
@@ -77,6 +85,11 @@ namespace Soulseek
         ///     Gets a value indicating whether to accept distributed child connections. (Default = accept).
         /// </summary>
         public bool? AcceptDistributedChildren { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to accept private room invitations. (Default = false).
+        /// </summary>
+        public bool? AcceptPrivateRoomInvitations { get; }
 
         /// <summary>
         ///     Gets a value indicating whether to automatically send a private message acknowledgement upon receipt. (Default = true).
@@ -103,6 +116,11 @@ namespace Soulseek
         ///     Gets the options for distributed message connections.
         /// </summary>
         public ConnectionOptions DistributedConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to establish distributed network connections. (Default = enabled).
+        /// </summary>
+        public bool? EnableDistributedNetwork { get; }
 
         /// <summary>
         ///     Gets the options for incoming connections.
