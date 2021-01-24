@@ -44,6 +44,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
+        /// <param name="listen">A value indicating whether to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
@@ -89,7 +90,8 @@ namespace Soulseek
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptions(
-            int? listenPort = null,
+            bool listen = false,
+            int listenPort = 50000,
             IUserEndPointCache userEndPointCache = null,
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
@@ -113,6 +115,7 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
+            Listen = listen;
             ListenPort = listenPort;
 
             UserEndPointCache = userEndPointCache;
@@ -217,9 +220,14 @@ namespace Soulseek
         public ConnectionOptions IncomingConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets the port on which to listen for incoming connections. (Default = null; do not listen).
+        ///     Gets a value indicating whether to listen for incoming connections. (Default = listen).
         /// </summary>
-        public int? ListenPort { get; }
+        public bool Listen { get; }
+
+        /// <summary>
+        ///     Gets the port on which to listen for incoming connections. (Default = 50000).
+        /// </summary>
+        public int ListenPort { get; }
 
         /// <summary>
         ///     Gets the message timeout, in milliseconds, used when waiting for a response from the server or peer. (Default = 5000).
