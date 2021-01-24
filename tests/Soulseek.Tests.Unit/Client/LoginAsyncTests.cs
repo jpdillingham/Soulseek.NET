@@ -135,7 +135,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listen: true, listenPort: port)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 

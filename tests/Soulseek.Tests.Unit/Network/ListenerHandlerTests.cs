@@ -404,7 +404,7 @@ namespace Soulseek.Tests.Unit.Network
                     CallBase = true,
                 };
 
-                Listener.Setup(m => m.Port).Returns(clientOptions?.ListenPort ?? new SoulseekClientOptions().ListenPort ?? 0);
+                Listener.Setup(m => m.Port).Returns(clientOptions?.ListenPort ?? new SoulseekClientOptions().ListenPort);
                 PeerConnectionManager.Setup(m => m.PendingSolicitations)
                     .Returns(new Dictionary<int, string>());
                 DistributedConnectionManager.Setup(m => m.PendingSolicitations)
