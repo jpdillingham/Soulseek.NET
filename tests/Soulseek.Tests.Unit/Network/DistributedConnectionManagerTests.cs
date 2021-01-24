@@ -73,6 +73,22 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "CanAcceptChildren is false if EnableDistributedNetwork is false")]
+        public void CanAcceptChildren_Is_False_If_EnableDistributedNEtwork_Is_False()
+        {
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
+                enableDistributedNetwork: false,
+                acceptDistributedChildren: true,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    Assert.False(c.CanAcceptChildren);
+                }
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "CanAcceptChildren is true if AcceptDistributedChildren is true")]
         public void CanAcceptChildren_Is_True_If_AcceptDistributedChildren_Is_True()
         {
@@ -2221,6 +2237,22 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Trait("Category", "AddParentConnectionAsync")]
+        [Fact(DisplayName = "AddParentConnectionAsync returns if distributed network is disabled")]
+        internal async Task AddParentConnectionAsync_Returns_If_Distributed_Network_Is_Disabled()
+        {
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(enableDistributedNetwork: false));
+
+            var candidates = new List<(string Username, IPEndPoint IPEndPoint)>();
+
+            using (manager)
+            {
+                await manager.AddParentConnectionAsync(candidates);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Parent connection solicitation ignored; distributed network is not enabled."))), Times.Once);
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
