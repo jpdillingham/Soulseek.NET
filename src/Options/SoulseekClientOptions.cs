@@ -123,12 +123,13 @@ namespace Soulseek
             EnableDistributedNetwork = enableDistributedNetwork;
             AcceptDistributedChildren = acceptDistributedChildren;
             DistributedChildLimit = distributedChildLimit;
-            DeduplicateSearchRequests = deduplicateSearchRequests;
 
             if (DistributedChildLimit < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(distributedChildLimit), "Must be greater than or equal to zero");
             }
+
+            DeduplicateSearchRequests = deduplicateSearchRequests;
 
             MessageTimeout = messageTimeout;
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
