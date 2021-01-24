@@ -46,7 +46,6 @@ namespace Soulseek
         /// </summary>
         /// <param name="listen">A value indicating whether to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
-        /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
@@ -70,6 +69,7 @@ namespace Soulseek
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
+        /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
         /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
@@ -92,7 +92,6 @@ namespace Soulseek
         public SoulseekClientOptions(
             bool listen = false,
             int listenPort = 50000,
-            IUserEndPointCache userEndPointCache = null,
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
@@ -108,6 +107,7 @@ namespace Soulseek
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
+            IUserEndPointCache userEndPointCache = null,
             Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
             Func<string, IPEndPoint, Task<BrowseResponse>> browseResponseResolver = null,
             Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
@@ -117,9 +117,6 @@ namespace Soulseek
         {
             Listen = listen;
             ListenPort = listenPort;
-
-            UserEndPointCache = userEndPointCache;
-
             EnableDistributedNetwork = enableDistributedNetwork;
             AcceptDistributedChildren = acceptDistributedChildren;
             DistributedChildLimit = distributedChildLimit;
@@ -143,6 +140,8 @@ namespace Soulseek
             TransferConnectionOptions = (transferConnectionOptions ?? new ConnectionOptions()).WithoutInactivityTimeout();
             IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
             DistributedConnectionOptions = distributedConnectionOptions ?? new ConnectionOptions();
+
+            UserEndPointCache = userEndPointCache;
 
             SearchResponseResolver = searchResponseResolver;
             BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
