@@ -1501,14 +1501,14 @@ namespace Soulseek
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch)
+        public Task ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
         {
             if (patch == null)
             {
                 throw new ArgumentNullException(nameof(patch), "The patch must not be null.");
             }
 
-            return Task.CompletedTask();
+            return Task.CompletedTask;
         }
 
         /// <summary>
