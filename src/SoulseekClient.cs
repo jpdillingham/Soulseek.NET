@@ -104,9 +104,9 @@ namespace Soulseek
 
             Listener = listener;
 
-            if (Listener == null && Options.ListenPort.HasValue)
+            if (Listener == null && Options.Listen)
             {
-                Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
+                Listener = new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
             }
 
             if (Listener != null)
@@ -1490,6 +1490,20 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new SoulseekClientException($"Failed to ping the server: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        ///     Applies the specified <paramref name="patch"/> to the client options.
+        /// </summary>
+        /// <param name="patch">A patch containing the updated options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public void Reconfigure(SoulseekClientOptionsPatch patch)
+        {
+            if (patch == null)
+            {
+                throw new ArgumentNullException(nameof(patch), "The patch must not be null.");
             }
         }
 
@@ -2891,11 +2905,11 @@ namespace Soulseek
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
 
-                    if (Options.ListenPort.HasValue)
+                    if (Options.Listen)
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value), cancellationToken).ConfigureAwait(false);
+                        await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
                     }
 
                     if (Options.EnableDistributedNetwork)

@@ -775,6 +775,14 @@ namespace Soulseek
         Task<long> PingServerAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Applies the specified <paramref name="patch"/> to the client options.
+        /// </summary>
+        /// <param name="patch">A patch containing the updated options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        void Reconfigure(SoulseekClientOptionsPatch patch);
+
+        /// <summary>
         ///     Asynchronously removes the specified <paramref name="username"/> from the list of members in the specified private <paramref name="roomName"/>.
         /// </summary>
         /// <param name="roomName">The room from which to remove the user.</param>
