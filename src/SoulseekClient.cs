@@ -1494,17 +1494,21 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Applies the specified <paramref name="patch"/> to the client options.
+        ///     Asynchronously applies the specified <paramref name="patch"/> to the client options.
         /// </summary>
         /// <param name="patch">A patch containing the updated options.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public void Reconfigure(SoulseekClientOptionsPatch patch)
+        public Task ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch)
         {
             if (patch == null)
             {
                 throw new ArgumentNullException(nameof(patch), "The patch must not be null.");
             }
+
+            return Task.CompletedTask();
         }
 
         /// <summary>
