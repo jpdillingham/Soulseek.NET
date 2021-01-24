@@ -244,8 +244,6 @@
             // create options for the client.
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
-                listenPort: ListenPort,
-                userEndPointCache: new UserEndPointCache(),
                 distributedChildLimit: DistributedChildLimit,
                 enableDistributedNetwork: EnableDistributedNetwork,
                 minimumDiagnosticLevel: DiagnosticLevel,
@@ -254,6 +252,7 @@
                 serverConnectionOptions: connectionOptions,
                 peerConnectionOptions: connectionOptions,
                 transferConnectionOptions: connectionOptions,
+                userEndPointCache: new UserEndPointCache(),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
                 directoryContentsResponseResolver: DirectoryContentsResponseResolver,
