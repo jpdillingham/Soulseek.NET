@@ -810,7 +810,7 @@ namespace Soulseek.Network
 
         private void WatchdogTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (!HasParent)
+            if (!HasParent && SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) && SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 Diagnostic.Warning("No distributed parent connected.  Requesting a list of candidates.");
                 _ = UpdateStatusAsync();

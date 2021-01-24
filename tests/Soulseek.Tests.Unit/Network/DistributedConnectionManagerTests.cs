@@ -2643,6 +2643,8 @@ namespace Soulseek.Tests.Unit.Network
         internal void Watchdog_Produces_Warning_When_No_Parent_Connected()
         {
             var (manager, mocks) = GetFixture();
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             using (manager)
             {
@@ -2650,6 +2652,20 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Warning("No distributed parent connected.  Requesting a list of candidates.", null), Times.Once);
+        }
+
+        [Trait("Category", "Watchdog")]
+        [Fact(DisplayName = "Watchdog does not produce a warning when server is not connected and logged in")]
+        internal void Watchdog_Does_Not_Produce_A_Warning_When_Server_Is_Not_Connected_And_Logged_In()
+        {
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.InvokeMethod("WatchdogTimer_Elapsed", null, null);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning("No distributed parent connected.  Requesting a list of candidates.", null), Times.Never);
         }
 
         [Trait("Category", "GetBranchInformation")]
