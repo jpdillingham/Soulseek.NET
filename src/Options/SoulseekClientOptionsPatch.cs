@@ -41,6 +41,7 @@ namespace Soulseek
         ///     A value indicating whether to automatically send a privilege notification acknowledgement upon receipt.
         /// </param>
         /// <param name="acceptPrivateRoomInvitations">A value indicating whether to accept private room invitations.</param>
+        /// <param name="serverConnectionOptions">The options for the server message connection.</param>
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
@@ -57,6 +58,7 @@ namespace Soulseek
             bool? autoAcknowledgePrivateMessages = null,
             bool? autoAcknowledgePrivilegeNotifications = null,
             bool? acceptPrivateRoomInvitations = null,
+            ConnectionOptions serverConnectionOptions = null,
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
@@ -84,6 +86,7 @@ namespace Soulseek
             AutoAcknowledgePrivilegeNotifications = autoAcknowledgePrivilegeNotifications;
             AcceptPrivateRoomInvitations = acceptPrivateRoomInvitations;
 
+            ServerConnectionOptions = serverConnectionOptions;
             PeerConnectionOptions = peerConnectionOptions;
             TransferConnectionOptions = transferConnectionOptions;
             IncomingConnectionOptions = incomingConnectionOptions;
@@ -144,6 +147,11 @@ namespace Soulseek
         ///     Gets the options for peer message connections.
         /// </summary>
         public ConnectionOptions PeerConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the options for the server message connection.
+        /// </summary>
+        public ConnectionOptions ServerConnectionOptions { get; }
 
         /// <summary>
         ///     Gets the options for peer transfer connections.
