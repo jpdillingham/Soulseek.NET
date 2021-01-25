@@ -278,7 +278,7 @@ namespace Soulseek
         public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResponseResolver { get; }
 
         /// <summary>
-        ///     Creates a clone of this instance with the properties in the specified <paramref name="patch"/> overlayed.
+        ///     Creates a clone of this instance with the specified substitutions.
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
@@ -294,12 +294,13 @@ namespace Soulseek
         ///     A value indicating whether to automatically send a privilege notification acknowledgement upon receipt.
         /// </param>
         /// <param name="acceptPrivateRoomInvitations">A value indicating whether to accept private room invitations.</param>
+        /// <param name="serverConnectionOptions">The options for the server message connection.</param>
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
-        /// <returns>The cloned instance with overlayed properties.</returns>
-        internal SoulseekClientOptions Patch(
+        /// <returns>The cloned instance.</returns>
+        public SoulseekClientOptions With(
             int? listenPort = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
@@ -308,6 +309,7 @@ namespace Soulseek
             bool? autoAcknowledgePrivateMessages = null,
             bool? autoAcknowledgePrivilegeNotifications = null,
             bool? acceptPrivateRoomInvitations = null,
+            ConnectionOptions serverConnectionOptions = null,
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
@@ -325,7 +327,7 @@ namespace Soulseek
                 acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
                 MinimumDiagnosticLevel,
                 StartingToken,
-                ServerConnectionOptions,
+                serverConnectionOptions ?? ServerConnectionOptions,
                 peerConnectionOptions ?? PeerConnectionOptions,
                 transferConnectionOptions ?? TransferConnectionOptions,
                 incomingConnectionOptions ?? IncomingConnectionOptions,
@@ -337,6 +339,34 @@ namespace Soulseek
                 UserInfoResponseResolver,
                 EnqueueDownloadAction,
                 PlaceInQueueResponseResolver);
+        }
+
+        /// <summary>
+        ///     Creates a clone of this instance with the substitutions in the specified <paramref name="patch"/> applied.
+        /// </summary>
+        /// <param name="patch">The patch containing the desired substitutions.</param>
+        /// <returns>The cloned instance.</returns>
+        public SoulseekClientOptions With(SoulseekClientOptionsPatch patch)
+        {
+            if (patch == null)
+            {
+                throw new ArgumentNullException(nameof(patch), "The patch must not be null");
+            }
+
+            return With(
+                patch.ListenPort,
+                patch.EnableDistributedNetwork,
+                patch.AcceptDistributedChildren,
+                patch.DistributedChildLimit,
+                patch.DeduplicateSearchRequests,
+                patch.AutoAcknowledgePrivateMessages,
+                patch.AutoAcknowledgePrivilegeNotifications,
+                patch.AcceptPrivateRoomInvitations,
+                patch.ServerConnectionOptions,
+                patch.PeerConnectionOptions,
+                patch.TransferConnectionOptions,
+                patch.IncomingConnectionOptions,
+                patch.DistributedConnectionOptions);
         }
     }
 }
