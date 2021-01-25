@@ -44,7 +44,6 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
-        /// <param name="listen">A value indicating whether to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
@@ -90,7 +89,6 @@ namespace Soulseek
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptions(
-            bool listen = false,
             int listenPort = 50000,
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
@@ -115,8 +113,13 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
-            Listen = listen;
             ListenPort = listenPort;
+
+            if (ListenPort < 1024 || ListenPort > 65535)
+            {
+                throw new ArgumentOutOfRangeException(nameof(listenPort), "Must be between 1024 and 65535");
+            }
+
             EnableDistributedNetwork = enableDistributedNetwork;
             AcceptDistributedChildren = acceptDistributedChildren;
             DistributedChildLimit = distributedChildLimit;
@@ -220,11 +223,6 @@ namespace Soulseek
         public ConnectionOptions IncomingConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to listen for incoming connections. (Default = listen).
-        /// </summary>
-        public bool Listen { get; }
-
-        /// <summary>
         ///     Gets the port on which to listen for incoming connections. (Default = 50000).
         /// </summary>
         public int ListenPort { get; }
@@ -278,5 +276,67 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a blank/zeroed response).
         /// </summary>
         public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResponseResolver { get; }
+
+        /// <summary>
+        ///     Creates a clone of this instance with the properties in the specified <paramref name="patch"/> overlayed.
+        /// </summary>
+        /// <param name="listenPort">The port on which to listen for incoming connections.</param>
+        /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
+        /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
+        /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="deduplicateSearchRequests">
+        ///     A value indicating whether duplicated distributed search requests should be discarded.
+        /// </param>
+        /// <param name="autoAcknowledgePrivateMessages">
+        ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
+        /// </param>
+        /// <param name="autoAcknowledgePrivilegeNotifications">
+        ///     A value indicating whether to automatically send a privilege notification acknowledgement upon receipt.
+        /// </param>
+        /// <param name="acceptPrivateRoomInvitations">A value indicating whether to accept private room invitations.</param>
+        /// <param name="peerConnectionOptions">The options for peer message connections.</param>
+        /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
+        /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
+        /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
+        /// <returns>The cloned instance with overlayed properties.</returns>
+        internal SoulseekClientOptions Patch(
+            int? listenPort = null,
+            bool? enableDistributedNetwork = null,
+            bool? acceptDistributedChildren = null,
+            int? distributedChildLimit = null,
+            bool? deduplicateSearchRequests = null,
+            bool? autoAcknowledgePrivateMessages = null,
+            bool? autoAcknowledgePrivilegeNotifications = null,
+            bool? acceptPrivateRoomInvitations = null,
+            ConnectionOptions peerConnectionOptions = null,
+            ConnectionOptions transferConnectionOptions = null,
+            ConnectionOptions incomingConnectionOptions = null,
+            ConnectionOptions distributedConnectionOptions = null)
+        {
+            return new SoulseekClientOptions(
+                listenPort ?? ListenPort,
+                enableDistributedNetwork ?? EnableDistributedNetwork,
+                acceptDistributedChildren ?? AcceptDistributedChildren,
+                distributedChildLimit ?? DistributedChildLimit,
+                deduplicateSearchRequests ?? DeduplicateSearchRequests,
+                MessageTimeout,
+                autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications ?? AutoAcknowledgePrivilegeNotifications,
+                acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
+                MinimumDiagnosticLevel,
+                StartingToken,
+                ServerConnectionOptions,
+                peerConnectionOptions ?? PeerConnectionOptions,
+                transferConnectionOptions ?? TransferConnectionOptions,
+                incomingConnectionOptions ?? IncomingConnectionOptions,
+                distributedConnectionOptions ?? DistributedConnectionOptions,
+                UserEndPointCache,
+                SearchResponseResolver,
+                BrowseResponseResolver,
+                DirectoryContentsResponseResolver,
+                UserInfoResponseResolver,
+                EnqueueDownloadAction,
+                PlaceInQueueResponseResolver);
+        }
     }
 }
