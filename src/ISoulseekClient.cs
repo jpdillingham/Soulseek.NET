@@ -779,10 +779,13 @@ namespace Soulseek
         /// </summary>
         /// <param name="patch">A patch containing the updated options.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including a value indicating whether a server reconnect is
+        ///     required for the new options to fully take effect.
+        /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null);
+        Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously removes the specified <paramref name="username"/> from the list of members in the specified private <paramref name="roomName"/>.
