@@ -102,18 +102,9 @@ namespace Soulseek
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            Listener = listener;
-
-            if (Listener == null && Options.Listen)
-            {
-                Listener = new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
-            }
-
-            if (Listener != null)
-            {
-                Listener.Accepted += ListenerHandler.HandleConnection;
-                Listener.Start();
-            }
+            Listener = listener ?? new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
+            Listener.Accepted += ListenerHandler.HandleConnection;
+            Listener.Start();
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -340,7 +331,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public virtual SoulseekClientOptions Options { get; }
+        public virtual SoulseekClientOptions Options { get; private set; }
 
         /// <summary>
         ///     Gets server port.
@@ -366,7 +357,7 @@ namespace Soulseek
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, TransferInternal> Downloads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
-        internal virtual IListener Listener { get; }
+        internal virtual IListener Listener { get; private set; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
         internal virtual IPeerMessageHandler PeerMessageHandler { get; }
@@ -1498,17 +1489,31 @@ namespace Soulseek
         /// </summary>
         /// <param name="patch">A patch containing the updated options.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including a value indicating whether a server reconnect is
+        ///     required for the new options to fully take effect.
+        /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
+        public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
         {
             if (patch == null)
             {
-                throw new ArgumentNullException(nameof(patch), "The patch must not be null.");
+                throw new ArgumentNullException(nameof(patch), "The patch must not be null");
             }
 
-            return Task.CompletedTask;
+            try
+            {
+                var listener = new Listener(patch.ListenPort.Value, Options.IncomingConnectionOptions);
+                listener.Start();
+                listener.Stop();
+            }
+            catch (SocketException)
+            {
+                throw new InvalidOperationException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
+            }
+
+            return ReconfigureOptionsInternalAsync(patch, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2909,19 +2914,16 @@ namespace Soulseek
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
 
-                    if (Options.Listen)
-                    {
-                        // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
-                        // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
-                    }
+                    // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
+                    // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
+                    await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
 
                     if (Options.EnableDistributedNetwork)
                     {
                         await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
                     }
 
-                    await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations)).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -2936,6 +2938,67 @@ namespace Soulseek
             {
                 throw new SoulseekClientException($"Failed to log in as {username}: {ex.Message}", ex);
             }
+        }
+
+        private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, CancellationToken cancellationToken)
+        {
+            bool reconnectRequired = false;
+
+            if (patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork)
+            {
+                Options = Options.Patch(enableDistributedNetwork: patch.EnableDistributedNetwork);
+                reconnectRequired = true;
+            }
+
+            if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
+            {
+                Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
+
+                Listener.Stop();
+
+                Options = Options.Patch(
+                    listenPort: patch.ListenPort,
+                    incomingConnectionOptions: patch.IncomingConnectionOptions);
+
+                Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                Listener.Accepted += ListenerHandler.HandleConnection;
+                Listener.Start();
+
+                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
+
+                Diagnostic.Debug($"Listener successfully reconfigured");
+            }
+
+            if (patch.AcceptPrivateRoomInvitations.HasValue && patch.AcceptPrivateRoomInvitations.Value != Options.AcceptPrivateRoomInvitations)
+            {
+                Diagnostic.Debug($"Accept private room invitations changing from {Options.AcceptPrivateRoomInvitations} to {patch.AcceptPrivateRoomInvitations.Value}");
+
+                Options = Options.Patch(acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations);
+
+                await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
+
+                Diagnostic.Debug($"Private room invitation acceptance successfully reconfigured");
+            }
+
+            Options = Options.Patch(
+                acceptDistributedChildren: patch.AcceptDistributedChildren,
+                distributedChildLimit: patch.DistributedChildLimit,
+                deduplicateSearchRequests: patch.DeduplicateSearchRequests,
+                autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
+                peerConnectionOptions: patch.PeerConnectionOptions,
+                transferConnectionOptions: patch.TransferConnectionOptions,
+                incomingConnectionOptions: patch.IncomingConnectionOptions,
+                distributedConnectionOptions: patch.DistributedConnectionOptions);
+
+            Diagnostic.Debug("Options reconfigured successfully");
+
+            if (reconnectRequired)
+            {
+                Diagnostic.Warning("Server reconnect required following options reconfiguration");
+            }
+
+            return reconnectRequired;
         }
 
         private async Task RemovePrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
