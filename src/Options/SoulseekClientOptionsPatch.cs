@@ -27,6 +27,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptionsPatch"/> class.
         /// </summary>
+        /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
@@ -48,6 +49,7 @@ namespace Soulseek
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptionsPatch(
+            int? listenPort = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
             int? distributedChildLimit = null,
@@ -60,6 +62,13 @@ namespace Soulseek
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null)
         {
+            ListenPort = listenPort;
+
+            if (ListenPort < 1024 || ListenPort > 65535)
+            {
+                throw new ArgumentOutOfRangeException(nameof(listenPort), "Must be between 1024 and 65535");
+            }
+
             EnableDistributedNetwork = enableDistributedNetwork;
             AcceptDistributedChildren = acceptDistributedChildren;
             DistributedChildLimit = distributedChildLimit;
@@ -82,33 +91,32 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets a value indicating whether to accept distributed child connections. (Default = accept).
+        ///     Gets a value indicating whether to accept distributed child connections.
         /// </summary>
         public bool? AcceptDistributedChildren { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to accept private room invitations. (Default = false).
+        ///     Gets a value indicating whether to accept private room invitations.
         /// </summary>
         public bool? AcceptPrivateRoomInvitations { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to automatically send a private message acknowledgement upon receipt. (Default = true).
+        ///     Gets a value indicating whether to automatically send a private message acknowledgement upon receipt.
         /// </summary>
         public bool? AutoAcknowledgePrivateMessages { get; }
 
         /// <summary>
         ///     Gets a value indicating whether to automatically send a privilege notification acknowledgement upon receipt.
-        ///     (Default = true).
         /// </summary>
         public bool? AutoAcknowledgePrivilegeNotifications { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether duplicated distributed search requests should be discarded. (Default = discard duplicates).
+        ///     Gets a value indicating whether duplicated distributed search requests should be discarded.
         /// </summary>
         public bool? DeduplicateSearchRequests { get; }
 
         /// <summary>
-        ///     Gets the number of allowed distributed children. (Default = 25).
+        ///     Gets the number of allowed distributed children.
         /// </summary>
         public int? DistributedChildLimit { get; }
 
@@ -118,7 +126,7 @@ namespace Soulseek
         public ConnectionOptions DistributedConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to establish distributed network connections. (Default = enabled).
+        ///     Gets a value indicating whether to establish distributed network connections.
         /// </summary>
         public bool? EnableDistributedNetwork { get; }
 
@@ -126,6 +134,11 @@ namespace Soulseek
         ///     Gets the options for incoming connections.
         /// </summary>
         public ConnectionOptions IncomingConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the port on which to listen for incoming connections.
+        /// </summary>
+        public int? ListenPort { get; }
 
         /// <summary>
         ///     Gets the options for peer message connections.
