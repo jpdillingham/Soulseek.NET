@@ -1488,6 +1488,7 @@ namespace Soulseek
         ///     Asynchronously applies the specified <paramref name="patch"/> to the client options.
         /// </summary>
         /// <param name="patch">A patch containing the updated options.</param>
+        /// <param name="dryRun">A value indicating that the reconfiguration should be validated without making any changes.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>
         ///     The Task representing the asynchronous operation, including a value indicating whether a server reconnect is
@@ -1495,7 +1496,7 @@ namespace Soulseek
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
+        public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, bool dryRun = false, CancellationToken? cancellationToken = null)
         {
             if (patch == null)
             {
@@ -1513,7 +1514,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
             }
 
-            return ReconfigureOptionsInternalAsync(patch, cancellationToken ?? CancellationToken.None);
+            return ReconfigureOptionsInternalAsync(patch, dryRun, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2940,62 +2941,90 @@ namespace Soulseek
             }
         }
 
-        private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, CancellationToken cancellationToken)
+        private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, bool dryRun, CancellationToken cancellationToken)
         {
             bool reconnectRequired = false;
 
             if (patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork)
             {
-                Options = Options.Patch(enableDistributedNetwork: patch.EnableDistributedNetwork);
+                if (!dryRun)
+                {
+                    Options = Options.With(enableDistributedNetwork: patch.EnableDistributedNetwork);
+                }
+
+                if (Options.EnableDistributedNetwork)
+                {
+                    if (!dryRun)
+                    {
+                        await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    // reconnect and don't send the initial 'have no parents' message to avoid state issues server side
+                    reconnectRequired = true;
+                }
+            }
+
+            if (patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions)
+            {
+                if (!dryRun)
+                {
+                    Options = Options.With(serverConnectionOptions: patch.ServerConnectionOptions);
+                }
+
                 reconnectRequired = true;
             }
 
-            if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
+            if (!dryRun)
             {
-                Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
+                if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
+                {
+                    Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
 
-                Listener.Stop();
+                    Listener.Stop();
 
-                Options = Options.Patch(
-                    listenPort: patch.ListenPort,
-                    incomingConnectionOptions: patch.IncomingConnectionOptions);
+                    Options = Options.With(
+                        listenPort: patch.ListenPort,
+                        incomingConnectionOptions: patch.IncomingConnectionOptions);
 
-                Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
-                Listener.Accepted += ListenerHandler.HandleConnection;
-                Listener.Start();
+                    Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                    Listener.Accepted += ListenerHandler.HandleConnection;
+                    Listener.Start();
 
-                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
 
-                Diagnostic.Debug($"Listener successfully reconfigured");
-            }
+                    Diagnostic.Debug($"Listener successfully reconfigured");
+                }
 
-            if (patch.AcceptPrivateRoomInvitations.HasValue && patch.AcceptPrivateRoomInvitations.Value != Options.AcceptPrivateRoomInvitations)
-            {
-                Diagnostic.Debug($"Accept private room invitations changing from {Options.AcceptPrivateRoomInvitations} to {patch.AcceptPrivateRoomInvitations.Value}");
+                if (patch.AcceptPrivateRoomInvitations.HasValue && patch.AcceptPrivateRoomInvitations.Value != Options.AcceptPrivateRoomInvitations)
+                {
+                    Diagnostic.Debug($"Accept private room invitations changing from {Options.AcceptPrivateRoomInvitations} to {patch.AcceptPrivateRoomInvitations.Value}");
 
-                Options = Options.Patch(acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations);
+                    Options = Options.With(acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations);
 
-                await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
 
-                Diagnostic.Debug($"Private room invitation acceptance successfully reconfigured");
-            }
+                    Diagnostic.Debug($"Private room invitation acceptance successfully reconfigured");
+                }
 
-            Options = Options.Patch(
-                acceptDistributedChildren: patch.AcceptDistributedChildren,
-                distributedChildLimit: patch.DistributedChildLimit,
-                deduplicateSearchRequests: patch.DeduplicateSearchRequests,
-                autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
-                autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
-                peerConnectionOptions: patch.PeerConnectionOptions,
-                transferConnectionOptions: patch.TransferConnectionOptions,
-                incomingConnectionOptions: patch.IncomingConnectionOptions,
-                distributedConnectionOptions: patch.DistributedConnectionOptions);
+                Options = Options.With(
+                    acceptDistributedChildren: patch.AcceptDistributedChildren,
+                    distributedChildLimit: patch.DistributedChildLimit,
+                    deduplicateSearchRequests: patch.DeduplicateSearchRequests,
+                    autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
+                    autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
+                    peerConnectionOptions: patch.PeerConnectionOptions,
+                    transferConnectionOptions: patch.TransferConnectionOptions,
+                    incomingConnectionOptions: patch.IncomingConnectionOptions,
+                    distributedConnectionOptions: patch.DistributedConnectionOptions);
 
-            Diagnostic.Debug("Options reconfigured successfully");
+                Diagnostic.Debug("Options reconfigured successfully");
 
-            if (reconnectRequired)
-            {
-                Diagnostic.Warning("Server reconnect required following options reconfiguration");
+                if (reconnectRequired)
+                {
+                    Diagnostic.Warning("Server reconnect required following options reconfiguration");
+                }
             }
 
             return reconnectRequired;
