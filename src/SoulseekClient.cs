@@ -1342,47 +1342,6 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
-        /// </summary>
-        /// <param name="username">The username with which to log in.</param>
-        /// <param name="password">The password with which to log in.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when a user is already logged in.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
-        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null)
-        {
-            if (string.IsNullOrEmpty(username))
-            {
-                throw new ArgumentException("Username may not be null or an empty string", nameof(username));
-            }
-
-            if (string.IsNullOrEmpty(password))
-            {
-                throw new ArgumentException("Password may not be null or an empty string", nameof(password));
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected))
-            {
-                throw new InvalidOperationException("The client must be connected to log in");
-            }
-
-            if (State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again");
-            }
-
-            return LoginInternalAsync(username, password, cancellationToken ?? CancellationToken.None);
-        }
-
-        /// <summary>
         ///     Asynchronously pings the server to check connectivity.
         /// </summary>
         /// <remarks>The server doesn't seem to be responding; this may have been deprecated.</remarks>
