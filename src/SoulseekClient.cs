@@ -636,7 +636,8 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected and logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -663,12 +664,24 @@ namespace Soulseek
                 throw new ArgumentException("Password may not be null or an empty string", nameof(password));
             }
 
-            if (State.HasFlag(SoulseekClientStates.Connected))
+            if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException("The client is already connected");
+                throw new InvalidOperationException($"The client is already connected and logged in as {Username}.  Disconnect before logging in again");
             }
 
-            return ConnectAndLoginAsync(address, port, username, password, cancellationToken ?? CancellationToken.None);
+            if (!IPAddress.TryParse(address, out IPAddress ipAddress))
+            {
+                try
+                {
+                    ipAddress = Dns.GetHostEntry(address).AddressList[0];
+                }
+                catch (SocketException ex)
+                {
+                    throw new AddressException($"Failed to resolve address '{Address}': {ex.Message}", ex);
+                }
+            }
+
+            return ConnectInternalAsync(address, new IPEndPoint(ipAddress, port), username, password, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
