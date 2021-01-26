@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -615,7 +615,7 @@ namespace Soulseek
         public Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null)
         {
             return ConnectAsync(DefaultAddress, DefaultPort, username, password, cancellationToken ?? CancellationToken.None);
-            }
+        }
 
         /// <summary>
         ///     Asynchronously connects the client to the specified server <paramref name="address"/> and <paramref name="port"/>
@@ -2741,17 +2741,30 @@ namespace Soulseek
             }
         }
 
-        private async Task LoginInternalAsync(string username, string password, CancellationToken cancellationToken)
+        private async Task ConnectInternalAsync(string address, IPEndPoint ipEndPoint, string username, string password, CancellationToken cancellationToken)
         {
-            using var failureCts = new CancellationTokenSource();
-            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, failureCts.Token);
-
             try
             {
                 await StateSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 try
                 {
+                    ServerConnection = ConnectionFactory.GetServerConnection(
+                        ipEndPoint,
+                        ServerConnection_Connected,
+                        ServerConnection_Disconnected,
+                        ServerConnection_MessageRead,
+                        ServerConnection_MessageWritten,
+                        Options.ServerConnectionOptions);
+
+                    await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+                    Address = address;
+                    IPEndPoint = ipEndPoint;
+
+                    using var failureCts = new CancellationTokenSource();
+                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, failureCts.Token);
+
                     var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
 
                     var parentMinSpeedWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentMinSpeed), cancellationToken: combinedCts.Token);
@@ -2789,20 +2802,22 @@ namespace Soulseek
                     else
                     {
                         failureCts.Cancel();
-
-                        var ex = new LoginRejectedException($"The server rejected login attempt: {response.Message}");
-                        Disconnect(ex.Message, exception: ex); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
-                        throw ex;
+                        throw new LoginRejectedException($"The server rejected login attempt: {response.Message}");
                     }
                 }
-                finally
+                catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
                 {
-                    StateSyncRoot.Release();
+                    throw new SoulseekClientException($"Failed to connect: {ex.Message}", ex);
                 }
             }
-            catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex)
             {
-                throw new SoulseekClientException($"Failed to log in as {username}: {ex.Message}", ex);
+                Disconnect(ex.Message, exception: ex);
+                throw;
+            }
+            finally
+            {
+                StateSyncRoot.Release();
             }
         }
 
@@ -2827,83 +2842,83 @@ namespace Soulseek
 
         private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, bool dryRun, CancellationToken cancellationToken)
         {
-                await StateSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await StateSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                try
+            try
+            {
+                bool loggedIn = State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn);
+                bool reconnectRequired = false;
+
+                if (loggedIn && patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork && !patch.EnableDistributedNetwork.Value)
                 {
-                    bool loggedIn = State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn);
-                    bool reconnectRequired = false;
+                    // reconnect and don't send the initial 'have no parents' message to avoid state issues server side that might be caused
+                    // by disabling this on the fly.  the server doesn't have a way to simply shut this off, we can only just log in and
+                    // never ask it for a parent
+                    reconnectRequired = true;
+                }
 
-                    if (loggedIn && patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork && !patch.EnableDistributedNetwork.Value)
+                if (loggedIn && patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions)
+                {
+                    reconnectRequired = true;
+                }
+
+                if (!dryRun)
+                {
+                    if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
                     {
-                        // reconnect and don't send the initial 'have no parents' message to avoid state issues server side that might be caused
-                        // by disabling this on the fly.  the server doesn't have a way to simply shut this off, we can only just log in and
-                        // never ask it for a parent
-                        reconnectRequired = true;
-                    }
+                        Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
 
-                    if (loggedIn && patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions)
-                    {
-                        reconnectRequired = true;
-                    }
-
-                    if (!dryRun)
-                    {
-                        if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
-                        {
-                            Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
-
-                            Listener.Stop();
-
-                            Options = Options.With(
-                                listenPort: patch.ListenPort,
-                                incomingConnectionOptions: patch.IncomingConnectionOptions);
-
-                            Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
-                            Listener.Accepted += ListenerHandler.HandleConnection;
-                            Listener.Start();
-
-                            Diagnostic.Debug($"Listener successfully reconfigured");
-                        }
+                        Listener.Stop();
 
                         Options = Options.With(
-                            enableDistributedNetwork: patch.EnableDistributedNetwork,
-                            acceptDistributedChildren: patch.AcceptDistributedChildren,
-                            distributedChildLimit: patch.DistributedChildLimit,
-                            acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
-                            deduplicateSearchRequests: patch.DeduplicateSearchRequests,
-                            autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
-                            autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
-                            serverConnectionOptions: patch.ServerConnectionOptions,
-                            peerConnectionOptions: patch.PeerConnectionOptions,
-                            transferConnectionOptions: patch.TransferConnectionOptions,
-                            incomingConnectionOptions: patch.IncomingConnectionOptions,
-                            distributedConnectionOptions: patch.DistributedConnectionOptions);
+                            listenPort: patch.ListenPort,
+                            incomingConnectionOptions: patch.IncomingConnectionOptions);
 
-                        Diagnostic.Debug("Options reconfigured successfully");
+                        Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                        Listener.Accepted += ListenerHandler.HandleConnection;
+                        Listener.Start();
 
-                        if (reconnectRequired)
-                        {
-                            Diagnostic.Warning("Server reconnect required following options reconfiguration");
-                        }
-
-                        if (loggedIn)
-                        {
-                            await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
-                        }
+                        Diagnostic.Debug($"Listener successfully reconfigured");
                     }
 
-                    return reconnectRequired;
+                    Options = Options.With(
+                        enableDistributedNetwork: patch.EnableDistributedNetwork,
+                        acceptDistributedChildren: patch.AcceptDistributedChildren,
+                        distributedChildLimit: patch.DistributedChildLimit,
+                        acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
+                        deduplicateSearchRequests: patch.DeduplicateSearchRequests,
+                        autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
+                        autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
+                        serverConnectionOptions: patch.ServerConnectionOptions,
+                        peerConnectionOptions: patch.PeerConnectionOptions,
+                        transferConnectionOptions: patch.TransferConnectionOptions,
+                        incomingConnectionOptions: patch.IncomingConnectionOptions,
+                        distributedConnectionOptions: patch.DistributedConnectionOptions);
+
+                    Diagnostic.Debug("Options reconfigured successfully");
+
+                    if (reconnectRequired)
+                    {
+                        Diagnostic.Warning("Server reconnect required following options reconfiguration");
+                    }
+
+                    if (loggedIn)
+                    {
+                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
+                    }
                 }
+
+                return reconnectRequired;
+            }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to reconfigure options: {ex.Message}.  Any successful reconfiguration has not been rolled back; retry with the same patch until successful or handle this as a fatal Exception", ex);
             }
-                finally
-                {
-                    StateSyncRoot.Release();
-                }
+            finally
+            {
+                StateSyncRoot.Release();
             }
+        }
 
         private async Task RemovePrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
         {
