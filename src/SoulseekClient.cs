@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -2821,7 +2821,7 @@ namespace Soulseek
                         ServerInfoReceived?.Invoke(this, serverInfo);
 
                         Username = username;
-                        
+
                         await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
 
                         ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
@@ -2862,16 +2862,22 @@ namespace Soulseek
             await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, bool dryRun, CancellationToken cancellationToken)
+        private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, CancellationToken cancellationToken)
         {
+            bool IsConnected() => State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn);
+
             await StateSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                bool loggedIn = State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn);
+                // capture the state.  at this point the client is either Connected | LoggedIn, or not.  if not, a reconnect will not be required
+                // and we won't send configuration messages.  it isn't possible to transition into Connected | LoggedIn because of the SyncRoot, but
+                // we can transition *from* Connected | LoggedIn to Disconnected or Disconnecting.  if this happens, we will return false, indicating
+                // that a reconnect is not necessary.  this is safe because the client can't be reconnected while this code holds the SyncRoot semaphore.
+                bool connected = IsConnected();
                 bool reconnectRequired = false;
 
-                if (loggedIn && patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork && !patch.EnableDistributedNetwork.Value)
+                if (connected && patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork && !patch.EnableDistributedNetwork.Value)
                 {
                     // reconnect and don't send the initial 'have no parents' message to avoid state issues server side that might be caused
                     // by disabling this on the fly.  the server doesn't have a way to simply shut this off, we can only just log in and
@@ -2879,62 +2885,62 @@ namespace Soulseek
                     reconnectRequired = true;
                 }
 
-                if (loggedIn && patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions)
+                if (connected && patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions)
                 {
                     reconnectRequired = true;
                 }
 
-                if (!dryRun)
+                if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
                 {
-                    if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
-                    {
-                        Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
+                    Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
 
-                        Listener.Stop();
-
-                        Options = Options.With(
-                            listenPort: patch.ListenPort,
-                            incomingConnectionOptions: patch.IncomingConnectionOptions);
-
-                        Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
-                        Listener.Accepted += ListenerHandler.HandleConnection;
-                        Listener.Start();
-
-                        Diagnostic.Debug($"Listener successfully reconfigured");
-                    }
+                    Listener.Stop();
 
                     Options = Options.With(
-                        enableDistributedNetwork: patch.EnableDistributedNetwork,
-                        acceptDistributedChildren: patch.AcceptDistributedChildren,
-                        distributedChildLimit: patch.DistributedChildLimit,
-                        acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
-                        deduplicateSearchRequests: patch.DeduplicateSearchRequests,
-                        autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
-                        autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
-                        serverConnectionOptions: patch.ServerConnectionOptions,
-                        peerConnectionOptions: patch.PeerConnectionOptions,
-                        transferConnectionOptions: patch.TransferConnectionOptions,
-                        incomingConnectionOptions: patch.IncomingConnectionOptions,
-                        distributedConnectionOptions: patch.DistributedConnectionOptions);
+                        listenPort: patch.ListenPort,
+                        incomingConnectionOptions: patch.IncomingConnectionOptions);
 
-                    Diagnostic.Debug("Options reconfigured successfully");
+                    Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                    Listener.Accepted += ListenerHandler.HandleConnection;
+                    Listener.Start();
+
+                    Diagnostic.Info($"Listener now listening on port {Listener.Port}");
+                }
+
+                Options = Options.With(
+                    enableDistributedNetwork: patch.EnableDistributedNetwork,
+                    acceptDistributedChildren: patch.AcceptDistributedChildren,
+                    distributedChildLimit: patch.DistributedChildLimit,
+                    acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
+                    deduplicateSearchRequests: patch.DeduplicateSearchRequests,
+                    autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
+                    autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
+                    serverConnectionOptions: patch.ServerConnectionOptions,
+                    peerConnectionOptions: patch.PeerConnectionOptions,
+                    transferConnectionOptions: patch.TransferConnectionOptions,
+                    incomingConnectionOptions: patch.IncomingConnectionOptions,
+                    distributedConnectionOptions: patch.DistributedConnectionOptions);
+
+                Diagnostic.Info("Options reconfigured successfully");
+
+                if (IsConnected())
+                {
+                    Diagnostic.Debug($"Updating server with latest configuration");
+                    await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
 
                     if (reconnectRequired)
                     {
-                        Diagnostic.Warning("Server reconnect required following options reconfiguration");
+                        Diagnostic.Warning("Server reconnect required for options to fully take effect");
                     }
 
-                    if (loggedIn)
-                    {
-                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
-                    }
+                    return reconnectRequired;
                 }
 
-                return reconnectRequired;
+                return false;
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new SoulseekClientException($"Failed to reconfigure options: {ex.Message}.  Any successful reconfiguration has not been rolled back; retry with the same patch until successful or handle this as a fatal Exception", ex);
+                throw new SoulseekClientException($"Failed to reconfigure options: {ex.Message}.  Any successful reconfiguration has not been rolled back; retry with the same patch until successful or consider this as a fatal Exception", ex);
             }
             finally
             {
