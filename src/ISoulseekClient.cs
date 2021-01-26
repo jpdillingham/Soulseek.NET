@@ -351,6 +351,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected and logged in.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -378,6 +379,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected and logged in.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
