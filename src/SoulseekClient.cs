@@ -2764,6 +2764,14 @@ namespace Soulseek
 
                 try
                 {
+                    // if another thread somehow managed to get queued behind the semaphore while a previous thread was connecting,
+                    // drop it and don't establish a new connection.  it shouldn't be possible for this method to exit in states other than
+                    // Disconnected or Connected | LoggedIn, and if the previous attempt resulted in a Disconnected state, we want to proceed.
+                    if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn)) 
+                    {
+                        return;
+                    }
+
                     ChangeState(SoulseekClientStates.Connecting, $"Connecting");
 
                     ServerConnection = ConnectionFactory.GetServerConnection(
