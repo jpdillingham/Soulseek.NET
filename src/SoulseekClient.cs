@@ -2939,25 +2939,6 @@ namespace Soulseek
             }
         }
 
-        private IPAddress ResolveIPAddress(string address)
-        {
-            if (IPAddress.TryParse(address, out IPAddress ip))
-            {
-                return ip;
-            }
-            else
-            {
-                try
-                {
-                    return Dns.GetHostEntry(address).AddressList[0];
-                }
-                catch (SocketException ex)
-                {
-                    throw new AddressException($"Failed to resolve address '{Address}': {ex.Message}", ex);
-                }
-            }
-        }
-
         private async Task SearchToCallbackAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var search = new SearchInternal(query.SearchText, token, options);
