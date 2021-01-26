@@ -2827,8 +2827,6 @@ namespace Soulseek
 
         private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, bool dryRun, CancellationToken cancellationToken)
         {
-            try
-            {
                 await StateSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 try
@@ -2897,16 +2895,15 @@ namespace Soulseek
 
                     return reconnectRequired;
                 }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to reconfigure options: {ex.Message}.  Any successful reconfiguration has not been rolled back; retry with the same patch until successful or handle this as a fatal Exception", ex);
+            }
                 finally
                 {
                     StateSyncRoot.Release();
                 }
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
-            {
-                throw new SoulseekClientException($"Failed to reconfigure options: {ex.Message}.  Any successful reconfiguration has NOT been rolled back; retry with the same patch until successful or handle this as a fatal Exception", ex);
-            }
-        }
 
         private async Task RemovePrivateRoomMemberInternalAsync(string roomName, string username, CancellationToken cancellationToken)
         {
