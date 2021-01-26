@@ -607,30 +607,15 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected and logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrEmpty(username))
-            {
-                throw new ArgumentException("Username may not be null or an empty string", nameof(username));
+            return ConnectAsync(DefaultAddress, DefaultPort, username, password, cancellationToken ?? CancellationToken.None);
             }
-
-            if (string.IsNullOrEmpty(password))
-            {
-                throw new ArgumentException("Password may not be null or an empty string", nameof(password));
-            }
-
-            if (State.HasFlag(SoulseekClientStates.Connected))
-            {
-                throw new InvalidOperationException("The client is already connected");
-            }
-
-            return ConnectAndLoginAsync(DefaultAddress, DefaultPort, username, password, cancellationToken ?? CancellationToken.None);
-        }
 
         /// <summary>
         ///     Asynchronously connects the client to the specified server <paramref name="address"/> and <paramref name="port"/>
