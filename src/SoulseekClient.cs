@@ -2757,6 +2757,8 @@ namespace Soulseek
 
                 try
                 {
+                    ChangeState(SoulseekClientStates.Connecting, $"Connecting");
+
                     ServerConnection = ConnectionFactory.GetServerConnection(
                         ipEndPoint,
                         ServerConnection_Connected,
@@ -2770,8 +2772,10 @@ namespace Soulseek
                     Address = address;
                     IPEndPoint = ipEndPoint;
 
-                    using var failureCts = new CancellationTokenSource();
-                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, failureCts.Token);
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggingIn, $"Logging in");
+
+                    using var loginFailureCts = new CancellationTokenSource();
+                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, loginFailureCts.Token);
 
                     var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
 
@@ -2803,13 +2807,14 @@ namespace Soulseek
                         ServerInfoReceived?.Invoke(this, serverInfo);
 
                         Username = username;
-                        ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
-
+                        
                         await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
+
+                        ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
                     }
                     else
                     {
-                        failureCts.Cancel();
+                        loginFailureCts.Cancel();
                         throw new LoginRejectedException($"The server rejected login attempt: {response.Message}");
                     }
                 }
