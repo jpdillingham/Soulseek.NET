@@ -41,8 +41,23 @@ namespace Soulseek
         Connected = 2,
 
         /// <summary>
-        ///     Connected and logged in.
+        ///     Logged in.
         /// </summary>
         LoggedIn = 4,
+
+        /// <summary>
+        ///     Connecting.
+        /// </summary>
+        Connecting = 8,
+
+        /// <summary>
+        ///     Logging in.
+        /// </summary>
+        LoggingIn = 16,
+
+        /// <summary>
+        ///     Disconnecting.
+        /// </summary>
+        Disconnecting = 32,
     }
 }
