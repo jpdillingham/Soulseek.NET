@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -666,7 +666,7 @@ namespace Soulseek
 
             if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The client is already connected and logged in as {Username}.  Disconnect before logging in again");
+                throw new InvalidOperationException($"The client is already connected and logged in");
             }
 
             if (!IPAddress.TryParse(address, out IPAddress ipAddress))
