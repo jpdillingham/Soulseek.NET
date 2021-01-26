@@ -691,8 +691,16 @@ namespace Soulseek
         /// <param name="exception">An optional Exception causing the disconnect.</param>
         public void Disconnect(string message = null, Exception exception = null)
         {
-            if (State != SoulseekClientStates.Disconnected)
+            // note, while this *should* be synchronized with the rest of the state changes via the SyncRoot, it really *cant* be done
+            // safely because this is synchronous and largely event driven. syncing this would require flipping an async WaitAsync() to synchronous via .Result
+            // or using Wait() which would block until it was obtained. either option leads to objectively worse outcomes than if state is momentarily
+            // desynced by an unexpected disconnect.  furthermore, by the time this is executed the server connection has most likely disconnected, so waiting
+            // to act until it is convenient will cause other in flight things to fail in non-deterministic ways (this is already remotely possible, but waiting
+            // here makes it worse).
+            if (State != SoulseekClientStates.Disconnected && State != SoulseekClientStates.Disconnecting)
             {
+                ChangeState(SoulseekClientStates.Disconnecting, message, exception);
+
                 message ??= exception?.Message ?? "Client disconnected";
 
                 if (ServerConnection != default)
