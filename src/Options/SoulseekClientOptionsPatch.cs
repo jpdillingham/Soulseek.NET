@@ -18,6 +18,7 @@
 namespace Soulseek
 {
     using System;
+    using System.Net;
 
     /// <summary>
     ///     A patch for SoulseekClientOptions.
@@ -66,7 +67,7 @@ namespace Soulseek
         {
             ListenPort = listenPort;
 
-            if (ListenPort < 1024 || ListenPort > 65535)
+            if (ListenPort < 1024 || ListenPort > IPEndPoint.MaxPort)
             {
                 throw new ArgumentOutOfRangeException(nameof(listenPort), "Must be between 1024 and 65535");
             }
