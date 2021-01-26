@@ -2232,36 +2232,6 @@ namespace Soulseek
             }
         }
 
-        private async Task ConnectAndLoginAsync(string address, int port, string username, string password, CancellationToken cancellationToken)
-        {
-            await ConnectInternalAsync(address, port, cancellationToken).ConfigureAwait(false);
-            await LoginInternalAsync(username, password, cancellationToken).ConfigureAwait(false);
-        }
-
-        private async Task ConnectInternalAsync(string address, int port, CancellationToken cancellationToken)
-        {
-            try
-            {
-                Address = address;
-                var ipAddress = ResolveIPAddress(address);
-                IPEndPoint = new IPEndPoint(ipAddress, port);
-
-                ServerConnection = ConnectionFactory.GetServerConnection(
-                    IPEndPoint,
-                    ServerConnection_Connected,
-                    ServerConnection_Disconnected,
-                    ServerConnection_MessageRead,
-                    ServerConnection_MessageWritten,
-                    Options.ServerConnectionOptions);
-
-                await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is AddressException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
-            {
-                throw new SoulseekClientException($"Failed to connect: {ex.Message}", ex);
-            }
-        }
-
         private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
