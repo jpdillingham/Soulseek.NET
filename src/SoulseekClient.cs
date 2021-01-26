@@ -671,7 +671,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The client is already connected and logged in");
             }
 
-            if (State.HasFlag(SoulseekClientStates.Connecting) || State.HasFlag(SoulseekClientStates.LoggingIn)) 
+            if (State.HasFlag(SoulseekClientStates.Connecting) || State.HasFlag(SoulseekClientStates.LoggingIn))
             {
                 throw new InvalidOperationException($"A connection is already in the process of being established");
             }
@@ -1398,7 +1398,6 @@ namespace Soulseek
         ///     Asynchronously applies the specified <paramref name="patch"/> to the client options.
         /// </summary>
         /// <param name="patch">A patch containing the updated options.</param>
-        /// <param name="dryRun">A value indicating that the reconfiguration should be validated without making any changes.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>
         ///     The Task representing the asynchronous operation, including a value indicating whether a server reconnect is
@@ -1406,7 +1405,7 @@ namespace Soulseek
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, bool dryRun = false, CancellationToken? cancellationToken = null)
+        public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
         {
             if (patch == null)
             {
@@ -1424,7 +1423,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
             }
 
-            return ReconfigureOptionsInternalAsync(patch, dryRun, cancellationToken ?? CancellationToken.None);
+            return ReconfigureOptionsInternalAsync(patch, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2767,7 +2766,7 @@ namespace Soulseek
                     // if another thread somehow managed to get queued behind the semaphore while a previous thread was connecting,
                     // drop it and don't establish a new connection.  it shouldn't be possible for this method to exit in states other than
                     // Disconnected or Connected | LoggedIn, and if the previous attempt resulted in a Disconnected state, we want to proceed.
-                    if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn)) 
+                    if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn))
                     {
                         return;
                     }
