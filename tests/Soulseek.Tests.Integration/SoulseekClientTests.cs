@@ -17,6 +17,7 @@
 
 namespace Soulseek.Tests.Integration
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Xunit;
 
@@ -28,10 +29,10 @@ namespace Soulseek.Tests.Integration
         {
             using (var client = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => client.ConnectAsync("un", "pw"));
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync(Configuration.Username, Configuration.Password));
 
                 Assert.Null(ex);
-                Assert.Equal(SoulseekClientStates.Connected, client.State);
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, client.State);
             }
         }
 
@@ -39,17 +40,21 @@ namespace Soulseek.Tests.Integration
         [Fact(DisplayName = "Client connect raises StateChanged event")]
         public async Task Client_Connect_Raises_StateChanged_Event()
         {
-            SoulseekClientStateChangedEventArgs args = null;
-
             using (var client = new SoulseekClient())
             {
-                client.StateChanged += (sender, e) => args = e;
+                var events = new List<SoulseekClientStateChangedEventArgs>();
 
-                var ex = await Record.ExceptionAsync(() => client.ConnectAsync("un", "pw"));
+                client.StateChanged += (sender, e) => events.Add(e);
+
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync(Configuration.Username, Configuration.Password));
 
                 Assert.Null(ex);
-                Assert.Equal(SoulseekClientStates.Connected, client.State);
-                Assert.Equal(SoulseekClientStates.Connected, args.State);
+
+                Assert.Equal(4, events.Count);
+                Assert.Equal(SoulseekClientStates.Connecting, events[0].State);
+                Assert.Equal(SoulseekClientStates.Connected, events[1].State);
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggingIn, events[2].State);
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, events[3].State);
             }
         }
 
@@ -59,7 +64,7 @@ namespace Soulseek.Tests.Integration
         {
             using (var client = new SoulseekClient())
             {
-                await client.ConnectAsync("un", "pw");
+                await client.ConnectAsync(Configuration.Username, Configuration.Password);
 
                 var ex = Record.Exception(() => client.Disconnect());
 
@@ -76,7 +81,7 @@ namespace Soulseek.Tests.Integration
 
             using (var client = new SoulseekClient())
             {
-                await client.ConnectAsync("un", "pw");
+                await client.ConnectAsync(Configuration.Username, Configuration.Password);
 
                 client.StateChanged += (sender, e) => args = e;
 
