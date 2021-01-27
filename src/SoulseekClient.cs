@@ -104,17 +104,6 @@ namespace Soulseek
 
             Listener = listener;
 
-            if (Listener == null && Options.ListenPort.HasValue)
-            {
-                Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
-            }
-
-            if (Listener != null)
-            {
-                Listener.Accepted += ListenerHandler.HandleConnection;
-                Listener.Start();
-            }
-
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
@@ -2785,6 +2774,13 @@ namespace Soulseek
 
                     ChangeState(SoulseekClientStates.Connecting, $"Connecting");
 
+                    if (Options.EnableListener)
+                    {
+                        Listener = new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
+                        Listener.Accepted += ListenerHandler.HandleConnection;
+                        Listener.Start();
+                    }
+
                     ServerConnection = ConnectionFactory.GetServerConnection(
                         ipEndPoint,
                         ServerConnection_Connected,
@@ -2864,9 +2860,9 @@ namespace Soulseek
         {
             // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
             // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-            if (Options.ListenPort.HasValue && (Listener?.Listening ?? false))
+            if (Options.EnableListener && Listener.Listening)
             {
-                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
             }
 
             if (Options.EnableDistributedNetwork && !DistributedConnectionManager.HasParent)
@@ -2892,37 +2888,44 @@ namespace Soulseek
                 bool connected = IsConnected();
                 bool reconnectRequired = false;
 
-                if (connected && patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork && !patch.EnableDistributedNetwork.Value)
+                var enableDistributedNetworkChanged = patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork;
+                var distributedConnectionOptionsChanged = patch.DistributedConnectionOptions != null && patch.DistributedConnectionOptions != Options.DistributedConnectionOptions;
+
+                if (connected && ((enableDistributedNetworkChanged && !patch.EnableDistributedNetwork.Value) || distributedConnectionOptionsChanged))
                 {
                     // reconnect and don't send the initial 'have no parents' message to avoid state issues server side that might be caused
                     // by disabling this on the fly.  the server doesn't have a way to simply shut this off, we can only just log in and
-                    // never ask it for a parent
+                    // never ask it for a parent. if we are changing from disabled to enabled, there's no restart required.
                     reconnectRequired = true;
                 }
 
-                if (connected && patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions)
+                var serverConnectionOptionsChanged = patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions;
+
+                if (connected && serverConnectionOptionsChanged)
                 {
                     // required because we need to re-instantiate ServerConnection in order to pass it the new options
                     reconnectRequired = true;
                 }
 
-                if ((patch.ListenPort.HasValue && Options.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort.Value) ||
-                    (patch.ListenPort.HasValue && !Options.ListenPort.HasValue) ||
-                    (patch.IncomingConnectionOptions != null && patch.IncomingConnectionOptions != Options.IncomingConnectionOptions))
-                {
-                    Diagnostic.Debug($"Listen port changing from {Options.ListenPort ?? -1} to {patch.ListenPort}");
+                var enableListenerChanged = patch.EnableListener.HasValue && patch.EnableListener.Value != Options.EnableListener;
+                var listenPortChanged = patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort;
+                var incomingConnectionOptionsChanged = patch.IncomingConnectionOptions != null && patch.IncomingConnectionOptions != Options.IncomingConnectionOptions;
 
+                if (enableListenerChanged || listenPortChanged || incomingConnectionOptionsChanged)
+                {
                     Listener?.Stop();
 
                     Options = Options.With(
+                        enableListener: patch.EnableListener,
                         listenPort: patch.ListenPort,
                         incomingConnectionOptions: patch.IncomingConnectionOptions);
 
-                    Listener = new Listener(Options.ListenPort.Value, Options.IncomingConnectionOptions);
-                    Listener.Accepted += ListenerHandler.HandleConnection;
-                    Listener.Start();
-
-                    Diagnostic.Debug($"Listener now listening on port {Listener.Port}");
+                    if (Options.EnableListener)
+                    {
+                        Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                        Listener.Accepted += ListenerHandler.HandleConnection;
+                        Listener.Start();
+                    }
                 }
 
                 Options = Options.With(
