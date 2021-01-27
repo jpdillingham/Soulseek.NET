@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Integration
         {
             using (var client = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync("un", "pw"));
 
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Connected, client.State);
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Integration
             {
                 client.StateChanged += (sender, e) => args = e;
 
-                var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync("un", "pw"));
 
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Connected, client.State);
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Integration
         {
             using (var client = new SoulseekClient())
             {
-                await client.ConnectAsync();
+                await client.ConnectAsync("un", "pw");
 
                 var ex = Record.Exception(() => client.Disconnect());
 
@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Integration
 
             using (var client = new SoulseekClient())
             {
-                await client.ConnectAsync();
+                await client.ConnectAsync("un", "pw");
 
                 client.StateChanged += (sender, e) => args = e;
 

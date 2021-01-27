@@ -137,7 +137,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -152,7 +152,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, "u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -209,7 +209,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -237,7 +237,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -264,7 +264,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -290,7 +290,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                await s.ConnectAsync(cancellationToken);
+                await s.ConnectAsync("u", "p", cancellationToken);
             }
 
             c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
@@ -304,7 +304,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(serverConnection: c.Object))
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
 
                 Assert.Null(ex);
             }
@@ -329,7 +329,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, "u", "p"));
 
                 Assert.Null(ex);
             }
@@ -354,7 +354,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
-                await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, cancellationToken);
+                await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, "u", "p", cancellationToken);
             }
 
             c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
@@ -434,7 +434,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.StateChanged += (sender, e) => fired = true;
 
-                var task = s.ConnectAsync();
+                var task = s.ConnectAsync("u", "p");
 
                 var c = s.GetProperty<Connection>("ServerConnection");
                 c.RaiseEvent(typeof(Connection), "Connected", EventArgs.Empty);
@@ -470,7 +470,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1, "u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<AddressException>(ex);
@@ -508,7 +508,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1, "u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -523,7 +523,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port, "u", "p"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -628,7 +628,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(serverConnection: c.Object))
             {
-                await s.ConnectAsync();
+                await s.ConnectAsync("u", "p");
 
                 s.InvokeMethod("ServerConnection_Disconnected", null, new ConnectionDisconnectedEventArgs(string.Empty));
 
@@ -644,7 +644,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(serverConnection: c.Object))
             {
-                await s.ConnectAsync();
+                await s.ConnectAsync("u", "p");
 
                 var ex = Record.Exception(() => s.Disconnect());
 
