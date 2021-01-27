@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -2836,15 +2836,15 @@ namespace Soulseek
                 {
                     throw new SoulseekClientException($"Failed to connect: {ex.Message}", ex);
                 }
+                finally
+                {
+                    StateSyncRoot.Release();
+                }
             }
             catch (Exception ex)
             {
                 Disconnect(ex.Message, exception: ex);
                 throw;
-            }
-            finally
-            {
-                StateSyncRoot.Release();
             }
         }
 
