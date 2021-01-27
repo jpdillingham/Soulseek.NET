@@ -160,11 +160,22 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Throws if listen port is invalid")]
-        public void Throws_If_Listen_Port_Is_Invalid()
+        [Fact(DisplayName = "Throws if listen port is too high")]
+        public void Throws_If_Listen_Port_Is_Too_High()
         {
             SoulseekClientOptions x;
             var ex = Record.Exception(() => x = new SoulseekClientOptions(listenPort: 999999999));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if listen port is too low")]
+        public void Throws_If_Listen_Port_Is_Too_Low()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(listenPort: 1023));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -181,8 +192,8 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "With")]
-        [Theory(DisplayName = "Clones with expected properties"), AutoData]
-        public void Clones_With_Expected_Properties(
+        [Theory(DisplayName = "Clones with expected properties given a patch"), AutoData]
+        public void Clones_With_Expected_Properties_Given_A_Patch(
             bool? enableListener,
             bool? enableDistributedNetwork,
             bool? acceptDistributedChildren,
@@ -240,6 +251,75 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
             Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
             Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+        }
+
+        [Trait("Category", "With")]
+        [Theory(DisplayName = "Clones with expected properties"), AutoData]
+        public void Clones_With_Expected_Properties(
+            bool? enableListener,
+            bool? enableDistributedNetwork,
+            bool? acceptDistributedChildren,
+            int? distributedChildLimit,
+            bool? deduplicateSearchRequests,
+            bool? autoAcknowledgePrivateMessages,
+            bool? autoAcknowledgePrivilegeNotifications,
+            bool? acceptPrivateRoomInvitations,
+            ConnectionOptions serverConnectionOptions,
+            ConnectionOptions peerConnectionOptions,
+            ConnectionOptions transferConnectionOptions,
+            ConnectionOptions incomingConnectionOptions,
+            ConnectionOptions distributedConnectionOptions)
+        {
+            var rnd = new Random();
+            var listenPort = rnd.Next(1024, 65535);
+
+            var o = new SoulseekClientOptions().With(
+                enableListener,
+                listenPort,
+                enableDistributedNetwork: enableDistributedNetwork,
+                acceptDistributedChildren: acceptDistributedChildren,
+                distributedChildLimit: distributedChildLimit,
+                deduplicateSearchRequests: deduplicateSearchRequests,
+                autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications: autoAcknowledgePrivilegeNotifications,
+                acceptPrivateRoomInvitations: acceptPrivateRoomInvitations,
+                serverConnectionOptions: serverConnectionOptions,
+                peerConnectionOptions: peerConnectionOptions,
+                transferConnectionOptions: transferConnectionOptions,
+                incomingConnectionOptions: incomingConnectionOptions,
+                distributedConnectionOptions: distributedConnectionOptions);
+
+            Assert.Equal(enableListener, o.EnableListener);
+            Assert.Equal(listenPort, o.ListenPort);
+            Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
+            Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
+            Assert.Equal(distributedChildLimit, o.DistributedChildLimit);
+            Assert.Equal(deduplicateSearchRequests, o.DeduplicateSearchRequests);
+            Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
+            Assert.Equal(autoAcknowledgePrivilegeNotifications, o.AutoAcknowledgePrivilegeNotifications);
+            Assert.Equal(acceptPrivateRoomInvitations, o.AcceptPrivateRoomInvitations);
+            Assert.Equal(peerConnectionOptions, o.PeerConnectionOptions);
+            Assert.Equal(incomingConnectionOptions, o.IncomingConnectionOptions);
+            Assert.Equal(distributedConnectionOptions, o.DistributedConnectionOptions);
+
+            Assert.Equal(serverConnectionOptions.ReadBufferSize, o.ServerConnectionOptions.ReadBufferSize);
+            Assert.Equal(serverConnectionOptions.WriteBufferSize, o.ServerConnectionOptions.WriteBufferSize);
+            Assert.Equal(serverConnectionOptions.ConnectTimeout, o.ServerConnectionOptions.ConnectTimeout);
+            Assert.Equal(-1, o.ServerConnectionOptions.InactivityTimeout);
+
+            Assert.Equal(transferConnectionOptions.ReadBufferSize, o.TransferConnectionOptions.ReadBufferSize);
+            Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
+            Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
+            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+        }
+
+        [Trait("Category", "With")]
+        [Fact(DisplayName = "Does not throw given all nulls")]
+        public void Does_Not_Throw_Given_All_Nulls()
+        {
+            var ex = Record.Exception(() => new SoulseekClientOptions().With());
+
+            Assert.Null(ex);
         }
     }
 }

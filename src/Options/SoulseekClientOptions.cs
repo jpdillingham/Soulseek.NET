@@ -312,6 +312,12 @@ namespace Soulseek
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <returns>The cloned instance.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
+        /// </exception>
         public SoulseekClientOptions With(
             bool? enableListener = null,
             int? listenPort = null,

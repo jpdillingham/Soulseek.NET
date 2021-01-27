@@ -118,11 +118,22 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Throws if listen port is invalid")]
-        public void Throws_If_Listen_Port_Is_Invalid()
+        [Fact(DisplayName = "Throws if listen port is too high")]
+        public void Throws_If_Listen_Port_Is_Too_High()
         {
             SoulseekClientOptionsPatch x;
             var ex = Record.Exception(() => x = new SoulseekClientOptionsPatch(listenPort: 999999999));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if listen port is too low")]
+        public void Throws_If_Listen_Port_Is_Too_Low()
+        {
+            SoulseekClientOptionsPatch x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptionsPatch(listenPort: 1023));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
