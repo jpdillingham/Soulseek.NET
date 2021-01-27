@@ -350,8 +350,8 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is already connected and logged in.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -377,9 +377,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
-        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is already connected and logged in.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -723,6 +723,24 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously applies the specified <paramref name="patch"/> to the client options.
         /// </summary>
+        /// <remarks>
+        ///     <para>Options that can be changed without reinstantiation of the client are limited to those included in <see cref="SoulseekClientOptionsPatch"/>.</para>
+        ///     <para>
+        ///         If the client is connected when this method completes, a re-connect of the client may be required, depending
+        ///         on the options that were changed. The return value of this method indicates when a re-connect is necessary.
+        ///         The following options require a re-connect under these circumstances:
+        ///         <list type="bullet">
+        ///             <item>ServerConnectionOptions</item>
+        ///             <item>DistributedConnectionOptions</item>
+        ///             <item>EnableDistributedNetwork (transition from enabled to disabled only)</item>
+        ///         </list>
+        ///     </para>
+        ///     <para>
+        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options will
+        ///         be updated immediately, but any objects instantiated will not be updated (for example, established connections
+        ///         will retain the options with which they were instantiated).
+        ///     </para>
+        /// </remarks>
         /// <param name="patch">A patch containing the updated options.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>
@@ -730,6 +748,7 @@ namespace Soulseek
         ///     required for the new options to fully take effect.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null);
 
