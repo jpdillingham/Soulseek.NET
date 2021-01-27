@@ -28,6 +28,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptionsPatch"/> class.
         /// </summary>
+        /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
@@ -51,6 +52,7 @@ namespace Soulseek
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptionsPatch(
+            bool? enableListener = null,
             int? listenPort = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
@@ -65,6 +67,7 @@ namespace Soulseek
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null)
         {
+            EnableListener = enableListener;
             ListenPort = listenPort;
 
             if (ListenPort < 1024 || ListenPort > IPEndPoint.MaxPort)
@@ -93,6 +96,11 @@ namespace Soulseek
             IncomingConnectionOptions = incomingConnectionOptions;
             DistributedConnectionOptions = distributedConnectionOptions;
         }
+
+        /// <summary>
+        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
+        /// </summary>
+        public bool? EnableListener { get; }
 
         /// <summary>
         ///     Gets a value indicating whether to accept distributed child connections.

@@ -44,6 +44,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
+        /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
@@ -89,7 +90,8 @@ namespace Soulseek
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptions(
-            int? listenPort = null,
+            bool enableListener = true,
+            int listenPort = 50000,
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
@@ -113,9 +115,10 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
+            EnableListener = enableListener;
             ListenPort = listenPort;
 
-            if (ListenPort.HasValue && (ListenPort.Value < 1024 || ListenPort.Value > IPEndPoint.MaxPort))
+            if (ListenPort < 1024 || ListenPort > IPEndPoint.MaxPort)
             {
                 throw new ArgumentOutOfRangeException(nameof(listenPort), "Must be between 1024 and 65535");
             }
@@ -154,6 +157,11 @@ namespace Soulseek
             EnqueueDownloadAction = enqueueDownloadAction ?? defaultEnqueueDownloadAction;
             PlaceInQueueResponseResolver = placeInQueueResponseResolver ?? defaultPlaceInQueueResponse;
         }
+
+        /// <summary>
+        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
+        /// </summary>
+        public bool EnableListener { get; }
 
         /// <summary>
         ///     Gets a value indicating whether to accept distributed child connections. (Default = accept).
@@ -225,7 +233,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the port on which to listen for incoming connections. (Default = 50000).
         /// </summary>
-        public int? ListenPort { get; }
+        public int ListenPort { get; }
 
         /// <summary>
         ///     Gets the message timeout, in milliseconds, used when waiting for a response from the server or peer. (Default = 5000).
@@ -280,6 +288,7 @@ namespace Soulseek
         /// <summary>
         ///     Creates a clone of this instance with the specified substitutions.
         /// </summary>
+        /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
@@ -301,6 +310,7 @@ namespace Soulseek
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <returns>The cloned instance.</returns>
         public SoulseekClientOptions With(
+            bool? enableListener = null,
             int? listenPort = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
@@ -316,6 +326,7 @@ namespace Soulseek
             ConnectionOptions distributedConnectionOptions = null)
         {
             return new SoulseekClientOptions(
+                enableListener ?? EnableListener,
                 listenPort ?? ListenPort,
                 enableDistributedNetwork ?? EnableDistributedNetwork,
                 acceptDistributedChildren ?? AcceptDistributedChildren,
@@ -354,6 +365,7 @@ namespace Soulseek
             }
 
             return With(
+                patch.EnableListener,
                 patch.ListenPort,
                 patch.EnableDistributedNetwork,
                 patch.AcceptDistributedChildren,
