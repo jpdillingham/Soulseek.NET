@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -102,9 +102,18 @@ namespace Soulseek
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            Listener = listener ?? new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
-            Listener.Accepted += ListenerHandler.HandleConnection;
-            Listener.Start();
+            Listener = listener;
+
+            if (Listener == null && Options.ListenPort.HasValue)
+            {
+                Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
+            }
+
+            if (Listener != null)
+            {
+                Listener.Accepted += ListenerHandler.HandleConnection;
+                Listener.Start();
+            }
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -666,14 +675,14 @@ namespace Soulseek
                 throw new ArgumentException("Password may not be null or an empty string", nameof(password));
             }
 
-            if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The client is already connected and logged in");
-            }
-
             if (State.HasFlag(SoulseekClientStates.Connecting) || State.HasFlag(SoulseekClientStates.LoggingIn))
             {
                 throw new InvalidOperationException($"A connection is already in the process of being established");
+            }
+
+            if (State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The client is already connected");
             }
 
             if (!IPAddress.TryParse(address, out IPAddress ipAddress))
@@ -1412,15 +1421,18 @@ namespace Soulseek
                 throw new ArgumentNullException(nameof(patch), "The patch must not be null");
             }
 
-            try
+            if (patch.ListenPort.HasValue)
             {
-                var listener = new Listener(patch.ListenPort.Value, Options.IncomingConnectionOptions);
-                listener.Start();
-                listener.Stop();
-            }
-            catch (SocketException)
-            {
-                throw new InvalidOperationException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
+                try
+                {
+                    var listener = new Listener(patch.ListenPort.Value, Options.IncomingConnectionOptions);
+                    listener.Start();
+                    listener.Stop();
+                }
+                catch (SocketException)
+                {
+                    throw new InvalidOperationException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
+                }
             }
 
             return ReconfigureOptionsInternalAsync(patch, cancellationToken ?? CancellationToken.None);
@@ -2852,7 +2864,10 @@ namespace Soulseek
         {
             // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
             // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-            await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
+            if (Options.ListenPort.HasValue && (Listener?.Listening ?? false))
+            {
+                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value), cancellationToken).ConfigureAwait(false);
+            }
 
             if (Options.EnableDistributedNetwork && !DistributedConnectionManager.HasParent)
             {
@@ -2887,24 +2902,27 @@ namespace Soulseek
 
                 if (connected && patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions)
                 {
+                    // required because we need to re-instantiate ServerConnection in order to pass it the new options
                     reconnectRequired = true;
                 }
 
-                if (patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort)
+                if ((patch.ListenPort.HasValue && Options.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort.Value) ||
+                    (patch.ListenPort.HasValue && !Options.ListenPort.HasValue) ||
+                    (patch.IncomingConnectionOptions != null && patch.IncomingConnectionOptions != Options.IncomingConnectionOptions))
                 {
-                    Diagnostic.Debug($"Listen port changing from {Options.ListenPort} to {patch.ListenPort.Value}");
+                    Diagnostic.Debug($"Listen port changing from {Options.ListenPort ?? -1} to {patch.ListenPort}");
 
-                    Listener.Stop();
+                    Listener?.Stop();
 
                     Options = Options.With(
                         listenPort: patch.ListenPort,
                         incomingConnectionOptions: patch.IncomingConnectionOptions);
 
-                    Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                    Listener = new Listener(Options.ListenPort.Value, Options.IncomingConnectionOptions);
                     Listener.Accepted += ListenerHandler.HandleConnection;
                     Listener.Start();
 
-                    Diagnostic.Info($"Listener now listening on port {Listener.Port}");
+                    Diagnostic.Debug($"Listener now listening on port {Listener.Port}");
                 }
 
                 Options = Options.With(
