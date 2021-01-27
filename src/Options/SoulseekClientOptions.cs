@@ -289,6 +289,36 @@ namespace Soulseek
         public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResponseResolver { get; }
 
         /// <summary>
+        ///     Creates a clone of this instance with the substitutions in the specified <paramref name="patch"/> applied.
+        /// </summary>
+        /// <param name="patch">The patch containing the desired substitutions.</param>
+        /// <returns>The cloned instance.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
+        public SoulseekClientOptions With(SoulseekClientOptionsPatch patch)
+        {
+            if (patch == null)
+            {
+                throw new ArgumentNullException(nameof(patch), "Must not be null");
+            }
+
+            return With(
+                patch.EnableListener,
+                patch.ListenPort,
+                patch.EnableDistributedNetwork,
+                patch.AcceptDistributedChildren,
+                patch.DistributedChildLimit,
+                patch.DeduplicateSearchRequests,
+                patch.AutoAcknowledgePrivateMessages,
+                patch.AutoAcknowledgePrivilegeNotifications,
+                patch.AcceptPrivateRoomInvitations,
+                patch.ServerConnectionOptions,
+                patch.PeerConnectionOptions,
+                patch.TransferConnectionOptions,
+                patch.IncomingConnectionOptions,
+                patch.DistributedConnectionOptions);
+        }
+
+        /// <summary>
         ///     Creates a clone of this instance with the specified substitutions.
         /// </summary>
         /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
@@ -312,13 +342,7 @@ namespace Soulseek
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <returns>The cloned instance.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
-        /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
-        /// </exception>
-        public SoulseekClientOptions With(
+        internal SoulseekClientOptions With(
             bool? enableListener = null,
             int? listenPort = null,
             bool? enableDistributedNetwork = null,
@@ -359,36 +383,6 @@ namespace Soulseek
                 UserInfoResponseResolver,
                 EnqueueDownloadAction,
                 PlaceInQueueResponseResolver);
-        }
-
-        /// <summary>
-        ///     Creates a clone of this instance with the substitutions in the specified <paramref name="patch"/> applied.
-        /// </summary>
-        /// <param name="patch">The patch containing the desired substitutions.</param>
-        /// <returns>The cloned instance.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
-        public SoulseekClientOptions With(SoulseekClientOptionsPatch patch)
-        {
-            if (patch == null)
-            {
-                throw new ArgumentNullException(nameof(patch), "Must not be null");
-            }
-
-            return With(
-                patch.EnableListener,
-                patch.ListenPort,
-                patch.EnableDistributedNetwork,
-                patch.AcceptDistributedChildren,
-                patch.DistributedChildLimit,
-                patch.DeduplicateSearchRequests,
-                patch.AutoAcknowledgePrivateMessages,
-                patch.AutoAcknowledgePrivilegeNotifications,
-                patch.AcceptPrivateRoomInvitations,
-                patch.ServerConnectionOptions,
-                patch.PeerConnectionOptions,
-                patch.TransferConnectionOptions,
-                patch.IncomingConnectionOptions,
-                patch.DistributedConnectionOptions);
         }
     }
 }
