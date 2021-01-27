@@ -89,7 +89,7 @@ namespace Soulseek
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptions(
-            int listenPort = 50000,
+            int? listenPort = null,
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
@@ -115,7 +115,7 @@ namespace Soulseek
         {
             ListenPort = listenPort;
 
-            if (ListenPort < 1024 || ListenPort > IPEndPoint.MaxPort)
+            if (ListenPort.HasValue && (ListenPort.Value < 1024 || ListenPort.Value > IPEndPoint.MaxPort))
             {
                 throw new ArgumentOutOfRangeException(nameof(listenPort), "Must be between 1024 and 65535");
             }
@@ -225,7 +225,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the port on which to listen for incoming connections. (Default = 50000).
         /// </summary>
-        public int ListenPort { get; }
+        public int? ListenPort { get; }
 
         /// <summary>
         ///     Gets the message timeout, in milliseconds, used when waiting for a response from the server or peer. (Default = 5000).
