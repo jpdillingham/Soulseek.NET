@@ -87,6 +87,9 @@ namespace Soulseek
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </param>
         /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptions(
@@ -159,11 +162,6 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
-        /// </summary>
-        public bool EnableListener { get; }
-
-        /// <summary>
         ///     Gets a value indicating whether to accept distributed child connections. (Default = accept).
         /// </summary>
         public bool AcceptDistributedChildren { get; }
@@ -215,6 +213,11 @@ namespace Soulseek
         ///     Gets a value indicating whether to establish distributed network connections. (Default = enabled).
         /// </summary>
         public bool EnableDistributedNetwork { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
+        /// </summary>
+        public bool EnableListener { get; }
 
         /// <summary>
         ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).
@@ -338,9 +341,9 @@ namespace Soulseek
                 acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
                 MinimumDiagnosticLevel,
                 StartingToken,
-                serverConnectionOptions ?? ServerConnectionOptions,
+                (serverConnectionOptions ?? ServerConnectionOptions).WithoutInactivityTimeout(),
                 peerConnectionOptions ?? PeerConnectionOptions,
-                transferConnectionOptions ?? TransferConnectionOptions,
+                (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
                 incomingConnectionOptions ?? IncomingConnectionOptions,
                 distributedConnectionOptions ?? DistributedConnectionOptions,
                 UserEndPointCache,
@@ -357,11 +360,12 @@ namespace Soulseek
         /// </summary>
         /// <param name="patch">The patch containing the desired substitutions.</param>
         /// <returns>The cloned instance.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         public SoulseekClientOptions With(SoulseekClientOptionsPatch patch)
         {
             if (patch == null)
             {
-                throw new ArgumentNullException(nameof(patch), "The patch must not be null");
+                throw new ArgumentNullException(nameof(patch), "Must not be null");
             }
 
             return With(

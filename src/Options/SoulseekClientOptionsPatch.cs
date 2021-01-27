@@ -49,6 +49,9 @@ namespace Soulseek
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptionsPatch(
@@ -90,17 +93,12 @@ namespace Soulseek
             AutoAcknowledgePrivilegeNotifications = autoAcknowledgePrivilegeNotifications;
             AcceptPrivateRoomInvitations = acceptPrivateRoomInvitations;
 
-            ServerConnectionOptions = serverConnectionOptions;
+            ServerConnectionOptions = serverConnectionOptions?.WithoutInactivityTimeout();
             PeerConnectionOptions = peerConnectionOptions;
-            TransferConnectionOptions = transferConnectionOptions;
+            TransferConnectionOptions = transferConnectionOptions?.WithoutInactivityTimeout();
             IncomingConnectionOptions = incomingConnectionOptions;
             DistributedConnectionOptions = distributedConnectionOptions;
         }
-
-        /// <summary>
-        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
-        /// </summary>
-        public bool? EnableListener { get; }
 
         /// <summary>
         ///     Gets a value indicating whether to accept distributed child connections.
@@ -141,6 +139,11 @@ namespace Soulseek
         ///     Gets a value indicating whether to establish distributed network connections.
         /// </summary>
         public bool? EnableDistributedNetwork { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
+        /// </summary>
+        public bool? EnableListener { get; }
 
         /// <summary>
         ///     Gets the options for incoming connections.
