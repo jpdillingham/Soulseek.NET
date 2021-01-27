@@ -30,6 +30,7 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiation(
+            bool enableListener,
             bool enableDistributedNetwork,
             bool acceptDistributedChildren,
             int distributedChildLimit,
@@ -49,6 +50,7 @@ namespace Soulseek.Tests.Unit
             var listenPort = rnd.Next(1024, 65535);
 
             var o = new SoulseekClientOptions(
+                enableListener,
                 listenPort,
                 userEndPointCache: null,
                 enableDistributedNetwork: enableDistributedNetwork,
@@ -66,6 +68,7 @@ namespace Soulseek.Tests.Unit
                 incomingConnectionOptions: incomingConnectionOptions,
                 distributedConnectionOptions: distributedConnectionOptions);
 
+            Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
             Assert.Null(o.UserEndPointCache);
             Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
