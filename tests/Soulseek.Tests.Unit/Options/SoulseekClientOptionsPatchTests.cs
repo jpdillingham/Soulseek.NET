@@ -84,6 +84,29 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with given data"), AutoData]
+        public void Removes_Timeout_On_Server_And_Transfer_Options(
+            ConnectionOptions serverConnectionOptions,
+            ConnectionOptions transferConnectionOptions)
+        {
+            var o = new SoulseekClientOptionsPatch(
+                serverConnectionOptions: serverConnectionOptions,
+                transferConnectionOptions: transferConnectionOptions);
+
+            Assert.Equal(-1, o.ServerConnectionOptions.InactivityTimeout);
+            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Does not throw if server and transfer options not given")]
+        public void Does_Not_Throw_If_Server_And_Transfer_Options_Not_Given()
+        {
+            var ex = Record.Exception(() => new SoulseekClientOptionsPatch());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Throws if distributed child limit is less than zero")]
         public void Throws_If_Distributed_Child_Limit_Is_Less_Than_Zero()
         {
