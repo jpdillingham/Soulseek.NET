@@ -339,6 +339,23 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "ServerConnection_Connected raises StateChanged event")]
+        public void ServerConnection_Connected_Raises_StateChanged_Event()
+        {
+            SoulseekClientStateChangedEventArgs args = null;
+
+            using (var s = new SoulseekClient())
+            {
+                s.StateChanged += (sender, e) => args = e;
+
+                s.InvokeMethod("ServerConnection_Connected", null, EventArgs.Empty);
+
+                Assert.NotNull(args);
+                Assert.Equal(SoulseekClientStates.Connected, args.State);
+            }
+        }
+
         [Trait("Category", "ConnectInternal")]
         [Theory(DisplayName = "Exits gracefully if already connected and logged in"), AutoData]
         public async Task Exits_Gracefully_If_Already_Connected_And_Logged_In(IPEndPoint endpoint, string username, string password)
@@ -369,6 +386,25 @@ namespace Soulseek.Tests.Unit.Client
             using (client)
             {
                 await client.ConnectAsync(user, password, cancellationToken);
+
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, client.State);
+                Assert.Equal(user, client.Username);
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.AtLeastOnce);
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Address uses given CancellationToken"), AutoData]
+        public async Task Address_uses_Given_CancellationToken(IPEndPoint endpoint, string user, string password)
+        {
+            var cancellationToken = new CancellationToken();
+
+            var (client, mocks) = GetFixture();
+
+            using (client)
+            {
+                await client.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, user, password, cancellationToken);
 
                 Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, client.State);
                 Assert.Equal(user, client.Username);
