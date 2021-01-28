@@ -27,7 +27,6 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -131,14 +130,11 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect handler disconnects")]
-        public async Task Disconnect_Handler_Disconnects()
+        public void Disconnect_Handler_Disconnects()
         {
-            var c = new Mock<IMessageConnection>();
-
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient())
             {
-                await s.ConnectAsync("u", "p");
-
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 s.InvokeMethod("ServerConnection_Disconnected", null, new ConnectionDisconnectedEventArgs(string.Empty));
 
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
@@ -146,14 +142,12 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Disconnect")]
-        [Fact(DisplayName = "Disconnect disconnects")]
-        public async Task Disconnect_Disconnects()
+        [Fact(DisplayName = "Disconnect sets state to Disconnected")]
+        public void Disconnect_Disconnects()
         {
-            var c = new Mock<IMessageConnection>();
-
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient())
             {
-                await s.ConnectAsync("u", "p");
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var ex = Record.Exception(() => s.Disconnect());
 
@@ -166,22 +160,22 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Disconnect raises StateChanged event")]
         public void Disconnect_Raises_StateChanged_Event()
         {
-            var fired = false;
+            var events = new List<SoulseekClientStateChangedEventArgs>();
 
             var c = new Mock<IMessageConnection>();
 
             using (var s = new SoulseekClient(serverConnection: c.Object))
             {
-                s.StateChanged += (sender, e) => fired = true;
+                s.StateChanged += (sender, e) => events.Add(e);
 
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var ex = Record.Exception(() => s.Disconnect());
 
                 Assert.Null(ex);
-                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-                Assert.True(fired);
+                Assert.Equal(SoulseekClientStates.Disconnecting, events[0].State);
+                Assert.Equal(SoulseekClientStates.Disconnected, events[1].State);
             }
         }
 

@@ -2853,7 +2853,7 @@ namespace Soulseek
                         throw new LoginRejectedException($"The server rejected login attempt: {response.Message}");
                     }
                 }
-                catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+                catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
                 {
                     throw new SoulseekClientException($"Failed to connect: {ex.Message}", ex);
                 }
