@@ -1402,9 +1402,9 @@ namespace Soulseek
         ///         </list>
         ///     </para>
         ///     <para>
-        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options will
-        ///         be updated immediately, but any objects instantiated will not be updated (for example, established connections
-        ///         will retain the options with which they were instantiated).
+        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options
+        ///         will be updated immediately, but any objects instantiated will not be updated (for example, established
+        ///         connections will retain the options with which they were instantiated).
         ///     </para>
         /// </remarks>
         /// <param name="patch">A patch containing the updated options.</param>
@@ -2260,6 +2260,107 @@ namespace Soulseek
             }
         }
 
+        private async Task ConnectInternalAsync(string address, IPEndPoint ipEndPoint, string username, string password, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await StateSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                try
+                {
+                    // if another thread somehow managed to get queued behind the semaphore while a previous thread was
+                    // connecting, drop it and don't establish a new connection. it shouldn't be possible for this method to exit
+                    // in states other than Disconnected or Connected | LoggedIn, and if the previous attempt resulted in a
+                    // Disconnected state, we want to proceed.
+                    if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn))
+                    {
+                        return;
+                    }
+
+                    ChangeState(SoulseekClientStates.Connecting, $"Connecting");
+
+                    if (Options.EnableListener)
+                    {
+                        Listener = new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
+                        Listener.Accepted += ListenerHandler.HandleConnection;
+                        Listener.Start();
+                    }
+
+                    ServerConnection = ConnectionFactory.GetServerConnection(
+                        ipEndPoint,
+                        ServerConnection_Connected,
+                        ServerConnection_Disconnected,
+                        ServerConnection_MessageRead,
+                        ServerConnection_MessageWritten,
+                        Options.ServerConnectionOptions);
+
+                    await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+                    Address = address;
+                    IPEndPoint = ipEndPoint;
+
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggingIn, $"Logging in");
+
+                    using var loginFailureCts = new CancellationTokenSource();
+                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, loginFailureCts.Token);
+
+                    var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
+
+                    var parentMinSpeedWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentMinSpeed), cancellationToken: combinedCts.Token);
+                    var parentSpeedRatioWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentSpeedRatio), cancellationToken: combinedCts.Token);
+                    var wishlistIntervalWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.WishlistInterval), cancellationToken: combinedCts.Token);
+
+                    await ServerConnection.WriteAsync(new LoginRequest(username, password), cancellationToken).ConfigureAwait(false);
+
+                    var response = await loginWait.ConfigureAwait(false);
+
+                    if (response.Succeeded)
+                    {
+                        try
+                        {
+                            await Task.WhenAll(parentMinSpeedWait, parentSpeedRatioWait, wishlistIntervalWait).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new ConnectionException("Did not receive one or more expected server messages upon login", ex);
+                        }
+
+                        var serverInfo = new ServerInfo(
+                            await parentMinSpeedWait.ConfigureAwait(false),
+                            await parentSpeedRatioWait.ConfigureAwait(false),
+                            await wishlistIntervalWait.ConfigureAwait(false) * 1000);
+
+                        ServerInfo = serverInfo;
+                        ServerInfoReceived?.Invoke(this, serverInfo);
+
+                        Username = username;
+
+                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
+
+                        ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
+                    }
+                    else
+                    {
+                        loginFailureCts.Cancel();
+                        throw new LoginRejectedException($"The server rejected login attempt: {response.Message}");
+                    }
+                }
+                catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+                {
+                    throw new SoulseekClientException($"Failed to connect: {ex.Message}", ex);
+                }
+                finally
+                {
+                    StateSyncRoot.Release();
+                }
+            }
+            catch (Exception ex)
+            {
+                Disconnect(ex.Message, exception: ex);
+                throw;
+            }
+        }
+
         private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
@@ -2769,123 +2870,6 @@ namespace Soulseek
             }
         }
 
-        private async Task ConnectInternalAsync(string address, IPEndPoint ipEndPoint, string username, string password, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await StateSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                try
-                {
-                    // if another thread somehow managed to get queued behind the semaphore while a previous thread was connecting,
-                    // drop it and don't establish a new connection.  it shouldn't be possible for this method to exit in states other than
-                    // Disconnected or Connected | LoggedIn, and if the previous attempt resulted in a Disconnected state, we want to proceed.
-                    if (State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn))
-                    {
-                        return;
-                    }
-
-                    ChangeState(SoulseekClientStates.Connecting, $"Connecting");
-
-                    if (Options.EnableListener)
-                    {
-                        Listener = new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
-                        Listener.Accepted += ListenerHandler.HandleConnection;
-                        Listener.Start();
-                    }
-
-                    ServerConnection = ConnectionFactory.GetServerConnection(
-                        ipEndPoint,
-                        ServerConnection_Connected,
-                        ServerConnection_Disconnected,
-                        ServerConnection_MessageRead,
-                        ServerConnection_MessageWritten,
-                        Options.ServerConnectionOptions);
-
-                    await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-                    Address = address;
-                    IPEndPoint = ipEndPoint;
-
-                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggingIn, $"Logging in");
-
-                    using var loginFailureCts = new CancellationTokenSource();
-                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, loginFailureCts.Token);
-
-                    var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
-
-                    var parentMinSpeedWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentMinSpeed), cancellationToken: combinedCts.Token);
-                    var parentSpeedRatioWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentSpeedRatio), cancellationToken: combinedCts.Token);
-                    var wishlistIntervalWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.WishlistInterval), cancellationToken: combinedCts.Token);
-
-                    await ServerConnection.WriteAsync(new LoginRequest(username, password), cancellationToken).ConfigureAwait(false);
-
-                    var response = await loginWait.ConfigureAwait(false);
-
-                    if (response.Succeeded)
-                    {
-                        try
-                        {
-                            await Task.WhenAll(parentMinSpeedWait, parentSpeedRatioWait, wishlistIntervalWait).ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            throw new ConnectionException("Did not receive one or more expected server messages upon login", ex);
-                        }
-
-                        var serverInfo = new ServerInfo(
-                            await parentMinSpeedWait.ConfigureAwait(false),
-                            await parentSpeedRatioWait.ConfigureAwait(false),
-                            await wishlistIntervalWait.ConfigureAwait(false) * 1000);
-
-                        ServerInfo = serverInfo;
-                        ServerInfoReceived?.Invoke(this, serverInfo);
-
-                        Username = username;
-
-                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
-
-                        ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
-                    }
-                    else
-                    {
-                        loginFailureCts.Cancel();
-                        throw new LoginRejectedException($"The server rejected login attempt: {response.Message}");
-                    }
-                }
-                catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
-                {
-                    throw new SoulseekClientException($"Failed to connect: {ex.Message}", ex);
-                }
-                finally
-                {
-                    StateSyncRoot.Release();
-                }
-            }
-            catch (Exception ex)
-            {
-                Disconnect(ex.Message, exception: ex);
-                throw;
-            }
-        }
-
-        private async Task SendConfigurationMessagesAsync(CancellationToken cancellationToken)
-        {
-            // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't
-            // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-            if (Options.EnableListener && Listener.Listening)
-            {
-                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
-            }
-
-            if (Options.EnableDistributedNetwork && !DistributedConnectionManager.HasParent)
-            {
-                await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
-            }
-
-            await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
-        }
-
         private async Task<bool> ReconfigureOptionsInternalAsync(SoulseekClientOptionsPatch patch, CancellationToken cancellationToken)
         {
             bool IsConnected() => State.HasFlag(SoulseekClientStates.Connected) && State.HasFlag(SoulseekClientStates.LoggedIn);
@@ -2894,10 +2878,11 @@ namespace Soulseek
 
             try
             {
-                // capture the state.  at this point the client is either Connected | LoggedIn, or not.  if not, a reconnect will not be required
-                // and we won't send configuration messages.  it isn't possible to transition into Connected | LoggedIn because of the SyncRoot, but
-                // we can transition *from* Connected | LoggedIn to Disconnected or Disconnecting.  if this happens, we will return false, indicating
-                // that a reconnect is not necessary.  this is safe because the client can't be reconnected while this code holds the SyncRoot semaphore.
+                // capture the state. at this point the client is either Connected | LoggedIn, or not. if not, a reconnect will
+                // not be required and we won't send configuration messages. it isn't possible to transition into Connected |
+                // LoggedIn because of the SyncRoot, but we can transition *from* Connected | LoggedIn to Disconnected or
+                // Disconnecting. if this happens, we will return false, indicating that a reconnect is not necessary. this is
+                // safe because the client can't be reconnected while this code holds the SyncRoot semaphore.
                 bool connected = IsConnected();
                 bool reconnectRequired = false;
 
@@ -2906,9 +2891,9 @@ namespace Soulseek
 
                 if (connected && ((enableDistributedNetworkChanged && !patch.EnableDistributedNetwork.Value) || distributedConnectionOptionsChanged))
                 {
-                    // reconnect and don't send the initial 'have no parents' message to avoid state issues server side that might be caused
-                    // by disabling this on the fly.  the server doesn't have a way to simply shut this off, we can only just log in and
-                    // never ask it for a parent. if we are changing from disabled to enabled, there's no restart required.
+                    // reconnect and don't send the initial 'have no parents' message to avoid state issues server side that might
+                    // be caused by disabling this on the fly. the server doesn't have a way to simply shut this off, we can only
+                    // just log in and never ask it for a parent. if we are changing from disabled to enabled, there's no restart required.
                     reconnectRequired = true;
                 }
 
@@ -3092,6 +3077,23 @@ namespace Soulseek
 
             await SearchToCallbackAsync(query, ResponseReceived, scope, token, options, cancellationToken).ConfigureAwait(false);
             return responseBag.ToList().AsReadOnly();
+        }
+
+        private async Task SendConfigurationMessagesAsync(CancellationToken cancellationToken)
+        {
+            // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't support
+            // obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
+            if (Options.EnableListener && Listener.Listening)
+            {
+                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
+            }
+
+            if (Options.EnableDistributedNetwork && !DistributedConnectionManager.HasParent)
+            {
+                await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
+            }
+
+            await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
         }
 
         private async Task SendPrivateMessageInternalAsync(string username, string message, CancellationToken cancellationToken)
