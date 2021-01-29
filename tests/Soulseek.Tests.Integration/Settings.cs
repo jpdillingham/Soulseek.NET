@@ -1,4 +1,4 @@
-﻿// <copyright file="Configuration.cs" company="JP Dillingham">
+﻿// <copyright file="Settings.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@ namespace Soulseek.Tests.Integration
     /// <summary>
     ///     Configuration for integration tests.
     /// </summary>
-    public static class Configuration
+    public static class Settings
     {
         /// <summary>
         ///     Gets the username to use when logging in.
