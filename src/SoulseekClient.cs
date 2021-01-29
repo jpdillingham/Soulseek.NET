@@ -1446,7 +1446,7 @@ namespace Soulseek
                 throw new ArgumentNullException(nameof(patch), "The patch must not be null");
             }
 
-            if (patch.ListenPort.HasValue)
+            if (patch.ListenPort.HasValue && patch.ListenPort != Options.ListenPort)
             {
                 Listener listener = null;
 
