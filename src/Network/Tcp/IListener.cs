@@ -30,6 +30,11 @@ namespace Soulseek.Network.Tcp
         event EventHandler<IConnection> Accepted;
 
         /// <summary>
+        ///     Gets the options used when creating new <see cref="IConnection"/> instances.
+        /// </summary>
+        ConnectionOptions ConnectionOptions { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether the listener is listening for connections.
         /// </summary>
         bool Listening { get; }

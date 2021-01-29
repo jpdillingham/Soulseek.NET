@@ -2912,6 +2912,7 @@ namespace Soulseek
                 if (enableListenerChanged || listenPortChanged || incomingConnectionOptionsChanged)
                 {
                     Listener?.Stop();
+                    Listener = null;
 
                     Options = Options.With(
                         enableListener: patch.EnableListener,
