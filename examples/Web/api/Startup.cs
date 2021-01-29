@@ -55,6 +55,8 @@
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
         private ISharedFileCache SharedFileCache { get; set; }
+        private int MaxReconnectAttempts = 3;
+        private int CurrentReconnectAttempts = 0;
 
         public Startup(IConfiguration configuration)
         {
@@ -351,30 +353,28 @@
                 // if ObjectDisposedException, the client is shutting down.
                 if (!(args.Exception is KickedFromServerException || args.Exception is ObjectDisposedException))
                 {
-                    Console.WriteLine($"Attepting to reconnect...");
-                    await Client.ConnectAsync(Username, Password);
+                    Interlocked.Increment(ref CurrentReconnectAttempts);
+
+                    if (CurrentReconnectAttempts <= MaxReconnectAttempts)
+                    {
+                        var wait = CurrentReconnectAttempts ^ 3;
+                        Console.WriteLine($"Waiting {wait} second(s) before reconnect...");
+                        await Task.Delay(wait);
+
+                        Console.WriteLine($"Attepting to reconnect...");
+                        await Client.ConnectAsync(Username, Password);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Unable to reconnect after {CurrentReconnectAttempts} tries.");
+                    }
                 }
             };
 
             Task.Run(async () =>
             {
                 await Client.ConnectAsync(Username, Password);
-
-                await Task.Delay(5000);
-
-                var restart = await Client.ReconfigureOptionsAsync(new SoulseekClientOptionsPatch(listenPort: 50001));
-
-                Console.WriteLine($"Restart required: {restart}");
-
-                await Task.Delay(5000);
-                restart = await Client.ReconfigureOptionsAsync(new SoulseekClientOptionsPatch(enableDistributedNetwork: true));
-
-                Console.WriteLine($"Restart required: {restart}");
-
-                await Task.Delay(5000);
-                restart = await Client.ReconfigureOptionsAsync(new SoulseekClientOptionsPatch(enableDistributedNetwork: false));
-
-                Console.WriteLine($"Restart required: {restart}");
+                CurrentReconnectAttempts = 0;
             }).GetAwaiter().GetResult();
 
             Console.WriteLine($"Connected and logged in.");
