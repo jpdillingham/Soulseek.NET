@@ -690,9 +690,11 @@ namespace Soulseek
 
             if (Options.EnableListener)
             {
+                Listener listener = null;
+
                 try
                 {
-                    var listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                    listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
                     listener.Start();
                 }
                 catch (SocketException)
@@ -701,7 +703,7 @@ namespace Soulseek
                 }
                 finally
                 {
-                    Listener.Stop();
+                    listener.Stop();
                 }
             }
 
@@ -1446,9 +1448,11 @@ namespace Soulseek
 
             if (patch.ListenPort.HasValue)
             {
+                Listener listener = null;
+
                 try
                 {
-                    var listener = new Listener(patch.ListenPort.Value, Options.IncomingConnectionOptions);
+                    listener = new Listener(patch.ListenPort.Value, Options.IncomingConnectionOptions);
                     listener.Start();
                 }
                 catch (SocketException)
@@ -1457,7 +1461,7 @@ namespace Soulseek
                 }
                 finally
                 {
-                    Listener.Stop();
+                    listener.Stop();
                 }
             }
 
