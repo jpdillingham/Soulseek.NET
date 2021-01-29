@@ -694,11 +694,14 @@ namespace Soulseek
                 {
                     var listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
                     listener.Start();
-                    listener.Stop();
                 }
                 catch (SocketException)
                 {
                     throw new ListenPortException($"Failed to start listening on port {Options.ListenPort}; the port may be in use");
+                }
+                finally
+                {
+                    Listener.Stop();
                 }
             }
 
@@ -1447,11 +1450,14 @@ namespace Soulseek
                 {
                     var listener = new Listener(patch.ListenPort.Value, Options.IncomingConnectionOptions);
                     listener.Start();
-                    listener.Stop();
                 }
                 catch (SocketException)
                 {
                     throw new ListenPortException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
+                }
+                finally
+                {
+                    Listener.Stop();
                 }
             }
 
