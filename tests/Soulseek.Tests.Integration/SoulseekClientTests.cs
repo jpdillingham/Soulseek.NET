@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Integration
         {
             using (var client = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => client.ConnectAsync(Configuration.Username, Configuration.Password));
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync(Settings.Username, Settings.Password));
 
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, client.State);
@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Integration
 
                 client.StateChanged += (sender, e) => events.Add(e);
 
-                var ex = await Record.ExceptionAsync(() => client.ConnectAsync(Configuration.Username, Configuration.Password));
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync(Settings.Username, Settings.Password));
 
                 Assert.Null(ex);
 
@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Integration
         {
             using (var client = new SoulseekClient())
             {
-                await client.ConnectAsync(Configuration.Username, Configuration.Password);
+                await client.ConnectAsync(Settings.Username, Settings.Password);
 
                 var ex = Record.Exception(() => client.Disconnect());
 
@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Integration
 
             using (var client = new SoulseekClient())
             {
-                await client.ConnectAsync(Configuration.Username, Configuration.Password);
+                await client.ConnectAsync(Settings.Username, Settings.Password);
 
                 client.StateChanged += (sender, e) => args = e;
 

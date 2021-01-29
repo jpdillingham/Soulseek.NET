@@ -91,7 +91,7 @@
             return Unauthorized();
         }
 
-        private JwtSecurityToken GetJwtSecurityToken()
+        private static JwtSecurityToken GetJwtSecurityToken()
         {
             var issuedUtc = DateTime.UtcNow;
             var expiresUtc = DateTime.UtcNow.AddMilliseconds(Startup.SecurityTokenTTL);

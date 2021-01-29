@@ -55,7 +55,7 @@
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
         private ISharedFileCache SharedFileCache { get; set; }
-        private int MaxReconnectAttempts = 3;
+        private readonly int MaxReconnectAttempts = 3;
         private int CurrentReconnectAttempts = 0;
 
         public Startup(IConfiguration configuration)
