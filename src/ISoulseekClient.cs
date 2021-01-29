@@ -340,44 +340,6 @@ namespace Soulseek
         Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously connects the client to the default server, but does not log in.
-        /// </summary>
-        /// <remarks>
-        ///     To fully establish a connection, <see cref="LoginAsync(string, string, CancellationToken?)"/> must be invoked.
-        /// </remarks>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task ConnectAsync(CancellationToken? cancellationToken = null);
-
-        /// <summary>
-        ///     Asynchronously connects the client to the specified server <paramref name="address"/> and <paramref name="port"/>,
-        ///     but does not log in.
-        /// </summary>
-        /// <remarks>
-        ///     To fully establish a connection, <see cref="LoginAsync(string, string, CancellationToken?)"/> must be invoked.
-        /// </remarks>
-        /// <param name="address">The address of the server to which to connect.</param>
-        /// <param name="port">The port to which to connect.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="address"/> is null, empty, or consists only of whitespace.
-        /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the <paramref name="port"/> is not within the valid port range 0-65535.
-        /// </exception>
-        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task ConnectAsync(string address, int port, CancellationToken? cancellationToken = null);
-
-        /// <summary>
         ///     Asynchronously connects the client to the default server and logs in using the specified
         ///     <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
@@ -388,7 +350,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -414,8 +378,10 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
-        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
+        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -745,24 +711,6 @@ namespace Soulseek
         Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
-        /// </summary>
-        /// <param name="username">The username with which to log in.</param>
-        /// <param name="password">The password with which to log in.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when a user is already logged in.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
-        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null);
-
-        /// <summary>
         ///     Asynchronously pings the server to check connectivity.
         /// </summary>
         /// <remarks>The server doesn't seem to be responding; this may have been deprecated.</remarks>
@@ -773,6 +721,38 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<long> PingServerAsync(CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously applies the specified <paramref name="patch"/> to the client options.
+        /// </summary>
+        /// <remarks>
+        ///     <para>Options that can be changed without reinstantiation of the client are limited to those included in <see cref="SoulseekClientOptionsPatch"/>.</para>
+        ///     <para>
+        ///         If the client is connected when this method completes, a re-connect of the client may be required, depending
+        ///         on the options that were changed. The return value of this method indicates when a re-connect is necessary.
+        ///         The following options require a re-connect under these circumstances:
+        ///         <list type="bullet">
+        ///             <item>ServerConnectionOptions</item>
+        ///             <item>DistributedConnectionOptions</item>
+        ///             <item>EnableDistributedNetwork (transition from enabled to disabled only)</item>
+        ///         </list>
+        ///     </para>
+        ///     <para>
+        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options will
+        ///         be updated immediately, but any objects instantiated will not be updated (for example, established connections
+        ///         will retain the options with which they were instantiated).
+        ///     </para>
+        /// </remarks>
+        /// <param name="patch">A patch containing the updated options.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including a value indicating whether a server reconnect is
+        ///     required for the new options to fully take effect.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified listen port can't be bound.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously removes the specified <paramref name="username"/> from the list of members in the specified private <paramref name="roomName"/>.

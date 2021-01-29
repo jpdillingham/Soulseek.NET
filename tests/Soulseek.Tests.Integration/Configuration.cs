@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClientState.cs" company="JP Dillingham">
+﻿// <copyright file="Configuration.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -15,49 +15,23 @@
 //     along with this program.  If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek
+namespace Soulseek.Tests.Integration
 {
     using System;
 
     /// <summary>
-    ///     Soulseek client state.
+    ///     Configuration for integration tests.
     /// </summary>
-    [Flags]
-    public enum SoulseekClientStates
+    public static class Configuration
     {
         /// <summary>
-        ///     None.
+        ///     Gets the username to use when logging in.
         /// </summary>
-        None = 0,
+        public static string Username => Environment.GetEnvironmentVariable("SLSK_INTEGRATION_USERNAME");
 
         /// <summary>
-        ///     Disconnected.
+        ///     Gets the password to use when logging in.
         /// </summary>
-        Disconnected = 1,
-
-        /// <summary>
-        ///     Connected.
-        /// </summary>
-        Connected = 2,
-
-        /// <summary>
-        ///     Logged in.
-        /// </summary>
-        LoggedIn = 4,
-
-        /// <summary>
-        ///     Connecting.
-        /// </summary>
-        Connecting = 8,
-
-        /// <summary>
-        ///     Logging in.
-        /// </summary>
-        LoggingIn = 16,
-
-        /// <summary>
-        ///     Disconnecting.
-        /// </summary>
-        Disconnecting = 32,
+        public static string Password => Environment.GetEnvironmentVariable("SLSK_INTEGRATION_PASSWORD");
     }
 }

@@ -27,9 +27,7 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
-    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
@@ -129,507 +127,13 @@ namespace Soulseek.Tests.Unit
             }
         }
 
-        [Trait("Category", "Connect")]
-        [Fact(DisplayName = "Connect fails if connected")]
-        public async Task Connect_Fails_If_Connected()
-        {
-            using (var s = new SoulseekClient())
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected);
-
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
-
-                Assert.NotNull(ex);
-                Assert.IsType<InvalidOperationException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect fails if connected"), AutoData]
-        public async Task Connect_Address_Fails_If_Connected(IPEndPoint endpoint)
-        {
-            using (var s = new SoulseekClient())
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected);
-
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
-
-                Assert.NotNull(ex);
-                Assert.IsType<InvalidOperationException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect fails if connected"), AutoData]
-        public async Task Connect_Credentials_Fails_If_Connected(string username, string password)
-        {
-            using (var s = new SoulseekClient())
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected);
-
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
-
-                Assert.NotNull(ex);
-                Assert.IsType<InvalidOperationException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect fails if connected"), AutoData]
-        public async Task Connect_Address_Credentials_Fails_If_Connected(IPEndPoint endpoint, string username, string password)
-        {
-            using (var s = new SoulseekClient())
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected);
-
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
-
-                Assert.NotNull(ex);
-                Assert.IsType<InvalidOperationException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Fact(DisplayName = "Connect throws when TcpConnection throws")]
-        public async Task Connect_Throws_When_TcpConnection_Throws()
-        {
-            var c = new Mock<IMessageConnection>();
-            c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new ConnectionException());
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object))
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
-
-                Assert.NotNull(ex);
-                Assert.IsType<SoulseekClientException>(ex);
-                Assert.IsType<ConnectionException>(ex.InnerException);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Fact(DisplayName = "Connect throws TimeoutException when connection times out")]
-        public async Task Connect_Throws_TimeoutException_When_Connection_Times_Out()
-        {
-            var c = new Mock<IMessageConnection>();
-            c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new TimeoutException());
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object))
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
-
-                Assert.NotNull(ex);
-                Assert.IsType<TimeoutException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Fact(DisplayName = "Connect throws OperationCanceledException when canceled")]
-        public async Task Connect_Throws_OperationCanceledException_When_Canceled()
-        {
-            var c = new Mock<IMessageConnection>();
-            c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new OperationCanceledException());
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object))
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
-
-                Assert.NotNull(ex);
-                Assert.IsType<OperationCanceledException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect uses given CancellationToken"), AutoData]
-        public async Task Connect_Uses_Given_CancellationToken(CancellationToken cancellationToken)
-        {
-            var c = new Mock<IMessageConnection>();
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object))
-            {
-                await s.ConnectAsync(cancellationToken);
-            }
-
-            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
-        }
-
-        [Trait("Category", "Connect")]
-        [Fact(DisplayName = "Connect succeeds when TcpConnection succeeds")]
-        public async Task Connect_Succeeds_When_TcpConnection_Succeeds()
-        {
-            var c = new Mock<IMessageConnection>();
-
-            using (var s = new SoulseekClient(serverConnection: c.Object))
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync());
-
-                Assert.Null(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect address succeeds when TcpConnection succeeds"), AutoData]
-        public async Task Connect_Address_Succeeds_When_TcpConnection_Succeeds(IPEndPoint endpoint)
-        {
-            var c = new Mock<IMessageConnection>();
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object))
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
-
-                Assert.Null(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect address uses given CancellationToken"), AutoData]
-        public async Task Connect_Address_Uses_Given_CancellationToken(IPEndPoint endpoint, CancellationToken cancellationToken)
-        {
-            var c = new Mock<IMessageConnection>();
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object))
-            {
-                await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, cancellationToken);
-            }
-
-            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect address credentials succeeds when TcpConnection succeeds"), AutoData]
-        public async Task Connect_Address_Credentials_Succeeds_When_TcpConnection_Succeeds(IPEndPoint endpoint, string username, string password)
-        {
-            var c = new Mock<IMessageConnection>();
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            var key = new WaitKey(MessageCode.Server.Login);
-
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<LoginResponse>(key, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new LoginResponse(succeeded: true, string.Empty)));
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: waiter.Object))
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
-
-                Assert.Null(ex);
-            }
-
-            waiter.Verify(m => m.Wait<LoginResponse>(key, It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect address login uses given CancellationToken"), AutoData]
-        public async Task Connect_Address_Login_Uses_Given_CancellationToken(IPEndPoint endpoint, string username, string password, CancellationToken cancellationToken)
-        {
-            var c = new Mock<IMessageConnection>();
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            var key = new WaitKey(MessageCode.Server.Login);
-
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<LoginResponse>(key, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new LoginResponse(succeeded: true, string.Empty)));
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: waiter.Object))
-            {
-                await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password, cancellationToken);
-            }
-
-            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
-        }
-
-        [Trait("Category", "Connect")]
-        [Fact(DisplayName = "Connect d StateChanged event")]
-        public async Task Connect_Raises_StateChanged_Event()
-        {
-            var fired = false;
-
-            using (var s = new SoulseekClient())
-            {
-                s.StateChanged += (sender, e) => fired = true;
-
-                var task = s.ConnectAsync();
-
-                var c = s.GetProperty<Connection>("ServerConnection");
-                c.RaiseEvent(typeof(Connection), "Connected", EventArgs.Empty);
-
-                await task;
-
-                Assert.True(fired);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
-        [InlineData(null, "a")]
-        [InlineData("", "a")]
-        [InlineData("a", null)]
-        [InlineData("a", "")]
-        [InlineData("", "")]
-        [InlineData(null, null)]
-        public async Task Connect_Throws_ArgumentException_On_Bad_Input(string username, string password)
-        {
-            using (var s = new SoulseekClient())
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
-
-                Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws AddressException on bad address"), AutoData]
-        public async Task Connect_Throws_ArgumentException_On_Bad_Address(string address)
-        {
-            using (var s = new SoulseekClient())
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
-
-                Assert.NotNull(ex);
-                Assert.IsType<AddressException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
-        [InlineData("127.0.0.1", 1, null, "a")]
-        [InlineData("127.0.0.1", 1, "", "a")]
-        [InlineData("127.0.0.1", 1, "a", null)]
-        [InlineData("127.0.0.1", 1, "a", "")]
-        [InlineData("127.0.0.1", 1, "", "")]
-        [InlineData("127.0.0.1", 1, null, null)]
-        [InlineData(null, 1, "user", "pass")]
-        [InlineData("", 1, "user", "pass")]
-        [InlineData(" ", 1, "user", "pass")]
-        public async Task Connect_Address_Credentials_Throws_ArgumentException_On_Bad_Input(string address, int port, string username, string password)
-        {
-            using (var s = new SoulseekClient())
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, port, username, password));
-
-                Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData(" ")]
-        public async Task Connect_Address_Throws_ArgumentException_On_Bad_Input(string address)
-        {
-            using (var s = new SoulseekClient())
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
-
-                Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws ArgumentOutOfRangeException on bad port")]
-        [InlineData(-1)]
-        [InlineData(65536)]
-        public async Task Connect_Address_Throws_ArgumentException_On_Bad_Port(int port)
-        {
-            using (var s = new SoulseekClient())
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port));
-
-                Assert.NotNull(ex);
-                Assert.IsType<ArgumentOutOfRangeException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws ArgumentOutOfRangeException on bad port")]
-        [InlineData(-1)]
-        [InlineData(65536)]
-        public async Task Connect_Address_Credentials_Throws_ArgumentException_On_Bad_Port(int port)
-        {
-            using (var s = new SoulseekClient())
-            {
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port, "user", "pass"));
-
-                Assert.NotNull(ex);
-                Assert.IsType<ArgumentOutOfRangeException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect throws InvalidOperationException_When_Already_Connected"), AutoData]
-        public async Task Connect_Throws_InvalidOperationException_When_Already_Connected(string username, string password)
-        {
-            using (var s = new SoulseekClient())
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected);
-
-                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
-
-                Assert.NotNull(ex);
-                Assert.IsType<InvalidOperationException>(ex);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect connects and logs in"), AutoData]
-        public async Task Connect_Connects_And_Logs_In(string username, string password)
-        {
-            var c = new Mock<IMessageConnection>();
-
-            var w = new Mock<IWaiter>();
-            w.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: w.Object))
-            {
-                await s.ConnectAsync(username, password);
-
-                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
-            }
-
-            c.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()));
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect login uses given CancellationToken"), AutoData]
-        public async Task Connect_Login_Uses_Given_CancellationToken(string username, string password, CancellationToken cancellationToken)
-        {
-            var c = new Mock<IMessageConnection>();
-
-            var w = new Mock<IWaiter>();
-            w.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
-
-            var factory = new Mock<IConnectionFactory>();
-            factory.Setup(m => m.GetServerConnection(
-                It.IsAny<IPEndPoint>(),
-                It.IsAny<EventHandler>(),
-                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<EventHandler<MessageEventArgs>>(),
-                It.IsAny<ConnectionOptions>(),
-                It.IsAny<ITcpClient>()))
-                .Returns(c.Object);
-
-            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: w.Object))
-            {
-                await s.ConnectAsync(username, password, cancellationToken);
-            }
-
-            c.Verify(m => m.ConnectAsync(cancellationToken), Times.Once);
-        }
-
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect handler disconnects")]
-        public async Task Disconnect_Handler_Disconnects()
+        public void Disconnect_Handler_Disconnects()
         {
-            var c = new Mock<IMessageConnection>();
-
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient())
             {
-                await s.ConnectAsync();
-
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 s.InvokeMethod("ServerConnection_Disconnected", null, new ConnectionDisconnectedEventArgs(string.Empty));
 
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
@@ -637,14 +141,12 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Disconnect")]
-        [Fact(DisplayName = "Disconnect disconnects")]
-        public async Task Disconnect_Disconnects()
+        [Fact(DisplayName = "Disconnect sets state to Disconnected")]
+        public void Disconnect_Disconnects()
         {
-            var c = new Mock<IMessageConnection>();
-
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient())
             {
-                await s.ConnectAsync();
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var ex = Record.Exception(() => s.Disconnect());
 
@@ -657,6 +159,29 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Disconnect raises StateChanged event")]
         public void Disconnect_Raises_StateChanged_Event()
         {
+            var events = new List<SoulseekClientStateChangedEventArgs>();
+
+            var c = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: c.Object))
+            {
+                s.StateChanged += (sender, e) => events.Add(e);
+
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = Record.Exception(() => s.Disconnect());
+
+                Assert.Null(ex);
+
+                Assert.Equal(SoulseekClientStates.Disconnecting, events[0].State);
+                Assert.Equal(SoulseekClientStates.Disconnected, events[1].State);
+            }
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect does not raise StateChanged event if already disconnected")]
+        public void Disconnect_Does_Not_Raise_StateChanged_Event_If_Already_Disconnected()
+        {
             var fired = false;
 
             var c = new Mock<IMessageConnection>();
@@ -665,14 +190,37 @@ namespace Soulseek.Tests.Unit
             {
                 s.StateChanged += (sender, e) => fired = true;
 
-                s.SetProperty("State", ConnectionState.Connected);
+                s.SetProperty("State", SoulseekClientStates.Disconnected);
 
                 var ex = Record.Exception(() => s.Disconnect());
 
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-                Assert.True(fired);
+                Assert.False(fired);
+            }
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect does not raise StateChanged event if disconnecting")]
+        public void Disconnect_Does_Not_Raise_StateChanged_Event_If_Disconnecting()
+        {
+            var fired = false;
+
+            var c = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient(serverConnection: c.Object))
+            {
+                s.StateChanged += (sender, e) => fired = true;
+
+                s.SetProperty("State", SoulseekClientStates.Disconnecting);
+
+                var ex = Record.Exception(() => s.Disconnect());
+
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnecting, s.State);
+
+                Assert.False(fired);
             }
         }
 
@@ -688,7 +236,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.StateChanged += (sender, e) => message = e.Message;
 
-                s.SetProperty("State", ConnectionState.Connected);
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var ex = Record.Exception(() => s.Disconnect());
 
@@ -711,7 +259,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.StateChanged += (sender, e) => message = e.Message;
 
-                s.SetProperty("State", ConnectionState.Connected);
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var ex = Record.Exception(() => s.Disconnect(msg));
 
@@ -735,7 +283,7 @@ namespace Soulseek.Tests.Unit
             {
                 s.StateChanged += (sender, e) => message = e.Message;
 
-                s.SetProperty("State", ConnectionState.Connected);
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var ex = Record.Exception(() => s.InvokeMethod("Disconnect", null, exception));
 

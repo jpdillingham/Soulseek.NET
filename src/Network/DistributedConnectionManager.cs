@@ -60,7 +60,7 @@ namespace Soulseek.Network
 
             WatchdogTimer = new SystemTimer()
             {
-                Enabled = SoulseekClient.Options.EnableDistributedNetwork,
+                Enabled = true,
                 AutoReset = true,
                 Interval = 300000,
             };
@@ -86,7 +86,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => AcceptChildren && HasParent && ChildConnectionDictionary.Count < ChildLimit;
+        public bool CanAcceptChildren => Enabled && AcceptChildren && HasParent && ChildConnectionDictionary.Count < ChildLimit;
 
         /// <summary>
         ///     Gets the current list of child connections.
@@ -121,6 +121,7 @@ namespace Soulseek.Network
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
+        private bool Enabled => SoulseekClient.Options.EnableDistributedNetwork;
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
@@ -298,6 +299,12 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates)
         {
+            if (!Enabled)
+            {
+                Diagnostic.Debug($"Parent connection solicitation ignored; distributed network is not enabled.");
+                return;
+            }
+
             ParentCandidateList = parentCandidates.ToList();
 
             if (HasParent || ParentCandidateList.Count == 0)
@@ -810,7 +817,7 @@ namespace Soulseek.Network
 
         private void WatchdogTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (!HasParent)
+            if (Enabled && !HasParent && SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) && SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 Diagnostic.Warning("No distributed parent connected.  Requesting a list of candidates.");
                 _ = UpdateStatusAsync();
