@@ -607,6 +607,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -638,6 +639,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
+        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -686,6 +688,20 @@ namespace Soulseek
                 }
             }
 
+            if (Options.EnableListener)
+            {
+                try
+                {
+                    var listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                    listener.Start();
+                    listener.Stop();
+                }
+                catch (SocketException)
+                {
+                    throw new ListenPortException($"Failed to start listening on port {Options.ListenPort}; the port may be in use");
+                }
+            }
+
             return ConnectInternalAsync(address, new IPEndPoint(ipAddress, port), username, password, cancellationToken ?? CancellationToken.None);
         }
 
@@ -701,6 +717,8 @@ namespace Soulseek
                 ChangeState(SoulseekClientStates.Disconnecting, message, exception);
 
                 message ??= exception?.Message ?? "Client disconnected";
+
+                Listener?.Stop();
 
                 if (ServerConnection != default)
                 {
@@ -1414,7 +1432,7 @@ namespace Soulseek
         ///     required for the new options to fully take effect.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified listen port can't be bound.</exception>
+        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
         {
@@ -1433,7 +1451,7 @@ namespace Soulseek
                 }
                 catch (SocketException)
                 {
-                    throw new ArgumentException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
+                    throw new ListenPortException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
                 }
             }
 

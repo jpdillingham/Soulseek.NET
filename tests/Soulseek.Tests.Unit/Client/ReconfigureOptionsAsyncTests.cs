@@ -46,8 +46,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
-        [Fact(DisplayName = "Throws ArgumentException given listen port which can not be bound")]
-        public async Task Throws_ArgumentNullException_Given_Listen_Port_Which_Can_Not_Be_Bound()
+        [Fact(DisplayName = "Throws ListenPortException given listen port which can not be bound")]
+        public async Task Throws_ListenPortException_Given_Listen_Port_Which_Can_Not_Be_Bound()
         {
             var (client, mocks) = GetFixture();
 
@@ -67,7 +67,7 @@ namespace Soulseek.Tests.Unit.Client
                     var ex = await Record.ExceptionAsync(() => client.ReconfigureOptionsAsync(patch));
 
                     Assert.NotNull(ex);
-                    Assert.IsType<ArgumentException>(ex);
+                    Assert.IsType<ListenPortException>(ex);
                     Assert.True(ex.Message.ContainsInsensitive($"failed to start listening on port {port}"));
                 }
             }

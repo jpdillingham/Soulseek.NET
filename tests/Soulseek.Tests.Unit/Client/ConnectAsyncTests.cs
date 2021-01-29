@@ -65,6 +65,33 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Throws ListenPortException on bad listen port")]
+        public async Task Address_Throws_ListenPortException_On_Bad_Listen_Port()
+        {
+            var port = Mocks.Port;
+
+            using (var s = new SoulseekClient(new SoulseekClientOptions(enableListener: true, listenPort: port)))
+            {
+                Listener listener = null;
+
+                try
+                {
+                    listener = new Listener(port, new ConnectionOptions());
+                    listener.Start();
+
+                    var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ListenPortException>(ex);
+                }
+                finally
+                {
+                    listener.Stop();
+                }
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Address throws ArgumentOutOfRangeException on bad port")]
         [InlineData(-1)]
         [InlineData(65536)]

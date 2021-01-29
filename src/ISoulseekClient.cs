@@ -352,6 +352,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -380,6 +381,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
+        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
