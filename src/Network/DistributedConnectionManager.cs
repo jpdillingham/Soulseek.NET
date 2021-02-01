@@ -299,6 +299,11 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates)
         {
+            if (SoulseekClient.State.HasFlag(SoulseekClientStates.Disconnected) || SoulseekClient.State.HasFlag(SoulseekClientStates.Disconnecting))
+            {
+                return;
+            }
+
             if (!Enabled)
             {
                 Diagnostic.Debug($"Parent connection solicitation ignored; distributed network is not enabled.");
