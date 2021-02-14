@@ -2245,6 +2245,9 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(enableDistributedNetwork: false));
 
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
             var candidates = new List<(string Username, IPEndPoint IPEndPoint)>();
 
             using (manager)
@@ -2260,6 +2263,9 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task AddParentConnectionAsync_Produces_Warning_Diagnostic_Does_Not_Throw_And_Updates_Status_If_No_Candidates_Connect()
         {
             var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var candidates = new List<(string Username, IPEndPoint IPEndPoint)>
             {
@@ -2292,6 +2298,8 @@ namespace Soulseek.Tests.Unit.Network
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             // mocks for connection #1
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
@@ -2354,6 +2362,8 @@ namespace Soulseek.Tests.Unit.Network
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             // mocks for connection #1
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
@@ -2414,6 +2424,8 @@ namespace Soulseek.Tests.Unit.Network
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             // mocks for connection #1
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
@@ -2479,6 +2491,8 @@ namespace Soulseek.Tests.Unit.Network
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             // mocks for connection #1
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
