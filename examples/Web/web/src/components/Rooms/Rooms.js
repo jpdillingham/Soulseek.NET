@@ -7,6 +7,7 @@ import { Segment, Card, Icon, Input, Ref, List, Loader, Dimmer } from 'semantic-
 import RoomMenu from './RoomMenu';
 import RoomUserList from './RoomUserList';
 import PlaceholderSegment from '../Shared/PlaceholderSegment';
+import DeprecationWarning from '../Shared/DeprecationWarning';
 
 const initialState = {
   active: '',
@@ -154,6 +155,7 @@ class Rooms extends Component {
             joinRoom={this.joinRoom}
           />
         </Segment>
+        <DeprecationWarning/>
         {!active ? 
         <PlaceholderSegment icon='comments'/> :
         <Card className='room-active-card' raised>

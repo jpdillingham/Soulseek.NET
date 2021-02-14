@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import * as transfers from '../../lib/transfers';
+import DeprecationWarning from '../Shared/DeprecationWarning';
 import PlaceholderSegment from '../Shared/PlaceholderSegment';
 
 import TransferGroup from './TransferGroup';
@@ -32,13 +33,19 @@ class Transfers extends Component {
         const { direction } = this.props;
 
         return (
-            downloads.length === 0 ? 
-            <PlaceholderSegment icon={direction}/> :
-            <div className='transfer-segment'>
-                {downloads.map((user, index) => 
-                    <TransferGroup key={index} direction={this.props.direction} user={user}/>
-                )}
-            </div>
+            downloads.length === 0 ?
+            <>
+                <DeprecationWarning className='transfer-card' style={{ marginTop: 14 }}/>
+                <PlaceholderSegment icon={direction}/>
+            </>:
+            <>
+                <DeprecationWarning className='transfer-card' style={{ marginTop: 14 }}/>
+                <div className='transfer-segment'>
+                    {downloads.map((user, index) => 
+                        <TransferGroup key={index} direction={this.props.direction} user={user}/>
+                    )}
+                </div>
+            </>
         );
     }
 }
