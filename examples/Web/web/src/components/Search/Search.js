@@ -6,6 +6,7 @@ import './Search.css';
 
 import Response from './Response';
 import PlaceholderSegment from '../Shared/PlaceholderSegment';
+import DeprecationWarning from '../Shared/DeprecationWarning';
 
 import {
     Segment,
@@ -178,6 +179,7 @@ class Search extends Component {
                         onKeyUp={(e) => e.key === 'Enter' ? this.search() : ''}
                     />
                 </Segment>
+                <DeprecationWarning/>
                 {pending ?
                     <Loader
                         className='search-loader'

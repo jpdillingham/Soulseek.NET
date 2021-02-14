@@ -9,6 +9,7 @@ import {
 
 import ChatMenu from './ChatMenu';
 import PlaceholderSegment from '../Shared/PlaceholderSegment';
+import DeprecationWarning from '../Shared/DeprecationWarning';
 
 const initialState = {
     active: '',
@@ -154,6 +155,7 @@ class Chat extends Component {
                         initiateConversation={this.initiateConversation}
                     />
                 </Segment>
+                <DeprecationWarning/>
                 {!active ? 
                 <PlaceholderSegment icon='comment'/> :
                 <Card className='chat-active-card' raised>

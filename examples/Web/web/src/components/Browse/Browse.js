@@ -15,6 +15,7 @@ import {
 
 import Directory from './Directory';
 import PlaceholderSegment from '../Shared/PlaceholderSegment';
+import DeprecationWarning from '../Shared/DeprecationWarning';
 
 const initialState = { 
   username: '', 
@@ -180,6 +181,7 @@ class Browse extends Component {
             onKeyUp={(e) => e.key === 'Enter' ? this.browse() : ''}
           />
         </Segment>
+        <DeprecationWarning/>
         {pending ? 
           <Loader 
             className='search-loader'

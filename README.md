@@ -73,6 +73,8 @@ The external interface of the library is sparse and well documented; the best re
 
 # Example Web Application
 
+Note that the example application as been superseded by [slskd](https://github.com/slskd/slskd) and will no longer be maintained.
+
 Included is a small [web application](https://github.com/jpdillingham/Soulseek.NET/tree/master/examples/Web) which serves as an example.
 
 It's important to note that there are currently no controls over uploads; anything you share can be downloaded by any number of people at any given time.  With this in mind, consider sharing a small number of files from the example.
