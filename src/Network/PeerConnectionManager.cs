@@ -428,7 +428,6 @@ namespace Soulseek.Network
 
                 var connection = await task.ConfigureAwait(false);
                 connection.Disconnected += MessageConnection_Disconnected;
-                connection.Disconnected -= MessageConnectionCandidate_Disconnected;
 
                 var isDirect = task == direct;
 
@@ -614,7 +613,7 @@ namespace Soulseek.Network
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
             connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
-            connection.Disconnected += MessageConnectionCandidate_Disconnected;
+            connection.Disconnected += (sender, e) => connection.Dispose();
 
             try
             {
@@ -661,7 +660,7 @@ namespace Soulseek.Network
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                 connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
-                connection.Disconnected += MessageConnectionCandidate_Disconnected;
+                connection.Disconnected += (sender, e) => connection.Dispose();
 
                 Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
@@ -749,11 +748,6 @@ namespace Soulseek.Network
             {
                 PendingSolicitationDictionary.TryRemove(solicitationToken, out var _);
             }
-        }
-
-        private void MessageConnectionCandidate_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
-        {
-            ((IMessageConnection)sender).Dispose();
         }
 
         private void MessageConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
