@@ -1,4 +1,4 @@
-// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -288,6 +288,8 @@ namespace Soulseek.Network
                     connection.Dispose();
                     throw;
                 }
+
+                connection.Disconnected += ChildConnection_Disconnected;
 
                 Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 Diagnostic.Info($"{(superseded ? "Updated" : "Added")} child connection to {connection.Username} ({connection.IPEndPoint})");
