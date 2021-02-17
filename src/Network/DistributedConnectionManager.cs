@@ -1,4 +1,4 @@
-﻿// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
+// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -167,6 +167,10 @@ namespace Soulseek.Network
 
                 throw new ConnectionException(msg, ex);
             }
+            finally
+            {
+                await UpdateStatusAsync().ConfigureAwait(false);
+            }
 
             async Task<IMessageConnection> GetConnection()
             {
@@ -238,6 +242,10 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Purging child connection cache of failed connection to {username} ({c.IPEndPoint}).");
                 ChildConnectionDictionary.TryRemove(username, out _);
                 throw new ConnectionException(msg, ex);
+            }
+            finally
+            {
+                await UpdateStatusAsync().ConfigureAwait(false);
             }
 
             async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
