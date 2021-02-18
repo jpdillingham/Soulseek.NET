@@ -186,7 +186,7 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
-                connection.Disconnected += (sender, e) => connection.Dispose();
+                connection.Disconnected += ChildConnectionProvisional_Disconnected;
 
                 try
                 {
@@ -204,6 +204,7 @@ namespace Soulseek.Network
                 }
 
                 connection.Disconnected += ChildConnection_Disconnected;
+                connection.Disconnected -= ChildConnectionProvisional_Disconnected;
 
                 Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
@@ -265,7 +266,7 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
-                connection.Disconnected += (sender, e) => connection.Dispose();
+                connection.Disconnected += ChildConnectionProvisional_Disconnected;
 
                 Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
 
@@ -292,6 +293,7 @@ namespace Soulseek.Network
                 }
 
                 connection.Disconnected += ChildConnection_Disconnected;
+                connection.Disconnected -= ChildConnectionProvisional_Disconnected;
 
                 Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 Diagnostic.Info($"{(superseded ? "Updated" : "Added")} child connection to {connection.Username} ({connection.IPEndPoint})");
@@ -465,6 +467,8 @@ namespace Soulseek.Network
             BranchRoot = branchRoot;
             UpdateStatusAsync().ConfigureAwait(false);
         }
+
+        private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
         private void ChildConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {

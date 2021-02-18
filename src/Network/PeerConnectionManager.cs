@@ -428,7 +428,7 @@ namespace Soulseek.Network
 
                 var connection = await task.ConfigureAwait(false);
                 connection.Disconnected += MessageConnection_Disconnected;
-                connection.Disconnected -= MessageConnectionCandidate_Disconnected;
+                connection.Disconnected -= MessageConnectionProvisional_Disconnected;
 
                 var isDirect = task == direct;
 
@@ -610,7 +610,7 @@ namespace Soulseek.Network
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
             connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
-            connection.Disconnected += MessageConnectionCandidate_Disconnected;
+            connection.Disconnected += MessageConnectionProvisional_Disconnected;
 
             try
             {
@@ -657,7 +657,7 @@ namespace Soulseek.Network
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                 connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
-                connection.Disconnected += MessageConnectionCandidate_Disconnected;
+                connection.Disconnected += MessageConnectionProvisional_Disconnected;
 
                 Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
@@ -739,7 +739,7 @@ namespace Soulseek.Network
             }
         }
 
-        private void MessageConnectionCandidate_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
+        private void MessageConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
         private void MessageConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
