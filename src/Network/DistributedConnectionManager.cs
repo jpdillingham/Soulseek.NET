@@ -89,16 +89,16 @@ namespace Soulseek.Network
         public bool CanAcceptChildren => Enabled && AcceptChildren && HasParent && ChildConnectionDictionary.Count < ChildLimit;
 
         /// <summary>
+        ///     Gets the number of allowed concurrent child connections.
+        /// </summary>
+        public int ChildLimit => SoulseekClient.Options.DistributedChildLimit;
+
+        /// <summary>
         ///     Gets the current list of child connections.
         /// </summary>
         public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children => ChildConnectionDictionary.Values
             .Select(async c => await c.Value.ConfigureAwait(false))
             .Select(c => (c.Result.Username, c.Result.IPEndPoint)).ToList().AsReadOnly();
-
-        /// <summary>
-        ///     Gets the number of allowed concurrent child connections.
-        /// </summary>
-        public int ChildLimit => SoulseekClient.Options.DistributedChildLimit;
 
         /// <summary>
         ///     Gets a value indicating whether a parent connection is established.
@@ -468,8 +468,6 @@ namespace Soulseek.Network
             UpdateStatusAsync().ConfigureAwait(false);
         }
 
-        private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
-
         private void ChildConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
@@ -480,6 +478,8 @@ namespace Soulseek.Network
 
             UpdateStatusAsync().ConfigureAwait(false);
         }
+
+        private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
         private void Dispose(bool disposing)
         {
