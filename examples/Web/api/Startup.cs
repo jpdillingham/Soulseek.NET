@@ -22,7 +22,6 @@
     using Microsoft.Extensions.Hosting;
     using Microsoft.IdentityModel.Tokens;
     using Microsoft.OpenApi.Models;
-    using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.Diagnostics;
     using WebAPI.Entities;
