@@ -2207,6 +2207,8 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
+            mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
             var candidates = new List<(string Username, IPEndPoint IPEndPoint)>
             {
                 ("foo", new IPEndPoint(IPAddress.None, 1)),
@@ -2230,6 +2232,8 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task AddParentConnectionAsync_Returns_If_ParentCandidates_Is_Empty()
         {
             var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var candidates = new List<(string Username, IPEndPoint IPEndPoint)>();
 
