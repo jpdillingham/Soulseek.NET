@@ -131,10 +131,10 @@ namespace Soulseek.Network
 
                 if (cachedConnectionRecord != null)
                 {
-                    // because the cache is Lazy<>, the cached entry may be either a connected or pending connection.
-                    // if we try to reference .Value before the cached function is dispositioned we'll get stuck waiting for it,
-                    // which will prevent this code from superseding the connection until the pending connection times out.
-                    // to get around this the pending connection dictionary was added, allowing us to tell if the connection is still pending.
+                    // because the cache is Lazy<>, the cached entry may be either a connected or pending connection. if we try to
+                    // reference .Value before the cached function is dispositioned we'll get stuck waiting for it, which will
+                    // prevent this code from superseding the connection until the pending connection times out. to get around
+                    // this the pending connection dictionary was added, allowing us to tell if the connection is still pending.
                     // if so, we can just cancel the token and move on.
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
                     {
@@ -143,8 +143,9 @@ namespace Soulseek.Network
                     }
                     else
                     {
-                        // if there's no entry in the pending connection dictionary, the Lazy<> function has completed executing and we know that
-                        // awaiting .Value will return immediately, allowing us to tear down the disconnected event handler.
+                        // if there's no entry in the pending connection dictionary, the Lazy<> function has completed executing
+                        // and we know that awaiting .Value will return immediately, allowing us to tear down the disconnected
+                        // event handler.
                         try
                         {
                             var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
@@ -350,7 +351,8 @@ namespace Soulseek.Network
                     }
                     finally
                     {
-                        // let everyone know this code is done executing and that .Value of the containing cache is safe to await with no delay.
+                        // let everyone know this code is done executing and that .Value of the containing cache is safe to await
+                        // with no delay.
                         PendingInboundIndirectConnectionDictionary.TryRemove(r.Username, out _);
                     }
                 }
@@ -428,6 +430,7 @@ namespace Soulseek.Network
 
                 var connection = await task.ConfigureAwait(false);
                 connection.Disconnected += MessageConnection_Disconnected;
+                connection.Disconnected -= MessageConnectionProvisional_Disconnected;
 
                 var isDirect = task == direct;
 
@@ -609,6 +612,7 @@ namespace Soulseek.Network
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
             connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
+            connection.Disconnected += MessageConnectionProvisional_Disconnected;
 
             try
             {
@@ -655,6 +659,7 @@ namespace Soulseek.Network
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                 connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
+                connection.Disconnected += MessageConnectionProvisional_Disconnected;
 
                 Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
@@ -745,6 +750,8 @@ namespace Soulseek.Network
             TryRemoveMessageConnectionRecord(connection);
             connection.Dispose();
         }
+
+        private void MessageConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
         private void TryRemoveMessageConnectionRecord(IMessageConnection connection)
         {

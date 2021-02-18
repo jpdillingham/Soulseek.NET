@@ -1328,6 +1328,21 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "MessageConnectionProvisional_Disconnected")]
+        [Theory(DisplayName = "MessageConnectionProvisional_Disconnected disposes connection"), AutoData]
+        internal void MessageConnectionProvisional_Disconnected_Disposes_Connection(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.InvokeMethod("MessageConnectionProvisional_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
         [Trait("Category", "MessageConnection_Disconnected")]
         [Theory(DisplayName = "MessageConnection_Disconnected removes and disposes connection"), AutoData]
         internal void MessageConnection_Disconnected_Removes_And_Disposes_Connection(string username, string message)

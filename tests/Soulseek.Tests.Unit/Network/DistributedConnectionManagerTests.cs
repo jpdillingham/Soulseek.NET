@@ -381,7 +381,9 @@ namespace Soulseek.Tests.Unit.Network
         {
             var c = GetMessageConnectionMock(username, endpoint);
 
-            var (manager, _) = GetFixture();
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             using (manager)
             {
@@ -2205,6 +2207,8 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
+            mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
             var candidates = new List<(string Username, IPEndPoint IPEndPoint)>
             {
                 ("foo", new IPEndPoint(IPAddress.None, 1)),
@@ -2228,6 +2232,8 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task AddParentConnectionAsync_Returns_If_ParentCandidates_Is_Empty()
         {
             var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var candidates = new List<(string Username, IPEndPoint IPEndPoint)>();
 
@@ -2794,6 +2800,24 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.True(info.Matches(expected.ToArray()));
             }
+        }
+
+        [Trait("Category", "ChildConnectionProvisional_Disconnected")]
+        [Fact(DisplayName = "ChildConnectionProvisional_Disconnected disposes connection")]
+        internal void ChildConnectionProvisional_Disconnected_Disposes_Connection()
+        {
+            var (manager, mocks) = GetFixture();
+
+            var child = new Mock<IMessageConnection>();
+
+            var args = new ConnectionDisconnectedEventArgs(null);
+
+            using (manager)
+            {
+                manager.InvokeMethod("ChildConnectionProvisional_Disconnected", child.Object, args);
+            }
+
+            child.Verify(m => m.Dispose(), Times.Once);
         }
 
         [Trait("Category", "ChildConnection_Disconnected")]
