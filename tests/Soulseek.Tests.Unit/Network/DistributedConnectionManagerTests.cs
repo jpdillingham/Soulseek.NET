@@ -381,7 +381,9 @@ namespace Soulseek.Tests.Unit.Network
         {
             var c = GetMessageConnectionMock(username, endpoint);
 
-            var (manager, _) = GetFixture();
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             using (manager)
             {
