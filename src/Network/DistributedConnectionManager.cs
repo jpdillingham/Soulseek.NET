@@ -128,7 +128,33 @@ namespace Soulseek.Network
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private bool AcceptChildren => SoulseekClient.Options.AcceptDistributedChildren;
+
+        /// <remarks>
+        ///     <para>Provides a thread-safe collection for managing connecting and connected children.</para>
+        ///     <para>
+        ///         The Lazy value allows us to use the Add and Update functions passed to the concurrent dictionary in a
+        ///         thread-safe manner; the lazy values are swapped into the collection atomically, but the code wrapped in the
+        ///         lazy value is executed when we await the value shortly after.
+        ///     </para>
+        ///     <para>
+        ///         This collection should be used any time a child connection needs to be referenced, such as when broadcasting messages.
+        ///     </para>
+        /// </remarks>
         private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set; } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+
+        /// <remarks>
+        ///     <para>Provides a collection of chilren for which a connection was successfully negotiated.</para>
+        ///     <para>
+        ///         Unlike <see cref="ChildConnectionDictionary"/>, this collection does not include children for which a
+        ///         connection is being established, making it a better representation of children that have successfully
+        ///         connected for status reporting purposes.
+        ///     </para>
+        ///     <para>
+        ///         This collection is redundant but was introduced to get around issues capturing an accurate count for status updates.
+        ///     </para>
+        /// </remarks>
+        private ConcurrentDictionary<string, IPEndPoint> ChildDictionary { get; set; } = new ConcurrentDictionary<string, IPEndPoint>();
+
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
