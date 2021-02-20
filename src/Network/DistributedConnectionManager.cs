@@ -1,4 +1,4 @@
-﻿// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
+// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,9 @@ namespace Soulseek.Network
     /// </summary>
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
-        private readonly object statusSyncRoot = new object();
+        private static readonly int StatusAgeLimit = 300000; // 5 minutes
+        private static readonly int StatusDebounceTime = 5000; // 5 seconds
+        private static readonly int WatchdogTime = 900000; // 15 minutes
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedConnectionManager"/> class.
@@ -58,11 +60,20 @@ namespace Soulseek.Network
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
+            StatusDebounceTimer = new SystemTimer()
+            {
+                Interval = StatusDebounceTime,
+                Enabled = false,
+                AutoReset = false,
+            };
+
+            StatusDebounceTimer.Elapsed += (sender, e) => UpdateStatusAsync().ConfigureAwait(false);
+
             WatchdogTimer = new SystemTimer()
             {
                 Enabled = true,
                 AutoReset = true,
-                Interval = 300000,
+                Interval = WatchdogTime,
             };
 
             WatchdogTimer.Elapsed += WatchdogTimer_Elapsed;
