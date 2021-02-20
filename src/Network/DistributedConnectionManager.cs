@@ -698,12 +698,14 @@ namespace Soulseek.Network
             var parentsIp = HasParent ? ParentConnection.IPEndPoint?.Address : null;
             var branchLevel = HasParent ? BranchLevel : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
+            var childCount = ChildConnectionDictionary.Count;
+            var canAcceptChildren = CanAcceptChildren;
 
             payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
             payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
             payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
-            payload.AddRange(new ChildDepthCommand(ChildConnectionDictionary.Count).ToByteArray());
-            payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
+            payload.AddRange(new ChildDepthCommand(childCount).ToByteArray());
+            payload.AddRange(new AcceptChildrenCommand(canAcceptChildren).ToByteArray());
             payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
 
             var statusHash = Convert.ToBase64String(payload.ToArray());
@@ -734,7 +736,7 @@ namespace Soulseek.Network
                     .Append($"HaveNoParents: {haveNoParents}, ")
                     .Append($"ParentsIP: {parentsIp}, ")
                     .Append($"BranchLevel: {branchLevel}, BranchRoot: {branchRoot}, ")
-                    .Append($"ChildDepth: {ChildConnectionDictionary.Count}, AcceptChildren: {CanAcceptChildren}");
+                    .Append($"ChildDepth: {childCount}, AcceptChildren: {canAcceptChildren}");
 
                 Diagnostic.Info(sb.ToString());
             }
