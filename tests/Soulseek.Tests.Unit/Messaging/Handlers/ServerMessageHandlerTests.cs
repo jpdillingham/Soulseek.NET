@@ -1905,11 +1905,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var conn = new Mock<IMessageConnection>();
 
-            mocks.Client.Setup(m => m.Username)
-                .Returns(username);
-
             var message = GetServerSearchRequest(username, token, query);
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
             var ex = Record.Exception(() => handler.HandleMessageRead(conn.Object, message));
 
