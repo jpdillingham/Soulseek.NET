@@ -1107,7 +1107,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 // bit of a hack here, but this is the expected hash on an uninitialized instance
-                manager.SetProperty("StatusHash", "CAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
+                manager.SetProperty("LastStatusHash", "CAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
                 manager.SetProperty("ParentConnection", conn.Object);
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
