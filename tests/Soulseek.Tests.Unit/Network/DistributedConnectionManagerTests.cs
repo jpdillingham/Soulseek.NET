@@ -230,6 +230,25 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "SetBranchLevel")]
+        [Theory(DisplayName = "SetBranchLevel resets StatusDebounceTimer"), AutoData]
+        public void SetBranchLevel_Resets_StatusDebounceTimer(int branchLevel)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
+
+                Assert.False(timer.Enabled);
+
+                manager.SetBranchLevel(branchLevel);
+
+                Assert.Equal(branchLevel, manager.BranchLevel);
+                Assert.True(timer.Enabled);
+            }
+        }
+
         [Trait("Category", "SetBranchRoot")]
         [Theory(DisplayName = "SetBranchRoot sets branch root"), AutoData]
         public void SetBranchRoot_Sets_Branch_Root(string branchRoot)
@@ -241,6 +260,25 @@ namespace Soulseek.Tests.Unit.Network
                 manager.SetBranchRoot(branchRoot);
 
                 Assert.Equal(branchRoot, manager.BranchRoot);
+            }
+        }
+
+        [Trait("Category", "SetBranchRoot")]
+        [Theory(DisplayName = "SetBranchRoot resets StatusDebounceTimer"), AutoData]
+        public void SetBranchRoot_Resets_StatusDebounceTimer(string branchRoot)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
+
+                Assert.False(timer.Enabled);
+
+                manager.SetBranchRoot(branchRoot);
+
+                Assert.Equal(branchRoot, manager.BranchRoot);
+                Assert.True(timer.Enabled);
             }
         }
 
@@ -457,6 +495,45 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(ctpr.Username, child.Username);
                 Assert.Equal(ctpr.IPAddress, child.IPEndPoint.Address);
                 Assert.Equal(ctpr.Port, child.IPEndPoint.Port);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR resets StatusDebounceTimer on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Resets_StatusDebounceTimer_On_Successful_Connection(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
+
+                Assert.False(timer.Enabled);
+
+                await manager.AddChildConnectionAsync(ctpr);
+
+                var child = manager.Children.FirstOrDefault();
+
+                Assert.Single(manager.Children);
+                Assert.NotEqual(default((string, IPEndPoint)), child);
+                Assert.Equal(ctpr.Username, child.Username);
+                Assert.Equal(ctpr.IPAddress, child.IPEndPoint.Address);
+                Assert.Equal(ctpr.Port, child.IPEndPoint.Port);
+
+                Assert.True(timer.Enabled);
             }
         }
 
@@ -837,6 +914,45 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(username, child.Username);
                 Assert.Equal(endpoint.Address, child.IPEndPoint.Address);
                 Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync resets StatusDebounceTimer on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Resets_StatusDebounceTimer_On_Successful_Connection(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
+
+                Assert.False(timer.Enabled);
+
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+
+                var child = manager.Children.FirstOrDefault();
+
+                Assert.Single(manager.Children);
+                Assert.NotEqual(default((string, IPEndPoint)), child);
+                Assert.Equal(username, child.Username);
+                Assert.Equal(endpoint.Address, child.IPEndPoint.Address);
+                Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
+
+                Assert.True(timer.Enabled);
             }
         }
 
@@ -1310,13 +1426,44 @@ namespace Soulseek.Tests.Unit.Network
             var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
             dict.TryAdd("foo", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
 
+            var dict2 = manager.GetProperty<ConcurrentDictionary<string, IPEndPoint>>("ChildDictionary");
+            dict2.TryAdd("foo", conn.Object.IPEndPoint);
+
             using (manager)
             {
                 manager.SetProperty("ChildConnectionDictionary", dict);
+                manager.SetProperty("ChildDictionary", dict2);
 
                 manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
 
                 Assert.Empty(dict);
+                Assert.Empty(dict2);
+            }
+        }
+
+        [Trait("Category", "ChildConnection_Disconnected")]
+        [Theory(DisplayName = "ChildConnection_Disconnected resets StatusDebounceTimer"), AutoData]
+        internal void ChildConnection_Disconnected_Resets_StatusDebounceTimer(string message)
+        {
+            var (manager, _) = GetFixture();
+
+            var conn = GetMessageConnectionMock("foo", null);
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("foo", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
+
+            using (manager)
+            {
+                manager.SetProperty("ChildConnectionDictionary", dict);
+                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
+
+                Assert.False(timer.Enabled);
+
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
+
+                Assert.Empty(dict);
+
+                Assert.True(timer.Enabled);
             }
         }
 
@@ -2838,6 +2985,47 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("disconnected."))), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusEventually")]
+        [Fact(DisplayName = "UpdateStatusEventually resets StatusDebounceTimer")]
+        internal async Task UpdateStatusEventually_Resets_StatusDebounceTimer()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
+
+                Assert.False(timer.Enabled);
+
+                await manager.InvokeMethod<Task>("UpdateStatusEventuallyAsync");
+
+                Assert.True(timer.Enabled);
+            }
+        }
+
+        [Trait("Category", "UpdateStatusEventually")]
+        [Fact(DisplayName = "UpdateStatusEventually updates immediately if stale")]
+        internal async Task UpdateStatusEventually_Updates_Immediately_If_Stale()
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            using (manager)
+            {
+                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
+                timer.Start();
+                manager.SetProperty("StatusDebounceTimer", timer);
+
+                manager.SetProperty("LastStatusTimestamp", DateTime.UtcNow.AddDays(-365));
+
+                await manager.InvokeMethod<Task>("UpdateStatusEventuallyAsync");
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
