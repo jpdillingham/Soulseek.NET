@@ -259,7 +259,7 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
 
-                UpdateStatusEventually();
+                _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
 
                 return connection;
             }
@@ -353,7 +353,7 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 Diagnostic.Info($"{(superseded ? "Updated" : "Added")} child connection to {connection.Username} ({connection.IPEndPoint})");
 
-                UpdateStatusEventually();
+                _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
 
                 return connection;
             }
@@ -519,7 +519,7 @@ namespace Soulseek.Network
         public void SetBranchLevel(int branchLevel)
         {
             BranchLevel = branchLevel;
-            UpdateStatusEventually();
+            _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -529,7 +529,7 @@ namespace Soulseek.Network
         public void SetBranchRoot(string branchRoot)
         {
             BranchRoot = branchRoot;
-            UpdateStatusEventually();
+            _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
 
         private void ChildConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
@@ -541,7 +541,7 @@ namespace Soulseek.Network
             Diagnostic.Info($"Child connection to {connection.Username} ({connection.IPEndPoint}) disconnected{(e.Message == null ? "." : $": {e.Message}")}");
             connection.Dispose();
 
-            UpdateStatusEventually();
+            _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
 
         private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
@@ -553,6 +553,7 @@ namespace Soulseek.Network
                 if (disposing)
                 {
                     WatchdogTimer.Dispose();
+                    StatusDebounceTimer.Dispose();
                     RemoveAndDisposeAll();
                 }
 
@@ -824,12 +825,12 @@ namespace Soulseek.Network
             }
         }
 
-        private void UpdateStatusEventually()
+        private async Task UpdateStatusEventuallyAsync()
         {
             if (StatusDebounceTimer.Enabled && LastStatusTimestamp.AddMilliseconds(StatusAgeLimit) <= DateTime.UtcNow)
             {
                 Diagnostic.Debug($"Distributed status age exceeds limit of {StatusAgeLimit}ms, forcing an update");
-                UpdateStatusAsync().ConfigureAwait(false);
+                await UpdateStatusAsync().ConfigureAwait(false);
             }
 
             StatusDebounceTimer.Reset();
