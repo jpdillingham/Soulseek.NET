@@ -527,7 +527,13 @@ namespace Soulseek.Tests.Unit.Network
 
                     c.MessageDataRead += (sender, e) => readMessage = e.Code;
 
-                    Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+                    var maxTime = DateTime.UtcNow.AddSeconds(5);
+
+                    // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+                    do
+                    {
+                        Thread.Sleep(100);
+                    } while (readMessage == null && DateTime.UtcNow <= maxTime);
 
                     Assert.Equal(code, BitConverter.ToInt32(readMessage));
                 }
