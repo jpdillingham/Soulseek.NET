@@ -217,11 +217,15 @@ namespace Soulseek.Network.Tcp
 
                     if (Options.ProxyOptions != default)
                     {
+                        var proxy = Options.ProxyOptions;
+
                         connectTask = TcpClient.ConnectThroughProxyAsync(
-                            Options.ProxyOptions.Address,
-                            Options.ProxyOptions.Port,
+                            proxy.IPEndPoint.Address,
+                            proxy.IPEndPoint.Port,
                             IPEndPoint.Address,
-                            IPEndPoint.Port);
+                            IPEndPoint.Port,
+                            proxy.Username,
+                            proxy.Password);
                     }
                     else
                     {
