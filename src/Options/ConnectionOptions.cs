@@ -29,13 +29,22 @@ namespace Soulseek
         /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
         /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
         /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
-        public ConnectionOptions(int readBufferSize = 16384, int writeBufferSize = 16384, int connectTimeout = 5000, int inactivityTimeout = 15000)
+        public ConnectionOptions(
+            int readBufferSize = 16384,
+            int writeBufferSize = 16384,
+            int connectTimeout = 5000,
+            int inactivityTimeout = 15000,
+            ProxyOptions proxyOptions = null)
         {
             ReadBufferSize = readBufferSize;
             WriteBufferSize = writeBufferSize;
             ConnectTimeout = connectTimeout;
             InactivityTimeout = inactivityTimeout;
+
+            ProxyOptions = proxyOptions;
         }
+
+        public ProxyOptions ProxyOptions { get; }
 
         /// <summary>
         ///     Gets the connection timeout, in milliseconds, for client and peer TCP connections. (Default = 5000).
