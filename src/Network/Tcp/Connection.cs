@@ -213,7 +213,20 @@ namespace Soulseek.Network.Tcp
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
                 using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(Options.ConnectTimeout)))
                 {
-                    var connectTask = TcpClient.ConnectAsync(IPEndPoint.Address, IPEndPoint.Port);
+                    Task connectTask;
+
+                    if (Options.ProxyOptions != default)
+                    {
+                        connectTask = TcpClient.ConnectThroughProxyAsync(
+                            Options.ProxyOptions.Address,
+                            Options.ProxyOptions.Port,
+                            IPEndPoint.Address,
+                            IPEndPoint.Port);
+                    }
+                    else
+                    {
+                        connectTask = TcpClient.ConnectAsync(IPEndPoint.Address, IPEndPoint.Port);
+                    }
 
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
                     // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same
