@@ -253,6 +253,7 @@
                 serverConnectionOptions: connectionOptions,
                 peerConnectionOptions: connectionOptions,
                 transferConnectionOptions: connectionOptions,
+                distributedConnectionOptions: connectionOptions,
                 userEndPointCache: new UserEndPointCache(),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
