@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-    using System.Net.Sockets;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -13,15 +12,15 @@
     {
         public static async Task<(string ProxyAddress, int ProxyPort)> ConnectThroughProxyAsync(
             this ITcpClient client,
-            string proxyAddress,
+            IPAddress proxyAddress,
             int proxyPort,
-            string destinationAddress,
+            IPAddress destinationAddress,
             int destinationPort,
             string username = null,
             string password = null,
             CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrEmpty(proxyAddress))
+            if (proxyAddress == default)
             {
                 throw new ArgumentNullException(nameof(proxyAddress));
             }
@@ -31,7 +30,7 @@
                 throw new ArgumentOutOfRangeException(nameof(proxyPort), proxyPort, $"Proxy port must be within {IPEndPoint.MinPort} and {IPEndPoint.MaxPort}, inclusive");
             }
 
-            if (string.IsNullOrEmpty(destinationAddress))
+            if (destinationAddress == default)
             {
                 throw new ArgumentNullException(nameof(destinationAddress));
             }
@@ -73,40 +72,35 @@
 
             cancellationToken ??= CancellationToken.None;
 
-            static async Task<byte[]> ReadAsync(NetworkStream stream, int length, CancellationToken cancellationToken)
+            var usingCredentials = !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
+
+            static async Task<byte[]> ReadAsync(INetworkStream stream, int length, CancellationToken cancellationToken)
             {
                 var buffer = new byte[1024];
                 var bytesRead = await stream.ReadAsync(buffer, 0, length, cancellationToken).ConfigureAwait(false);
                 return buffer.AsSpan().Slice(0, bytesRead).ToArray();
             }
 
-            await client.ConnectAsync(proxyAddress, proxyPort);
+            static Task WriteAsync(INetworkStream stream, byte[] data, CancellationToken cancellationToken)
+                => stream.WriteAsync(data, 0, data.Length, cancellationToken);
+
+            await client.ConnectAsync(proxyAddress, proxyPort).ConfigureAwait(false);
             var stream = client.GetStream();
 
-            // https://tools.ietf.org/html/rfc1928
+            byte[] auth;
 
-            // The client connects to the server, and sends a version identifier/method selection message:
-            // +-----+----------+----------+
-            // | VER | NMETHODS | METHODS  |
-            // +-----+----------+----------+
-            // | 1   | 1        | 1 to 255 |
-            // +-----+----------+----------+
-            var auth = new byte[] { SOCKS_5, 0x01, AUTH_ANONYMOUS };
-
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            if (usingCredentials)
             {
                 auth = new byte[] { SOCKS_5, 0x02, AUTH_ANONYMOUS, AUTH_USERNAME };
             }
+            else
+            {
+                auth = new byte[] { SOCKS_5, 0x01, AUTH_ANONYMOUS };
+            }
 
-            await stream.WriteAsync(auth, cancellationToken.Value);
+            await WriteAsync(stream, auth, cancellationToken.Value).ConfigureAwait(false);
 
-            // The server selects from one of the methods given in METHODS, and sends a METHOD selection message:
-            // +-----+--------+
-            // | VER | METHOD |
-            // +-----+--------+
-            // | 1   | 1      |
-            // +-----+--------+
-            var authResponse = await ReadAsync(stream, 2, cancellationToken.Value);
+            var authResponse = await ReadAsync(stream, 2, cancellationToken.Value).ConfigureAwait(false);
 
             if (authResponse[0] != SOCKS_5)
             {
@@ -118,17 +112,11 @@
                 case AUTH_ANONYMOUS:
                     break;
                 case AUTH_USERNAME:
-                    // https://tools.ietf.org/html/rfc1929
+                    if (!usingCredentials)
+                    {
+                        throw new IOException("Server requests authorization but none was provided");
+                    }
 
-                    // Once the SOCKS V5 server has started, and the client has selected the
-                    // Username / Password Authentication protocol, the Username / Password
-                    // subnegotiation begins.  This begins with the client producing a
-                    // Username / Password request:
-                    // +-----+------+----------+------+----------+
-                    // | VER | ULEN | UNAME    | PLEN | PASSWD   |
-                    // +-----+------+----------+------+----------+
-                    // | 1   | 1    | 1 to 255 | 1    | 1 to 255 |
-                    // +-----+------+----------+------+----------+
                     var creds = new List<byte>() { AUTH_VERSION };
 
                     creds.Add((byte)username.Length);
@@ -137,16 +125,9 @@
                     creds.Add((byte)password.Length);
                     creds.AddRange(Encoding.ASCII.GetBytes(password));
 
-                    await stream.WriteAsync(creds.ToArray(), cancellationToken.Value);
+                    await WriteAsync(stream, creds.ToArray(), cancellationToken.Value).ConfigureAwait(false);
 
-                    // The server verifies the supplied UNAME and PASSWD, and sends the
-                    // following response:
-                    // +----+--------+
-                    // |VER | STATUS |
-                    // +----+--------+
-                    // | 1  |   1    |
-                    // +----+--------+
-                    var credsResponse = await ReadAsync(stream, 2, cancellationToken.Value);
+                    var credsResponse = await ReadAsync(stream, 2, cancellationToken.Value).ConfigureAwait(false);
 
                     if (credsResponse.Length != 2)
                     {
@@ -170,39 +151,25 @@
                     throw new IOException($"Unknown auth METHOD response from server: {authResponse[1]}");
             }
 
-            // The SOCKS request is formed as follows:
-            // +----+-----+-------+------+----------+----------+
-            // |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
-            // +----+-----+-------+------+----------+----------+
-            // | 1  |  1  | X'00' |  1   | Variable |    2     |
-            // +----+-----+-------+------+----------+----------+
             var connection = new List<byte>() { SOCKS_5, CONNECT, EMPTY, DOMAIN };
 
-            connection.Add((byte)destinationAddress.Length);
-            connection.AddRange(Encoding.ASCII.GetBytes(destinationAddress));
+            connection.Add((byte)destinationAddress.ToString().Length);
+            connection.AddRange(Encoding.ASCII.GetBytes(destinationAddress.ToString()));
 
             connection.AddRange(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)destinationPort)));
 
-            await stream.WriteAsync(connection.ToArray(), cancellationToken.Value);
+            await WriteAsync(stream, connection.ToArray(), cancellationToken.Value).ConfigureAwait(false);
 
-            // The SOCKS request information is sent by the client as soon as it has
-            // established a connection to the SOCKS server, and completed the
-            // authentication negotiations.  The server evaluates the request, and
-            // returns a reply formed as follows:
-            // +-----+-----+-------+------+----------+----------+
-            // | VER | REP | RSV   | ATYP | BND.ADDR | BND.PORT |
-            // +-----+-----+-------+------+----------+----------+
-            // | 1   | 1   | X'00' | 1    | Variable | 2        |
-            // +-----+-----+-------+------+----------+----------+
-            var connectionResponse = await ReadAsync(stream, 4, CancellationToken.None);
+            var connectionResponse = await ReadAsync(stream, 4, CancellationToken.None).ConfigureAwait(false);
 
             if (connectionResponse[0] != SOCKS_5)
             {
                 throw new IOException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
             }
+
             if (connectionResponse[1] != EMPTY)
             {
-                string msg = (connectionResponse[1]) switch
+                string msg = connectionResponse[1] switch
                 {
                     0x01 => "General SOCKS server failure",
                     0x02 => "Connection not allowed by ruleset",
@@ -226,22 +193,22 @@
                 switch (connectionResponse[3])
                 {
                     case IPV4:
-                        var boundIPBytes = await ReadAsync(stream, 4, CancellationToken.None);
+                        var boundIPBytes = await ReadAsync(stream, 4, CancellationToken.None).ConfigureAwait(false);
                         boundAddress = new IPAddress(BitConverter.ToUInt32(boundIPBytes, 0)).ToString();
                         break;
                     case DOMAIN:
-                        var lengthBytes = await ReadAsync(stream, 1, CancellationToken.None);
+                        var lengthBytes = await ReadAsync(stream, 1, CancellationToken.None).ConfigureAwait(false);
 
                         if (lengthBytes[0] == ERROR)
                         {
                             throw new IOException("Invalid domain name");
                         }
 
-                        var boundDomainBytes = await ReadAsync(stream, lengthBytes[0], CancellationToken.None);
+                        var boundDomainBytes = await ReadAsync(stream, lengthBytes[0], CancellationToken.None).ConfigureAwait(false);
                         boundAddress = Encoding.ASCII.GetString(boundDomainBytes);
                         break;
                     case IPV6:
-                        var boundIPv6Bytes = await ReadAsync(stream, 16, CancellationToken.None);
+                        var boundIPv6Bytes = await ReadAsync(stream, 16, CancellationToken.None).ConfigureAwait(false);
                         boundAddress = new IPAddress(boundIPv6Bytes).ToString();
                         break;
                     default:
@@ -253,7 +220,7 @@
                 throw new IOException($"Invalid address response from server: {ex.Message}");
             }
 
-            var boundPortBytes = await ReadAsync(stream, 2, CancellationToken.None);
+            var boundPortBytes = await ReadAsync(stream, 2, CancellationToken.None).ConfigureAwait(false);
             boundPort = (ushort)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(boundPortBytes, 0));
 
             return (boundAddress, boundPort);
