@@ -8,9 +8,9 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    internal static class Extensions
+    internal static class ITcpClientExtensions
     {
-        public static async Task<(string ProxyAddress, int ProxyPort)> ConnectThroughProxyAsync(
+        internal static async Task<(string ProxyAddress, int ProxyPort)> ConnectThroughProxyAsync(
             this ITcpClient client,
             IPAddress proxyAddress,
             int proxyPort,
@@ -73,10 +73,10 @@
             cancellationToken ??= CancellationToken.None;
 
             var usingCredentials = !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
+            var buffer = new byte[1024];
 
-            static async Task<byte[]> ReadAsync(INetworkStream stream, int length, CancellationToken cancellationToken)
+            async Task<byte[]> ReadAsync(INetworkStream stream, int length, CancellationToken cancellationToken)
             {
-                var buffer = new byte[1024];
                 var bytesRead = await stream.ReadAsync(buffer, 0, length, cancellationToken).ConfigureAwait(false);
                 return buffer.AsSpan().Slice(0, bytesRead).ToArray();
             }
@@ -104,7 +104,7 @@
 
             if (authResponse[0] != SOCKS_5)
             {
-                throw new IOException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
+                throw new ConnectionProxyException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
             }
 
             switch (authResponse[1])
@@ -114,7 +114,7 @@
                 case AUTH_USERNAME:
                     if (!usingCredentials)
                     {
-                        throw new IOException("Server requests authorization but none was provided");
+                        throw new ConnectionProxyException("Server requests authorization but none was provided");
                     }
 
                     var creds = new List<byte>() { AUTH_VERSION };
@@ -131,24 +131,24 @@
 
                     if (credsResponse.Length != 2)
                     {
-                        throw new IOException("Abnormal authentication response from server");
+                        throw new ConnectionProxyException("Abnormal authentication response from server");
                     }
 
                     if (credsResponse[0] != AUTH_VERSION)
                     {
-                        throw new IOException($"Invalid authentication subnegotiation version (expected: {AUTH_VERSION}, received: {credsResponse[0]})");
+                        throw new ConnectionProxyException($"Invalid authentication subnegotiation version (expected: {AUTH_VERSION}, received: {credsResponse[0]})");
                     }
 
                     if (credsResponse[1] != EMPTY)
                     {
-                        throw new IOException($"Authentication failed: error code {credsResponse[1]}");
+                        throw new ConnectionProxyException($"Authentication failed: error code {credsResponse[1]}");
                     }
 
                     break;
                 case ERROR:
-                    throw new IOException($"No acceptable authentication methods");
+                    throw new ConnectionProxyException($"Server does not support the specified authentication method(s)");
                 default:
-                    throw new IOException($"Unknown auth METHOD response from server: {authResponse[1]}");
+                    throw new ConnectionProxyException($"Unknown auth METHOD response from server: {authResponse[1]}");
             }
 
             var connection = new List<byte>() { SOCKS_5, CONNECT, EMPTY, DOMAIN };
@@ -164,7 +164,7 @@
 
             if (connectionResponse[0] != SOCKS_5)
             {
-                throw new IOException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
+                throw new ConnectionProxyException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
             }
 
             if (connectionResponse[1] != EMPTY)
@@ -182,7 +182,7 @@
                     _ => $"Unknown SOCKS error {connectionResponse[1]}",
                 };
 
-                throw new IOException($"SOCKS connection failed: {msg}");
+                throw new ConnectionProxyException($"SOCKS connection failed: {msg}");
             }
 
             string boundAddress;
@@ -201,7 +201,7 @@
 
                         if (lengthBytes[0] == ERROR)
                         {
-                            throw new IOException("Invalid domain name");
+                            throw new ConnectionProxyException("Invalid domain name");
                         }
 
                         var boundDomainBytes = await ReadAsync(stream, lengthBytes[0], CancellationToken.None).ConfigureAwait(false);
@@ -212,12 +212,12 @@
                         boundAddress = new IPAddress(boundIPv6Bytes).ToString();
                         break;
                     default:
-                        throw new IOException($"Unknown SOCKS Address type (expected: one of {IPV4}, {DOMAIN}, {IPV6}, received: {connectionResponse[3]})");
+                        throw new ConnectionProxyException($"Unknown SOCKS Address type (expected: one of {IPV4}, {DOMAIN}, {IPV6}, received: {connectionResponse[3]})");
                 }
             }
             catch (Exception ex)
             {
-                throw new IOException($"Invalid address response from server: {ex.Message}");
+                throw new ConnectionProxyException($"Invalid address response from server: {ex.Message}");
             }
 
             var boundPortBytes = await ReadAsync(stream, 2, CancellationToken.None).ConfigureAwait(false);
