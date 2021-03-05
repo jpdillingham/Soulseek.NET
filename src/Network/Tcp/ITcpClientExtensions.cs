@@ -151,11 +151,9 @@
                     throw new ConnectionProxyException($"Unknown auth METHOD response from server: {authResponse[1]}");
             }
 
-            var connection = new List<byte>() { SOCKS_5, CONNECT, EMPTY, DOMAIN };
+            var connection = new List<byte>() { SOCKS_5, CONNECT, EMPTY, IPV4 };
 
-            connection.Add((byte)destinationAddress.ToString().Length);
-            connection.AddRange(Encoding.ASCII.GetBytes(destinationAddress.ToString()));
-
+            connection.AddRange(destinationAddress.GetAddressBytes());
             connection.AddRange(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)destinationPort)));
 
             await WriteAsync(stream, connection.ToArray(), cancellationToken.Value).ConfigureAwait(false);
