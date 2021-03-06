@@ -1,15 +1,50 @@
-﻿namespace Soulseek.Network.Tcp
+﻿// <copyright file="ITcpClientExtensions.cs" company="JP Dillingham">
+//     Copyright (c) JP Dillingham. All rights reserved.
+//
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+//
+//     You should have received a copy of the GNU General Public License
+//     along with this program.  If not, see https://www.gnu.org/licenses/.
+// </copyright>
+
+namespace Soulseek.Network.Tcp
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Net;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
+    /// <summary>
+    ///     Extension methods for <see cref="ITcpClient"/>.
+    /// </summary>
     internal static class ITcpClientExtensions
     {
+        /// <summary>
+        ///     Connects to the specified <paramref name="destinationAddress"/> and <paramref name="destinationPort"/> via the
+        ///     specified <paramref name="proxyAddress"/> and <paramref name="proxyPort"/>.
+        /// </summary>
+        /// <param name="client">The ITcpClient instance with which to connect.</param>
+        /// <param name="proxyAddress">The address of the proxy server to which to connect.</param>
+        /// <param name="proxyPort">The port of the proxy server to which to connect.</param>
+        /// <param name="destinationAddress">The destination address to which to connect.</param>
+        /// <param name="destinationPort">The desintation port to which to connect.</param>
+        /// <param name="username">The optional username for the proxy.</param>
+        /// <param name="password">The optional password for the proxy.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the address and port reported by the proxy server
+        ///     following connection.
+        /// </returns>
         internal static async Task<(string ProxyAddress, int ProxyPort)> ConnectThroughProxyAsync(
             this ITcpClient client,
             IPAddress proxyAddress,
@@ -104,17 +139,18 @@
 
             if (authResponse[0] != SOCKS_5)
             {
-                throw new ConnectionProxyException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
+                throw new ProxyException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
             }
 
             switch (authResponse[1])
             {
                 case AUTH_ANONYMOUS:
                     break;
+
                 case AUTH_USERNAME:
                     if (!usingCredentials)
                     {
-                        throw new ConnectionProxyException("Server requests authorization but none was provided");
+                        throw new ProxyException("Server requests authorization but none was provided");
                     }
 
                     var creds = new List<byte>() { AUTH_VERSION };
@@ -131,24 +167,25 @@
 
                     if (credsResponse.Length != 2)
                     {
-                        throw new ConnectionProxyException("Abnormal authentication response from server");
+                        throw new ProxyException("Abnormal authentication response from server");
                     }
 
                     if (credsResponse[0] != AUTH_VERSION)
                     {
-                        throw new ConnectionProxyException($"Invalid authentication subnegotiation version (expected: {AUTH_VERSION}, received: {credsResponse[0]})");
+                        throw new ProxyException($"Invalid authentication subnegotiation version (expected: {AUTH_VERSION}, received: {credsResponse[0]})");
                     }
 
                     if (credsResponse[1] != EMPTY)
                     {
-                        throw new ConnectionProxyException($"Authentication failed: error code {credsResponse[1]}");
+                        throw new ProxyException($"Authentication failed: error code {credsResponse[1]}");
                     }
 
                     break;
+
                 case ERROR:
-                    throw new ConnectionProxyException($"Server does not support the specified authentication method(s)");
+                    throw new ProxyException($"Server does not support the specified authentication method(s)");
                 default:
-                    throw new ConnectionProxyException($"Unknown auth METHOD response from server: {authResponse[1]}");
+                    throw new ProxyException($"Unknown auth METHOD response from server: {authResponse[1]}");
             }
 
             var connection = new List<byte>() { SOCKS_5, CONNECT, EMPTY, IPV4 };
@@ -162,7 +199,7 @@
 
             if (connectionResponse[0] != SOCKS_5)
             {
-                throw new ConnectionProxyException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
+                throw new ProxyException($"Invalid SOCKS version (expected: {SOCKS_5}, received: {authResponse[0]})");
             }
 
             if (connectionResponse[1] != EMPTY)
@@ -180,7 +217,7 @@
                     _ => $"Unknown SOCKS error {connectionResponse[1]}",
                 };
 
-                throw new ConnectionProxyException($"SOCKS connection failed: {msg}");
+                throw new ProxyException($"SOCKS connection failed: {msg}");
             }
 
             string boundAddress;
@@ -194,28 +231,31 @@
                         var boundIPBytes = await ReadAsync(stream, 4, CancellationToken.None).ConfigureAwait(false);
                         boundAddress = new IPAddress(BitConverter.ToUInt32(boundIPBytes, 0)).ToString();
                         break;
+
                     case DOMAIN:
                         var lengthBytes = await ReadAsync(stream, 1, CancellationToken.None).ConfigureAwait(false);
 
                         if (lengthBytes[0] == ERROR)
                         {
-                            throw new ConnectionProxyException("Invalid domain name");
+                            throw new ProxyException("Invalid domain name");
                         }
 
                         var boundDomainBytes = await ReadAsync(stream, lengthBytes[0], CancellationToken.None).ConfigureAwait(false);
                         boundAddress = Encoding.ASCII.GetString(boundDomainBytes);
                         break;
+
                     case IPV6:
                         var boundIPv6Bytes = await ReadAsync(stream, 16, CancellationToken.None).ConfigureAwait(false);
                         boundAddress = new IPAddress(boundIPv6Bytes).ToString();
                         break;
+
                     default:
-                        throw new ConnectionProxyException($"Unknown SOCKS Address type (expected: one of {IPV4}, {DOMAIN}, {IPV6}, received: {connectionResponse[3]})");
+                        throw new ProxyException($"Unknown SOCKS Address type (expected: one of {IPV4}, {DOMAIN}, {IPV6}, received: {connectionResponse[3]})");
                 }
             }
             catch (Exception ex)
             {
-                throw new ConnectionProxyException($"Invalid address response from server: {ex.Message}");
+                throw new ProxyException($"Invalid address response from server: {ex.Message}");
             }
 
             var boundPortBytes = await ReadAsync(stream, 2, CancellationToken.None).ConfigureAwait(false);

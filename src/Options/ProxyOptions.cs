@@ -22,7 +22,7 @@ namespace Soulseek
     using System.Net.Sockets;
 
     /// <summary>
-    ///     Socks 5 proxy configuration options.
+    ///     Proxy configuration options.
     /// </summary>
     public class ProxyOptions
     {
