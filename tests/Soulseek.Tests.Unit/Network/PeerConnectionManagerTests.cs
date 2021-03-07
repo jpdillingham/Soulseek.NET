@@ -1330,7 +1330,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "MessageConnectionProvisional_Disconnected")]
         [Theory(DisplayName = "MessageConnectionProvisional_Disconnected disposes connection"), AutoData]
-        internal void MessageConnectionProvisional_Disconnected_Disposes_Connection(string username, string message)
+        internal void MessageConnectionProvisional_Disconnected_Disposes_Connection(string message)
         {
             var conn = new Mock<IMessageConnection>();
             var (manager, mocks) = GetFixture();

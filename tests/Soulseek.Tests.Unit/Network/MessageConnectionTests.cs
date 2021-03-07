@@ -533,7 +533,8 @@ namespace Soulseek.Tests.Unit.Network
                     do
                     {
                         Thread.Sleep(100);
-                    } while (readMessage == null && DateTime.UtcNow <= maxTime);
+                    }
+                    while (readMessage == null && DateTime.UtcNow <= maxTime);
 
                     Assert.Equal(code, BitConverter.ToInt32(readMessage));
                 }
