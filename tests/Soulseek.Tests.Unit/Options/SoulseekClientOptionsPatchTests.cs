@@ -33,13 +33,14 @@ namespace Soulseek.Tests.Unit
             bool? deduplicateSearchRequests,
             bool? autoAcknowledgePrivateMessages,
             bool? autoAcknowledgePrivilegeNotifications,
-            bool? acceptPrivateRoomInvitations,
-            ConnectionOptions serverConnectionOptions,
-            ConnectionOptions peerConnectionOptions,
-            ConnectionOptions transferConnectionOptions,
-            ConnectionOptions incomingConnectionOptions,
-            ConnectionOptions distributedConnectionOptions)
+            bool? acceptPrivateRoomInvitations)
         {
+            var serverConnectionOptions = new ConnectionOptions();
+            var peerConnectionOptions = new ConnectionOptions();
+            var transferConnectionOptions = new ConnectionOptions();
+            var incomingConnectionOptions = new ConnectionOptions();
+            var distributedConnectionOptions = new ConnectionOptions();
+
             var rnd = new Random();
             var listenPort = rnd.Next(1024, 65535);
 
@@ -84,11 +85,12 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with given data"), AutoData]
-        public void Removes_Timeout_On_Server_And_Transfer_Options(
-            ConnectionOptions serverConnectionOptions,
-            ConnectionOptions transferConnectionOptions)
+        [Fact(DisplayName = "Instantiates with given data")]
+        public void Removes_Timeout_On_Server_And_Transfer_Options()
         {
+            var serverConnectionOptions = new ConnectionOptions();
+            var transferConnectionOptions = new ConnectionOptions();
+
             var o = new SoulseekClientOptionsPatch(
                 serverConnectionOptions: serverConnectionOptions,
                 transferConnectionOptions: transferConnectionOptions);

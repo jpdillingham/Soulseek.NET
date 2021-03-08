@@ -40,13 +40,14 @@ namespace Soulseek.Tests.Unit
             bool autoAcknowledgePrivilegeNotifications,
             bool acceptPrivateRoomInvitations,
             DiagnosticLevel minimumDiagnosticLevel,
-            int startingToken,
-            ConnectionOptions serverConnectionOptions,
-            ConnectionOptions peerConnectionOptions,
-            ConnectionOptions transferConnectionOptions,
-            ConnectionOptions incomingConnectionOptions,
-            ConnectionOptions distributedConnectionOptions)
+            int startingToken)
         {
+            var serverConnectionOptions = new ConnectionOptions();
+            var peerConnectionOptions = new ConnectionOptions();
+            var transferConnectionOptions = new ConnectionOptions();
+            var incomingConnectionOptions = new ConnectionOptions();
+            var distributedConnectionOptions = new ConnectionOptions();
+
             var rnd = new Random();
             var listenPort = rnd.Next(1024, 65535);
 
@@ -201,13 +202,14 @@ namespace Soulseek.Tests.Unit
             bool? deduplicateSearchRequests,
             bool? autoAcknowledgePrivateMessages,
             bool? autoAcknowledgePrivilegeNotifications,
-            bool? acceptPrivateRoomInvitations,
-            ConnectionOptions serverConnectionOptions,
-            ConnectionOptions peerConnectionOptions,
-            ConnectionOptions transferConnectionOptions,
-            ConnectionOptions incomingConnectionOptions,
-            ConnectionOptions distributedConnectionOptions)
+            bool? acceptPrivateRoomInvitations)
         {
+            var serverConnectionOptions = new ConnectionOptions();
+            var peerConnectionOptions = new ConnectionOptions();
+            var transferConnectionOptions = new ConnectionOptions();
+            var incomingConnectionOptions = new ConnectionOptions();
+            var distributedConnectionOptions = new ConnectionOptions();
+
             var rnd = new Random();
             var listenPort = rnd.Next(1024, 65535);
 
@@ -263,13 +265,14 @@ namespace Soulseek.Tests.Unit
             bool? deduplicateSearchRequests,
             bool? autoAcknowledgePrivateMessages,
             bool? autoAcknowledgePrivilegeNotifications,
-            bool? acceptPrivateRoomInvitations,
-            ConnectionOptions serverConnectionOptions,
-            ConnectionOptions peerConnectionOptions,
-            ConnectionOptions transferConnectionOptions,
-            ConnectionOptions incomingConnectionOptions,
-            ConnectionOptions distributedConnectionOptions)
+            bool? acceptPrivateRoomInvitations)
         {
+            var serverConnectionOptions = new ConnectionOptions();
+            var peerConnectionOptions = new ConnectionOptions();
+            var transferConnectionOptions = new ConnectionOptions();
+            var incomingConnectionOptions = new ConnectionOptions();
+            var distributedConnectionOptions = new ConnectionOptions();
+
             var rnd = new Random();
             var listenPort = rnd.Next(1024, 65535);
 

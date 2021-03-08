@@ -35,8 +35,10 @@ namespace Soulseek.Tests.Unit.Network
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
-        public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPEndPoint endpoint, ConnectionOptions options)
+        public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPEndPoint endpoint)
         {
+            var options = new ConnectionOptions();
+
             using (var c = new MessageConnection(username, endpoint, options))
             {
                 Assert.Equal(username, c.Username);
@@ -66,8 +68,10 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates server connection with given IP"), AutoData]
-        public void Instantiates_Server_Connection_With_Given_IP(IPEndPoint endpoint, ConnectionOptions options)
+        public void Instantiates_Server_Connection_With_Given_IP(IPEndPoint endpoint)
         {
+            var options = new ConnectionOptions();
+
             using (var c = new MessageConnection(endpoint, options))
             {
                 Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
@@ -80,8 +84,10 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates peer connection with given IP and username"), AutoData]
-        public void Instantiates_Peer_Connection_With_Given_IP_And_Username(string username, IPEndPoint endpoint, ConnectionOptions options)
+        public void Instantiates_Peer_Connection_With_Given_IP_And_Username(string username, IPEndPoint endpoint)
         {
+            var options = new ConnectionOptions();
+
             using (var c = new MessageConnection(username, endpoint, options))
             {
                 Assert.Equal(username, c.Username);

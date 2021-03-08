@@ -29,8 +29,9 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "GetTransferConnection")]
         [Theory(DisplayName = "GetTransferConnection returns the expected connection"), AutoData]
-        internal void GetTransferConneciton_Returns_The_Expected_Connection(IPEndPoint endpoint, ConnectionOptions options)
+        internal void GetTransferConneciton_Returns_The_Expected_Connection(IPEndPoint endpoint)
         {
+            var options = new ConnectionOptions();
             var c = new ConnectionFactory().GetTransferConnection(endpoint, options);
 
             Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
@@ -53,8 +54,10 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "GetServerConnection")]
         [Theory(DisplayName = "GetServerConnection returns the expected connection"), AutoData]
-        internal void GetServerConneciton_Returns_The_Expected_Connection(IPEndPoint endpoint, ConnectionOptions options)
+        internal void GetServerConneciton_Returns_The_Expected_Connection(IPEndPoint endpoint)
         {
+            var options = new ConnectionOptions();
+
             bool connect = false;
             EventHandler connected = (s, a) => { connect = true;  };
 
@@ -106,8 +109,10 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "GetMessageConnection")]
         [Theory(DisplayName = "GetMessageConnection returns the expected connection"), AutoData]
-        internal void GetMessageConneciton_Returns_The_Expected_Connection(string username, IPEndPoint endpoint, ConnectionOptions options)
+        internal void GetMessageConneciton_Returns_The_Expected_Connection(string username, IPEndPoint endpoint)
         {
+            var options = new ConnectionOptions();
+
             var c = new ConnectionFactory().GetMessageConnection(username, endpoint, options);
 
             Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
