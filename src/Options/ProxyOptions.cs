@@ -50,14 +50,17 @@ namespace Soulseek
                 throw new ArgumentException("Username and password must both be specified");
             }
 
-            if (username != default && username.Length > 255)
+            if (username != default)
             {
-                throw new ArgumentOutOfRangeException(nameof(username), "The username must be less than or equal to 255 characters");
-            }
+                if (username.Length < 1 || username.Length > 255)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(username), "The username must be between 1 and 255 characters");
+                }
 
-            if (password != default && password.Length > 255)
-            {
-                throw new ArgumentOutOfRangeException(nameof(password), "The password must be less than or equal to 255 characters");
+                if (password.Length < 1 || password.Length > 255)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(password), "The password must be between 1 and 255 characters");
+                }
             }
 
             if (!IPAddress.TryParse(address, out IPAddress ipAddress))
