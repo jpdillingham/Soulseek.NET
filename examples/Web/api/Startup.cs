@@ -448,12 +448,12 @@
         private Task EnqueueDownloadAction(string username, IPEndPoint endpoint, string filename, ITransferTracker tracker)
         {
             _ = endpoint;
-            filename = filename.ToLocalOSPath();
-            var fileInfo = new FileInfo(filename);
+            var localFilename = filename.ToLocalOSPath();
+            var fileInfo = new FileInfo(localFilename);
 
             if (!fileInfo.Exists)
             {
-                Console.WriteLine($"[UPLOAD REJECTED] File {filename} not found.");
+                Console.WriteLine($"[UPLOAD REJECTED] File {localFilename} not found.");
                 throw new DownloadEnqueueException($"File not found.");
             }
 
