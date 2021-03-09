@@ -211,7 +211,7 @@ namespace Soulseek.Messaging.Handlers
                             {
                                 // reject the transfer with an empty reason.  it was probably cancelled, but we can't be sure.
                                 Diagnostic.Debug($"Rejecting unknown upload from {connection.Username} for {transferRequest.Filename} with token {transferRequest.Token}");
-                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, string.Empty)).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Cancelled")).ConfigureAwait(false);
                             }
                         }
                         else
