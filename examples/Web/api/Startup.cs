@@ -245,6 +245,7 @@
             // create options for the client.
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
+                listenPort: ListenPort,
                 distributedChildLimit: DistributedChildLimit,
                 enableDistributedNetwork: EnableDistributedNetwork,
                 minimumDiagnosticLevel: DiagnosticLevel,
@@ -408,8 +409,10 @@
         {
             var directories = System.IO.Directory
                 .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
-                .Select(dir => new Soulseek.Directory(dir, System.IO.Directory.GetFiles(dir)
-                    .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f)))));
+                .Select(dir => new Soulseek.Directory(
+                    dir, 
+                    System.IO.Directory.GetFiles(dir)
+                        .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f)))));
 
             return Task.FromResult(new BrowseResponse(directories));
         }
@@ -424,7 +427,9 @@
         /// <returns>A Task resolving an instance of Soulseek.Directory containing the contents of the requested directory.</returns>
         private Task<Soulseek.Directory> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
         {
-            var result = new Soulseek.Directory(directory, System.IO.Directory.GetFiles(directory)
+            var result = new Soulseek.Directory(
+                directory, 
+                System.IO.Directory.GetFiles(directory)
                     .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f))));
 
             return Task.FromResult(result);
@@ -469,7 +474,7 @@
             Task.Run(async () =>
             {
                 using var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read);
-                await Client.UploadAsync(username, fileInfo.FullName, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
+                await Client.UploadAsync(username, filename, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
             }).ContinueWith(t =>
             {
                 Console.WriteLine($"[UPLOAD FAILED] {t.Exception}");
