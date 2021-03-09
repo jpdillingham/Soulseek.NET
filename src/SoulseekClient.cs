@@ -2619,19 +2619,25 @@ namespace Soulseek
 
                 download.Connection?.Dispose();
 
-                // change state so we can fire the progress update a final time with the updated state little bit of a hack to
+                // change state so we can fire the progress update a final time with the updated state. little bit of a hack to
                 // avoid cloning the download
                 download.State = TransferStates.Completed | download.State;
                 UpdateProgress(download.StartOffset + outputStream.Position);
                 UpdateState(download.State);
 
+                Downloads.TryRemove(download.Token, out _);
+
                 if (options.DisposeOutputStreamOnCompletion)
                 {
-                    await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
-                    await outputStream.DisposeAsync().ConfigureAwait(false);
+                    try
+                    {
+                        await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        await outputStream.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
-
-                Downloads.TryRemove(download.Token, out _);
             }
         }
 
