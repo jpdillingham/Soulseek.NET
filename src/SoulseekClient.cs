@@ -3437,12 +3437,12 @@ namespace Soulseek
                     }
                 }
 
+                Uploads.TryRemove(upload.Token, out _);
+
                 if (options.DisposeInputStreamOnCompletion)
                 {
                     await inputStream.DisposeAsync().ConfigureAwait(false);
                 }
-
-                Uploads.TryRemove(upload.Token, out _);
             }
         }
     }
