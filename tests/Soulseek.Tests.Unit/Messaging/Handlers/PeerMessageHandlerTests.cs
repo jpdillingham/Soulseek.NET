@@ -834,7 +834,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            var expected = new TransferResponse(token, string.Empty).ToByteArray();
+            var expected = new TransferResponse(token, "Cancelled").ToByteArray();
 
             mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expected)), null), Times.Once);
         }
