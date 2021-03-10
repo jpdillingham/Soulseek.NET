@@ -32,9 +32,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates properly"), AutoData]
-        public void Instantiates_Properly(ConnectionOptions options)
+        [Fact(DisplayName = "Instantiates properly")]
+        public void Instantiates_Properly()
         {
+            var options = new ConnectionOptions();
             var port = GetPort();
 
             var l = new Listener(port, options);
@@ -46,9 +47,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Start")]
-        [Theory(DisplayName = "Start starts listening"), AutoData]
-        public void Start_Starts_Listening(ConnectionOptions options)
+        [Fact(DisplayName = "Start starts listening")]
+        public void Start_Starts_Listening()
         {
+            var options = new ConnectionOptions();
             var port = GetPort();
 
             var l = new Listener(port, options);
@@ -62,9 +64,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Stop")]
-        [Theory(DisplayName = "Stop stops listening"), AutoData]
-        public void Stop_Stops_Listening(ConnectionOptions options)
+        [Fact(DisplayName = "Stop stops listening")]
+        public void Stop_Stops_Listening()
         {
+            var options = new ConnectionOptions();
             var port = GetPort();
 
             var l = new Listener(port, options);

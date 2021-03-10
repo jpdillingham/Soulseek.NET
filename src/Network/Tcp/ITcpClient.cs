@@ -20,6 +20,7 @@ namespace Soulseek.Network.Tcp
     using System;
     using System.Net;
     using System.Net.Sockets;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -61,6 +62,37 @@ namespace Soulseek.Network.Tcp
         /// <exception cref="SocketException">Thrown when an error occurs while accessing the socket.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
         Task ConnectAsync(IPAddress address, int port);
+
+        /// <summary>
+        ///     Connects to the specified <paramref name="destinationAddress"/> and <paramref name="destinationPort"/> via the
+        ///     specified <paramref name="proxyAddress"/> and <paramref name="proxyPort"/>.
+        /// </summary>
+        /// <param name="proxyAddress">The address of the proxy server to which to connect.</param>
+        /// <param name="proxyPort">The port of the proxy server to which to connect.</param>
+        /// <param name="destinationAddress">The destination address to which to connect.</param>
+        /// <param name="destinationPort">The desintation port to which to connect.</param>
+        /// <param name="username">The optional username for the proxy.</param>
+        /// <param name="password">The optional password for the proxy.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the address and port reported by the proxy server
+        ///     following connection.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when the proxy or destination address is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the proxy or destination port is not within the valid port range 0-65535.
+        /// </exception>
+        /// <exception cref="ArgumentException">Thrown when a username is supplied without a password, or vice versa.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the username or password is longer than 255 characters.</exception>
+        /// <exception cref="ProxyException">Thrown when an unexpected error occurs.</exception>
+        Task<(string ProxyAddress, int ProxyPort)> ConnectThroughProxyAsync(
+            IPAddress proxyAddress,
+            int proxyPort,
+            IPAddress destinationAddress,
+            int destinationPort,
+            string username = null,
+            string password = null,
+            CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Returns the <see cref="NetworkStream"/> used to send and receive data.
