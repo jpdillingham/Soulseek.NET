@@ -372,6 +372,43 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect connects through proxy if configured"), AutoData]
+        public async Task Connect_Connects_Through_Proxy_If_Configured(IPEndPoint endpoint)
+        {
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+
+                var proxy = new ProxyOptions("127.0.0.1", 1, "username", "password");
+                var options = new ConnectionOptions(proxyOptions: proxy);
+
+                using (var c = new Connection(endpoint, options: options, tcpClient: t.Object))
+                {
+                    var eventArgs = new List<EventArgs>();
+
+                    c.Connected += (sender, e) => eventArgs.Add(e);
+
+                    await c.ConnectAsync();
+
+                    Assert.Equal(ConnectionState.Connected, c.State);
+                    Assert.Single(eventArgs);
+
+                    t.Verify(
+                        m => m.ConnectThroughProxyAsync(
+                            proxy.IPEndPoint.Address,
+                            proxy.IPEndPoint.Port,
+                            It.IsAny<IPAddress>(),
+                            It.IsAny<int>(),
+                            proxy.Username,
+                            proxy.Password,
+                            It.IsAny<CancellationToken?>()),
+                        Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect raises Connected event"), AutoData]
         public async Task Connect_Raises_Connected_Event(IPEndPoint endpoint)
         {
