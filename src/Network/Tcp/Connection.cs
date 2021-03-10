@@ -225,7 +225,8 @@ namespace Soulseek.Network.Tcp
                             IPEndPoint.Address,
                             IPEndPoint.Port,
                             proxy.Username,
-                            proxy.Password);
+                            proxy.Password,
+                            cancellationToken);
                     }
                     else
                     {
