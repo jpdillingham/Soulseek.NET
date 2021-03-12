@@ -410,7 +410,7 @@
             var directories = System.IO.Directory
                 .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
                 .Select(dir => new Soulseek.Directory(
-                    dir, 
+                    dir.Replace("/", @"\"), 
                     System.IO.Directory.GetFiles(dir)
                         .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f)))));
 
@@ -428,7 +428,7 @@
         private Task<Soulseek.Directory> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
         {
             var result = new Soulseek.Directory(
-                directory, 
+                directory.Replace("/", @"\"), 
                 System.IO.Directory.GetFiles(directory)
                     .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f))));
 
