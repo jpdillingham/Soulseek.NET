@@ -122,6 +122,30 @@ namespace Soulseek.Messaging.Handlers
                         await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
                         break;
 
+                    case MessageCode.Peer.SearchRequest:
+                        var searchRequest = PeerSearchRequest.FromByteArray(message);
+
+                        if (SoulseekClient.Options.SearchResponseResolver == default)
+                        {
+                            break;
+                        }
+
+                        try
+                        {
+                            var peerSearchResponse = await SoulseekClient.Options.SearchResponseResolver(connection.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
+
+                            if (peerSearchResponse != null && peerSearchResponse.FileCount + peerSearchResponse.LockedFileCount > 0)
+                            {
+                                await connection.WriteAsync(peerSearchResponse.ToByteArray()).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {connection.Username} with token {searchRequest.Token}: {ex.Message}", ex);
+                        }
+
+                        break;
+
                     case MessageCode.Peer.BrowseRequest:
                         BrowseResponse browseResponse;
 
