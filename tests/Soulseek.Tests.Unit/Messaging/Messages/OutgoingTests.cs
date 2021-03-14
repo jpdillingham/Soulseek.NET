@@ -176,17 +176,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "PeerSearchRequest")]
-        [Theory(DisplayName = "PeerSearchRequest instantiates properly"), AutoData]
-        public void PeerSearchRequest_Instantiates_Properly(string text, int token)
-        {
-            var a = new PeerSearchRequest(token, text);
-
-            Assert.Equal(text, a.Query);
-            Assert.Equal(token, a.Token);
-        }
-
-        [Trait("Category", "Instantiation")]
         [Trait("Request", "SearchRequest")]
         [Theory(DisplayName = "SearchRequest instantiates properly"), AutoData]
         public void SearchRequest_Instantiates_Properly(string text, int token)
