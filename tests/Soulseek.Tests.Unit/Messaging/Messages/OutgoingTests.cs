@@ -180,28 +180,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "PeerSearchRequest instantiates properly"), AutoData]
         public void PeerSearchRequest_Instantiates_Properly(string text, int token)
         {
-            var a = new PeerSearchRequest(text, token);
+            var a = new PeerSearchRequest(token, text);
 
-            Assert.Equal(text, a.SearchText);
+            Assert.Equal(text, a.Query);
             Assert.Equal(token, a.Token);
-        }
-
-        [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PeerSearchRequest")]
-        [Theory(DisplayName = "PeerSearchRequest constructs the correct Message"), AutoData]
-        public void PeerSearchRequest_Constructs_The_Correct_Message(string text, int token)
-        {
-            var a = new PeerSearchRequest(text, token);
-            var msg = a.ToByteArray();
-
-            var reader = new MessageReader<MessageCode.Peer>(msg);
-            var code = reader.ReadCode();
-
-            Assert.Equal(MessageCode.Peer.SearchRequest, code);
-            Assert.Equal(4 + 4 + 4 + 4 + text.Length, msg.Length);
-
-            Assert.Equal(token, reader.ReadInteger());
-            Assert.Equal(text, reader.ReadString());
         }
 
         [Trait("Category", "Instantiation")]
