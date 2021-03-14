@@ -20,23 +20,23 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests a search from a peer.
     /// </summary>
-    internal sealed class PeerSearchRequest : IOutgoingMessage
+    internal sealed class PeerSearchRequest : IIncomingMessage
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerSearchRequest"/> class.
         /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="token">The unique token for the search.</param>
-        public PeerSearchRequest(string searchText, int token)
+        /// <param name="token">The unique token for the request.</param>
+        /// <param name="query">The search query.</param>
+        public PeerSearchRequest(int token, string query)
         {
             Token = token;
-            SearchText = searchText;
+            Query = query;
         }
 
         /// <summary>
-        ///     Gets the text for which to search.
+        ///     Gets the search query.
         /// </summary>
-        public string SearchText { get; }
+        public string Query { get; }
 
         /// <summary>
         ///     Gets the unique token for the search.
@@ -44,16 +44,24 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Constructs a <see cref="byte"/> array from this message.
+        ///     Creates a new instance of <see cref="ServerSearchRequest"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <returns>The constructed byte array.</returns>
-        public byte[] ToByteArray()
+        /// <param name="bytes">The byte array from which to parse.</param>
+        /// <returns>The created instance.</returns>
+        public static PeerSearchRequest FromByteArray(byte[] bytes)
         {
-            return new MessageBuilder()
-                .WriteCode(MessageCode.Peer.SearchRequest)
-                .WriteInteger(Token)
-                .WriteString(SearchText)
-                .Build();
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
+            var code = reader.ReadCode();
+
+            if (code != MessageCode.Peer.SearchRequest)
+            {
+                throw new MessageException($"Message Code mismatch creating {nameof(PeerSearchRequest)} (expected: {(int)MessageCode.Peer.SearchRequest}, received: {(int)code})");
+            }
+
+            var token = reader.ReadInteger();
+            var query = reader.ReadString();
+
+            return new PeerSearchRequest(token, query);
         }
     }
 }
