@@ -1138,7 +1138,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
             }
 
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Superseding cached child connection"))));
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Superseding existing child connection"))));
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
