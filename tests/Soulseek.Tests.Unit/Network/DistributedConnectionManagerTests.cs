@@ -1142,6 +1142,85 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync does not throw if superseded connection throws"), AutoData]
+        internal async Task AddChildConnectionAsync_Does_Not_Throw_If_Superseded_Connection_Throws(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var existingConn = GetMessageConnectionMock(username, endpoint);
+            existingConn.Setup(m => m.Disconnect(It.IsAny<string>(), null))
+                .Throws(new Exception());
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
+
+                var ex = await Record.ExceptionAsync(() =>
+                    manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+
+                Assert.Null(ex);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Superseding existing child connection"))));
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync cancels pending connection if one exists"), AutoData]
+        internal async Task AddChildConnectionAsync_Cancels_Pending_Connection_If_One_Exists(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var existingConn = GetMessageConnectionMock(username, endpoint);
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var cts = new CancellationTokenSource();
+            var pendingDict = new ConcurrentDictionary<string, CancellationTokenSource>();
+            pendingDict.AddOrUpdate(username, cts, (k, v) => cts);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
+
+                manager.SetProperty("PendingInboundIndirectConnectionDictionary", pendingDict);
+
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+
+                Assert.True(cts.IsCancellationRequested);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Cancelling pending indirect child connection to {username}"))));
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync purges cache for user on throw"), AutoData]
         internal async Task AddChildConnectionAsync_Purges_Cache_For_User_On_Throw(string username, IPEndPoint endpoint)
         {

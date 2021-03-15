@@ -77,8 +77,12 @@ namespace Soulseek.Network
         private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> MessageConnectionDictionary { get; set; } =
             new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
 
-        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
-        private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
+        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } =
+            new ConcurrentDictionary<string, CancellationTokenSource>();
+
+        private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } =
+            new ConcurrentDictionary<int, string>();
+
         private SoulseekClient SoulseekClient { get; }
 
         /// <summary>
@@ -576,6 +580,7 @@ namespace Soulseek.Network
         public async void RemoveAndDisposeAll()
         {
             PendingSolicitationDictionary.Clear();
+            PendingInboundIndirectConnectionDictionary.Clear();
 
             while (!MessageConnectionDictionary.IsEmpty)
             {

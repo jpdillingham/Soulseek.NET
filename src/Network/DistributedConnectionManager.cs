@@ -138,7 +138,7 @@ namespace Soulseek.Network
         ///         This collection should be used any time a child connection needs to be referenced, such as when broadcasting messages.
         ///     </para>
         /// </remarks>
-        private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set; } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+        private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set;  } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
 
         /// <remarks>
         ///     <para>Provides a collection of chilren for which a connection was successfully negotiated.</para>
@@ -165,7 +165,7 @@ namespace Soulseek.Network
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private SystemTimer StatusDebounceTimer { get; set; }
-        private SemaphoreSlim StatusSyncRoot { get; set; } = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim StatusSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private SystemTimer WatchdogTimer { get; }
 
         /// <summary>
@@ -526,6 +526,7 @@ namespace Soulseek.Network
         public async void RemoveAndDisposeAll()
         {
             PendingSolicitationDictionary.Clear();
+            PendingInboundIndirectConnectionDictionary.Clear();
             ParentConnection?.Dispose();
 
             while (!ChildConnectionDictionary.IsEmpty)
