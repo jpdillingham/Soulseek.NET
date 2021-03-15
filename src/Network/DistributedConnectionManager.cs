@@ -161,6 +161,7 @@ namespace Soulseek.Network
         private DateTime LastStatusTimestamp { get; set; }
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
+        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private SystemTimer StatusDebounceTimer { get; set; }
@@ -236,19 +237,28 @@ namespace Soulseek.Network
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
                 connection.Disconnected += ChildConnectionProvisional_Disconnected;
 
-                try
+                using (var cts = new CancellationTokenSource())
                 {
-                    await connection.ConnectAsync().ConfigureAwait(false);
+                    PendingInboundIndirectConnectionDictionary.AddOrUpdate(r.Username, cts, (username, existingCts) => cts);
 
-                    var request = new PierceFirewall(r.Token);
-                    await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+                    try
+                    {
+                        await connection.ConnectAsync().ConfigureAwait(false);
 
-                    await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
-                }
-                catch
-                {
-                    connection.Dispose();
-                    throw;
+                        var request = new PierceFirewall(r.Token);
+                        await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+
+                        await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        connection.Dispose();
+                        throw;
+                    }
+                    finally
+                    {
+                        PendingInboundIndirectConnectionDictionary.TryRemove(r.Username, out _);
+                    }
                 }
 
                 connection.Disconnected += ChildConnection_Disconnected;
@@ -325,12 +335,27 @@ namespace Soulseek.Network
 
                 if (cachedConnectionRecord != null)
                 {
-                    var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
-                    cachedConnection.Disconnected -= ChildConnection_Disconnected;
-                    Diagnostic.Debug($"Superseding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
-                    cachedConnection.Disconnect("Superseded.");
-                    cachedConnection.Dispose();
-                    superseded = true;
+                    if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
+                    {
+                        Diagnostic.Debug($"Cancelling pending inbound indirect child connection to {username}");
+                        pendingCts.Cancel();
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
+                            cachedConnection.Disconnected -= ChildConnection_Disconnected;
+                            Diagnostic.Debug($"Superseding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
+                            cachedConnection.Disconnect("Superseded.");
+                            cachedConnection.Dispose();
+                            superseded = true;
+                        }
+                        catch
+                        {
+                            // noop
+                        }
+                    }
                 }
 
                 try
