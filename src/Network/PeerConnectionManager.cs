@@ -77,17 +77,21 @@ namespace Soulseek.Network
         private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> MessageConnectionDictionary { get; set; } =
             new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
 
-        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
-        private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
+        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } =
+            new ConcurrentDictionary<string, CancellationTokenSource>();
+
+        private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } =
+            new ConcurrentDictionary<int, string>();
+
         private SoulseekClient SoulseekClient { get; }
 
         /// <summary>
         ///     Adds a new message connection from an incoming connection.
         /// </summary>
         /// <remarks>
-        ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited message
-        ///     only. Because this connection is fully established by the time it is passed to this method, it must supersede any
-        ///     cached connection, as it will be the most recently established connection as tracked by the remote user.
+        ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming 'P' connection only.
+        ///     Because this connection is fully established by the time it is passed to this method, it must supersede any cached
+        ///     connection, as it will be the most recently established connection as tracked by the remote user.
         /// </remarks>
         /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
@@ -576,6 +580,7 @@ namespace Soulseek.Network
         public async void RemoveAndDisposeAll()
         {
             PendingSolicitationDictionary.Clear();
+            PendingInboundIndirectConnectionDictionary.Clear();
 
             while (!MessageConnectionDictionary.IsEmpty)
             {

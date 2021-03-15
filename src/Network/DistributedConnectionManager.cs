@@ -138,7 +138,7 @@ namespace Soulseek.Network
         ///         This collection should be used any time a child connection needs to be referenced, such as when broadcasting messages.
         ///     </para>
         /// </remarks>
-        private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set; } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+        private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set;  } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
 
         /// <remarks>
         ///     <para>Provides a collection of chilren for which a connection was successfully negotiated.</para>
@@ -161,10 +161,11 @@ namespace Soulseek.Network
         private DateTime LastStatusTimestamp { get; set; }
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
+        private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private SystemTimer StatusDebounceTimer { get; set; }
-        private SemaphoreSlim StatusSyncRoot { get; set; } = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim StatusSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private SystemTimer WatchdogTimer { get; }
 
         /// <summary>
@@ -172,18 +173,9 @@ namespace Soulseek.Network
         ///     pierces the remote peer's firewall.
         /// </summary>
         /// <remarks>
-        ///     <para>
-        ///         Because this uses <see cref="ConcurrentDictionary{TKey, TValue}.GetOrAdd(TKey, Func{TKey, TValue})"/>, the
-        ///         code that creates and establishes the indirect connection is only invoked if the dictionary is lacking an
-        ///         entry. If a direct connection has been established, the <see cref="ConnectToPeerResponse"/> which led to the
-        ///         invocation of this method is effectively discarded.
-        ///     </para>
-        ///     <para>
-        ///         This creates a slight chance for a missed opportunity to establish a functioning connection, if a direct
-        ///         connection was connected first but ultimately fails to be established due to a problem with handshaking. This
-        ///         is not a big deal because of the nature of the distributed network, and the fact that if a direct connection
-        ///         ultimately failed, an indirect connection would likely fail also.
-        ///     </para>
+        ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an
+        ///     unsolicited <see cref="ConnectToPeerResponse"/> of type 'D' only. This connection should only be initiated if
+        ///     there is no existing connection; superseding should be avoided if possible.
         /// </remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context.</returns>
@@ -236,19 +228,31 @@ namespace Soulseek.Network
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
                 connection.Disconnected += ChildConnectionProvisional_Disconnected;
 
-                try
+                using (var cts = new CancellationTokenSource())
                 {
-                    await connection.ConnectAsync().ConfigureAwait(false);
+                    // add a record to the pending dictionary so we can tell whether the following code is waiting
+                    PendingInboundIndirectConnectionDictionary.AddOrUpdate(r.Username, cts, (username, existingCts) => cts);
 
-                    var request = new PierceFirewall(r.Token);
-                    await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+                    try
+                    {
+                        await connection.ConnectAsync().ConfigureAwait(false);
 
-                    await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
-                }
-                catch
-                {
-                    connection.Dispose();
-                    throw;
+                        var request = new PierceFirewall(r.Token);
+                        await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+
+                        await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        connection.Dispose();
+                        throw;
+                    }
+                    finally
+                    {
+                        // let everyone know this code is done executing and that .Value of the containing cache is safe to await
+                        // with no delay.
+                        PendingInboundIndirectConnectionDictionary.TryRemove(r.Username, out _);
+                    }
                 }
 
                 connection.Disconnected += ChildConnection_Disconnected;
@@ -269,9 +273,9 @@ namespace Soulseek.Network
         ///     Adds a new child connection from an incoming connection.
         /// </summary>
         /// <remarks>
-        ///     Because the connection has already been established by the listener when this method is invoked, the code to hand
-        ///     off and establish the connection is executed regardless of whether we have an existing connection to this user. If
-        ///     a previous connection does exist, it is disposed.
+        ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited connection
+        ///     only. Because this connection is fully established by the time it is passed to this method, it must supersede any
+        ///     cached connection, as it will be the most recently established connection as tracked by the remote user.
         /// </remarks>
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="incomingConnection">The accepted connection.</param>
@@ -325,12 +329,35 @@ namespace Soulseek.Network
 
                 if (cachedConnectionRecord != null)
                 {
-                    var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
-                    cachedConnection.Disconnected -= ChildConnection_Disconnected;
-                    Diagnostic.Debug($"Superseding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
-                    cachedConnection.Disconnect("Superseded.");
-                    cachedConnection.Dispose();
-                    superseded = true;
+                    // because the cache is Lazy<>, the cached entry may be either a connected or pending connection. if we try to
+                    // reference .Value before the cached function is dispositioned we'll get stuck waiting for it, which will
+                    // prevent this code from superseding the connection until the pending connection times out. to get around
+                    // this the pending connection dictionary was added, allowing us to tell if the connection is still pending.
+                    // if so, we can just cancel the token and move on.
+                    if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
+                    {
+                        Diagnostic.Debug($"Cancelling pending indirect child connection to {username}");
+                        pendingCts.Cancel();
+                    }
+                    else
+                    {
+                        try
+                        {
+                            // if there's no entry in the pending connection dictionary, the Lazy<> function has completed
+                            // executing and we know that awaiting .Value will return immediately, allowing us to tear down the
+                            // existing connection.
+                            var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
+                            cachedConnection.Disconnected -= ChildConnection_Disconnected;
+                            Diagnostic.Debug($"Superseding existing child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
+                            cachedConnection.Disconnect("Superseded.");
+                            cachedConnection.Dispose();
+                            superseded = true;
+                        }
+                        catch
+                        {
+                            // noop
+                        }
+                    }
                 }
 
                 try
@@ -499,6 +526,7 @@ namespace Soulseek.Network
         public async void RemoveAndDisposeAll()
         {
             PendingSolicitationDictionary.Clear();
+            PendingInboundIndirectConnectionDictionary.Clear();
             ParentConnection?.Dispose();
 
             while (!ChildConnectionDictionary.IsEmpty)
