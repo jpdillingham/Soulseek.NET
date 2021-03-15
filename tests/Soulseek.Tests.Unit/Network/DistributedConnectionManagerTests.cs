@@ -772,6 +772,108 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR adds entry to pending dictionary"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Adds_Entry_To_Pending_Dictionary(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var tcs = new TaskCompletionSource();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(tcs.Task);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                var task = manager.AddChildConnectionAsync(ctpr);
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, CancellationTokenSource>>("PendingInboundIndirectConnectionDictionary");
+                var exists = dict.ContainsKey(ctpr.Username);
+
+                tcs.SetResult();
+
+                await task;
+
+                Assert.True(exists);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR removes entry from pending dictionary on success"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Removes_Entry_From_Pending_Dictionary_On_Success(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                await manager.AddChildConnectionAsync(ctpr);
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, CancellationTokenSource>>("PendingInboundIndirectConnectionDictionary");
+                Assert.False(dict.ContainsKey(ctpr.Username));
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR removes entry from pending dictionary on failure"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Removes_Entry_From_Pending_Dictionary_On_Failure(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException(new Exception()));
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, CancellationTokenSource>>("PendingInboundIndirectConnectionDictionary");
+                Assert.False(dict.ContainsKey(ctpr.Username));
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
         internal async Task AddChildConnectionAsync_Rejects_If_Over_Child_Limit(string username, IPEndPoint endpoint)
         {
