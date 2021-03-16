@@ -91,7 +91,12 @@ namespace Soulseek.Messaging.Compression
 		}
 		
 		protected internal ZStream z = new ZStream();
-		protected internal int bufsize = 4096;		
+
+		// CHUNK is simply the buffer size for feeding data to and pulling data from the zlib routines. 
+		// Larger buffer sizes would be more efficient, especially for inflate(). If the memory is available, 
+		// buffers sizes on the order of 128K or 256K bytes should be used.
+		// https://zlib.net/zlib_how.html
+		protected internal int bufsize = 262144;
 		protected internal int flush_Renamed_Field;		
 		protected internal byte[] buf, buf1 = new byte[1];
 		protected internal bool compress;
