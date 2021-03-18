@@ -25,12 +25,14 @@
             TTL = ttl;
         }
 
+        public event EventHandler<(int Directories, int Files)> Refreshed;
+
         public string Directory { get; }
-        private Dictionary<string, Soulseek.File> Files { get; set; }
         public DateTime? LastFill { get; set; }
+        public long TTL { get; }
+        private Dictionary<string, Soulseek.File> Files { get; set; }
         private SqliteConnection SQLite { get; set; }
         private ReaderWriterLockSlim SyncRoot { get; } = new ReaderWriterLockSlim();
-        public long TTL { get; }
 
         /// <summary>
         ///     Scans the configured <see cref="Directory"/> and fills the cache.
@@ -48,16 +50,19 @@
             {
                 CreateTable();
 
+                var directoryCount = System.IO.Directory.GetDirectories(Directory, "*", SearchOption.AllDirectories).Length;
+
                 Files = System.IO.Directory.GetFiles(Directory, "*", SearchOption.AllDirectories)
                     .Select(f => new Soulseek.File(1, f.Replace("/", @"\"), new FileInfo(f).Length, Path.GetExtension(f)))
                     .ToDictionary(f => f.Filename, f => f);
 
-                // potentially optimize with multi-valued insert
-                // https://stackoverflow.com/questions/16055566/insert-multiple-rows-in-sqlite
+                // potentially optimize with multi-valued insert https://stackoverflow.com/questions/16055566/insert-multiple-rows-in-sqlite
                 foreach (var file in Files)
                 {
                     InsertFilename(file.Key);
                 }
+
+                Refreshed?.Invoke(this, (directoryCount, Files.Count));
             }
             finally
             {
