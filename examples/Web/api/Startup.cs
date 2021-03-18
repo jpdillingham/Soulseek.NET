@@ -56,6 +56,7 @@
         private ISharedFileCache SharedFileCache { get; set; }
         private readonly int MaxReconnectAttempts = 3;
         private int CurrentReconnectAttempts = 0;
+        private (int Directories, int Files) SharedCounts { get; set; }
 
         public Startup(IConfiguration configuration)
         {
@@ -263,10 +264,15 @@
                 searchResponseResolver: SearchResponseResolver);
 
             Client = new SoulseekClient(options: clientOptions);
+            SharedCounts = (Directories: 0, Files: 0);
 
             SharedFileCache.Refreshed += (e, args) =>
             {
-                _ = Client.SetSharedCountsAsync(args.Directories, args.Files);
+                if (SharedCounts != args)
+                {
+                    SharedCounts = args;
+                    _ = Client.SetSharedCountsAsync(args.Directories, args.Files);
+                }
             };
 
             // bind the DiagnosticGenerated event so we can trap and display diagnostic messages.  this is optional, and if the event 
