@@ -264,11 +264,13 @@
                 searchResponseResolver: SearchResponseResolver);
 
             Client = new SoulseekClient(options: clientOptions);
+            SharedCounts = (Directories: 0, Files: 0);
 
             SharedFileCache.Refreshed += (e, args) =>
             {
-                if (args.Files != SharedCounts.Files || args.Directories != SharedCounts.Directories)
+                if (SharedCounts != args)
                 {
+                    SharedCounts = args;
                     _ = Client.SetSharedCountsAsync(args.Directories, args.Files);
                 }
             };
