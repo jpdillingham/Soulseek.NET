@@ -301,6 +301,12 @@
                 var completed = args.Transfer.State.HasFlag(TransferStates.Completed);
 
                 Console.WriteLine($"[{direction}] [{user}/{file}] {oldState} => {state}{(completed ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%) @ {args.Transfer.AverageSpeed.SizeSuffix()}/s" : string.Empty)}");
+
+                if (completed)
+                {
+                    _ = Client.SendUploadSpeedAsync((int)(args.Transfer.AverageSpeed));
+                    Console.WriteLine($"sent {(int)(args.Transfer.AverageSpeed)}");
+                }
             };
 
             Client.TransferProgressUpdated += (e, args) =>
@@ -387,6 +393,7 @@
             {
                 await Client.ConnectAsync(Username, Password);
                 CurrentReconnectAttempts = 0;
+                await Client.SetUploadSpeedAsync(5000);
             }).GetAwaiter().GetResult();
 
             Console.WriteLine($"Connected and logged in.");
