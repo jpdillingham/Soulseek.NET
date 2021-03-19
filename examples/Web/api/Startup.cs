@@ -393,7 +393,6 @@
             {
                 await Client.ConnectAsync(Username, Password);
                 CurrentReconnectAttempts = 0;
-                await Client.SetUploadSpeedAsync(5000);
             }).GetAwaiter().GetResult();
 
             Console.WriteLine($"Connected and logged in.");
