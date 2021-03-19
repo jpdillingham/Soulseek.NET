@@ -403,6 +403,31 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
+        [Trait("Request", "SendUploadSpeed")]
+        [Theory(DisplayName = "SendUploadSpeed instantiates properly"), AutoData]
+        public void SendUploadSpeed_Instantiates_Properly(int speed)
+        {
+            var a = new SendUploadSpeedCommand(speed);
+
+            Assert.Equal(speed, a.Speed);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "SendUploadSpeed")]
+        [Theory(DisplayName = "SendUploadSpeed constructs the correct message"), AutoData]
+        public void SendUploadSpeed_Constructs_The_Correct_Message(int speed)
+        {
+            var a = new SendUploadSpeedCommand(speed);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.SendUploadSpeed, code);
+            Assert.Equal(speed, reader.ReadInteger());
+        }
+
+        [Trait("Category", "Instantiation")]
         [Trait("Request", "RoomMessageCommand")]
         [Theory(DisplayName = "RoomMessageCommand instantiates properly"), AutoData]
         public void RoomMessageCommand_Instantiates_Properly(string room, string msg)

@@ -1,4 +1,4 @@
-﻿// <copyright file="SetUserStatusAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="SetStatusAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -26,11 +26,11 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Network.Tcp;
     using Xunit;
 
-    public class SetUserStatusAsyncTests
+    public class SetStatusAsyncTests
     {
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws InvalidOperationException when not connected")]
-        public async Task SetUserStatusAsync_Throws_InvalidOperationException_When_Not_Connected()
+        [Trait("Category", "SetStatusAsync")]
+        [Fact(DisplayName = "SetStatusAsync throws InvalidOperationException when not connected")]
+        public async Task SetStatusAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
             using (var s = new SoulseekClient())
             {
@@ -41,9 +41,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws InvalidOperationException when not logged in")]
-        public async Task SetUserStatusAsync_Throws_InvalidOperationException_When_Not_Logged_In()
+        [Trait("Category", "SetStatusAsync")]
+        [Fact(DisplayName = "SetStatusAsync throws InvalidOperationException when not logged in")]
+        public async Task SetStatusAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
             using (var s = new SoulseekClient())
             {
@@ -56,9 +56,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync does not throw when write does not throw")]
-        public async Task SetUserStatusAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
+        [Trait("Category", "SetStatusAsync")]
+        [Fact(DisplayName = "SetStatusAsync does not throw when write does not throw")]
+        public async Task SetStatusAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -74,9 +74,32 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws SoulseekClientException when write throws")]
-        public async Task SetUserStatusAsync_Throws_SoulseekClientException_When_Write_Throws()
+        [Trait("Category", "SetStatusAsync")]
+        [Theory(DisplayName = "SetStatusAsync sends expected status")]
+        [InlineData(UserPresence.Away)]
+        [InlineData(UserPresence.Offline)]
+        [InlineData(UserPresence.Online)]
+        public async Task SetStatusAsync_Sends_Expected_Status(UserPresence status)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.SetStatusAsync(status));
+
+                Assert.Null(ex);
+            }
+
+            conn.Verify(m => m.WriteAsync(It.Is<SetOnlineStatusCommand>(s => s.Status == status), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Trait("Category", "SetStatusAsync")]
+        [Fact(DisplayName = "SetStatusAsync throws SoulseekClientException when write throws")]
+        public async Task SetStatusAsync_Throws_SoulseekClientException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -94,9 +117,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws TimeoutException when write times out")]
-        public async Task SetUserStatusAsync_Throws_TimeoutException_When_Write_Times_Out()
+        [Trait("Category", "SetStatusAsync")]
+        [Fact(DisplayName = "SetStatusAsync throws TimeoutException when write times out")]
+        public async Task SetStatusAsync_Throws_TimeoutException_When_Write_Times_Out()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
@@ -113,9 +136,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws OperationCanceledException when write is canceled")]
-        public async Task SetUserStatusAsync_Throws_OperationCanceledException_When_Write_Is_Canceled()
+        [Trait("Category", "SetStatusAsync")]
+        [Fact(DisplayName = "SetStatusAsync throws OperationCanceledException when write is canceled")]
+        public async Task SetStatusAsync_Throws_OperationCanceledException_When_Write_Is_Canceled()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
