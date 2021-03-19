@@ -1,4 +1,4 @@
-﻿// <copyright file="SetUploadSpeedCommand.cs" company="JP Dillingham">
+﻿// <copyright file="SendUploadSpeedCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the most recent upload transfer speed.
     /// </summary>
-    internal sealed class SetUploadSpeedCommand : IOutgoingMessage
+    internal sealed class SendUploadSpeedCommand : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetUploadSpeedCommand"/> class.
+        ///     Initializes a new instance of the <see cref="SendUploadSpeedCommand"/> class.
         /// </summary>
         /// <param name="speed">The most recent upload transfer speed.</param>
-        public SetUploadSpeedCommand(int speed)
+        public SendUploadSpeedCommand(int speed)
         {
             Speed = speed;
         }
