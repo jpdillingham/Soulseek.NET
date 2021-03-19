@@ -305,7 +305,6 @@
                 if (completed)
                 {
                     _ = Client.SendUploadSpeedAsync((int)(args.Transfer.AverageSpeed));
-                    Console.WriteLine($"sent {(int)(args.Transfer.AverageSpeed)}");
                 }
             };
 
