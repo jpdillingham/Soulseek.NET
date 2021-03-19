@@ -917,7 +917,7 @@ namespace Soulseek
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the value of <paramref name="speed"/> is less than zero.
+        ///     Thrown when the value of <paramref name="speed"/> is less than or equal to zero.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
