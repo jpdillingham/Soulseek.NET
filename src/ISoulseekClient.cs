@@ -738,9 +738,9 @@ namespace Soulseek
         ///         </list>
         ///     </para>
         ///     <para>
-        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options will
-        ///         be updated immediately, but any objects instantiated will not be updated (for example, established connections
-        ///         will retain the options with which they were instantiated).
+        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options
+        ///         will be updated immediately, but any objects instantiated will not be updated (for example, established
+        ///         connections will retain the options with which they were instantiated).
         ///     </para>
         /// </remarks>
         /// <param name="patch">A patch containing the updated options.</param>
@@ -908,6 +908,21 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously informs the server of the most recently completed upload transfer <paramref name="speed"/>.
+        /// </summary>
+        /// <param name="speed">The speed of the most recently completed upload transfer, in bytes per second.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the value of <paramref name="speed"/> is less than zero.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task SetUploadSpeedAsync(int speed, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously starts receiving public chat messages.
