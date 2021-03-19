@@ -25,14 +25,14 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="SendUploadSpeedCommand"/> class.
         /// </summary>
-        /// <param name="speed">The most recent upload transfer speed.</param>
+        /// <param name="speed">The most recent upload transfer speed, in bytes per second.</param>
         public SendUploadSpeedCommand(int speed)
         {
             Speed = speed;
         }
 
         /// <summary>
-        ///     Gets the most recent upload transfer speed.
+        ///     Gets the most recent upload transfer speed, in bytes per second.
         /// </summary>
         public int Speed { get; }
 
