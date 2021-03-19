@@ -301,6 +301,11 @@
                 var completed = args.Transfer.State.HasFlag(TransferStates.Completed);
 
                 Console.WriteLine($"[{direction}] [{user}/{file}] {oldState} => {state}{(completed ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%) @ {args.Transfer.AverageSpeed.SizeSuffix()}/s" : string.Empty)}");
+
+                if (completed)
+                {
+                    _ = Client.SendUploadSpeedAsync((int)(args.Transfer.AverageSpeed));
+                }
             };
 
             Client.TransferProgressUpdated += (e, args) =>
