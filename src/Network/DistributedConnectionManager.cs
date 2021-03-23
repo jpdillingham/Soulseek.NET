@@ -240,7 +240,7 @@ namespace Soulseek.Network
                         var request = new PierceFirewall(r.Token);
                         await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
-                        await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
+                        await connection.WriteAsync(GetBranchInformation()).ConfigureAwait(false);
                     }
                     catch
                     {
@@ -364,7 +364,7 @@ namespace Soulseek.Network
                 {
                     connection.StartReadingContinuously();
 
-                    await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
+                    await connection.WriteAsync(GetBranchInformation()).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -589,22 +589,15 @@ namespace Soulseek.Network
             }
         }
 
-        private byte[] GetBranchInformation<T>()
+        private byte[] GetBranchInformation()
         {
             var branchLevel = HasParent ? BranchLevel + 1 : 0;
-            var branchRoot = HasParent ? BranchRoot : string.Empty;
+            var branchRoot = HasParent ? BranchRoot : SoulseekClient.Username;
 
-            var isPeer = typeof(T) == typeof(MessageCode.Peer);
             var payload = new List<byte>();
 
-            payload.AddRange(isPeer ? new DistributedBranchLevel(branchLevel).ToByteArray() :
-                new BranchLevelCommand(branchLevel).ToByteArray());
-
-            if (!string.IsNullOrEmpty(branchRoot))
-            {
-                payload.AddRange(isPeer ? new DistributedBranchRoot(branchRoot).ToByteArray() :
-                    new BranchRootCommand(branchRoot).ToByteArray());
-            }
+            payload.AddRange(new DistributedBranchLevel(branchLevel).ToByteArray());
+            payload.AddRange(new DistributedBranchRoot(branchRoot).ToByteArray());
 
             return payload.ToArray();
         }
@@ -813,7 +806,7 @@ namespace Soulseek.Network
                     {
                         await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
-                        await BroadcastMessageAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
+                        await BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
 
                         if (HasParent)
                         {
