@@ -127,7 +127,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => Enabled && AcceptChildren && HasParent && ChildDictionary.Count < ChildLimit;
+        public bool CanAcceptChildren => Enabled && AcceptChildren && (HasParent || IsBranchRoot) && ChildDictionary.Count < ChildLimit;
 
         /// <summary>
         ///     Gets the number of allowed concurrent child connections.
@@ -1021,7 +1021,7 @@ namespace Soulseek.Network
 
         private void WatchdogTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (Enabled && !HasParent && SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) && SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn))
+            if (Enabled && !HasParent && !IsBranchRoot && SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) && SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 Diagnostic.Warning("No distributed parent connected.  Requesting a list of candidates.");
                 UpdateStatusAsync().ConfigureAwait(false);
