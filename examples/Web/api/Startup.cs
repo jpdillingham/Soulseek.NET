@@ -388,6 +388,13 @@
                 }
             };
 
+            Client.PromotedToDistributedBranchRoot += (e, args) => Console.WriteLine($"[DNET] Promoted to branch root");
+            Client.DemotedFromDistributedBranchRoot += (e, args) => Console.WriteLine($"[DNET] Demoted from branch root");
+            Client.DistributedParentAdopted += (e, args) => Console.WriteLine($"[DNET] Adopted parent {args.Username} ({args.IPEndPoint}) [Level: {args.BranchLevel}; Root: {args.BranchRoot}]");
+            Client.DistributedParentDisconnected += (e, args) => Console.WriteLine($"[DNET] Disconnected from parent {args.Username} ({args.IPEndPoint}) [Level: {args.BranchLevel}; Root: {args.BranchRoot}]");
+            Client.DistributedChildAdded += (e, args) => Console.WriteLine($"[DNET] Added child {args.Username} ({args.IPEndPoint})");
+            Client.DistributedChildDisconnected += (e, args) => Console.WriteLine($"[DNET] Disconnected child {args.Username} ({args.IPEndPoint})");
+
             Task.Run(async () =>
             {
                 await Client.ConnectAsync(Username, Password);
