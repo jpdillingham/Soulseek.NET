@@ -42,9 +42,34 @@ namespace Soulseek
         event EventHandler Connected;
 
         /// <summary>
+        ///     Occurs when the client is demoted from a branch root on the distributed network.
+        /// </summary>
+        event EventHandler DemotedFromDistributedBranchRoot;
+
+        /// <summary>
         ///     Occurs when the client disconnects.
         /// </summary>
         event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
+
+        /// <summary>
+        ///     Occurs when a child connection is added.
+        /// </summary>
+        event EventHandler<DistributedChildEventArgs> DistributedChildAdded;
+
+        /// <summary>
+        ///     Occurs when a child connection is disconnected.
+        /// </summary>
+        event EventHandler<DistributedChildEventArgs> DistributedChildDisconnected;
+
+        /// <summary>
+        ///     Occurs when a new parent is adopted.
+        /// </summary>
+        event EventHandler<DistributedParentEventArgs> DistributedParentAdopted;
+
+        /// <summary>
+        ///     Occurs when the parent is disconnected.
+        /// </summary>
+        event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
 
         /// <summary>
         ///     Occurs when a global message is received.
@@ -100,6 +125,11 @@ namespace Soulseek
         ///     Occurs when the server sends a notification of new user privileges.
         /// </summary>
         event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
+
+        /// <summary>
+        ///     Occurs when the client has been promoted to a branch root on the distributed network.
+        /// </summary>
+        event EventHandler PromotedToDistributedBranchRoot;
 
         /// <summary>
         ///     Occurs when a public chat message is received.

@@ -117,6 +117,12 @@ namespace Soulseek
 
             DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
             DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            DistributedConnectionManager.PromotedToBranchRoot += (sender, e) => PromotedToDistributedBranchRoot?.Invoke(this, e);
+            DistributedConnectionManager.DemotedFromBranchRoot += (sender, e) => DemotedFromDistributedBranchRoot?.Invoke(this, e);
+            DistributedConnectionManager.ParentAdopted += (sender, e) => DistributedParentAdopted?.Invoke(this, e);
+            DistributedConnectionManager.ParentDisconnected += (sender, e) => DistributedParentDisconnected?.Invoke(this, e);
+            DistributedConnectionManager.ChildAdded += (sender, e) => DistributedChildAdded?.Invoke(this, e);
+            DistributedConnectionManager.ChildDisconnected += (sender, e) => DistributedChildDisconnected?.Invoke(this, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
@@ -160,6 +166,11 @@ namespace Soulseek
         public event EventHandler Connected;
 
         /// <summary>
+        ///     Occurs when the client is demoted from a branch root on the distributed network.
+        /// </summary>
+        public event EventHandler DemotedFromDistributedBranchRoot;
+
+        /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
@@ -168,6 +179,26 @@ namespace Soulseek
         ///     Occurs when the client disconnects.
         /// </summary>
         public event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
+
+        /// <summary>
+        ///     Occurs when a child connection is added.
+        /// </summary>
+        public event EventHandler<DistributedChildEventArgs> DistributedChildAdded;
+
+        /// <summary>
+        ///     Occurs when a child connection is disconnected.
+        /// </summary>
+        public event EventHandler<DistributedChildEventArgs> DistributedChildDisconnected;
+
+        /// <summary>
+        ///     Occurs when a new parent is adopted.
+        /// </summary>
+        public event EventHandler<DistributedParentEventArgs> DistributedParentAdopted;
+
+        /// <summary>
+        ///     Occurs when the parent is disconnected.
+        /// </summary>
+        public event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
 
         /// <summary>
         ///     Occurs when a global message is received.
@@ -229,6 +260,11 @@ namespace Soulseek
         ///     Occurs when the server sends a notification of new user privileges.
         /// </summary>
         public event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
+
+        /// <summary>
+        ///     Occurs when the client has been promoted to a branch root on the distributed network.
+        /// </summary>
+        public event EventHandler PromotedToDistributedBranchRoot;
 
         /// <summary>
         ///     Occurs when a public chat message is received.
