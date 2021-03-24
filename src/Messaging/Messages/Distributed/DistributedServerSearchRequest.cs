@@ -17,6 +17,8 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using System;
+    
     /// <summary>
     ///     A distributed file search request.
     /// </summary>
@@ -71,7 +73,8 @@ namespace Soulseek.Messaging.Messages
             }
 
             // nobody knows what this is.  always 0000000331000000 in hex.
-            reader.ReadBytes(8);
+            var mystery = reader.ReadBytes(8);
+            Console.WriteLine($"Mystery bytes: {BitConverter.ToString(mystery)}");
 
             var username = reader.ReadString();
             var token = reader.ReadInteger();
