@@ -32,6 +32,36 @@ namespace Soulseek.Network
     internal interface IDistributedConnectionManager : IDisposable, IDiagnosticGenerator
     {
         /// <summary>
+        ///     Occurs when a child connection is added.
+        /// </summary>
+        event EventHandler<DistributedChildEventArgs> ChildAdded;
+
+        /// <summary>
+        ///     Occurs when a child connection is disconnected.
+        /// </summary>
+        event EventHandler<DistributedChildEventArgs> ChildDisconnected;
+
+        /// <summary>
+        ///     Occurs when the client is demoted from a branch root on the distributed network.
+        /// </summary>
+        event EventHandler DemotedFromBranchRoot;
+
+        /// <summary>
+        ///     Occurs when a new parent is adopted.
+        /// </summary>
+        event EventHandler<DistributedParentEventArgs> ParentAdopted;
+
+        /// <summary>
+        ///     Occurs when the parent is disconnected.
+        /// </summary>
+        event EventHandler<DistributedParentEventArgs> ParentDisconnected;
+
+        /// <summary>
+        ///     Occurs when the client has been promoted to a branch root on the distributed network.
+        /// </summary>
+        event EventHandler PromotedToBranchRoot;
+
+        /// <summary>
         ///     Gets the current distributed branch level.
         /// </summary>
         int BranchLevel { get; }
@@ -47,19 +77,24 @@ namespace Soulseek.Network
         bool CanAcceptChildren { get; }
 
         /// <summary>
-        ///     Gets the current list of child connections.
-        /// </summary>
-        IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children { get; }
-
-        /// <summary>
         ///     Gets the number of allowed concurrent child connections.
         /// </summary>
         int ChildLimit { get; }
 
         /// <summary>
+        ///     Gets the current list of child connections.
+        /// </summary>
+        IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether a parent connection is established.
         /// </summary>
         bool HasParent { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether the client is currently operating as a branch root.
+        /// </summary>
+        bool IsBranchRoot { get; }
 
         /// <summary>
         ///     Gets the current parent connection.
@@ -101,6 +136,16 @@ namespace Soulseek.Network
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
         Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Demotes the client from a branch root on the distributed network.
+        /// </summary>
+        void DemoteFromBranchRoot();
+
+        /// <summary>
+        ///     Promotes the client to a branch root on the distributed network.
+        /// </summary>
+        void PromoteToBranchRoot();
 
         /// <summary>
         ///     Removes and disposes the parent and all child connections.
