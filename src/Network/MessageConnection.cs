@@ -37,8 +37,8 @@ namespace Soulseek.Network
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : this(ipEndPoint, options, tcpClient)
+        internal MessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, int codeLength = 4, ITcpClient tcpClient = null)
+            : this(ipEndPoint, options, codeLength, tcpClient)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -54,9 +54,11 @@ namespace Soulseek.Network
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        internal MessageConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, int codeLength = 4, ITcpClient tcpClient = null)
             : base(ipEndPoint, options, tcpClient)
         {
+            CodeLength = codeLength;
+
             // bind the connected event to begin reading upon connection. if we received a connected client, this will never fire
             // and the read loop must be started via ReadContinuouslyAsync().
             Connected += (sender, e) =>
@@ -109,6 +111,8 @@ namespace Soulseek.Network
         ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
         /// </summary>
         public bool IsServerConnection => string.IsNullOrEmpty(Username);
+
+        public int CodeLength { get; }
 
         /// <summary>
         ///     Gets the unique identifier for the connection.
@@ -200,17 +204,22 @@ namespace Soulseek.Network
                         var length = BitConverter.ToInt32(lengthBytes, 0);
                         message.AddRange(lengthBytes);
 
-                        codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
+                        if (CodeLength == 1)
+                        {
+                            Console.WriteLine($"!!!!!!!!!!!!!!!!!!!!!!!!! read length {length} from connection with codesize 1");
+                        }
+
+                        codeBytes = await ReadAsync(CodeLength, CancellationToken.None).ConfigureAwait(false);
                         message.AddRange(codeBytes);
 
-                        RaiseMessageDataRead(this, new ConnectionDataEventArgs(0, length - 4));
+                        RaiseMessageDataRead(this, new ConnectionDataEventArgs(0, length - CodeLength));
 
                         Interlocked.CompareExchange(ref MessageReceived, null, null)?
                             .Invoke(this, new MessageReceivedEventArgs(length, codeBytes));
 
                         DataRead += RaiseMessageDataRead;
 
-                        var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
+                        var payloadBytes = await ReadAsync(length - CodeLength, CancellationToken.None).ConfigureAwait(false);
                         message.AddRange(payloadBytes);
 
                         var messageBytes = message.ToArray();
