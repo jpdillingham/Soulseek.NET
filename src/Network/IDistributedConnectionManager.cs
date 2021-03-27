@@ -138,11 +138,6 @@ namespace Soulseek.Network
         Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Demotes the client from a branch root on the distributed network.
-        /// </summary>
-        void DemoteFromBranchRoot();
-
-        /// <summary>
         ///     Promotes the client to a branch root on the distributed network.
         /// </summary>
         void PromoteToBranchRoot();
@@ -156,13 +151,13 @@ namespace Soulseek.Network
         ///     Sets the distributed <paramref name="branchLevel"/>.
         /// </summary>
         /// <param name="branchLevel">The distributed branch level.</param>
-        void SetBranchLevel(int branchLevel);
+        void SetParentBranchLevel(int branchLevel);
 
         /// <summary>
         ///     Sets the distributed <paramref name="branchRoot"/>.
         /// </summary>
         /// <param name="branchRoot">The distributed branch root.</param>
-        void SetBranchRoot(string branchRoot);
+        void SetParentBranchRoot(string branchRoot);
 
         /// <summary>
         ///     Updates the server and any connected distributed parents and children with the current status of the distributed network.

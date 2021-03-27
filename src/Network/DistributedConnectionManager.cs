@@ -117,12 +117,12 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the current distributed branch level.
         /// </summary>
-        public int BranchLevel { get; private set; } = 0;
+        public int BranchLevel => HasParent ? ParentBranchLevel + 1 : 0;
 
         /// <summary>
         ///     Gets the current distributed branch root.
         /// </summary>
-        public string BranchRoot { get; private set; } = string.Empty;
+        public string BranchRoot => HasParent ? ParentBranchRoot : SoulseekClient.Username;
 
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
@@ -194,6 +194,8 @@ namespace Soulseek.Network
         private bool Enabled => SoulseekClient.Options.EnableDistributedNetwork;
         private string LastStatusHash { get; set; }
         private DateTime LastStatusTimestamp { get; set; }
+        private int ParentBranchLevel { get; set; } = 0;
+        private string ParentBranchRoot { get; set; } = string.Empty;
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
         private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
@@ -491,22 +493,23 @@ namespace Soulseek.Network
                 {
                     Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
 
-                    (ParentConnection, BranchLevel, BranchRoot) = successfulConnections.First();
-                    Diagnostic.Debug($"Selected {ParentConnection.Username} as the best connection; branch root: {BranchRoot}, branch level: {BranchLevel}");
+                    (ParentConnection, ParentBranchLevel, ParentBranchRoot) = successfulConnections.First();
+                    Diagnostic.Debug($"Selected {ParentConnection.Username} as the best connection; branch root: {ParentBranchRoot}, branch level: {ParentBranchLevel}");
 
                     ParentConnection.Disconnected += ParentConnection_Disconnected;
                     ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
                     ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
                     ParentConnection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleMessageWritten;
 
+                    DemoteFromBranchRoot();
+
                     Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
-                    ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, BranchLevel, BranchRoot));
+                    ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
 
-                    await ParentConnection.WriteAsync(new DistributedChildDepth(ChildDictionary.Count)).ConfigureAwait(false);
                     await BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
 
-                    successfulConnections.Remove((ParentConnection, BranchLevel, BranchRoot));
+                    successfulConnections.Remove((ParentConnection, ParentBranchLevel, ParentBranchRoot));
                     ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
 
                     Diagnostic.Debug($"Connected parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
@@ -557,20 +560,6 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Demotes the client from a branch root on the distributed network.
-        /// </summary>
-        /// <remarks>This should only be invoked upon receipt of a NetInfo message from the server.</remarks>
-        public void DemoteFromBranchRoot()
-        {
-            if (IsBranchRoot)
-            {
-                IsBranchRoot = false;
-                Diagnostic.Info($"Demoted from distributed branch root.");
-                DemotedFromBranchRoot?.Invoke(this, EventArgs.Empty);
-            }
-        }
-
-        /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IDistributedConnectionManager"/>.
         /// </summary>
         public void Dispose()
@@ -617,9 +606,9 @@ namespace Soulseek.Network
         ///     Sets the distributed <paramref name="branchLevel"/>.
         /// </summary>
         /// <param name="branchLevel">The distributed branch level.</param>
-        public void SetBranchLevel(int branchLevel)
+        public void SetParentBranchLevel(int branchLevel)
         {
-            BranchLevel = branchLevel;
+            ParentBranchLevel = branchLevel;
             _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
 
@@ -627,9 +616,9 @@ namespace Soulseek.Network
         ///     Sets the distributed <paramref name="branchRoot"/>.
         /// </summary>
         /// <param name="branchRoot">The distributed branch root.</param>
-        public void SetBranchRoot(string branchRoot)
+        public void SetParentBranchRoot(string branchRoot)
         {
-            BranchRoot = branchRoot;
+            ParentBranchRoot = branchRoot;
             _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
 
@@ -650,43 +639,25 @@ namespace Soulseek.Network
             {
                 var payload = new List<byte>();
 
-                var haveNoParents = !HasParent;
-                var parentsIp = HasParent ? ParentConnection.IPEndPoint?.Address : null;
-                var branchLevel = HasParent ? BranchLevel + 1 : 0;
-                var branchRoot = HasParent ? BranchRoot : SoulseekClient.Username;
-                var childCount = ChildDictionary.Count;
-                var canAcceptChildren = CanAcceptChildren;
-
-                if (HasParent)
-                {
-                    payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
-                }
-
-                payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
-                payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
-                payload.AddRange(new ChildDepthCommand(childCount).ToByteArray());
-                payload.AddRange(new AcceptChildrenCommand(canAcceptChildren).ToByteArray());
-                payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
+                payload.AddRange(new BranchLevelCommand(BranchLevel).ToByteArray());
+                payload.AddRange(new BranchRootCommand(BranchRoot).ToByteArray());
+                payload.AddRange(new ChildDepthCommand(ChildDictionary.Count).ToByteArray());
+                payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
+                payload.AddRange(new HaveNoParentsCommand(!HasParent).ToByteArray());
 
                 var statusHash = Convert.ToBase64String(payload.ToArray());
 
-                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase) || haveNoParents)
+                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase) || !HasParent)
                 {
                     try
                     {
                         await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
-                        if (HasParent)
-                        {
-                            await ParentConnection.WriteAsync(new DistributedChildDepth(childCount)).ConfigureAwait(false);
-                        }
-
                         var sb = new StringBuilder("Updated distributed status; ");
                         sb
-                            .Append($"HaveNoParents: {haveNoParents}, ")
-                            .Append(HasParent ? $"ParentsIP: {parentsIp}, " : string.Empty)
-                            .Append($"BranchLevel: {branchLevel}, BranchRoot: {branchRoot}, ")
-                            .Append($"ChildDepth: {childCount}, AcceptChildren: {canAcceptChildren}");
+                            .Append($"HaveNoParents: {!HasParent}, ")
+                            .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot}, ")
+                            .Append($"ChildDepth: {ChildDictionary.Count}, AcceptChildren: {CanAcceptChildren}");
 
                         Diagnostic.Info(sb.ToString());
 
@@ -731,6 +702,16 @@ namespace Soulseek.Network
 
         private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
+        private void DemoteFromBranchRoot()
+        {
+            if (IsBranchRoot)
+            {
+                IsBranchRoot = false;
+                Diagnostic.Info($"Demoted from distributed branch root.");
+                DemotedFromBranchRoot?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
         private void Dispose(bool disposing)
         {
             if (!Disposed)
@@ -748,13 +729,10 @@ namespace Soulseek.Network
 
         private byte[] GetBranchInformation()
         {
-            var branchLevel = HasParent ? BranchLevel + 1 : 0;
-            var branchRoot = HasParent ? BranchRoot : SoulseekClient.Username;
-
             var payload = new List<byte>();
 
-            payload.AddRange(new DistributedBranchLevel(branchLevel).ToByteArray());
-            payload.AddRange(new DistributedBranchRoot(branchRoot).ToByteArray());
+            payload.AddRange(new DistributedBranchLevel(BranchLevel).ToByteArray());
+            payload.AddRange(new DistributedBranchRoot(BranchRoot).ToByteArray());
 
             return payload.ToArray();
         }
@@ -911,11 +889,11 @@ namespace Soulseek.Network
 
             Diagnostic.Debug($"Parent connection to {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message} (type: {connection.Type}, id: {connection.Id})");
             Diagnostic.Info($"Parent connection to {connection.Username} ({connection.IPEndPoint}) disconnected{(e.Message == null ? "." : $": {e.Message}")}.");
-            ParentDisconnected?.Invoke(this, new DistributedParentEventArgs(connection.Username, connection.IPEndPoint, BranchLevel, BranchRoot));
+            ParentDisconnected?.Invoke(this, new DistributedParentEventArgs(connection.Username, connection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
 
             ParentConnection = null;
-            BranchLevel = 0;
-            BranchRoot = string.Empty;
+            ParentBranchLevel = 0;
+            ParentBranchRoot = string.Empty;
 
             connection.Dispose();
 
