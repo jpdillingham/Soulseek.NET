@@ -253,7 +253,7 @@ namespace Soulseek.Network
 
                 Diagnostic.Debug($"Attempting inbound indirect child connection to {r.Username} ({r.IPEndPoint}) for token {r.Token}");
 
-                var connection = ConnectionFactory.GetMessageConnection(
+                var connection = ConnectionFactory.GetDistributedConnection(
                     r.Username,
                     r.IPEndPoint,
                     SoulseekClient.Options.DistributedConnectionOptions);
@@ -350,7 +350,7 @@ namespace Soulseek.Network
 
                 var superseded = false;
 
-                var connection = ConnectionFactory.GetMessageConnection(
+                var connection = ConnectionFactory.GetDistributedConnection(
                     username,
                     c.IPEndPoint,
                     SoulseekClient.Options.DistributedConnectionOptions,
