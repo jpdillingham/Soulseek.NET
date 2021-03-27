@@ -164,6 +164,10 @@ namespace Soulseek.Network
         /// <param name="branchRoot">The distributed branch root.</param>
         void SetBranchRoot(string branchRoot);
 
+        /// <summary>
+        ///     Updates the server and any connected distributed parents and children with the current status of the distributed network.
+        /// </summary>
+        /// <returns>The operation context.</returns>
         Task UpdateStatusAsync();
     }
 }
