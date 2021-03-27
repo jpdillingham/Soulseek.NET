@@ -891,6 +891,12 @@ namespace Soulseek.Network
                     {
                         await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
+                        if (HasParent)
+                        {
+                            await ParentConnection.WriteAsync(new DistributedChildDepth(childCount)).ConfigureAwait(false);
+                        }
+
+
                         var sb = new StringBuilder("Updated distributed status; ");
                         sb
                             .Append($"HaveNoParents: {haveNoParents}, ")
