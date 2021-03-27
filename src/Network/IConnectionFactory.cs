@@ -36,6 +36,8 @@ namespace Soulseek.Network
         /// <returns>The created connection.</returns>
         IMessageConnection GetMessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null);
 
+        IMessageConnection GetDistributedConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null);
+
         /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> for use with a server connection and binds the specified event handlers
         ///     before returning.

@@ -35,7 +35,10 @@ namespace Soulseek.Network
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
         public IMessageConnection GetMessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
-            new MessageConnection(username, ipEndPoint, options ?? new ConnectionOptions(), tcpClient);
+            new MessageConnection(username, ipEndPoint, options ?? new ConnectionOptions(), codeLength: 4, tcpClient);
+
+        public IMessageConnection GetDistributedConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
+            new MessageConnection(username, ipEndPoint, options ?? new ConnectionOptions(), codeLength: 1, tcpClient);
 
         /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> for use with a server connection and binds the specified event handlers
@@ -58,7 +61,7 @@ namespace Soulseek.Network
             ConnectionOptions options = null,
             ITcpClient tcpClient = null)
         {
-            var connection = new MessageConnection(ipEndPoint, (options ?? new ConnectionOptions()).WithoutInactivityTimeout(), tcpClient);
+            var connection = new MessageConnection(ipEndPoint, (options ?? new ConnectionOptions()).WithoutInactivityTimeout(), tcpClient: tcpClient);
             connection.Connected += connectedEventHandler;
             connection.Disconnected += disconnectedEventHandler;
             connection.MessageRead += messageReadEventHandler;
