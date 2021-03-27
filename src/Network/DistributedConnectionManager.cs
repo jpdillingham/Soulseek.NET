@@ -127,7 +127,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => Enabled && AcceptChildren && (HasParent || IsBranchRoot) && ChildDictionary.Count < ChildLimit;
+        public bool CanAcceptChildren => Enabled && AcceptChildren && ChildDictionary.Count < ChildLimit;
 
         /// <summary>
         ///     Gets the number of allowed concurrent child connections.
@@ -852,7 +852,7 @@ namespace Soulseek.Network
             }
         }
 
-        private async Task UpdateStatusAsync()
+        public async Task UpdateStatusAsync()
         {
             if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
             {
@@ -868,7 +868,7 @@ namespace Soulseek.Network
                 var haveNoParents = !HasParent;
                 var parentsIp = HasParent ? ParentConnection.IPEndPoint?.Address : null;
                 var branchLevel = HasParent ? BranchLevel : 0;
-                var branchRoot = HasParent ? BranchRoot : string.Empty;
+                var branchRoot = HasParent ? BranchRoot : SoulseekClient.Username;
                 var childCount = ChildDictionary.Count;
                 var canAcceptChildren = CanAcceptChildren;
 
@@ -1027,7 +1027,7 @@ namespace Soulseek.Network
 
         private void WatchdogTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (Enabled && !HasParent && !IsBranchRoot && SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) && SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn))
+            if (Enabled && !HasParent && SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) && SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 Diagnostic.Warning("No distributed parent connected.  Requesting a list of candidates.");
                 UpdateStatusAsync().ConfigureAwait(false);

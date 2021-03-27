@@ -163,5 +163,7 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="branchRoot">The distributed branch root.</param>
         void SetBranchRoot(string branchRoot);
+
+        Task UpdateStatusAsync();
     }
 }
