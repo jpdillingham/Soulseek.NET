@@ -2434,9 +2434,9 @@ namespace Soulseek
 
                         Username = username;
 
-                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
-
                         ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
+
+                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -3194,9 +3194,9 @@ namespace Soulseek
                 await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
             }
 
-            if (Options.EnableDistributedNetwork && !DistributedConnectionManager.HasParent)
+            if (Options.EnableDistributedNetwork)
             {
-                await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
+                await DistributedConnectionManager.UpdateStatusAsync();
             }
 
             await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
