@@ -503,6 +503,9 @@ namespace Soulseek.Network
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
                     ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, BranchLevel, BranchRoot));
 
+                    await ParentConnection.WriteAsync(new DistributedChildDepth(ChildDictionary.Count)).ConfigureAwait(false);
+                    await BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
+
                     successfulConnections.Remove((ParentConnection, BranchLevel, BranchRoot));
                     ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
 
@@ -869,7 +872,11 @@ namespace Soulseek.Network
                 var childCount = ChildDictionary.Count;
                 var canAcceptChildren = CanAcceptChildren;
 
-                payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
+                if (HasParent)
+                {
+                    payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
+                }
+
                 payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
                 payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
                 payload.AddRange(new ChildDepthCommand(childCount).ToByteArray());
@@ -884,12 +891,10 @@ namespace Soulseek.Network
                     {
                         await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
-                        await BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
-
                         var sb = new StringBuilder("Updated distributed status; ");
                         sb
                             .Append($"HaveNoParents: {haveNoParents}, ")
-                            .Append($"ParentsIP: {parentsIp}, ")
+                            .Append(HasParent ? $"ParentsIP: {parentsIp}, " : string.Empty)
                             .Append($"BranchLevel: {branchLevel}, BranchRoot: {branchRoot}, ")
                             .Append($"ChildDepth: {childCount}, AcceptChildren: {canAcceptChildren}");
 
