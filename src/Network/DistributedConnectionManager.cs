@@ -886,11 +886,6 @@ namespace Soulseek.Network
 
                         await BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
 
-                        if (HasParent)
-                        {
-                            await ParentConnection.WriteAsync(new DistributedChildDepth(childCount)).ConfigureAwait(false);
-                        }
-
                         var sb = new StringBuilder("Updated distributed status; ");
                         sb
                             .Append($"HaveNoParents: {haveNoParents}, ")
