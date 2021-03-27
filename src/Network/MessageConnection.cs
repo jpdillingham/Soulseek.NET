@@ -36,6 +36,7 @@ namespace Soulseek.Network
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
+        /// <param name="codeLength">The length message codes received, in bytes.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         internal MessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, int codeLength = 4, ITcpClient tcpClient = null)
             : this(ipEndPoint, options, codeLength, tcpClient)
@@ -53,6 +54,7 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
+        /// <param name="codeLength">The length message codes received, in bytes.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         internal MessageConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, int codeLength = 4, ITcpClient tcpClient = null)
             : base(ipEndPoint, options, tcpClient)
@@ -86,7 +88,7 @@ namespace Soulseek.Network
         ///     </para>
         ///     <para>
         ///         This event is only useful for tracking the progress of large messages (larger than the receive buffer);
-        ///         basically only the response to a browse request.  There is no corresponding event for data written, as this
+        ///         basically only the response to a browse request. There is no corresponding event for data written, as this
         ///         library sends messages in their entirety, and the two would be fuctionally identical.
         ///     </para>
         /// </remarks>
@@ -108,11 +110,14 @@ namespace Soulseek.Network
         public event EventHandler<MessageEventArgs> MessageWritten;
 
         /// <summary>
+        ///     Gets the length message codes received, in bytes.
+        /// </summary>
+        public int CodeLength { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
         /// </summary>
         public bool IsServerConnection => string.IsNullOrEmpty(Username);
-
-        public int CodeLength { get; }
 
         /// <summary>
         ///     Gets the unique identifier for the connection.
@@ -203,11 +208,6 @@ namespace Soulseek.Network
                         var lengthBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
                         var length = BitConverter.ToInt32(lengthBytes, 0);
                         message.AddRange(lengthBytes);
-
-                        if (CodeLength == 1)
-                        {
-                            Console.WriteLine($"!!!!!!!!!!!!!!!!!!!!!!!!! read length {length} from connection with codesize 1");
-                        }
 
                         codeBytes = await ReadAsync(CodeLength, CancellationToken.None).ConfigureAwait(false);
                         message.AddRange(codeBytes);
