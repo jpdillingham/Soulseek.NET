@@ -3196,7 +3196,7 @@ namespace Soulseek
 
             if (Options.EnableDistributedNetwork)
             {
-                await DistributedConnectionManager.UpdateStatusAsync();
+                await DistributedConnectionManager.UpdateStatusAsync().ConfigureAwait(false);
             }
 
             await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
