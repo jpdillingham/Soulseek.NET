@@ -623,69 +623,6 @@ namespace Soulseek.Network
             _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
 
-        /// <summary>
-        ///     Updates the server and any connected distributed parents and children with the current status of the distributed network.
-        /// </summary>
-        /// <returns>The operation context.</returns>
-        public async Task UpdateStatusAsync()
-        {
-            if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
-            {
-                return;
-            }
-
-            await StatusSyncRoot.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                var payload = new List<byte>();
-
-                payload.AddRange(new BranchLevelCommand(BranchLevel).ToByteArray());
-                payload.AddRange(new BranchRootCommand(BranchRoot).ToByteArray());
-                payload.AddRange(new ChildDepthCommand(ChildDictionary.Count).ToByteArray());
-                payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
-                payload.AddRange(new HaveNoParentsCommand(!HasParent).ToByteArray());
-
-                var statusHash = Convert.ToBase64String(payload.ToArray());
-
-                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase) || !HasParent)
-                {
-                    try
-                    {
-                        await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
-
-                        var sb = new StringBuilder("Updated distributed status; ");
-                        sb
-                            .Append($"HaveNoParents: {!HasParent}, ")
-                            .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot}, ")
-                            .Append($"ChildDepth: {ChildDictionary.Count}, AcceptChildren: {CanAcceptChildren}");
-
-                        Diagnostic.Info(sb.ToString());
-
-                        LastStatusHash = statusHash;
-                        LastStatusTimestamp = DateTime.UtcNow;
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = $"Failed to update distributed status: {ex.Message}";
-
-                        if (SoulseekClient.State != SoulseekClientStates.Disconnected)
-                        {
-                            Diagnostic.Warning(msg, ex);
-                        }
-                        else
-                        {
-                            Diagnostic.Debug(msg, ex);
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                StatusSyncRoot.Release();
-            }
-        }
-
         private void ChildConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
@@ -905,6 +842,65 @@ namespace Soulseek.Network
             catch (Exception)
             {
                 // noop
+            }
+        }
+
+        private async Task UpdateStatusAsync()
+        {
+            if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
+            {
+                return;
+            }
+
+            await StatusSyncRoot.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                var payload = new List<byte>();
+
+                payload.AddRange(new BranchLevelCommand(BranchLevel).ToByteArray());
+                payload.AddRange(new BranchRootCommand(BranchRoot).ToByteArray());
+                payload.AddRange(new ChildDepthCommand(ChildDictionary.Count).ToByteArray());
+                payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
+                payload.AddRange(new HaveNoParentsCommand(!HasParent).ToByteArray());
+
+                var statusHash = Convert.ToBase64String(payload.ToArray());
+
+                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase) || !HasParent)
+                {
+                    try
+                    {
+                        await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
+
+                        var sb = new StringBuilder("Updated distributed status; ");
+                        sb
+                            .Append($"HaveNoParents: {!HasParent}, ")
+                            .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot}, ")
+                            .Append($"ChildDepth: {ChildDictionary.Count}, AcceptChildren: {CanAcceptChildren}");
+
+                        Diagnostic.Info(sb.ToString());
+
+                        LastStatusHash = statusHash;
+                        LastStatusTimestamp = DateTime.UtcNow;
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = $"Failed to update distributed status: {ex.Message}";
+
+                        if (SoulseekClient.State != SoulseekClientStates.Disconnected)
+                        {
+                            Diagnostic.Warning(msg, ex);
+                        }
+                        else
+                        {
+                            Diagnostic.Debug(msg, ex);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                StatusSyncRoot.Release();
             }
         }
 
