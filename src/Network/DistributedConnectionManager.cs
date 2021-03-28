@@ -501,13 +501,14 @@ namespace Soulseek.Network
                     ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
                     ParentConnection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleMessageWritten;
 
-                    DemoteFromBranchRoot();
-
                     Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
                     ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
 
+                    await UpdateStatusAsync().ConfigureAwait(false);
                     await BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
+
+                    DemoteFromBranchRoot();
 
                     successfulConnections.Remove((ParentConnection, ParentBranchLevel, ParentBranchRoot));
                     ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
@@ -574,7 +575,7 @@ namespace Soulseek.Network
         /// <remarks>This should only be invoked upon receipt of a distributed search request (code 93) from the server.</remarks>
         public void PromoteToBranchRoot()
         {
-            if (!IsBranchRoot)
+            if (!IsBranchRoot && !HasParent)
             {
                 IsBranchRoot = true;
                 Diagnostic.Info($"Promoted to distributed branch root.");
