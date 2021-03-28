@@ -138,6 +138,11 @@ namespace Soulseek.Network
         Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Demotes the client from a branch root on the distributed network.
+        /// </summary>
+        void DemoteFromBranchRoot();
+
+        /// <summary>
         ///     Promotes the client to a branch root on the distributed network.
         /// </summary>
         void PromoteToBranchRoot();

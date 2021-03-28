@@ -54,6 +54,7 @@ namespace Soulseek.Network
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
+            SoulseekClient.Disconnected += (sender, e) => DemoteFromBranchRoot();
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
@@ -561,6 +562,19 @@ namespace Soulseek.Network
         }
 
         /// <summary>
+        ///     Demotes the client from a branch root on the distributed network.
+        /// </summary>
+        public void DemoteFromBranchRoot()
+        {
+            if (IsBranchRoot)
+            {
+                IsBranchRoot = false;
+                Diagnostic.Info($"Demoted from distributed branch root.");
+                DemotedFromBranchRoot?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IDistributedConnectionManager"/>.
         /// </summary>
         public void Dispose()
@@ -639,16 +653,6 @@ namespace Soulseek.Network
         }
 
         private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
-
-        private void DemoteFromBranchRoot()
-        {
-            if (IsBranchRoot)
-            {
-                IsBranchRoot = false;
-                Diagnostic.Info($"Demoted from distributed branch root.");
-                DemotedFromBranchRoot?.Invoke(this, EventArgs.Empty);
-            }
-        }
 
         private void Dispose(bool disposing)
         {
