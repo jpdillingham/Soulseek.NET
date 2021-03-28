@@ -282,10 +282,6 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfoNotification.FromByteArray(message);
 
-                        // the server will only send NetInfo if we don't (or did but no longer) qualify to act as a branch root.
-                        // when we get this message, inform the distributed manager that we are no longer a root.
-                        SoulseekClient.DistributedConnectionManager.DemoteFromBranchRoot();
-
                         try
                         {
                             var parents = netInfo.Parents.Select(parent => (parent.Username, new IPEndPoint(parent.IPAddress, parent.Port)));
@@ -501,8 +497,16 @@ namespace Soulseek.Messaging.Handlers
                     // if we are promoted to a distributed branch root, the server will begin to send us search requests directly.
                     // forward these to the distributed message handler, after informing the distributed manager that we are now a root.
                     case MessageCode.Server.SearchRequest:
-                        SoulseekClient.DistributedConnectionManager.PromoteToBranchRoot();
-                        SoulseekClient.DistributedMessageHandler.HandleMessageRead(SoulseekClient.ServerConnection, message);
+                        if (SoulseekClient.DistributedConnectionManager.HasParent)
+                        {
+                            Diagnostic.Debug($"Received search request from server but are connected to a parent.  Ignoring search.");
+                        }
+                        else
+                        {
+                            SoulseekClient.DistributedConnectionManager.PromoteToBranchRoot();
+                            SoulseekClient.DistributedMessageHandler.HandleMessageRead(SoulseekClient.ServerConnection, message);
+                        }
+
                         break;
 
                     default:
