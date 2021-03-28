@@ -3198,8 +3198,8 @@ namespace Soulseek
             {
                 var payload = new List<byte>();
                 payload.AddRange(new HaveNoParentsCommand(true).ToByteArray());
-                payload.AddRange(new BranchRootCommand(Username).ToByteArray());
-                payload.AddRange(new BranchLevelCommand(0).ToByteArray());
+                payload.AddRange(new BranchRootCommand(DistributedConnectionManager.BranchRoot).ToByteArray());
+                payload.AddRange(new BranchLevelCommand(DistributedConnectionManager.BranchLevel).ToByteArray());
 
                 await ServerConnection.WriteAsync(payload.ToArray(), cancellationToken).ConfigureAwait(false);
             }
