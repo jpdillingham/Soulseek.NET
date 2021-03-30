@@ -945,7 +945,7 @@ namespace Soulseek.Network
 
                 switch (code)
                 {
-                    case MessageCode.Distributed.ServerSearchRequest:
+                    case MessageCode.Distributed.EmbeddedMessage:
                     case MessageCode.Distributed.SearchRequest:
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Id));
                         break;
