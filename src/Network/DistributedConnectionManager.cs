@@ -242,7 +242,27 @@ namespace Soulseek.Network
                 var msg = $"Failed to establish an inbound indirect child connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
                 Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
-                ChildConnectionDictionary.TryRemove(r.Username, out _);
+
+                ChildConnectionDictionary.TryRemove(r.Username, out var removed);
+
+                try
+                {
+                    var conn = await removed.Value.ConfigureAwait(false);
+
+                    if (!conn.Type.HasFlag(ConnectionTypes.Indirect))
+                    {
+                        ChildConnectionDictionary.TryAdd(r.Username, removed);
+                        Console.WriteLine($"_______________________________ removed {r.Username} but put it back");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"!!!!!!!!!!!!!!!!!!!!!!!!! removed {r.Username}");
+                    }
+                }
+                catch (Exception ex1)
+                {
+                    Console.WriteLine(ex1);
+                }
 
                 throw new ConnectionException(msg, ex);
             }
@@ -318,6 +338,7 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddChildConnectionAsync(string username, IConnection incomingConnection)
         {
+            return;
             var c = incomingConnection;
 
             if (!CanAcceptChildren)
