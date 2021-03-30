@@ -3197,7 +3197,7 @@ namespace Soulseek
             if (Options.EnableDistributedNetwork)
             {
                 var payload = new List<byte>();
-                payload.AddRange(new HaveNoParentsCommand(true).ToByteArray());
+                payload.AddRange(new HaveNoParentsCommand(!DistributedConnectionManager.HasParent).ToByteArray());
                 payload.AddRange(new BranchRootCommand(DistributedConnectionManager.BranchRoot).ToByteArray());
                 payload.AddRange(new BranchLevelCommand(DistributedConnectionManager.BranchLevel).ToByteArray());
 
