@@ -44,5 +44,11 @@ namespace Soulseek.Messaging.Handlers
         /// <param name="sender">The child <see cref="IMessageConnection"/> instance to which the message was sent.</param>
         /// <param name="args">The message event args.</param>
         void HandleChildMessageWritten(object sender, MessageEventArgs args);
+
+        /// <summary>
+        ///     Handles embedded messages from the server.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        void HandleEmbeddedMessage(byte[] message);
     }
 }
