@@ -133,7 +133,7 @@ namespace Soulseek.Messaging.Handlers
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
 
-            if (code != MessageCode.Distributed.SearchRequest && code != MessageCode.Distributed.ServerSearchRequest)
+            if (code != MessageCode.Distributed.SearchRequest && code != MessageCode.Distributed.EmbeddedMessage)
             {
                 Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
             }
@@ -153,26 +153,35 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
-                    // if we are connected to a branch root, we get search requests with code DistributedServerSearchRequest.
-                    // convert this message to a normal DistributedSearchRequest before forwarding. not sure if this is correct,
-                    // but it would match the observed behavior. these messages may also be forwarded from the server message
-                    // handler if we haven't connected to a distributed parent in a timely manner.
-                    case MessageCode.Distributed.ServerSearchRequest:
-                        var serverSearchRequest = DistributedServerSearchRequest.FromByteArray(message);
+                    // if we are connected to a branch root, we will receive EmbeddedMessage/93.
+                    case MessageCode.Distributed.EmbeddedMessage:
+                        var embeddedMessage = EmbeddedMessage.FromByteArray(message);
 
-                        var forwardedSearchRequest = new DistributedSearchRequest(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query);
-                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(forwardedSearchRequest.ToByteArray()).ConfigureAwait(false);
+                        switch (embeddedMessage.DistributedCode)
+                        {
+                            // convert this message to a normal DistributedSearchRequest before forwarding.  this functionality is based
+                            // on the observation that branch roots send embedded messages to children, while parents that are not a branch root
+                            // send a plain SearchRequest/3.
+                            case MessageCode.Distributed.SearchRequest:
+                                var embeddedSearchRequest = DistributedSearchRequest.FromByteArray(embeddedMessage.DistributedMessage);
 
-                        await TrySendSearchResults(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query).ConfigureAwait(false);
+                                _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(embeddedMessage.DistributedMessage).ConfigureAwait(false);
+
+                                await TrySendSearchResults(embeddedSearchRequest.Username, embeddedSearchRequest.Token, embeddedSearchRequest.Query).ConfigureAwait(false);
+
+                                break;
+                            default:
+                                Diagnostic.Debug($"Unhandled embedded message: {code} from {connection.Username} ({connection.IPEndPoint}); {message.Length} bytes");
+                                break;
+                        }
 
                         break;
 
-                    // if we are connected to anyone other than a branch root, we should get search requests with code
-                    // SearchRequest. forward these requests as is.
+                    // if we are connected to anyone other than a branch root, we will receive SearchRequest/3.
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
-                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(searchRequest.ToByteArray()).ConfigureAwait(false);
+                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
 
                         await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
@@ -229,6 +238,45 @@ namespace Soulseek.Messaging.Handlers
         {
             var code = new MessageReader<MessageCode.Distributed>(args.Message).ReadCode();
             Diagnostic.Debug($"Distributed message sent: {code}");
+        }
+
+        /// <summary>
+        ///     Handles embedded messages from the server.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        public async void HandleEmbeddedMessage(byte[] message)
+        {
+            var code = MessageCode.Distributed.Unknown;
+
+            try
+            {
+                var embeddedMessage = EmbeddedMessage.FromByteArray(message);
+                code = embeddedMessage.DistributedCode;
+                var distributedMessage = embeddedMessage.DistributedMessage;
+
+                switch (code)
+                {
+                    case MessageCode.Distributed.SearchRequest:
+                        // receiving a SearchRequest/3 from the server as an embedded message indicates that we are
+                        // operating as a branch root on the distributed network.
+                        SoulseekClient.DistributedConnectionManager.PromoteToBranchRoot();
+
+                        var searchRequest = DistributedSearchRequest.FromByteArray(distributedMessage);
+
+                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
+
+                        await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+
+                        break;
+                    default:
+                        Diagnostic.Debug($"Unhandled embedded message: {code}; {message.Length} bytes");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Error handling embedded message: {code}; {ex.Message}", ex);
+            }
         }
 
         private async Task<bool> TrySendSearchResults(string username, int token, string query)

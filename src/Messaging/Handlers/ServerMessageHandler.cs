@@ -178,7 +178,7 @@ namespace Soulseek.Messaging.Handlers
         {
             var code = new MessageReader<MessageCode.Server>(message).ReadCode();
 
-            if (code != MessageCode.Server.SearchRequest)
+            if (code != MessageCode.Server.EmbeddedMessage)
             {
                 Diagnostic.Debug($"Server message received: {code}");
             }
@@ -498,19 +498,8 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
-                    // if we are promoted to a distributed branch root, the server will begin to send us search requests directly.
-                    // forward these to the distributed message handler, after informing the distributed manager that we are now a root.
-                    case MessageCode.Server.SearchRequest:
-                        if (SoulseekClient.DistributedConnectionManager.HasParent)
-                        {
-                            Diagnostic.Debug($"Received search request from server but are connected to a parent.  Ignoring search.");
-                        }
-                        else
-                        {
-                            SoulseekClient.DistributedConnectionManager.PromoteToBranchRoot();
-                            SoulseekClient.DistributedMessageHandler.HandleMessageRead(SoulseekClient.ServerConnection, message);
-                        }
-
+                    case MessageCode.Server.EmbeddedMessage:
+                        SoulseekClient.DistributedMessageHandler.HandleEmbeddedMessage(message);
                         break;
 
                     default:
