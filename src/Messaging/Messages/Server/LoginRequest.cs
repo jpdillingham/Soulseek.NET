@@ -41,7 +41,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the minor client version.
         /// </summary>
-        public int MinorVersion => 17;
+        public int MinorVersion => 100;
 
         /// <summary>
         ///     Gets the password.
@@ -56,7 +56,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the client version.
         /// </summary>
-        public int Version => 157;
+        public int Version => 170;
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
