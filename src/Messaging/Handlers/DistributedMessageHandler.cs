@@ -252,6 +252,10 @@ namespace Soulseek.Messaging.Handlers
                 switch (code)
                 {
                     case MessageCode.Distributed.SearchRequest:
+                        // receiving a SearchRequest/3 from the server as an embedded message indicates that we are
+                        // operating as a branch root on the distributed network.
+                        SoulseekClient.DistributedConnectionManager.PromoteToBranchRoot();
+
                         var searchRequest = DistributedSearchRequest.FromByteArray(distributedMessage);
 
                         _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
