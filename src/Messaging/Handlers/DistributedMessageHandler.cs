@@ -148,13 +148,15 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
-                    // if we are connected to a branch root, we get search requests with code EmbeddedMessage.
-                    // convert this message to a normal DistributedSearchRequest before forwarding.
+                    // if we are connected to a branch root, we will receive EmbeddedMessage/93.
                     case MessageCode.Distributed.EmbeddedMessage:
                         var embeddedMessage = EmbeddedMessage.FromByteArray(message);
 
                         switch (embeddedMessage.DistributedCode)
                         {
+                            // convert this message to a normal DistributedSearchRequest before forwarding.  this functionality is based
+                            // on the observation that branch roots send embedded messages to children, while parents that are not a branch root
+                            // send a plain SearchRequest/3.
                             case MessageCode.Distributed.SearchRequest:
                                 var embeddedSearchRequest = DistributedSearchRequest.FromByteArray(embeddedMessage.DistributedMessage);
 
@@ -170,12 +172,11 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
-                    // if we are connected to anyone other than a branch root, we should get search requests with code
-                    // SearchRequest. forward these requests as is.
+                    // if we are connected to anyone other than a branch root, we will receive SearchRequest/3.
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
-                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(searchRequest.ToByteArray()).ConfigureAwait(false);
+                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
 
                         await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
@@ -240,7 +241,7 @@ namespace Soulseek.Messaging.Handlers
         /// <param name="message">The message.</param>
         public async void HandleEmbeddedMessage(byte[] message)
         {
-            MessageCode.Distributed code = default;
+            var code = MessageCode.Distributed.Unknown;
 
             try
             {
@@ -252,7 +253,6 @@ namespace Soulseek.Messaging.Handlers
                 {
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(distributedMessage);
-                        Console.Write($"Distributed search: {searchRequest.Query}");
 
                         _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
 
@@ -260,7 +260,7 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
                     default:
-                        Diagnostic.Debug($"Unhandled embedded message: {code}");
+                        Diagnostic.Debug($"Unhandled embedded message: {code}; {message.Length} bytes");
                         break;
                 }
             }
