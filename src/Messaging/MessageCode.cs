@@ -60,7 +60,7 @@ namespace Soulseek.Messaging
             /// <summary>
             ///     Server code 93
             /// </summary>
-            ServerSearchRequest = 93,
+            EmbeddedMessage = 93,
         }
 
         /// <summary>
@@ -385,7 +385,7 @@ namespace Soulseek.Messaging
             /// <summary>
             ///     93
             /// </summary>
-            SearchRequest = 93,
+            EmbeddedMessage = 93,
 
             /// <summary>
             ///     100
