@@ -1733,8 +1733,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Fact(DisplayName = "Forwards distributed search requests")]
-        public void Forwards_Distributed_Search_Requests()
+        [Fact(DisplayName = "Forwards embedded messages")]
+        public void Forwards_Embedded_Messages()
         {
             var (handler, mocks) = GetFixture();
 
@@ -1744,7 +1744,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Returns(distributedHandler.Object);
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.Server.SearchRequest) // 93, same as distributed code
+                .WriteCode(MessageCode.Server.EmbeddedMessage) // 93, same as distributed code
+                .WriteByte(0x03)
                 .WriteBytes(new byte[8])
                 .WriteString("username")
                 .WriteInteger(1)
@@ -1753,7 +1754,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(null, message);
 
-            distributedHandler.Verify(m => m.HandleMessageRead(It.IsAny<object>(), message), Times.Once);
+            distributedHandler.Verify(m => m.HandleEmbeddedMessage(message), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]
