@@ -369,7 +369,6 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
-                connection.Disconnected += ChildConnectionProvisional_Disconnected;
 
                 Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
 
@@ -419,7 +418,6 @@ namespace Soulseek.Network
                 }
 
                 connection.Disconnected += ChildConnection_Disconnected;
-                connection.Disconnected -= ChildConnectionProvisional_Disconnected;
 
                 ChildDictionary.AddOrUpdate(username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
 
@@ -658,8 +656,6 @@ namespace Soulseek.Network
 
             _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
-
-        private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
         private void Dispose(bool disposing)
         {
