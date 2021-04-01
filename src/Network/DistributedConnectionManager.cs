@@ -678,7 +678,7 @@ namespace Soulseek.Network
         private byte[] GetBranchInformation()
         {
             var branchLevel = HasParent ? BranchLevel + 1 : 0;
-            var branchRoot = HasParent ? BranchRoot : SoulseekClient.Username;
+            var branchRoot = HasParent ? BranchRoot : SoulseekClient?.Username ?? string.Empty;
 
             var payload = new List<byte>();
 

@@ -267,8 +267,9 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var conn = new Mock<IMessageConnection>();
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
-                .WriteBytes(new byte[8])
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x03)
+                .WriteBytes(new byte[4])
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteString(query)
@@ -444,8 +445,9 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var conn = new Mock<IMessageConnection>();
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
-                .WriteBytes(new byte[8])
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x03)
+                .WriteBytes(new byte[4])
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteString(query)
