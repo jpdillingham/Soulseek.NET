@@ -2896,7 +2896,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
         [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead completes search wait on server search request"), AutoData]
-        internal void WaitForParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Server_Search_Request(string username, IPEndPoint endpoint, Guid id)
+        internal void WaitForParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Server_Search_Request(string username, int token, string query, IPEndPoint endpoint, Guid id)
         {
             var (manager, mocks) = GetFixture();
 
@@ -2906,7 +2906,12 @@ namespace Soulseek.Tests.Unit.Network
             var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, id);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x03)
+                .WriteInteger(49)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
                 .Build();
 
             var args = new MessageEventArgs(msg);
@@ -3049,38 +3054,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for peer")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Peer()
-        {
-            var (manager, _) = GetFixture();
-
-            using (manager)
-            {
-                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
-
-                Assert.True(info.Matches(new byte[] { 0x5, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0 }));
-            }
-        }
-
-        [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for server")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Server()
-        {
-            var (manager, _) = GetFixture();
-
-            var expected = new byte[] { 0x8, 0x0, 0x0, 0x0, 0x7E, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
-            using (manager)
-            {
-                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
-
-                Assert.True(info.Matches(expected));
-            }
-        }
-
-        [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for server when root is established")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Server_When_Root_Is_Established()
+        [Theory(DisplayName = "GetBranchInformation returns expected info when root is established"), AutoData]
+        internal void GetBranchInformation_Returns_Expected_Info_When_Root_Is_Established(string root, int level)
         {
             var (manager, _) = GetFixture();
 
@@ -3090,41 +3065,40 @@ namespace Soulseek.Tests.Unit.Network
 
             var expected = new List<byte>();
 
-            expected.AddRange(new BranchLevelCommand(1).ToByteArray());
-            expected.AddRange(new BranchRootCommand("a").ToByteArray());
+            expected.AddRange(new DistributedBranchLevel(level + 1).ToByteArray());
+            expected.AddRange(new DistributedBranchRoot(root).ToByteArray());
 
             using (manager)
             {
                 manager.SetProperty("ParentConnection", parent.Object);
-                manager.SetProperty("BranchRoot", "a");
+                manager.SetProperty("BranchRoot", root);
+                manager.SetProperty("BranchLevel", level);
 
-                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
+                var info = manager.InvokeMethod<byte[]>("GetBranchInformation");
 
                 Assert.True(info.Matches(expected.ToArray()));
             }
         }
 
         [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for peer when root is established")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Peer_When_Root_Is_Established()
+        [Theory(DisplayName = "GetBranchInformation returns expected info when no root is established"), AutoData]
+        internal void GetBranchInformation_Returns_Expected_Info_When_No_Root_Is_Established(string username)
         {
-            var (manager, _) = GetFixture();
+            var (manager, mocks) = GetFixture();
 
-            var parent = new Mock<IMessageConnection>();
-            parent.Setup(m => m.State)
-                .Returns(ConnectionState.Connected);
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
 
             var expected = new List<byte>();
 
-            expected.AddRange(new DistributedBranchLevel(1).ToByteArray());
-            expected.AddRange(new DistributedBranchRoot("a").ToByteArray());
+            expected.AddRange(new DistributedBranchLevel(0).ToByteArray());
+            expected.AddRange(new DistributedBranchRoot(username).ToByteArray());
 
             using (manager)
             {
-                manager.SetProperty("ParentConnection", parent.Object);
-                manager.SetProperty("BranchRoot", "a");
+                manager.SetProperty("ParentConnection", null);
 
-                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
+                var info = manager.InvokeMethod<byte[]>("GetBranchInformation");
 
                 Assert.True(info.Matches(expected.ToArray()));
             }
