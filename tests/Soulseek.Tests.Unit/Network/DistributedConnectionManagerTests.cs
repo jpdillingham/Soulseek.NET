@@ -1366,7 +1366,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound child connection"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound direct child connection"))), Times.Once);
             mocks.Diagnostic
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Purging child connection cache of failed connection"))), Times.Once);
         }
@@ -3102,24 +3102,6 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.True(info.Matches(expected.ToArray()));
             }
-        }
-
-        [Trait("Category", "ChildConnectionProvisional_Disconnected")]
-        [Fact(DisplayName = "ChildConnectionProvisional_Disconnected disposes connection")]
-        internal void ChildConnectionProvisional_Disconnected_Disposes_Connection()
-        {
-            var (manager, mocks) = GetFixture();
-
-            var child = new Mock<IMessageConnection>();
-
-            var args = new ConnectionDisconnectedEventArgs(null);
-
-            using (manager)
-            {
-                manager.InvokeMethod("ChildConnectionProvisional_Disconnected", child.Object, args);
-            }
-
-            child.Verify(m => m.Dispose(), Times.Once);
         }
 
         [Trait("Category", "ChildConnection_Disconnected")]
