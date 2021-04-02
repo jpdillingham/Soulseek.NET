@@ -386,14 +386,14 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
+                connection.Disconnected += ChildConnection_Disconnected;
 
                 if (cachedConnectionRecord != null)
                 {
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
                     {
                         // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed
-                        // because the remote client would supersede this connection with it.  this needs to be done at the earliest
-                        // possible opportunity.
+                        // because the remote client would supersede this connection with it.
                         Diagnostic.Debug($"Cancelling pending indirect child connection to {username}");
                         pendingCts.Cancel();
                     }
@@ -416,19 +416,9 @@ namespace Soulseek.Network
                     }
                 }
 
-                try
-                {
-                    connection.StartReadingContinuously();
+                connection.StartReadingContinuously();
 
-                    await connection.WriteAsync(GetBranchInformation()).ConfigureAwait(false);
-                }
-                catch
-                {
-                    connection.Dispose();
-                    throw;
-                }
-
-                connection.Disconnected += ChildConnection_Disconnected;
+                await connection.WriteAsync(GetBranchInformation()).ConfigureAwait(false);
 
                 ChildDictionary.AddOrUpdate(username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
 

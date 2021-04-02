@@ -126,40 +126,36 @@ namespace Soulseek.Network
                     SoulseekClient.Options.PeerConnectionOptions,
                     c.HandoffTcpClient());
 
+                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
+                c.Dispose();
+
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
                 connection.Disconnected += MessageConnection_Disconnected;
 
-                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
-
                 if (cachedConnectionRecord != null)
                 {
-                    // because the cache is Lazy<>, the cached entry may be either a connected or pending connection. if we try to
-                    // reference .Value before the cached function is dispositioned we'll get stuck waiting for it, which will
-                    // prevent this code from superseding the connection until the pending connection times out. to get around
-                    // this the pending connection dictionary was added, allowing us to tell if the connection is still pending.
-                    // if so, we can just cancel the token and move on.
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
                     {
+                        // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed
+                        // because the remote client would supersede this connection with it.
                         Diagnostic.Debug($"Cancelling pending inbound indirect message connection to {username}");
                         pendingCts.Cancel();
                     }
-                    else
+
+                    try
                     {
-                        // if there's no entry in the pending connection dictionary, the Lazy<> function has completed executing
-                        // and we know that awaiting .Value will return immediately, allowing us to tear down the disconnected
-                        // event handler.
-                        try
-                        {
-                            var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
-                            cachedConnection.Disconnected -= MessageConnection_Disconnected;
-                            Diagnostic.Debug($"Superseding cached message connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
-                        }
-                        catch
-                        {
-                            // noop
-                        }
+                        // because we cancelled any pending connection above, the Lazy<> function has completed
+                        // executing and we know that awaiting .Value will return immediately, allowing us to tear down the
+                        // existing connection.
+                        var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
+                        cachedConnection.Disconnected -= MessageConnection_Disconnected;
+                        Diagnostic.Debug($"Superseding cached message connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
+                    }
+                    catch
+                    {
+                        // noop
                     }
                 }
 
