@@ -309,8 +309,34 @@ namespace Soulseek.Network
             {
                 var msg = $"Failed to establish an inbound indirect message connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
-                Diagnostic.Debug($"Purging message connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
-                MessageConnectionDictionary.TryRemove(r.Username, out _);
+
+                // only purge the connection if the thrown exception is something other than OperationCanceledException.
+                // if this is thrown then a direct connection superseded this connection while it was being established,
+                // and ChildConnectionDictionary contains the new, direct connection.
+                if (!(ex is OperationCanceledException))
+                {
+                    Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
+
+                    // remove the current record, which *should* be the one we added above.
+                    MessageConnectionDictionary.TryRemove(r.Username, out var removed);
+
+                    try
+                    {
+                        var connection = await removed.Value.ConfigureAwait(false);
+
+                        // if the connection we removed is Direct, then a direct connection managed to come in
+                        // after this attempt had timed out or failed, but before that connection was able to cancel the pending token
+                        // this should be an extreme edge case, but log it as a warning so we can see how common it is.
+                        if (!connection.Type.HasFlag(ConnectionTypes.Direct))
+                        {
+                            Diagnostic.Warning($"Erroneously purged direct message connection to {r.Username} upon indirect failure");
+                        }
+                    }
+                    catch
+                    {
+                        // noop
+                    }
+                }
 
                 throw new ConnectionException(msg, ex);
             }
@@ -330,7 +356,6 @@ namespace Soulseek.Network
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                 connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
-                connection.Disconnected += MessageConnection_Disconnected;
 
                 using (var cts = new CancellationTokenSource())
                 {
@@ -356,6 +381,8 @@ namespace Soulseek.Network
                         PendingInboundIndirectConnectionDictionary.TryRemove(r.Username, out _);
                     }
                 }
+
+                connection.Disconnected += MessageConnection_Disconnected;
 
                 Diagnostic.Debug($"Message connection to {r.Username} ({r.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
