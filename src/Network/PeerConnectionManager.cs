@@ -159,7 +159,15 @@ namespace Soulseek.Network
                     }
                 }
 
-                connection.StartReadingContinuously();
+                try
+                {
+                    connection.StartReadingContinuously();
+                }
+                catch
+                {
+                    connection.Dispose();
+                    throw;
+                }
 
                 Diagnostic.Debug($"Message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
@@ -315,7 +323,7 @@ namespace Soulseek.Network
                 // and ChildConnectionDictionary contains the new, direct connection.
                 if (!(ex is OperationCanceledException))
                 {
-                    Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
+                    Diagnostic.Debug($"Purging message connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
 
                     // remove the current record, which *should* be the one we added above.
                     MessageConnectionDictionary.TryRemove(r.Username, out var removed);

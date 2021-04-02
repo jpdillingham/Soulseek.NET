@@ -416,9 +416,17 @@ namespace Soulseek.Network
                     }
                 }
 
-                connection.StartReadingContinuously();
+                try
+                {
+                    connection.StartReadingContinuously();
 
-                await connection.WriteAsync(GetBranchInformation()).ConfigureAwait(false);
+                    await connection.WriteAsync(GetBranchInformation()).ConfigureAwait(false);
+                }
+                catch
+                {
+                    connection.Dispose();
+                    throw;
+                }
 
                 ChildDictionary.AddOrUpdate(username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
 
