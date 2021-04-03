@@ -335,6 +335,41 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync disposes connection and throws if start reading throws"), AutoData]
+        internal async Task AddMessageConnectionAsync_Disposes_Connection_And_Throws_If_Start_Reading_Throws(string username, IPEndPoint endpoint, int token)
+        {
+            var thrown = new Exception();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            conn.Setup(m => m.StartReadingContinuously())
+                .Throws(thrown);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            using (manager)
+            {
+                var caught = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(caught);
+                Assert.IsType<ConnectionException>(caught);
+                Assert.Equal(thrown, caught.InnerException);
+            }
+
+            conn.Verify(m => m.StartReadingContinuously(), Times.Once);
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync adds connection"), AutoData]
         internal async Task AddMessageConnectionAsync_Adds_Connection(string username, IPEndPoint endpoint, int token)
         {
