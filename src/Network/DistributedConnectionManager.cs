@@ -259,7 +259,7 @@ namespace Soulseek.Network
                         // if the connection we removed is Direct, then a direct connection managed to come in
                         // after this attempt had timed out or failed, but before that connection was able to cancel the pending token
                         // this should be an extreme edge case, but log it as a warning so we can see how common it is.
-                        if (!connection.Type.HasFlag(ConnectionTypes.Direct))
+                        if (connection.Type.HasFlag(ConnectionTypes.Direct))
                         {
                             Diagnostic.Warning($"Erroneously purged direct child connection to {r.Username} upon indirect failure");
                         }

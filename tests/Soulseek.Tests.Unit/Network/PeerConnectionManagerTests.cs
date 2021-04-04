@@ -2006,6 +2006,39 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR produces warning if wrong connection is purged"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_CTPR_Produces_Warning_If_Wrong_Connection_Is_Purged(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
+
+            var (manager, mocks) = GetFixture();
+
+            var directConn = new Mock<IMessageConnection>();
+            directConn.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Callback(() =>
+                {
+                    var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+                    var record = new Lazy<Task<IMessageConnection>>(() => Task.FromResult(directConn.Object));
+                    dict.AddOrUpdate(username, record, (k, v) => record);
+                })
+                .Returns(Task.FromException(new Exception("foo")));
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Erroneously purged direct message connection")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR produces expected diagnostics on failure"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_CTPR_Produces_Expected_Diagnostics_On_Failure(string username, IPEndPoint endpoint, int token)
         {

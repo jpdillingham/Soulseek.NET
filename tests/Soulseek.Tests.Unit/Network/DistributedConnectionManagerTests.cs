@@ -639,6 +639,50 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR produces warning if wrong connection is purged"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Produces_Warning_If_Wrong_Connection_Is_Purged(ConnectToPeerResponse ctpr)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var directConn = new Mock<IMessageConnection>();
+            directConn.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Callback(() =>
+                {
+                    var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                    var record = new Lazy<Task<IMessageConnection>>(() => Task.FromResult(directConn.Object));
+                    dict.AddOrUpdate(ctpr.Username, record, (k, v) => record);
+                })
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+
+                Assert.Empty(manager.Children);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Erroneously purged direct child connection")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync CTPR generates expected diagnostics on successful connection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostics_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
