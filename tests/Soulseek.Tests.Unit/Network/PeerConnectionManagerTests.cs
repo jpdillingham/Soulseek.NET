@@ -2006,8 +2006,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
-        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR produces warning if wrong connection is purged"), AutoData]
-        internal async Task GetOrAddMessageConnectionAsync_CTPR_Produces_Warning_If_Wrong_Connection_Is_Purged(string username, IPEndPoint endpoint, int token)
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR produces warning and replaces if wrong connection is purged"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_CTPR_Produces_Warning_And_Replaces_If_Wrong_Connection_Is_Purged(string username, IPEndPoint endpoint, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
@@ -2033,6 +2033,16 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+
+                Assert.NotEmpty(dict);
+
+                dict.TryGetValue(username, out var remainingRecord);
+
+                var remainingConn = await remainingRecord.Value;
+
+                Assert.Equal(directConn.Object, remainingConn);
             }
 
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Erroneously purged direct message connection")), It.IsAny<Exception>()), Times.Once);

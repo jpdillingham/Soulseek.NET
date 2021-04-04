@@ -262,6 +262,7 @@ namespace Soulseek.Network
                         if (connection.Type.HasFlag(ConnectionTypes.Direct))
                         {
                             Diagnostic.Warning($"Erroneously purged direct child connection to {r.Username} upon indirect failure");
+                            ChildConnectionDictionary.TryAdd(r.Username, removed);
                         }
                     }
                     catch

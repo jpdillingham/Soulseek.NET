@@ -338,6 +338,7 @@ namespace Soulseek.Network
                         if (connection.Type.HasFlag(ConnectionTypes.Direct))
                         {
                             Diagnostic.Warning($"Erroneously purged direct message connection to {r.Username} upon indirect failure");
+                            MessageConnectionDictionary.TryAdd(r.Username, removed);
                         }
                     }
                     catch

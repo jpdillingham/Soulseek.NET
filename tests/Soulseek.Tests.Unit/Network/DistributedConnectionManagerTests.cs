@@ -639,8 +639,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync CTPR produces warning if wrong connection is purged"), AutoData]
-        internal async Task AddChildConnectionAsync_Ctpr_Produces_Warning_If_Wrong_Connection_Is_Purged(ConnectToPeerResponse ctpr)
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR produces warning and replaces if wrong connection is purged"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Produces_Warning_And_Replaces_If_Wrong_Connection_Is_Purged(ConnectToPeerResponse ctpr)
         {
             var expectedEx = new Exception("foo");
 
@@ -676,7 +676,15 @@ namespace Soulseek.Tests.Unit.Network
 
                 await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
 
-                Assert.Empty(manager.Children);
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+
+                Assert.NotEmpty(dict);
+
+                dict.TryGetValue(ctpr.Username, out var remainingRecord);
+
+                var remainingConn = await remainingRecord.Value;
+
+                Assert.Equal(directConn.Object, remainingConn);
             }
 
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Erroneously purged direct child connection")), It.IsAny<Exception>()), Times.Once);
