@@ -1971,7 +1971,11 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
+                var newConn = await manager.GetOrAddMessageConnectionAsync(ctpr);
+
+                Assert.NotNull(newConn);
+
+                newConn.Dispose();
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Attempting inbound indirect message connection"))), Times.Once);
