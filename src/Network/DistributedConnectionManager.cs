@@ -287,6 +287,7 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
+                connection.Disconnected += (sender, args) => ((IConnection)sender).Dispose();
 
                 using (var cts = new CancellationTokenSource())
                 {
@@ -386,7 +387,7 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
-                connection.Disconnected += ChildConnection_Disconnected;
+                connection.Disconnected += (sender, args) => ((IConnection)sender).Dispose();
 
                 if (cachedConnectionRecord != null)
                 {
@@ -427,6 +428,8 @@ namespace Soulseek.Network
                     connection.Dispose();
                     throw;
                 }
+
+                connection.Disconnected += ChildConnection_Disconnected;
 
                 ChildDictionary.AddOrUpdate(username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
 
