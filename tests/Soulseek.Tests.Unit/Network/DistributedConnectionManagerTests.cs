@@ -639,6 +639,58 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR produces warning and replaces if wrong connection is purged"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Produces_Warning_And_Replaces_If_Wrong_Connection_Is_Purged(ConnectToPeerResponse ctpr)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var directConn = new Mock<IMessageConnection>();
+            directConn.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Callback(() =>
+                {
+                    var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                    var record = new Lazy<Task<IMessageConnection>>(() => Task.FromResult(directConn.Object));
+                    dict.AddOrUpdate(ctpr.Username, record, (k, v) => record);
+                })
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+
+                Assert.NotEmpty(dict);
+
+                dict.TryGetValue(ctpr.Username, out var remainingRecord);
+
+                var remainingConn = await remainingRecord.Value;
+
+                Assert.Equal(directConn.Object, remainingConn);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Erroneously purged direct child connection")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync CTPR generates expected diagnostics on successful connection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostics_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
@@ -1366,7 +1418,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound child connection"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound direct child connection"))), Times.Once);
             mocks.Diagnostic
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Purging child connection cache of failed connection"))), Times.Once);
         }
@@ -3102,24 +3154,6 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.True(info.Matches(expected.ToArray()));
             }
-        }
-
-        [Trait("Category", "ChildConnectionProvisional_Disconnected")]
-        [Fact(DisplayName = "ChildConnectionProvisional_Disconnected disposes connection")]
-        internal void ChildConnectionProvisional_Disconnected_Disposes_Connection()
-        {
-            var (manager, mocks) = GetFixture();
-
-            var child = new Mock<IMessageConnection>();
-
-            var args = new ConnectionDisconnectedEventArgs(null);
-
-            using (manager)
-            {
-                manager.InvokeMethod("ChildConnectionProvisional_Disconnected", child.Object, args);
-            }
-
-            child.Verify(m => m.Dispose(), Times.Once);
         }
 
         [Trait("Category", "ChildConnection_Disconnected")]
