@@ -172,7 +172,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetParentBranchLevel(level), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -196,7 +196,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetParentBranchRoot(root), Times.Once);
         }
 
         [Trait("Category", "Message")]
