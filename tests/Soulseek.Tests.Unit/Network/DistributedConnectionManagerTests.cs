@@ -639,6 +639,58 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR produces warning and replaces if wrong connection is purged"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Produces_Warning_And_Replaces_If_Wrong_Connection_Is_Purged(ConnectToPeerResponse ctpr)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var directConn = new Mock<IMessageConnection>();
+            directConn.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Callback(() =>
+                {
+                    var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                    var record = new Lazy<Task<IMessageConnection>>(() => Task.FromResult(directConn.Object));
+                    dict.AddOrUpdate(ctpr.Username, record, (k, v) => record);
+                })
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+
+                Assert.NotEmpty(dict);
+
+                dict.TryGetValue(ctpr.Username, out var remainingRecord);
+
+                var remainingConn = await remainingRecord.Value;
+
+                Assert.Equal(directConn.Object, remainingConn);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Erroneously purged direct child connection")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync CTPR generates expected diagnostics on successful connection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostics_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
@@ -1366,7 +1418,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound child connection"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound direct child connection"))), Times.Once);
             mocks.Diagnostic
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Purging child connection cache of failed connection"))), Times.Once);
         }
@@ -2896,7 +2948,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
         [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead completes search wait on server search request"), AutoData]
-        internal void WaitForParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Server_Search_Request(string username, IPEndPoint endpoint, Guid id)
+        internal void WaitForParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Server_Search_Request(string username, int token, string query, IPEndPoint endpoint, Guid id)
         {
             var (manager, mocks) = GetFixture();
 
@@ -2906,7 +2958,12 @@ namespace Soulseek.Tests.Unit.Network
             var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, id);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x03)
+                .WriteInteger(49)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
                 .Build();
 
             var args = new MessageEventArgs(msg);
@@ -3049,38 +3106,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for peer")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Peer()
-        {
-            var (manager, _) = GetFixture();
-
-            using (manager)
-            {
-                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
-
-                Assert.True(info.Matches(new byte[] { 0x5, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0x0 }));
-            }
-        }
-
-        [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for server")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Server()
-        {
-            var (manager, _) = GetFixture();
-
-            var expected = new byte[] { 0x8, 0x0, 0x0, 0x0, 0x7E, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
-            using (manager)
-            {
-                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
-
-                Assert.True(info.Matches(expected));
-            }
-        }
-
-        [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for server when root is established")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Server_When_Root_Is_Established()
+        [Theory(DisplayName = "GetBranchInformation returns expected info when root is established"), AutoData]
+        internal void GetBranchInformation_Returns_Expected_Info_When_Root_Is_Established(string root, int level)
         {
             var (manager, _) = GetFixture();
 
@@ -3090,62 +3117,43 @@ namespace Soulseek.Tests.Unit.Network
 
             var expected = new List<byte>();
 
-            expected.AddRange(new BranchLevelCommand(1).ToByteArray());
-            expected.AddRange(new BranchRootCommand("a").ToByteArray());
+            expected.AddRange(new DistributedBranchLevel(level + 1).ToByteArray());
+            expected.AddRange(new DistributedBranchRoot(root).ToByteArray());
 
             using (manager)
             {
                 manager.SetProperty("ParentConnection", parent.Object);
-                manager.SetProperty("BranchRoot", "a");
+                manager.SetProperty("BranchRoot", root);
+                manager.SetProperty("BranchLevel", level);
 
-                var info = manager.InvokeGenericMethod<MessageCode.Server, byte[]>("GetBranchInformation");
+                var info = manager.InvokeMethod<byte[]>("GetBranchInformation");
 
                 Assert.True(info.Matches(expected.ToArray()));
             }
         }
 
         [Trait("Category", "GetBranchInformation")]
-        [Fact(DisplayName = "GetBranchInformation returns expected info for peer when root is established")]
-        internal void GetBranchInformation_Returns_Expected_Info_For_Peer_When_Root_Is_Established()
-        {
-            var (manager, _) = GetFixture();
-
-            var parent = new Mock<IMessageConnection>();
-            parent.Setup(m => m.State)
-                .Returns(ConnectionState.Connected);
-
-            var expected = new List<byte>();
-
-            expected.AddRange(new DistributedBranchLevel(1).ToByteArray());
-            expected.AddRange(new DistributedBranchRoot("a").ToByteArray());
-
-            using (manager)
-            {
-                manager.SetProperty("ParentConnection", parent.Object);
-                manager.SetProperty("BranchRoot", "a");
-
-                var info = manager.InvokeGenericMethod<MessageCode.Peer, byte[]>("GetBranchInformation");
-
-                Assert.True(info.Matches(expected.ToArray()));
-            }
-        }
-
-        [Trait("Category", "ChildConnectionProvisional_Disconnected")]
-        [Fact(DisplayName = "ChildConnectionProvisional_Disconnected disposes connection")]
-        internal void ChildConnectionProvisional_Disconnected_Disposes_Connection()
+        [Theory(DisplayName = "GetBranchInformation returns expected info when no root is established"), AutoData]
+        internal void GetBranchInformation_Returns_Expected_Info_When_No_Root_Is_Established(string username)
         {
             var (manager, mocks) = GetFixture();
 
-            var child = new Mock<IMessageConnection>();
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
 
-            var args = new ConnectionDisconnectedEventArgs(null);
+            var expected = new List<byte>();
+
+            expected.AddRange(new DistributedBranchLevel(0).ToByteArray());
+            expected.AddRange(new DistributedBranchRoot(username).ToByteArray());
 
             using (manager)
             {
-                manager.InvokeMethod("ChildConnectionProvisional_Disconnected", child.Object, args);
-            }
+                manager.SetProperty("ParentConnection", null);
 
-            child.Verify(m => m.Dispose(), Times.Once);
+                var info = manager.InvokeMethod<byte[]>("GetBranchInformation");
+
+                Assert.True(info.Matches(expected.ToArray()));
+            }
         }
 
         [Trait("Category", "ChildConnection_Disconnected")]

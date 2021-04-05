@@ -224,7 +224,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Child connection from {r.Username} ({r.IPEndPoint}) for token {r.Token} rejected: limit of {ChildLimit} reached");
+                Diagnostic.Debug($"Inbound child connection to {r.Username} ({r.IPEndPoint}) rejected: enabled {Enabled}; has parent: {HasParent}; is branch root: {IsBranchRoot}; children: {ChildDictionary.Count}/{ChildLimit}");
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
@@ -244,8 +244,35 @@ namespace Soulseek.Network
             {
                 var msg = $"Failed to establish an inbound indirect child connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
-                Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
-                ChildConnectionDictionary.TryRemove(r.Username, out _);
+
+                // only purge the connection if the thrown exception is something other than OperationCanceledException.
+                // if this is thrown then a direct connection superseded this connection while it was being established,
+                // and ChildConnectionDictionary contains the new, direct connection.
+                if (!(ex is OperationCanceledException))
+                {
+                    Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
+
+                    // remove the current record, which *should* be the one we added above.
+                    ChildConnectionDictionary.TryRemove(r.Username, out var removed);
+
+                    try
+                    {
+                        var connection = await removed.Value.ConfigureAwait(false);
+
+                        // if the connection we removed is Direct, then a direct connection managed to come in
+                        // after this attempt had timed out or failed, but before that connection was able to cancel the pending token
+                        // this should be an extreme edge case, but log it as a warning so we can see how common it is.
+                        if (connection.Type.HasFlag(ConnectionTypes.Direct))
+                        {
+                            Diagnostic.Warning($"Erroneously purged direct child connection to {r.Username} upon indirect failure");
+                            ChildConnectionDictionary.TryAdd(r.Username, removed);
+                        }
+                    }
+                    catch
+                    {
+                        // noop
+                    }
+                }
 
                 throw new ConnectionException(msg, ex);
             }
@@ -264,7 +291,7 @@ namespace Soulseek.Network
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
-                connection.Disconnected += ChildConnectionProvisional_Disconnected;
+                connection.Disconnected += (sender, args) => ((IConnection)sender).Dispose();
 
                 using (var cts = new CancellationTokenSource())
                 {
@@ -273,12 +300,12 @@ namespace Soulseek.Network
 
                     try
                     {
-                        await connection.ConnectAsync().ConfigureAwait(false);
+                        await connection.ConnectAsync(cts.Token).ConfigureAwait(false);
 
                         var request = new PierceFirewall(r.Token);
-                        await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+                        await connection.WriteAsync(request.ToByteArray(), cts.Token).ConfigureAwait(false);
 
-                        await connection.WriteAsync(GetBranchInformation()).ConfigureAwait(false);
+                        await connection.WriteAsync(GetBranchInformation(), cts.Token).ConfigureAwait(false);
                     }
                     catch
                     {
@@ -294,7 +321,6 @@ namespace Soulseek.Network
                 }
 
                 connection.Disconnected += ChildConnection_Disconnected;
-                connection.Disconnected -= ChildConnectionProvisional_Disconnected;
 
                 ChildDictionary.AddOrUpdate(r.Username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
 
@@ -325,7 +351,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) rejected: limit of {ChildLimit} concurrent connections reached.");
+                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) rejected: enabled {Enabled}; has parent: {HasParent}; is branch root: {IsBranchRoot}; children: {ChildDictionary.Count}/{ChildLimit}");
                 c.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
@@ -340,7 +366,7 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                var msg = $"Failed to establish an inbound child connection to {username} ({c.IPEndPoint}): {ex.Message}";
+                var msg = $"Failed to establish an inbound direct child connection to {username} ({c.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug($"{msg} (type: {c.Type}, id: {c.Id})");
                 Diagnostic.Debug($"Purging child connection cache of failed connection to {username} ({c.IPEndPoint})");
                 ChildConnectionDictionary.TryRemove(username, out _);
@@ -359,43 +385,39 @@ namespace Soulseek.Network
                     SoulseekClient.Options.DistributedConnectionOptions,
                     c.HandoffTcpClient());
 
+                Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
+                c.Dispose();
+
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
-                connection.Disconnected += ChildConnectionProvisional_Disconnected;
-
-                Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
+                connection.Disconnected += (sender, args) => ((IConnection)sender).Dispose();
 
                 if (cachedConnectionRecord != null)
                 {
-                    // because the cache is Lazy<>, the cached entry may be either a connected or pending connection. if we try to
-                    // reference .Value before the cached function is dispositioned we'll get stuck waiting for it, which will
-                    // prevent this code from superseding the connection until the pending connection times out. to get around
-                    // this the pending connection dictionary was added, allowing us to tell if the connection is still pending.
-                    // if so, we can just cancel the token and move on.
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
                     {
+                        // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed
+                        // because the remote client would supersede this connection with it.
                         Diagnostic.Debug($"Cancelling pending indirect child connection to {username}");
                         pendingCts.Cancel();
                     }
-                    else
+
+                    try
                     {
-                        try
-                        {
-                            // if there's no entry in the pending connection dictionary, the Lazy<> function has completed
-                            // executing and we know that awaiting .Value will return immediately, allowing us to tear down the
-                            // existing connection.
-                            var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
-                            cachedConnection.Disconnected -= ChildConnection_Disconnected;
-                            Diagnostic.Debug($"Superseding existing child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
-                            cachedConnection.Disconnect("Superseded.");
-                            cachedConnection.Dispose();
-                            superseded = true;
-                        }
-                        catch
-                        {
-                            // noop
-                        }
+                        // because we cancelled any pending connection above, the Lazy<> function has completed
+                        // executing and we know that awaiting .Value will return immediately, allowing us to tear down the
+                        // existing connection.
+                        var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
+                        cachedConnection.Disconnected -= ChildConnection_Disconnected;
+                        Diagnostic.Debug($"Superseding existing child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
+                        cachedConnection.Disconnect("Superseded.");
+                        cachedConnection.Dispose();
+                        superseded = true;
+                    }
+                    catch
+                    {
+                        // noop
                     }
                 }
 
@@ -412,7 +434,6 @@ namespace Soulseek.Network
                 }
 
                 connection.Disconnected += ChildConnection_Disconnected;
-                connection.Disconnected -= ChildConnectionProvisional_Disconnected;
 
                 ChildDictionary.AddOrUpdate(username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
 
@@ -650,8 +671,6 @@ namespace Soulseek.Network
 
             _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
-
-        private void ChildConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
         private void Dispose(bool disposing)
         {

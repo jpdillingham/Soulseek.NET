@@ -126,44 +126,48 @@ namespace Soulseek.Network
                     SoulseekClient.Options.PeerConnectionOptions,
                     c.HandoffTcpClient());
 
+                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
+                c.Dispose();
+
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
                 connection.Disconnected += MessageConnection_Disconnected;
 
-                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
-
                 if (cachedConnectionRecord != null)
                 {
-                    // because the cache is Lazy<>, the cached entry may be either a connected or pending connection. if we try to
-                    // reference .Value before the cached function is dispositioned we'll get stuck waiting for it, which will
-                    // prevent this code from superseding the connection until the pending connection times out. to get around
-                    // this the pending connection dictionary was added, allowing us to tell if the connection is still pending.
-                    // if so, we can just cancel the token and move on.
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
                     {
+                        // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed
+                        // because the remote client would supersede this connection with it.
                         Diagnostic.Debug($"Cancelling pending inbound indirect message connection to {username}");
                         pendingCts.Cancel();
                     }
-                    else
+
+                    try
                     {
-                        // if there's no entry in the pending connection dictionary, the Lazy<> function has completed executing
-                        // and we know that awaiting .Value will return immediately, allowing us to tear down the disconnected
-                        // event handler.
-                        try
-                        {
-                            var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
-                            cachedConnection.Disconnected -= MessageConnection_Disconnected;
-                            Diagnostic.Debug($"Superseding cached message connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
-                        }
-                        catch
-                        {
-                            // noop
-                        }
+                        // because we cancelled any pending connection above, the Lazy<> function has completed
+                        // executing and we know that awaiting .Value will return immediately, allowing us to tear down the
+                        // existing connection.
+                        var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
+                        cachedConnection.Disconnected -= MessageConnection_Disconnected;
+                        Diagnostic.Debug($"Superseding cached message connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
+                    }
+                    catch
+                    {
+                        // noop
                     }
                 }
 
-                connection.StartReadingContinuously();
+                try
+                {
+                    connection.StartReadingContinuously();
+                }
+                catch
+                {
+                    connection.Dispose();
+                    throw;
+                }
 
                 Diagnostic.Debug($"Message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
@@ -313,8 +317,35 @@ namespace Soulseek.Network
             {
                 var msg = $"Failed to establish an inbound indirect message connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
-                Diagnostic.Debug($"Purging message connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
-                MessageConnectionDictionary.TryRemove(r.Username, out _);
+
+                // only purge the connection if the thrown exception is something other than OperationCanceledException.
+                // if this is thrown then a direct connection superseded this connection while it was being established,
+                // and ChildConnectionDictionary contains the new, direct connection.
+                if (!(ex is OperationCanceledException))
+                {
+                    Diagnostic.Debug($"Purging message connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
+
+                    // remove the current record, which *should* be the one we added above.
+                    MessageConnectionDictionary.TryRemove(r.Username, out var removed);
+
+                    try
+                    {
+                        var connection = await removed.Value.ConfigureAwait(false);
+
+                        // if the connection we removed is Direct, then a direct connection managed to come in
+                        // after this attempt had timed out or failed, but before that connection was able to cancel the pending token
+                        // this should be an extreme edge case, but log it as a warning so we can see how common it is.
+                        if (connection.Type.HasFlag(ConnectionTypes.Direct))
+                        {
+                            Diagnostic.Warning($"Erroneously purged direct message connection to {r.Username} upon indirect failure");
+                            MessageConnectionDictionary.TryAdd(r.Username, removed);
+                        }
+                    }
+                    catch
+                    {
+                        // noop
+                    }
+                }
 
                 throw new ConnectionException(msg, ex);
             }
@@ -334,7 +365,6 @@ namespace Soulseek.Network
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                 connection.MessageWritten += SoulseekClient.PeerMessageHandler.HandleMessageWritten;
-                connection.Disconnected += MessageConnection_Disconnected;
 
                 using (var cts = new CancellationTokenSource())
                 {
@@ -360,6 +390,8 @@ namespace Soulseek.Network
                         PendingInboundIndirectConnectionDictionary.TryRemove(r.Username, out _);
                     }
                 }
+
+                connection.Disconnected += MessageConnection_Disconnected;
 
                 Diagnostic.Debug($"Message connection to {r.Username} ({r.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;

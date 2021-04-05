@@ -335,6 +335,41 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync disposes connection and throws if start reading throws"), AutoData]
+        internal async Task AddMessageConnectionAsync_Disposes_Connection_And_Throws_If_Start_Reading_Throws(string username, IPEndPoint endpoint, int token)
+        {
+            var thrown = new Exception();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            conn.Setup(m => m.StartReadingContinuously())
+                .Throws(thrown);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            using (manager)
+            {
+                var caught = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(caught);
+                Assert.IsType<ConnectionException>(caught);
+                Assert.Equal(thrown, caught.InnerException);
+            }
+
+            conn.Verify(m => m.StartReadingContinuously(), Times.Once);
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync adds connection"), AutoData]
         internal async Task AddMessageConnectionAsync_Adds_Connection(string username, IPEndPoint endpoint, int token)
         {
@@ -1936,7 +1971,11 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
+                var newConn = await manager.GetOrAddMessageConnectionAsync(ctpr);
+
+                Assert.NotNull(newConn);
+
+                newConn.Dispose();
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Attempting inbound indirect message connection"))), Times.Once);
@@ -1968,6 +2007,49 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Purging message connection cache"))), Times.Once);
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR produces warning and replaces if wrong connection is purged"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_CTPR_Produces_Warning_And_Replaces_If_Wrong_Connection_Is_Purged(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
+
+            var (manager, mocks) = GetFixture();
+
+            var directConn = new Mock<IMessageConnection>();
+            directConn.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Callback(() =>
+                {
+                    var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+                    var record = new Lazy<Task<IMessageConnection>>(() => Task.FromResult(directConn.Object));
+                    dict.AddOrUpdate(username, record, (k, v) => record);
+                })
+                .Returns(Task.FromException(new Exception("foo")));
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+
+                Assert.NotEmpty(dict);
+
+                dict.TryGetValue(username, out var remainingRecord);
+
+                var remainingConn = await remainingRecord.Value;
+
+                Assert.Equal(directConn.Object, remainingConn);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Erroneously purged direct message connection")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
