@@ -292,17 +292,23 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        [Trait("Category", "SetBranchLevel")]
-        [Theory(DisplayName = "SetBranchLevel sets branch level"), AutoData]
+        [Trait("Category", "SetParentBranchLevel")]
+        [Theory(DisplayName = "SetParentBranchLevel sets branch level"), AutoData]
         public void SetBranchLevel_Sets_Branch_Level(int branchLevel)
         {
             var (manager, _) = GetFixture();
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 manager.SetParentBranchLevel(branchLevel);
 
-                Assert.Equal(branchLevel, manager.BranchLevel);
+                Assert.Equal(branchLevel + 1, manager.BranchLevel);
             }
         }
 
@@ -312,15 +318,21 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, _) = GetFixture();
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
 
                 Assert.False(timer.Enabled);
 
                 manager.SetParentBranchLevel(branchLevel);
 
-                Assert.Equal(branchLevel, manager.BranchLevel);
+                Assert.Equal(branchLevel + 1, manager.BranchLevel);
                 Assert.True(timer.Enabled);
             }
         }
@@ -331,8 +343,14 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, _) = GetFixture();
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 manager.SetParentBranchRoot(branchRoot);
 
                 Assert.Equal(branchRoot, manager.BranchRoot);
@@ -345,8 +363,14 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, _) = GetFixture();
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
 
                 Assert.False(timer.Enabled);
