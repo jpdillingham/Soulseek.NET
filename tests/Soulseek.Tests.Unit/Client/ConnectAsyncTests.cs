@@ -491,17 +491,51 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Writes HaveNoParent on success if enabled"), AutoData]
-        public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password)
+        [Theory(DisplayName = "Configures distributed network with parent info on success if enabled and has parent"), AutoData]
+        public async Task LoginAsync_Configures_Distributed_Network_With_Parent_Info_On_Success_If_Enabled_And_Has_Parent(string user, string password, string branchRoot, int branchLevel)
         {
             var (client, mocks) = GetFixture();
+
+            mocks.DistributedConnectionManager.Setup(m => m.HasParent)
+                .Returns(true);
+            mocks.DistributedConnectionManager.Setup(m => m.BranchLevel)
+                .Returns(branchLevel);
+            mocks.DistributedConnectionManager.Setup(m => m.BranchRoot)
+                .Returns(branchRoot);
+
+            var expected = new List<byte>();
+            expected.AddRange(new HaveNoParentsCommand(false).ToByteArray());
+            expected.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
+            expected.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
 
             using (client)
             {
                 await client.ConnectAsync(user, password);
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<HaveNoParentsCommand>(), It.IsAny<CancellationToken?>()));
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()));
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Configures distributed network with defaults on success if enabled and no parent"), AutoData]
+        public async Task LoginAsync_Configures_Distributed_Network_With_Defaults_On_Success_If_Enabled_And_No_Parent(string user, string password)
+        {
+            var (client, mocks) = GetFixture();
+
+            mocks.DistributedConnectionManager.Setup(m => m.BranchRoot)
+                .Returns(user);
+
+            var expected = new List<byte>();
+            expected.AddRange(new HaveNoParentsCommand(true).ToByteArray());
+            expected.AddRange(new BranchRootCommand(user).ToByteArray());
+            expected.AddRange(new BranchLevelCommand(0).ToByteArray());
+
+            using (client)
+            {
+                await client.ConnectAsync(user, password);
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "Connect")]
@@ -653,6 +687,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(
+                distributedConnectionManager: mocks.DistributedConnectionManager.Object,
                 connectionFactory: mocks.ConnectionFactory.Object,
                 waiter: mocks.Waiter.Object,
                 options: clientOptions ?? new SoulseekClientOptions(enableListener: false));
@@ -675,6 +710,10 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<ITcpClient>()))
                     .Returns(ServerConnection.Object);
 
+                DistributedConnectionManager = new Mock<IDistributedConnectionManager>();
+                DistributedConnectionManager.Setup(m => m.BranchLevel).Returns(0);
+                DistributedConnectionManager.Setup(m => m.BranchRoot).Returns(string.Empty);
+
                 Waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                     .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
             }
@@ -685,6 +724,7 @@ namespace Soulseek.Tests.Unit.Client
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public Mock<IConnectionFactory> ConnectionFactory { get; }
+            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; }
         }
     }
 }
