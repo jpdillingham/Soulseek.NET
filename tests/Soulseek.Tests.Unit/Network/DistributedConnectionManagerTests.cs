@@ -57,6 +57,82 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Empty(c.PendingSolicitations);
         }
 
+        [Trait("Category", "BranchRoot")]
+        [Theory(DisplayName = "BranchRoot returns empty string if no username is set and no parent"), AutoData]
+        public void BranchRoot_Returns_Empty_String_If_No_Username_And_No_Parent(string username, string parentBranchRoot)
+        {
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                Assert.Equal(string.Empty, manager.BranchRoot);
+            }
+        }
+
+        [Trait("Category", "BranchRoot")]
+        [Theory(DisplayName = "BranchRoot returns username if set and no parent"), AutoData]
+        public void BranchRoot_Returns_Username_If_Set_And_No_Parent(string username, string parentBranchRoot)
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username).Returns(username);
+
+            using (manager)
+            {
+                Assert.Equal(username, manager.BranchRoot);
+            }
+        }
+
+        [Trait("Category", "BranchRoot")]
+        [Theory(DisplayName = "BranchRoot returns parent branch root if has parent"), AutoData]
+        public void BranchRoot_Returns_Parent_Branch_Root_If_Has_Parent(string username, string parentBranchRoot)
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username).Returns(username);
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State).Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                manager.SetProperty("ParentBranchRoot", parentBranchRoot);
+
+                Assert.Equal(parentBranchRoot, manager.BranchRoot);
+            }
+        }
+
+        [Trait("Category", "BranchLevel")]
+        [Fact(DisplayName = "BranchLevel returns 0 if no parent")]
+        public void BranchRoot_Returns_Zero_If_No_Parent()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                Assert.Equal(0, manager.BranchLevel);
+            }
+        }
+
+        [Trait("Category", "BranchLevel")]
+        [Theory(DisplayName = "BranchLevel returns parent branch level plus 1 if has parent"), AutoData]
+        public void BranchRoot_Returns_Parent_Branch_Level_Plus_1_If_Has_Parent(int parentBranchLevel)
+        {
+            var (manager, _) = GetFixture();
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State).Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                manager.SetProperty("ParentBranchLevel", parentBranchLevel);
+
+                Assert.Equal(parentBranchLevel + 1, manager.BranchLevel);
+            }
+        }
+
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "CanAcceptChildren is false if AcceptDistributedChildren is false")]
         public void CanAcceptChildren_Is_False_If_AcceptDistributedChildren_Is_False()
