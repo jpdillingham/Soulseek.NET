@@ -123,7 +123,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the current distributed branch root.
         /// </summary>
-        public string BranchRoot => HasParent ? ParentBranchRoot : SoulseekClient.Username;
+        public string BranchRoot => (HasParent ? ParentBranchRoot : SoulseekClient.Username) ?? string.Empty;
 
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.

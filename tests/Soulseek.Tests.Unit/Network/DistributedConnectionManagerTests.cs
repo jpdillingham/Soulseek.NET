@@ -3205,9 +3205,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var timer = manager.GetProperty<System.Timers.Timer>("StatusDebounceTimer");
-                timer.Start();
-                manager.SetProperty("StatusDebounceTimer", timer);
+                await manager.InvokeMethod<Task>("UpdateStatusEventuallyAsync");
 
                 manager.SetProperty("LastStatusTimestamp", DateTime.UtcNow.AddDays(-365));
 
