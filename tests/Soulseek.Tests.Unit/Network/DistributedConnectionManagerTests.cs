@@ -645,9 +645,6 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
-                .Returns(conn.Object);
-
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
@@ -716,7 +713,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Throws(expectedEx);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -760,7 +757,7 @@ namespace Soulseek.Tests.Unit.Network
                 })
                 .Throws(expectedEx);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -866,7 +863,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Throws(expectedEx);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1857,7 +1854,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1882,7 +1879,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1907,7 +1904,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1951,7 +1948,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
@@ -1972,7 +1969,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
@@ -1995,7 +1992,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Task>(new Exception()));
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
@@ -2021,7 +2018,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Task>(expected));
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
@@ -2043,7 +2040,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
@@ -2069,7 +2066,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Task>(expected));
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
@@ -2094,7 +2091,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2138,7 +2135,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2187,11 +2184,11 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(id);
 
             // direct fetch fails
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
                 .Throws(new Exception());
 
             // indirect succeeds
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), mocks.TcpClient.Object))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), mocks.TcpClient.Object))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -2235,11 +2232,11 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(id);
 
             // direct fetch fails
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
                 .Throws(new Exception());
 
             // indirect succeeds
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), mocks.TcpClient.Object))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), mocks.TcpClient.Object))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -2279,7 +2276,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(mocks.TcpClient.Object);
 
             // direct fetch fails
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
                 .Throws(new Exception());
 
             // indirect fails
@@ -2310,7 +2307,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(mocks.TcpClient.Object);
 
             // direct fetch fails
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
                 .Throws(new Exception());
 
             // indirect fails
@@ -2338,7 +2335,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2377,7 +2374,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2417,7 +2414,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2457,7 +2454,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2497,7 +2494,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2540,7 +2537,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.Id)
                 .Returns(id);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             // indirect wait fails
@@ -2583,11 +2580,11 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(id);
 
             // direct fetch fails
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
                 .Throws(new Exception());
 
             // indirect succeeds
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), mocks.TcpClient.Object))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), mocks.TcpClient.Object))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -2726,7 +2723,7 @@ namespace Soulseek.Tests.Unit.Network
             conn1.Setup(m => m.Id)
                 .Returns(id1);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
 
             // mocks for connection #2
@@ -2734,7 +2731,7 @@ namespace Soulseek.Tests.Unit.Network
             conn2.Setup(m => m.Id)
                 .Returns(id2);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
 
             // message mocks, to allow either connection to be established fully
@@ -2790,7 +2787,7 @@ namespace Soulseek.Tests.Unit.Network
             conn1.Setup(m => m.Id)
                 .Returns(id1);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
 
             // mocks for connection #2
@@ -2798,7 +2795,7 @@ namespace Soulseek.Tests.Unit.Network
             conn2.Setup(m => m.Id)
                 .Returns(id2);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
 
             // message mocks, to allow either connection to be established fully
@@ -2852,7 +2849,7 @@ namespace Soulseek.Tests.Unit.Network
             conn1.Setup(m => m.Id)
                 .Returns(id1);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
 
             // mocks for connection #2
@@ -2860,7 +2857,7 @@ namespace Soulseek.Tests.Unit.Network
             conn2.Setup(m => m.Id)
                 .Returns(id2);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
 
             // message mocks, to allow either connection to be established fully
@@ -2919,7 +2916,7 @@ namespace Soulseek.Tests.Unit.Network
             conn1.Setup(m => m.Id)
                 .Returns(id1);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
 
             // mocks for connection #2
@@ -2927,7 +2924,7 @@ namespace Soulseek.Tests.Unit.Network
             conn2.Setup(m => m.Id)
                 .Returns(id2);
 
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
 
             // message mocks, to allow either connection to be established fully

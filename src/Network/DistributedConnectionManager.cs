@@ -768,7 +768,7 @@ namespace Soulseek.Network
         {
             Diagnostic.Debug($"Attempting direct parent candidate connection to {username} ({ipEndPoint})");
 
-            var connection = ConnectionFactory.GetMessageConnection(
+            var connection = ConnectionFactory.GetDistributedConnection(
                 username,
                 ipEndPoint,
                 SoulseekClient.Options.DistributedConnectionOptions);
@@ -809,7 +809,7 @@ namespace Soulseek.Network
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, username, solicitationToken), SoulseekClient.Options.DistributedConnectionOptions.ConnectTimeout, cancellationToken)
                     .ConfigureAwait(false);
 
-                var connection = ConnectionFactory.GetMessageConnection(
+                var connection = ConnectionFactory.GetDistributedConnection(
                     username,
                     incomingConnection.IPEndPoint,
                     SoulseekClient.Options.DistributedConnectionOptions,
