@@ -888,7 +888,7 @@ namespace Soulseek.Network
 
                 var statusHash = Convert.ToBase64String(payload.ToArray());
 
-                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase) || !HasParent)
+                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase))
                 {
                     try
                     {
