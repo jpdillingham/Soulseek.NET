@@ -18,6 +18,7 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
+    using System.Net;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
@@ -51,6 +52,34 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(4 + 4 + 4 + username.Length + 4 + message.Length, msg.Length);
             Assert.Equal(username, reader.ReadString());
             Assert.Equal(message, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "ParentsIPCommand")]
+        [Theory(DisplayName = "ParentsIPCommand instantiates properly"), AutoData]
+        public void ParentsIPCommand_Instantiates_Properly(IPAddress ipAddress)
+        {
+            var msg = new ParentsIPCommand(ipAddress);
+
+            Assert.Equal(ipAddress, msg.IPAddress);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "ParentsIPCommand")]
+        [Theory(DisplayName = "ParentsIPCommand constructs the correct message"), AutoData]
+        public void ParentsIPCommand_Constructs_The_Correct_Message(IPAddress ipAddress)
+        {
+            var msg = new ParentsIPCommand(ipAddress).ToByteArray();
+            var expected = ipAddress.GetAddressBytes();
+            Array.Reverse(expected);
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.ParentsIP, code);
+
+            Assert.Equal(4 + 4 + 4, msg.Length);
+            Assert.Equal(expected, reader.ReadBytes(4));
         }
 
         [Trait("Category", "Instantiation")]
