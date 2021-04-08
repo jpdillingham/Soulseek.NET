@@ -59,6 +59,11 @@ namespace Soulseek.Network
         event EventHandler<MessageEventArgs> MessageWritten;
 
         /// <summary>
+        ///     Gets the length message codes received, in bytes.
+        /// </summary>
+        int CodeLength { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether this connection is connected to the server, as opposed to a peer.
         /// </summary>
         bool IsServerConnection { get; }

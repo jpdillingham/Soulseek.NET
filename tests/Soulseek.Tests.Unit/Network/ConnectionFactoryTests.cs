@@ -109,7 +109,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "GetMessageConnection")]
         [Theory(DisplayName = "GetMessageConnection returns the expected connection"), AutoData]
-        internal void GetMessageConneciton_Returns_The_Expected_Connection(string username, IPEndPoint endpoint)
+        internal void GetMessageConnection_Returns_The_Expected_Connection(string username, IPEndPoint endpoint)
         {
             var options = new ConnectionOptions();
 
@@ -126,9 +126,37 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "GetMessageConnection")]
         [Theory(DisplayName = "GetMessageConnection uses default options if not specified"), AutoData]
-        internal void GetMessageConneciton_Uses_Default_Options_If_Not_Specified(string username, IPEndPoint endpoint)
+        internal void GetMessageConnection_Uses_Default_Options_If_Not_Specified(string username, IPEndPoint endpoint)
         {
             var c = new ConnectionFactory().GetMessageConnection(username, endpoint);
+
+            Assert.NotNull(c.Options);
+        }
+
+        [Trait("Category", "GetDistributedConnection")]
+        [Theory(DisplayName = "GetDistributedConnection returns the expected connection"), AutoData]
+        internal void GetDistributedConnection_Returns_The_Expected_Connection(string username, IPEndPoint endpoint)
+        {
+            var options = new ConnectionOptions();
+
+            var c = new ConnectionFactory().GetDistributedConnection(username, endpoint, options);
+
+            Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
+            Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
+
+            Assert.Equal(options.ReadBufferSize, c.Options.ReadBufferSize);
+            Assert.Equal(options.WriteBufferSize, c.Options.WriteBufferSize);
+            Assert.Equal(options.ConnectTimeout, c.Options.ConnectTimeout);
+            Assert.Equal(options.InactivityTimeout, c.Options.InactivityTimeout);
+
+            Assert.Equal(1, c.CodeLength);
+        }
+
+        [Trait("Category", "GetDistributedConnection")]
+        [Theory(DisplayName = "GetDistributedConnection uses default options if not specified"), AutoData]
+        internal void GetDistributedConnection_Uses_Default_Options_If_Not_Specified(string username, IPEndPoint endpoint)
+        {
+            var c = new ConnectionFactory().GetDistributedConnection(username, endpoint);
 
             Assert.NotNull(c.Options);
         }
