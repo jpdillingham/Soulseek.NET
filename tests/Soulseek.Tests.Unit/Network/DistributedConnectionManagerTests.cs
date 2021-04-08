@@ -292,6 +292,117 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "PromoteToBranchRoot")]
+        [Fact(DisplayName = "PromoteToBranchRoot promotes to branch root")]
+        public void PromoteToBranchRoot_Promotes_To_Branch_Root()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                Assert.False(manager.IsBranchRoot);
+
+                manager.PromoteToBranchRoot();
+
+                Assert.True(manager.IsBranchRoot);
+            }
+        }
+
+        [Trait("Category", "PromoteToBranchRoot")]
+        [Fact(DisplayName = "PromoteToBranchRoot raises PromotedToBranchRoot")]
+        public void PromoteToBranchRoot_Raises_PromotedToBranchRoot()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                bool fired = false;
+
+                manager.PromotedToBranchRoot += (sender, args) => fired = true;
+
+                manager.PromoteToBranchRoot();
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "PromoteToBranchRoot")]
+        [Fact(DisplayName = "PromoteToBranchRoot does not raise PromotedToBranchRoot if already root")]
+        public void PromoteToBranchRoot_Does_Not_Raise_PromotedToBranchRoot_If_Already_Root()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.PromoteToBranchRoot();
+
+                bool fired = false;
+
+                manager.PromotedToBranchRoot += (sender, args) => fired = true;
+
+                manager.PromoteToBranchRoot();
+
+                Assert.False(fired);
+            }
+        }
+
+        [Trait("Category", "PromoteToBranchRoot")]
+        [Fact(DisplayName = "PromoteToBranchRoot does not promote if HasParent")]
+        public void PromoteToBranchRoot_Does_Not_Promote_If_HasParent()
+        {
+            var (manager, _) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State).Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+
+                manager.PromoteToBranchRoot();
+
+                Assert.False(manager.IsBranchRoot);
+            }
+        }
+
+        [Trait("Category", "DemoteFromBranchRoot")]
+        [Fact(DisplayName = "DemoteFromBranchRoot promotes to branch root")]
+        public void DemoteFromBranchRoot_Demotes_From_Branch_Root()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.PromoteToBranchRoot();
+                Assert.True(manager.IsBranchRoot);
+
+                manager.DemoteFromBranchRoot();
+
+                Assert.False(manager.IsBranchRoot);
+            }
+        }
+
+        [Trait("Category", "DemoteFromBranchRoot")]
+        [Fact(DisplayName = "DemoteFromBranchRoot raises DemotedFromBranchRoot")]
+        public void DemoteFromBranchRoot_Raises_DemotedFromBranchRoot()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.PromoteToBranchRoot();
+                Assert.True(manager.IsBranchRoot);
+
+                var fired = false;
+
+                manager.DemotedFromBranchRoot += (sender, args) => fired = true;
+
+                manager.DemoteFromBranchRoot();
+
+                Assert.True(fired);
+            }
+        }
+
         [Trait("Category", "SetParentBranchLevel")]
         [Theory(DisplayName = "SetParentBranchLevel sets branch level"), AutoData]
         public void SetBranchLevel_Sets_Branch_Level(int branchLevel)
@@ -421,7 +532,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+                await manager.BroadcastMessageAsync(bytes);
             }
 
             c1.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), It.IsAny<CancellationToken?>()));
@@ -444,7 +555,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.BroadcastMessageAsync(bytes, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(() => manager.BroadcastMessageAsync(bytes));
 
                 Assert.Null(ex);
             }
