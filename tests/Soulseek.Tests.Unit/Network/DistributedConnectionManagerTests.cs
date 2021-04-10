@@ -58,10 +58,10 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "BranchRoot")]
-        [Theory(DisplayName = "BranchRoot returns empty string if no username is set and no parent"), AutoData]
-        public void BranchRoot_Returns_Empty_String_If_No_Username_And_No_Parent(string username, string parentBranchRoot)
+        [Fact(DisplayName = "BranchRoot returns empty string if no username is set and no parent")]
+        public void BranchRoot_Returns_Empty_String_If_No_Username_And_No_Parent()
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             using (manager)
             {
@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "BranchRoot")]
         [Theory(DisplayName = "BranchRoot returns username if set and no parent"), AutoData]
-        public void BranchRoot_Returns_Username_If_Set_And_No_Parent(string username, string parentBranchRoot)
+        public void BranchRoot_Returns_Username_If_Set_And_No_Parent(string username)
         {
             var (manager, mocks) = GetFixture();
 
