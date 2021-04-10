@@ -769,6 +769,7 @@ namespace Soulseek
                 ServerConnection?.Disconnect(message, exception);
 
                 DistributedConnectionManager.RemoveAndDisposeAll();
+                DistributedConnectionManager.ResetStatus();
 
                 Searches.Values.ToList().ForEach(search =>
                 {

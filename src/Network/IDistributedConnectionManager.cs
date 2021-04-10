@@ -153,6 +153,11 @@ namespace Soulseek.Network
         void RemoveAndDisposeAll();
 
         /// <summary>
+        ///     Resets stored state information about the distributed network.
+        /// </summary>
+        void ResetStatus();
+
+        /// <summary>
         ///     Sets the distributed <paramref name="branchLevel"/>.
         /// </summary>
         /// <param name="branchLevel">The distributed branch level.</param>

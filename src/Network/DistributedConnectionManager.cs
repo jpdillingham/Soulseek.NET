@@ -54,7 +54,6 @@ namespace Soulseek.Network
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
-            SoulseekClient.Disconnected += (sender, e) => DemoteFromBranchRoot();
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
@@ -634,6 +633,16 @@ namespace Soulseek.Network
             }
 
             ChildDictionary.Clear();
+        }
+
+        /// <summary>
+        ///     Resets stored state information about the distributed network.
+        /// </summary>
+        public void ResetStatus()
+        {
+            LastStatusHash = default;
+            LastStatusTimestamp = default;
+            DemoteFromBranchRoot();
         }
 
         /// <summary>
