@@ -245,9 +245,9 @@ namespace Soulseek.Network
                 var msg = $"Failed to establish an inbound indirect child connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
 
-                // only purge the connection if the thrown exception is something other than OperationCanceledException.
-                // if this is thrown then a direct connection superseded this connection while it was being established,
-                // and ChildConnectionDictionary contains the new, direct connection.
+                // only purge the connection if the thrown exception is something other than OperationCanceledException. if this
+                // is thrown then a direct connection superseded this connection while it was being established, and
+                // ChildConnectionDictionary contains the new, direct connection.
                 if (!(ex is OperationCanceledException))
                 {
                     Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
@@ -259,9 +259,9 @@ namespace Soulseek.Network
                     {
                         var connection = await removed.Value.ConfigureAwait(false);
 
-                        // if the connection we removed is Direct, then a direct connection managed to come in
-                        // after this attempt had timed out or failed, but before that connection was able to cancel the pending token
-                        // this should be an extreme edge case, but log it as a warning so we can see how common it is.
+                        // if the connection we removed is Direct, then a direct connection managed to come in after this attempt
+                        // had timed out or failed, but before that connection was able to cancel the pending token this should be
+                        // an extreme edge case, but log it as a warning so we can see how common it is.
                         if (connection.Type.HasFlag(ConnectionTypes.Direct))
                         {
                             Diagnostic.Warning($"Erroneously purged direct child connection to {r.Username} upon indirect failure");
@@ -397,17 +397,16 @@ namespace Soulseek.Network
                 {
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
                     {
-                        // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed
-                        // because the remote client would supersede this connection with it.
+                        // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed because the
+                        // remote client would supersede this connection with it.
                         Diagnostic.Debug($"Cancelling pending indirect child connection to {username}");
                         pendingCts.Cancel();
                     }
 
                     try
                     {
-                        // because we cancelled any pending connection above, the Lazy<> function has completed
-                        // executing and we know that awaiting .Value will return immediately, allowing us to tear down the
-                        // existing connection.
+                        // because we cancelled any pending connection above, the Lazy<> function has completed executing and we
+                        // know that awaiting .Value will return immediately, allowing us to tear down the existing connection.
                         var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
                         cachedConnection.Disconnected -= ChildConnection_Disconnected;
                         Diagnostic.Debug($"Superseding existing child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
@@ -657,6 +656,70 @@ namespace Soulseek.Network
             _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
         }
 
+        /// <summary>
+        ///     Updates the server with the current status of the distributed network.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        public async Task UpdateStatusAsync(CancellationToken? cancellationToken = null)
+        {
+            if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
+            {
+                return;
+            }
+
+            await StatusSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                var payload = new List<byte>();
+
+                payload.AddRange(new BranchLevelCommand(BranchLevel).ToByteArray());
+                payload.AddRange(new BranchRootCommand(BranchRoot).ToByteArray());
+                payload.AddRange(new ChildDepthCommand(ChildDictionary.Count).ToByteArray());
+                payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
+                payload.AddRange(new HaveNoParentsCommand(Enabled && !HasParent).ToByteArray());
+
+                var statusHash = Convert.ToBase64String(payload.ToArray());
+
+                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    try
+                    {
+                        await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray(), cancellationToken).ConfigureAwait(false);
+
+                        var sb = new StringBuilder("Updated distributed status; ");
+                        sb
+                            .Append($"Requesting parent: {Enabled && !HasParent}, ")
+                            .Append($"Branch level: {BranchLevel}, Branch root: {BranchRoot}, ")
+                            .Append($"Number of children: {ChildDictionary.Count}/{ChildLimit}, Accepting children: {CanAcceptChildren}");
+
+                        Diagnostic.Info(sb.ToString());
+
+                        LastStatusHash = statusHash;
+                        LastStatusTimestamp = DateTime.UtcNow;
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = $"Failed to update distributed status: {ex.Message}";
+
+                        if (SoulseekClient.State != SoulseekClientStates.Disconnected)
+                        {
+                            Diagnostic.Warning(msg, ex);
+                        }
+                        else
+                        {
+                            Diagnostic.Debug(msg, ex);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                StatusSyncRoot.Release();
+            }
+        }
+
         private void ChildConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
@@ -864,65 +927,6 @@ namespace Soulseek.Network
             catch (Exception)
             {
                 // noop
-            }
-        }
-
-        private async Task UpdateStatusAsync()
-        {
-            if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
-            {
-                return;
-            }
-
-            await StatusSyncRoot.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                var payload = new List<byte>();
-
-                payload.AddRange(new BranchLevelCommand(BranchLevel).ToByteArray());
-                payload.AddRange(new BranchRootCommand(BranchRoot).ToByteArray());
-                payload.AddRange(new ChildDepthCommand(ChildDictionary.Count).ToByteArray());
-                payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
-                payload.AddRange(new HaveNoParentsCommand(!HasParent).ToByteArray());
-
-                var statusHash = Convert.ToBase64String(payload.ToArray());
-
-                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    try
-                    {
-                        await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
-
-                        var sb = new StringBuilder("Updated distributed status; ");
-                        sb
-                            .Append($"HaveNoParents: {!HasParent}, ")
-                            .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot}, ")
-                            .Append($"ChildDepth: {ChildDictionary.Count}, AcceptChildren: {CanAcceptChildren}");
-
-                        Diagnostic.Info(sb.ToString());
-
-                        LastStatusHash = statusHash;
-                        LastStatusTimestamp = DateTime.UtcNow;
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = $"Failed to update distributed status: {ex.Message}";
-
-                        if (SoulseekClient.State != SoulseekClientStates.Disconnected)
-                        {
-                            Diagnostic.Warning(msg, ex);
-                        }
-                        else
-                        {
-                            Diagnostic.Debug(msg, ex);
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                StatusSyncRoot.Release();
             }
         }
 
