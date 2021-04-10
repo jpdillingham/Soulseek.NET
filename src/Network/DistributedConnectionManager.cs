@@ -668,7 +668,7 @@ namespace Soulseek.Network
                 return;
             }
 
-            await StatusSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await StatusSyncRoot.WaitAsync(cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
 
             try
             {
