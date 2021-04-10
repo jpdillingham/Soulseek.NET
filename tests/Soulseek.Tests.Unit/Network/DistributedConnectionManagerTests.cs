@@ -1738,7 +1738,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+                await manager.UpdateStatusAsync();
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()), Times.Never);
@@ -1755,7 +1755,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+                await manager.UpdateStatusAsync();
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()), Times.Never);
@@ -1779,7 +1779,7 @@ namespace Soulseek.Tests.Unit.Network
                 // bit of a hack here, but this is the expected hash on an uninitialized instance
                 manager.SetProperty("LastStatusHash", "CAAAAH4AAAABAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
                 manager.SetProperty("ParentConnection", conn.Object);
-                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+                await manager.UpdateStatusAsync();
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
@@ -1803,7 +1803,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 manager.SetProperty("ParentConnection", conn.Object);
-                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+                await manager.UpdateStatusAsync();
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
@@ -1825,7 +1825,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 manager.SetProperty("ParentConnection", conn.Object);
-                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+                await manager.UpdateStatusAsync();
             }
 
             mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("Updated distributed status"))), Times.Once);
@@ -1852,7 +1852,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 manager.SetProperty("ParentConnection", conn.Object);
-                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+                await manager.UpdateStatusAsync();
             }
 
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Failed to update distributed status")), It.Is<Exception>(e => e == expectedEx)), Times.Once);
@@ -1880,7 +1880,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 manager.SetProperty("ParentConnection", conn.Object);
-                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+                await manager.UpdateStatusAsync();
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to update distributed status")), It.Is<Exception>(e => e == expectedEx)), Times.Once);

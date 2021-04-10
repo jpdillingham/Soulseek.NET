@@ -132,22 +132,10 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
-        [Theory(DisplayName = "Configures distributed network with parent info if EnableDistributedNetwork changed to true and has parent"), AutoData]
-        public async Task Configures_Distributed_Network_With_Parent_Info_If_EnableDistributedNetwork_Changed_To_True_And_Has_Parent(string branchRoot, int branchLevel)
+        [Fact(DisplayName = "Configures distributed network")]
+        public async Task Configures_Distributed_Network_()
         {
             var (client, mocks) = GetFixture(new SoulseekClientOptions(enableDistributedNetwork: false));
-
-            mocks.DistributedConnectionManager.Setup(m => m.HasParent)
-                .Returns(true);
-            mocks.DistributedConnectionManager.Setup(m => m.BranchLevel)
-                .Returns(branchLevel);
-            mocks.DistributedConnectionManager.Setup(m => m.BranchRoot)
-                .Returns(branchRoot);
-
-            var expected = new List<byte>();
-            expected.AddRange(new HaveNoParentsCommand(false).ToByteArray());
-            expected.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
-            expected.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
 
             var patch = new SoulseekClientOptionsPatch(enableDistributedNetwork: true);
 
@@ -158,33 +146,7 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ReconfigureOptionsAsync(patch);
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()));
-        }
-
-        [Trait("Category", "ReconfigureOptions")]
-        [Theory(DisplayName = "Configures distributed network with defaults if EnableDistributedNetwork changed to true and no parent"), AutoData]
-        public async Task Configures_Distributed_Network_With_Defaults_If_EnableDistributedNetwork_Changed_To_True_And_No_Parent(string user)
-        {
-            var (client, mocks) = GetFixture(new SoulseekClientOptions(enableDistributedNetwork: false));
-
-            mocks.DistributedConnectionManager.Setup(m => m.BranchRoot)
-                .Returns(user);
-
-            var expected = new List<byte>();
-            expected.AddRange(new HaveNoParentsCommand(true).ToByteArray());
-            expected.AddRange(new BranchRootCommand(user).ToByteArray());
-            expected.AddRange(new BranchLevelCommand(0).ToByteArray());
-
-            var patch = new SoulseekClientOptionsPatch(enableDistributedNetwork: true);
-
-            using (client)
-            {
-                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-                await client.ReconfigureOptionsAsync(patch);
-            }
-
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()));
+            mocks.DistributedConnectionManager.Verify(m => m.UpdateStatusAsync(It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "ReconfigureOptions")]

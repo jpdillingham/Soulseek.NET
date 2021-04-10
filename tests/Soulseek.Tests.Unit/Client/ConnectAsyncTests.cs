@@ -491,65 +491,17 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Configures distributed network with parent info on success if enabled and has parent"), AutoData]
-        public async Task LoginAsync_Configures_Distributed_Network_With_Parent_Info_On_Success_If_Enabled_And_Has_Parent(string user, string password, string branchRoot, int branchLevel)
+        [Theory(DisplayName = "Configures distributed network with parent info on success"), AutoData]
+        public async Task LoginAsync_Configures_Distributed_Network_With_Parent_Info_On_Success(string user, string password)
         {
             var (client, mocks) = GetFixture();
 
-            mocks.DistributedConnectionManager.Setup(m => m.HasParent)
-                .Returns(true);
-            mocks.DistributedConnectionManager.Setup(m => m.BranchLevel)
-                .Returns(branchLevel);
-            mocks.DistributedConnectionManager.Setup(m => m.BranchRoot)
-                .Returns(branchRoot);
-
-            var expected = new List<byte>();
-            expected.AddRange(new HaveNoParentsCommand(false).ToByteArray());
-            expected.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
-            expected.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
-
             using (client)
             {
                 await client.ConnectAsync(user, password);
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()));
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Configures distributed network with defaults on success if enabled and no parent"), AutoData]
-        public async Task LoginAsync_Configures_Distributed_Network_With_Defaults_On_Success_If_Enabled_And_No_Parent(string user, string password)
-        {
-            var (client, mocks) = GetFixture();
-
-            mocks.DistributedConnectionManager.Setup(m => m.BranchRoot)
-                .Returns(user);
-
-            var expected = new List<byte>();
-            expected.AddRange(new HaveNoParentsCommand(true).ToByteArray());
-            expected.AddRange(new BranchRootCommand(user).ToByteArray());
-            expected.AddRange(new BranchLevelCommand(0).ToByteArray());
-
-            using (client)
-            {
-                await client.ConnectAsync(user, password);
-            }
-
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()));
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Does not write HaveNoParent on success if disabled"), AutoData]
-        public async Task Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password)
-        {
-            var (client, mocks) = GetFixture(new SoulseekClientOptions(enableDistributedNetwork: false, enableListener: false));
-
-            using (client)
-            {
-                await client.ConnectAsync(user, password);
-            }
-
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<HaveNoParentsCommand>(), It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.DistributedConnectionManager.Verify(m => m.UpdateStatusAsync(It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "Connect")]
