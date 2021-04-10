@@ -1786,8 +1786,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "UpdateStatusAsync")]
-        [Fact(DisplayName = "UpdateStatusAsync writes payload to server")]
-        internal async Task UpdateStatusAsync_Writes_Payload_To_Server()
+        [Fact(DisplayName = "UpdateStatusAsync writes expected payload to server")]
+        internal async Task UpdateStatusAsync_Writes_Expected_Payload_To_Server()
         {
             var expectedPayload = Convert.FromBase64String("CAAAAH4AAAABAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
 
@@ -1804,6 +1804,39 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", conn.Object);
                 await manager.UpdateStatusAsync();
+
+                Assert.True(manager.GetProperty<bool>("Enabled"));
+                Assert.True(manager.CanAcceptChildren);
+                Assert.True(manager.HasParent);
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync writes HaveNoParents = false if disabled")]
+        internal async Task UpdateStatusAsync_Writes_HaveNoParents_False_If_Disabled()
+        {
+            var expectedPayload = Convert.FromBase64String("CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAAABQAAAEcAAAAA");
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(enableDistributedNetwork: false));
+
+            var conn = GetMessageConnectionMock("foo", null);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                await manager.UpdateStatusAsync(CancellationToken.None);
+
+                Assert.False(manager.GetProperty<bool>("Enabled"));
+                Assert.False(manager.CanAcceptChildren);
+                Assert.False(manager.HasParent);
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
