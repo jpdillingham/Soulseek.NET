@@ -3194,17 +3194,9 @@ namespace Soulseek
                 await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
             }
 
-            if (Options.EnableDistributedNetwork)
-            {
-                var payload = new List<byte>();
-                payload.AddRange(new HaveNoParentsCommand(!DistributedConnectionManager.HasParent).ToByteArray());
-                payload.AddRange(new BranchRootCommand(DistributedConnectionManager.BranchRoot).ToByteArray());
-                payload.AddRange(new BranchLevelCommand(DistributedConnectionManager.BranchLevel).ToByteArray());
-
-                await ServerConnection.WriteAsync(payload.ToArray(), cancellationToken).ConfigureAwait(false);
-            }
-
             await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
+
+            await DistributedConnectionManager.UpdateStatusAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private async Task SendPrivateMessageInternalAsync(string username, string message, CancellationToken cancellationToken)
