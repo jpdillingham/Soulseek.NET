@@ -72,7 +72,7 @@ namespace Soulseek.Messaging.Handlers
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
 
-            Diagnostic.Warning($"Distributed child message received: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+            Diagnostic.Debug($"Distributed child message received: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
 
             try
             {
@@ -80,7 +80,7 @@ namespace Soulseek.Messaging.Handlers
                 {
                     case MessageCode.Distributed.ChildDepth:
                         var childDepth = DistributedChildDepth.FromByteArray(message);
-                        Diagnostic.Debug($"Child depth of {childDepth} received from {connection.Username}");
+                        Diagnostic.Debug($"Child depth of {childDepth.Depth} received from {connection.Username}");
                         break;
 
                     case MessageCode.Distributed.Ping:
