@@ -19,17 +19,37 @@ namespace Soulseek.Messaging.Messages
 {
     using System.Linq;
 
-    internal sealed class EmbeddedMessage : IIncomingMessage, IOutgoingMessage
+    /// <summary>
+    ///     An embedded message, sent from the server and intended for forwarding to the distributed network.
+    /// </summary>
+    internal sealed class EmbeddedMessage : IIncomingMessage
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="EmbeddedMessage"/> class.
+        /// </summary>
+        /// <param name="distributedCode">The code of the embedded message.</param>
+        /// <param name="distributedMessage">The embedded message.</param>
         public EmbeddedMessage(MessageCode.Distributed distributedCode, byte[] distributedMessage)
         {
             DistributedCode = distributedCode;
             DistributedMessage = distributedMessage;
         }
 
+        /// <summary>
+        ///     Gets the code of the embedded message.
+        /// </summary>
         public MessageCode.Distributed DistributedCode { get; }
+
+        /// <summary>
+        ///     Gets the embedded message.
+        /// </summary>
         public byte[] DistributedMessage { get; }
 
+        /// <summary>
+        ///     Creates a new instance of <see cref="EmbeddedMessage"/> from the specified <paramref name="bytes"/>.
+        /// </summary>
+        /// <param name="bytes">The byte array from which to parse.</param>
+        /// <returns>The created instance.</returns>
         public static EmbeddedMessage FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
@@ -48,14 +68,6 @@ namespace Soulseek.Messaging.Messages
                 .Build();
 
             return new EmbeddedMessage(distributedCode, distributedMessage);
-        }
-
-        public byte[] ToByteArray()
-        {
-            return new MessageBuilder()
-                .WriteCode(MessageCode.Server.EmbeddedMessage)
-                .WriteBytes(DistributedMessage)
-                .Build();
         }
     }
 }
