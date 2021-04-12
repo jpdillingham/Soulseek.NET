@@ -1469,6 +1469,186 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "PromotedToDistributedBranchRoot fires when handler raises")]
+        public void PromotedToDistributedBranchRoot_Fires_When_Handler_Raises()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            var fired = false;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.PromotedToDistributedBranchRoot += (sender, args) => fired = true;
+                mock.Raise(m => m.PromotedToBranchRoot += null, mock.Object, EventArgs.Empty);
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "PromotedToDistributedBranchRoot does not throw if event not bound")]
+        public void PromotedToDistributedBranchRoot_Does_Not_Throw_If_Event_Not_Bound()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.PromotedToBranchRoot += null, mock.Object, EventArgs.Empty));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "DemotedFromDistributedBranchRoot fires when handler raises")]
+        public void DemotedFromDistributedBranchRoot_Fires_When_Handler_Raises()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            var fired = false;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.DemotedFromDistributedBranchRoot += (sender, args) => fired = true;
+                mock.Raise(m => m.DemotedFromBranchRoot += null, mock.Object, EventArgs.Empty);
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "DemotedFromDistributedBranchRoot does not throw if event not bound")]
+        public void DemotedFromDistributedBranchRoot_Does_Not_Throw_If_Event_Not_Bound()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DemotedFromBranchRoot += null, mock.Object, EventArgs.Empty));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedParentAdopted fires when handler raises"), AutoData]
+        public void DistributedParentAdopted_Fires_When_Handler_Raises(DistributedParentEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            DistributedParentEventArgs actual = default;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.DistributedParentAdopted += (sender, e) => actual = e;
+                mock.Raise(m => m.ParentAdopted += null, mock.Object, args);
+
+                Assert.Equal(args, actual);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedParentAdopted does not throw if event not bound"), AutoData]
+        public void DistributedParentAdopted_Does_Not_Throw_If_Event_Not_Bound(DistributedParentEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.ParentAdopted += null, mock.Object, args));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedParentDisconnected fires when handler raises"), AutoData]
+        public void DistributedParentDisconnected_Fires_When_Handler_Raises(DistributedParentEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            DistributedParentEventArgs actual = default;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.DistributedParentDisconnected += (sender, e) => actual = e;
+                mock.Raise(m => m.ParentDisconnected += null, mock.Object, args);
+
+                Assert.Equal(args, actual);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedParentDisconnected does not throw if event not bound"), AutoData]
+        public void DistributedParentDisconnected_Does_Not_Throw_If_Event_Not_Bound(DistributedParentEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.ParentDisconnected += null, mock.Object, args));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedChildAdded fires when handler raises"), AutoData]
+        public void DistributedChildAdded_Fires_When_Handler_Raises(DistributedChildEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            DistributedChildEventArgs actual = default;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.DistributedChildAdded += (sender, e) => actual = e;
+                mock.Raise(m => m.ChildAdded += null, mock.Object, args);
+
+                Assert.Equal(args, actual);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedChildAdded does not throw if event not bound"), AutoData]
+        public void DistributedChildAdded_Does_Not_Throw_If_Event_Not_Bound(DistributedChildEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.ChildAdded += null, mock.Object, args));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedChildDisconnected fires when handler raises"), AutoData]
+        public void DistributedChildDisconnected_Fires_When_Handler_Raises(DistributedChildEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+            DistributedChildEventArgs actual = default;
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                s.DistributedChildDisconnected += (sender, e) => actual = e;
+                mock.Raise(m => m.ChildDisconnected += null, mock.Object, args);
+
+                Assert.Equal(args, actual);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "DistributedChildDisconnected does not throw if event not bound"), AutoData]
+        public void DistributedChildDisconnected_Does_Not_Throw_If_Event_Not_Bound(DistributedChildEventArgs args)
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.ChildDisconnected += null, mock.Object, args));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "DiagnosticGenerated fires when handler raises"), AutoData]
         public void DiagnosticGenerated_Fires_When_Handler_Raises(DiagnosticLevel level, string message)
         {
