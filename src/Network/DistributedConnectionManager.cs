@@ -524,11 +524,10 @@ namespace Soulseek.Network
                     Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
                     ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
+                    DemoteFromBranchRoot();
 
                     await UpdateStatusAsync().ConfigureAwait(false);
                     await BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
-
-                    DemoteFromBranchRoot();
 
                     successfulConnections.Remove((ParentConnection, ParentBranchLevel, ParentBranchRoot));
                     ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
