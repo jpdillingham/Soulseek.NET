@@ -78,6 +78,11 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
+                    case MessageCode.Distributed.ChildDepth:
+                        var childDepth = DistributedChildDepth.FromByteArray(message);
+                        Diagnostic.Debug($"Child depth of {childDepth.Depth} received from {connection.Username}");
+                        break;
+
                     case MessageCode.Distributed.Ping:
                         Diagnostic.Debug("PING?");
                         var pingResponse = new DistributedPingResponse(SoulseekClient.GetNextToken());
@@ -193,7 +198,7 @@ namespace Soulseek.Messaging.Handlers
 
                         if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
-                            SoulseekClient.DistributedConnectionManager.SetBranchLevel(branchLevel.Level);
+                            SoulseekClient.DistributedConnectionManager.SetParentBranchLevel(branchLevel.Level);
                         }
 
                         break;
@@ -203,7 +208,7 @@ namespace Soulseek.Messaging.Handlers
 
                         if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
-                            SoulseekClient.DistributedConnectionManager.SetBranchRoot(branchRoot.Username);
+                            SoulseekClient.DistributedConnectionManager.SetParentBranchRoot(branchRoot.Username);
                         }
 
                         break;

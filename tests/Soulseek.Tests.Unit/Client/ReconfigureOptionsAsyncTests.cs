@@ -18,9 +18,11 @@
 namespace Soulseek.Tests.Unit.Client
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -130,8 +132,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
-        [Fact(DisplayName = "Sends HaveNoParentsCommand if EnableDistributedNetwork changed to true")]
-        public async Task Sends_HaveNoParentsCommand_If_EnableDistributedNetwork_Changed_To_True()
+        [Fact(DisplayName = "Configures distributed network")]
+        public async Task Configures_Distributed_Network_()
         {
             var (client, mocks) = GetFixture(new SoulseekClientOptions(enableDistributedNetwork: false));
 
@@ -144,7 +146,7 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ReconfigureOptionsAsync(patch);
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<HaveNoParentsCommand>(), It.IsAny<CancellationToken?>()));
+            mocks.DistributedConnectionManager.Verify(m => m.UpdateStatusAsync(It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "ReconfigureOptions")]
@@ -462,6 +464,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(
+                distributedConnectionManager: mocks.DistributedConnectionManager.Object,
                 connectionFactory: mocks.ConnectionFactory.Object,
                 serverConnection: mocks.ServerConnection.Object,
                 listener: mocks.Listener.Object,
@@ -484,6 +487,10 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<ConnectionOptions>(),
                     It.IsAny<ITcpClient>()))
                     .Returns(ServerConnection.Object);
+
+                DistributedConnectionManager = new Mock<IDistributedConnectionManager>();
+                DistributedConnectionManager.Setup(m => m.BranchLevel).Returns(0);
+                DistributedConnectionManager.Setup(m => m.BranchRoot).Returns(string.Empty);
             }
 
             private static readonly Random Rng = new Random();
@@ -492,6 +499,7 @@ namespace Soulseek.Tests.Unit.Client
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IConnectionFactory> ConnectionFactory { get; }
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
+            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; }
         }
     }
 }

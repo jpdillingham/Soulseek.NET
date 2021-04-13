@@ -172,7 +172,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetParentBranchLevel(level), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -196,7 +196,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetParentBranchRoot(root), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -551,6 +551,24 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             peerConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), null), Times.Never);
         }
 
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Produces debug on unhandled embedded messages")]
+        public void Produces_Debug_On_Unhandled_Embedded_Messages()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x08) // unknown
+                .Build();
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Unhandled embedded message"))), Times.Once);
+        }
+
         [Trait("Category", "HandleChildMessageRead")]
         [Theory(DisplayName = "HandleChildMessageRead responts to ping"), AutoData]
         public void HandleChildMessageRead_Responds_To_Ping(int token)
@@ -588,6 +606,24 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "HandleChildMessageRead")]
+        [Theory(DisplayName = "HandleChildMessageRead logs ChildDepth"), AutoData]
+        public void HandleChildMessageRead_Logs_ChildDepth(int token)
+        {
+            var (handler, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(token);
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedChildDepth(0).ToByteArray();
+
+            handler.HandleChildMessageRead(conn.Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Child depth of 0 received"))), Times.Once);
+        }
+
+        [Trait("Category", "HandleChildMessageRead")]
         [Theory(DisplayName = "HandleChildMessageRead produces warning on Exception"), AutoData]
         public void HandleChildMessageRead_Produces_Warning_On_Exception(int token)
         {
@@ -620,6 +656,109 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleChildMessageRead(conn.Object, message);
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("unhandled distributed child message"))), Times.Once);
+        }
+
+        [Trait("Category", "HandleEmbeddedMessage")]
+        [Fact(DisplayName = "HandleEmbeddedMessage produces warning on Exception")]
+        public void HandleEmbeddedMessage_Produces_Warning_On_Exception()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new byte[1];
+
+            handler.HandleEmbeddedMessage(message);
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Error handling embedded message")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Trait("Category", "HandleEmbeddedMessage")]
+        [Fact(DisplayName = "HandleEmbeddedMessage produces debug on unhandled message")]
+        public void HandleEmbeddedMessage_Produces_Debug_On_Unhandled_Message()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x08) // unknown
+                .Build();
+
+            handler.HandleEmbeddedMessage(message);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Unhandled embedded message"))), Times.Once);
+        }
+
+        [Trait("Category", "HandleEmbeddedMessage")]
+        [Theory(DisplayName = "HandleEmbeddedMessage promotes to branch root on search request"), AutoData]
+        public void HandleEmbeddedMessage_Promotes_To_Branch_Root_On_Search_Request(string username, int token, string query)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x03)
+                .WriteBytes(new byte[4])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            handler.HandleEmbeddedMessage(message);
+
+            mocks.DistributedConnectionManager.Verify(m => m.PromoteToBranchRoot(), Times.Once);
+        }
+
+        [Trait("Category", "HandleEmbeddedMessage")]
+        [Theory(DisplayName = "HandleEmbeddedMessage broadcasts search request unchanged"), AutoData]
+        public void HandleEmbeddedMessage_Broadcasts_Search_Request_Unchanged(string username, int token, string query)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x03)
+                .WriteBytes(new byte[4])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            handler.HandleEmbeddedMessage(message);
+
+            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "HandleEmbeddedMessage")]
+        [Theory(DisplayName = "HandleEmbeddedMessage responds to search request"), AutoData]
+        public void HandleEmbeddedMessage_Responds_To_Search_Request(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.EmbeddedMessage)
+                .WriteByte(0x03)
+                .WriteBytes(new byte[4])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            handler.HandleEmbeddedMessage(message);
+
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
+
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(response.ToByteArray())), null), Times.Once);
         }
 
         [Trait("Category", "HandleChildMessageWritten")]

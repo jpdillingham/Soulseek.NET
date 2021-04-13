@@ -491,8 +491,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Writes HaveNoParent on success if enabled"), AutoData]
-        public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password)
+        [Theory(DisplayName = "Configures distributed network with parent info on success"), AutoData]
+        public async Task LoginAsync_Configures_Distributed_Network_With_Parent_Info_On_Success(string user, string password)
         {
             var (client, mocks) = GetFixture();
 
@@ -501,21 +501,7 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ConnectAsync(user, password);
             }
 
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<HaveNoParentsCommand>(), It.IsAny<CancellationToken?>()));
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Does not write HaveNoParent on success if disabled"), AutoData]
-        public async Task Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password)
-        {
-            var (client, mocks) = GetFixture(new SoulseekClientOptions(enableDistributedNetwork: false, enableListener: false));
-
-            using (client)
-            {
-                await client.ConnectAsync(user, password);
-            }
-
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<HaveNoParentsCommand>(), It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.DistributedConnectionManager.Verify(m => m.UpdateStatusAsync(It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "Connect")]
@@ -653,6 +639,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(
+                distributedConnectionManager: mocks.DistributedConnectionManager.Object,
                 connectionFactory: mocks.ConnectionFactory.Object,
                 waiter: mocks.Waiter.Object,
                 options: clientOptions ?? new SoulseekClientOptions(enableListener: false));
@@ -675,6 +662,10 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<ITcpClient>()))
                     .Returns(ServerConnection.Object);
 
+                DistributedConnectionManager = new Mock<IDistributedConnectionManager>();
+                DistributedConnectionManager.Setup(m => m.BranchLevel).Returns(0);
+                DistributedConnectionManager.Setup(m => m.BranchRoot).Returns(string.Empty);
+
                 Waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                     .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
             }
@@ -685,6 +676,7 @@ namespace Soulseek.Tests.Unit.Client
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public Mock<IConnectionFactory> ConnectionFactory { get; }
+            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; }
         }
     }
 }

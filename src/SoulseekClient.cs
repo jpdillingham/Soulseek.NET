@@ -769,6 +769,7 @@ namespace Soulseek
                 ServerConnection?.Disconnect(message, exception);
 
                 DistributedConnectionManager.RemoveAndDisposeAll();
+                DistributedConnectionManager.ResetStatus();
 
                 Searches.Values.ToList().ForEach(search =>
                 {
@@ -2434,9 +2435,9 @@ namespace Soulseek
 
                         Username = username;
 
-                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
-
                         ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
+
+                        await SendConfigurationMessagesAsync(cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
@@ -3194,12 +3195,9 @@ namespace Soulseek
                 await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
             }
 
-            if (Options.EnableDistributedNetwork && !DistributedConnectionManager.HasParent)
-            {
-                await ServerConnection.WriteAsync(new HaveNoParentsCommand(true), cancellationToken).ConfigureAwait(false);
-            }
-
             await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
+
+            await DistributedConnectionManager.UpdateStatusAsync(cancellationToken).ConfigureAwait(false);
         }
 
         private async Task SendPrivateMessageInternalAsync(string username, string message, CancellationToken cancellationToken)

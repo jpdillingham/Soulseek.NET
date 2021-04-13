@@ -153,15 +153,27 @@ namespace Soulseek.Network
         void RemoveAndDisposeAll();
 
         /// <summary>
+        ///     Resets stored state information about the distributed network.
+        /// </summary>
+        void ResetStatus();
+
+        /// <summary>
         ///     Sets the distributed <paramref name="branchLevel"/>.
         /// </summary>
         /// <param name="branchLevel">The distributed branch level.</param>
-        void SetBranchLevel(int branchLevel);
+        void SetParentBranchLevel(int branchLevel);
 
         /// <summary>
         ///     Sets the distributed <paramref name="branchRoot"/>.
         /// </summary>
         /// <param name="branchRoot">The distributed branch root.</param>
-        void SetBranchRoot(string branchRoot);
+        void SetParentBranchRoot(string branchRoot);
+
+        /// <summary>
+        ///     Updates the server with the current status of the distributed network.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        Task UpdateStatusAsync(CancellationToken? cancellationToken = null);
     }
 }
