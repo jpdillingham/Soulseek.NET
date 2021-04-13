@@ -2997,9 +2997,9 @@ namespace Soulseek
 
                 if (connected && ((enableDistributedNetworkChanged && !patch.EnableDistributedNetwork.Value) || distributedConnectionOptionsChanged))
                 {
-                    // reconnect and don't send the initial 'have no parents' message to avoid state issues server side that might
-                    // be caused by disabling this on the fly. the server doesn't have a way to simply shut this off, we can only
-                    // just log in and never ask it for a parent. if we are changing from disabled to enabled, there's no restart required.
+                    // reconnect to avoid state issues that might be caused by disabling this on the fly. if we are changing
+                    // the big concerns are in half-open parent or child connections; we can stop the server from sending NetInfo/demote us from branch root
+                    // by sending HaveNoParents=false.  if changing from disabled to enabled, there's no restart required.
                     reconnectRequired = true;
                 }
 
