@@ -3190,10 +3190,7 @@ namespace Soulseek
         {
             // the client sends an undocumented message in the format 02/listen port/01/obfuscated port. we don't support
             // obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-            if (Options.EnableListener && Listener.Listening)
-            {
-                await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
-            }
+            await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort), cancellationToken).ConfigureAwait(false);
 
             await ServerConnection.WriteAsync(new PrivateRoomToggle(Options.AcceptPrivateRoomInvitations), cancellationToken).ConfigureAwait(false);
 
