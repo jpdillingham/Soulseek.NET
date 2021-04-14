@@ -327,19 +327,43 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Instantiation")]
         [Trait("Request", "SetListenPort")]
-        [Theory(DisplayName = "SetListenPort instantiates properly"), AutoData]
-        public void SetListenPort_Instantiates_Properly(int port)
+        [Fact(DisplayName = "SetListenPort instantiates properly")]
+        public void SetListenPort_Instantiates_Properly()
         {
+            var port = new Random().Next(1024, 50000);
             var a = new SetListenPortCommand(port);
 
             Assert.Equal(port, a.Port);
         }
 
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "SetListenPort")]
+        [Fact(DisplayName = "SetListenPort throws if port is less than 1024")]
+        public void SetListenPort_Throws_If_Port_Is_Less_Than_1024()
+        {
+            var ex = Record.Exception(() => new SetListenPortCommand(0));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "SetListenPort")]
+        [Fact(DisplayName = "SetListenPort throws if port is less than 1024")]
+        public void SetListenPort_Throws_If_Port_Is_More_Than_Max()
+        {
+            var ex = Record.Exception(() => new SetListenPortCommand(int.MaxValue));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
         [Trait("Category", "ToByteArray")]
         [Trait("Request", "SetListenPort")]
-        [Theory(DisplayName = "SetListenPort constructs the correct message"), AutoData]
-        public void SetListenPort_Constructs_The_Correct_Message(int port)
+        [Fact(DisplayName = "SetListenPort constructs the correct message")]
+        public void SetListenPort_Constructs_The_Correct_Message()
         {
+            var port = new Random().Next(1024, 50000);
             var a = new SetListenPortCommand(port);
             var msg = a.ToByteArray();
 
