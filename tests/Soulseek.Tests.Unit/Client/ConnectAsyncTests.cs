@@ -458,8 +458,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Sets listen port on success if enabled"), AutoData]
-        public async Task Sets_Listen_Port_On_Success_If_Enabled(string user, string password)
+        [Theory(DisplayName = "Sets listen port on success"), AutoData]
+        public async Task Sets_Listen_Port_On_Success(string user, string password)
         {
             var port = Mocks.Port;
             var (client, mocks) = GetFixture(new SoulseekClientOptions(listenPort: port));
@@ -473,21 +473,6 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<SetListenPortCommand>(), It.IsAny<CancellationToken?>()));
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Does not set listen port on success if not enabled"), AutoData]
-        public async Task Does_Not_Set_Listen_Port_On_Success_If_Not_Enabled(string user, string password)
-        {
-            var (client, mocks) = GetFixture(new SoulseekClientOptions(enableListener: false));
-
-            using (client)
-            {
-                await client.ConnectAsync(user, password);
-            }
-
-            mocks.ServerConnection
-                .Verify(m => m.WriteAsync(It.IsAny<SetListenPortCommand>(), It.IsAny<CancellationToken?>()), Times.Never);
         }
 
         [Trait("Category", "Connect")]

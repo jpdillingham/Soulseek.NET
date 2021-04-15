@@ -17,6 +17,9 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using System;
+    using System.Net;
+
     /// <summary>
     ///     Advises the server of the local listen port.
     /// </summary>
@@ -28,6 +31,11 @@ namespace Soulseek.Messaging.Messages
         /// <param name="port">The port on which to listen.</param>
         public SetListenPortCommand(int port)
         {
+            if (port < 1024 || port > IPEndPoint.MaxPort)
+            {
+                throw new ArgumentOutOfRangeException(nameof(port), port, $"The port must be between 1024 and {IPEndPoint.MaxPort}");
+            }
+
             Port = port;
         }
 

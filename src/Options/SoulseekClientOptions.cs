@@ -123,7 +123,7 @@ namespace Soulseek
 
             if (ListenPort < 1024 || ListenPort > IPEndPoint.MaxPort)
             {
-                throw new ArgumentOutOfRangeException(nameof(listenPort), "Must be between 1024 and 65535");
+                throw new ArgumentOutOfRangeException(nameof(listenPort), $"Must be between 1024 and {IPEndPoint.MaxPort}");
             }
 
             EnableDistributedNetwork = enableDistributedNetwork;
