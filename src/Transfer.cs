@@ -23,7 +23,6 @@ namespace Soulseek
     /// <summary>
     ///     A single file transfer.
     /// </summary>
-    /// <remarks>This DTO wouldn't be necessary if Json.NET didn't serialize internal properties by default.</remarks>
     public class Transfer
     {
         /// <summary>
