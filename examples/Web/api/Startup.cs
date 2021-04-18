@@ -73,7 +73,7 @@
             EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", true);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
-            ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
+            ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 10000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
             SecurityTokenTTL = Configuration.GetValue<int>("SECURITY_TOKEN_TTL", 604800000); // 7 days
