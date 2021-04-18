@@ -298,12 +298,7 @@ namespace Soulseek.Messaging.Handlers
                 return false;
             }
 
-            if (searchResponse == null)
-            {
-                return false;
-            }
-
-            if (searchResponse.FileCount <= 0)
+            if (searchResponse == null || searchResponse.FileCount + searchResponse.LockedFileCount <= 0)
             {
                 return false;
             }
@@ -323,7 +318,7 @@ namespace Soulseek.Messaging.Handlers
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
+                Diagnostic.Warning($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
             }
 
             return false;
