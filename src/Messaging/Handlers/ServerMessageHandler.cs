@@ -474,42 +474,7 @@ namespace Soulseek.Messaging.Handlers
                             break;
                         }
 
-                        if (SoulseekClient.Options.SearchResponseResolver == default)
-                        {
-                            break;
-                        }
-
-                        SearchResponse searchResponse = null;
-
-                        try
-                        {
-                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {searchRequest.Username} with token {searchRequest.Token}: {ex.Message}", ex);
-                        }
-
-                        if (searchResponse == null || searchResponse.FileCount + searchResponse.LockedFileCount <= 0)
-                        {
-                            break;
-                        }
-
-                        try
-                        {
-                            Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{searchRequest.Query}' with token {searchRequest.Token} from {searchRequest.Username}");
-
-                            var endpoint = await SoulseekClient.GetUserEndPointAsync(searchRequest.Username).ConfigureAwait(false);
-
-                            var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, endpoint, CancellationToken.None).ConfigureAwait(false);
-                            await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
-
-                            Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {searchRequest.Username} for query '{searchRequest.Query}' with token {searchRequest.Token}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Diagnostic.Warning($"Failed to send search response for {searchRequest.Query} to {searchRequest.Username}: {ex.Message}", ex);
-                        }
+                        await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
                         break;
 

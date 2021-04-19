@@ -57,7 +57,7 @@ namespace Soulseek
         /// <param name="token">The token for the search request.</param>
         /// <param name="query">The search query.</param>
         /// <returns>The operation context, including a value indicating whether a response was successfully sent.</returns>
-        public async Task<bool> TrySendSearchResponse(string username, int token, string query)
+        public async Task<bool> TryRespondAsync(string username, int token, string query)
         {
             if (SoulseekClient.Options.SearchResponseResolver == default)
             {
