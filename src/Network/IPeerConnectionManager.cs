@@ -79,6 +79,14 @@ namespace Soulseek.Network
         Task<IConnection> AwaitTransferConnectionAsync(string username, string filename, int remoteToken, CancellationToken cancellationToken);
 
         /// <summary>
+        ///     Gets an existing message connection to the specified <paramref name="username"/>, if one exists.
+        /// </summary>
+        /// <param name="username">The username of the user for which to retrieve the cached connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the cached connection, or null if one does not exist.</returns>
+        Task<IMessageConnection> GetCachedMessageConnectionAsync(string username, CancellationToken cancellationToken);
+
+        /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
@@ -101,8 +109,9 @@ namespace Soulseek.Network
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="solicitationToken">The optional token for the indirect connection solicitation.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
-        Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken, int? solicitationToken = null);
 
         /// <summary>
         ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>,
