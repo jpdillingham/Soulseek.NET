@@ -17,6 +17,7 @@
 
 namespace Soulseek
 {
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
 
@@ -25,6 +26,11 @@ namespace Soulseek
     /// </summary>
     internal interface ISearchResponder : IDiagnosticGenerator
     {
+        /// <summary>
+        ///     Gets a dictionary containing search responses that have been cached for delayed retrieval.
+        /// </summary>
+        IReadOnlyDictionary<int, (string Username, SearchResponse SearchResponse)> ResponseCache { get; }
+
         /// <summary>
         ///     Responds to the given search request, if a response could be resolved and matche(s) were found.
         /// </summary>
