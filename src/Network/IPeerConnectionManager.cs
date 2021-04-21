@@ -82,9 +82,8 @@ namespace Soulseek.Network
         ///     Gets an existing message connection to the specified <paramref name="username"/>, if one exists.
         /// </summary>
         /// <param name="username">The username of the user for which to retrieve the cached connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the cached connection, or null if one does not exist.</returns>
-        Task<IMessageConnection> GetCachedMessageConnectionAsync(string username, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetCachedMessageConnectionAsync(string username);
 
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
