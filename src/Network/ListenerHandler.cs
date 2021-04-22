@@ -110,6 +110,14 @@ namespace Soulseek.Network
                         Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, distributedUsername, pierceFirewall.Token), connection);
                     }
+                    else if (SoulseekClient.SearchResponder.PendingResponses.TryGetValue(pierceFirewall.Token, out var pendingSearchResponse))
+                    {
+                        // users may connect to retrieve search results long after we've given up waiting for them.  if this is the case, accept the connection,
+                        // cache it with the manager for potential reuse, then try to send the pending response.
+                        Diagnostic.Debug($"PierceFirewall matching pending search response received from {pendingSearchResponse.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        await SoulseekClient.PeerConnectionManager.AddMessageConnectionAsync(pendingSearchResponse.Username, connection).ConfigureAwait(false);
+                        await SoulseekClient.SearchResponder.TryRespondAsync(pierceFirewall.Token).ConfigureAwait(false);
+                    }
                     else
                     {
                         throw new ConnectionException($"Unknown PierceFirewall attempt with token {pierceFirewall.Token} from {connection.IPEndPoint.Address}:{connection.IPEndPoint.Port} (id: {connection.Id})");
