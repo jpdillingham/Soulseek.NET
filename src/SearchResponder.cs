@@ -18,10 +18,14 @@
 namespace Soulseek
 {
     using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
+    using Soulseek.Network;
 
     /// <summary>
     ///     Responds to search requests.
@@ -47,8 +51,37 @@ namespace Soulseek
         /// </summary>
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
+        /// <summary>
+        ///     Gets a dictionary containing search responses that have been cached for delayed retrieval.
+        /// </summary>
+        public IReadOnlyDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponses
+            => new ReadOnlyDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>(PendingResponseDictionary);
+
         private IDiagnosticFactory Diagnostic { get; }
+
+        private ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponseDictionary { get; set; }
+            = new ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>();
+
         private SoulseekClient SoulseekClient { get; }
+
+        /// <summary>
+        ///     Discards the pending response matching the specified <paramref name="responseToken"/>, if one exists.
+        /// </summary>
+        /// <param name="responseToken">The token matching the pending response to discard.</param>
+        /// <returns>A value indicating whether a response was discarded.</returns>
+        public bool TryDiscardPendingResponse(int responseToken)
+        {
+            if (PendingResponseDictionary.TryRemove(responseToken, out var record))
+            {
+                var (username, token, query, _) = record;
+
+                Diagnostic.Warning($"Discarded pending response {responseToken} to {username} for query '{query}' with token {token}");
+
+                return true;
+            }
+
+            return false;
+        }
 
         /// <summary>
         ///     Responds to the given search request, if a response could be resolved and matche(s) were found.
@@ -86,17 +119,76 @@ namespace Soulseek
                 Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
 
                 var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
+                var responseToken = SoulseekClient.GetNextToken();
 
-                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None).ConfigureAwait(false);
+                IMessageConnection peerConnection = default;
+
+                try
+                {
+                    // attempt to connect and send the results immediately.  either a direct connection succeeds, or a user responds to a solicited
+                    // connection request prior to the configured connection timeout.
+                    peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, solicitationToken: responseToken, CancellationToken.None).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // direct connection failed, and user did not respond to the solicited connection request before the timeout, but may respond later.  cache the result along with the solicitation token
+                    // that was sent so we can attempt a "second chance" delivery of results
+                    Diagnostic.Warning($"Failed to connect to {username} with solicitation token {responseToken} to deliver search results for query '{query}' with token {token}.  Caching response for potential delayed delivery.");
+
+                    PendingResponseDictionary.AddOrUpdate(responseToken, (username, token, query, searchResponse), (k, v) => (username, token, query, searchResponse));
+
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(180000).ConfigureAwait(false);
+                        TryDiscardPendingResponse(responseToken);
+                    });
+
+                    throw;
+                }
+
                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
-                Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {username} for query '{query}' with token {token}");
+                Diagnostic.Warning($"Sent response containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
 
                 return true;
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
+                Diagnostic.Warning($"Failed to send search response to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Sends the pending response matching the specified <paramref name="responseToken"/>, if one exists.
+        /// </summary>
+        /// <param name="responseToken">The token matching the pending response to send.</param>
+        /// <returns>The operation context, including a value indicating whether a response was successfully sent.</returns>
+        public async Task<bool> TryRespondAsync(int responseToken)
+        {
+            if (PendingResponseDictionary.TryGetValue(responseToken, out var record))
+            {
+                var (username, token, query, searchResponse) = record;
+
+                try
+                {
+                    var peerConnection = await SoulseekClient.PeerConnectionManager.GetCachedMessageConnectionAsync(username).ConfigureAwait(false);
+                    await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+
+                    Diagnostic.Warning($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+                }
+                finally
+                {
+                    // regardless of whether the "second chance" response delivery was successful, discard the response. the remote client won't make a third attempt.
+                    PendingResponseDictionary.TryRemove(responseToken, out _);
+                }
+
+                return true;
             }
 
             return false;

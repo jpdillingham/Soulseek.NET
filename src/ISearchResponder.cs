@@ -29,7 +29,14 @@ namespace Soulseek
         /// <summary>
         ///     Gets a dictionary containing search responses that have been cached for delayed retrieval.
         /// </summary>
-        IReadOnlyDictionary<int, (string Username, SearchResponse SearchResponse)> ResponseCache { get; }
+        IReadOnlyDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponses { get; }
+
+        /// <summary>
+        ///     Discards the pending response matching the specified <paramref name="responseToken"/>, if one exists.
+        /// </summary>
+        /// <param name="responseToken">The token matching the pending response to discard.</param>
+        /// <returns>A value indicating whether a response was discarded.</returns>
+        bool TryDiscardPendingResponse(int responseToken);
 
         /// <summary>
         ///     Responds to the given search request, if a response could be resolved and matche(s) were found.
@@ -39,5 +46,12 @@ namespace Soulseek
         /// <param name="query">The search query.</param>
         /// <returns>The operation context, including a value indicating whether a response was successfully sent.</returns>
         Task<bool> TryRespondAsync(string username, int token, string query);
+
+        /// <summary>
+        ///     Sends the pending response matching the specified <paramref name="responseToken"/>, if one exists.
+        /// </summary>
+        /// <param name="responseToken">The token matching the pending response to send.</param>
+        /// <returns>The operation context, including a value indicating whether a response was successfully sent.</returns>
+        Task<bool> TryRespondAsync(int responseToken);
     }
 }
