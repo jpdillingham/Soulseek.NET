@@ -300,8 +300,15 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.CannotConnect:
                         var cannotConnect = CannotConnect.FromByteArray(message);
-                        Diagnostic.Debug($"Received CannotConnect message from {cannotConnect.Username} for token {cannotConnect.Token}");
-                        UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
+                        Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
+
+                        SoulseekClient.SearchResponder.TryDiscardPendingResponse(cannotConnect.Token);
+
+                        if (!string.IsNullOrEmpty(cannotConnect.Username))
+                        {
+                            UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
+                        }
+
                         break;
 
                     case MessageCode.Server.CannotJoinRoom:
