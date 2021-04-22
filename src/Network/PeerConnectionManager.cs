@@ -431,9 +431,23 @@ namespace Soulseek.Network
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <param name="solicitationToken">The optional token for the indirect connection solicitation.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
-        public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken, int? solicitationToken = null)
+        public Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
+            => GetOrAddMessageConnectionAsync(username, ipEndPoint, SoulseekClient.GetNextToken(), cancellationToken);
+
+        /// <summary>
+        ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <remarks>
+        ///     If a connection doesn't exist, new direct and indirect connections are attempted simultaneously, and the first to
+        ///     connect is returned.
+        /// </remarks>
+        /// <param name="username">The username of the user to which to connect.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
+        /// <param name="solicitationToken">The optional token for the indirect connection solicitation.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the new or existing connection.</returns>
+        public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, int solicitationToken, CancellationToken cancellationToken)
         {
             bool cached = true;
 
@@ -469,7 +483,7 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Attempting simultaneous direct and indirect message connections to {username} ({ipEndPoint})");
 
                 var direct = GetMessageConnectionOutboundDirectAsync(username, ipEndPoint, directLinkedCts.Token);
-                var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token, solicitationToken);
+                var indirect = GetMessageConnectionOutboundIndirectAsync(username, solicitationToken, indirectLinkedCts.Token);
 
                 var tasks = new[] { direct, indirect }.ToList();
                 Task<IMessageConnection> task;
@@ -690,18 +704,16 @@ namespace Soulseek.Network
             return connection;
         }
 
-        private async Task<IMessageConnection> GetMessageConnectionOutboundIndirectAsync(string username, CancellationToken cancellationToken, int? solicitationToken = null)
+        private async Task<IMessageConnection> GetMessageConnectionOutboundIndirectAsync(string username, int solicitationToken, CancellationToken cancellationToken)
         {
-            solicitationToken ??= SoulseekClient.GetNextToken();
-
             Diagnostic.Debug($"Soliciting indirect message connection to {username} with token {solicitationToken}");
 
             try
             {
-                PendingSolicitationDictionary.TryAdd(solicitationToken.Value, username);
+                PendingSolicitationDictionary.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteAsync(new ConnectToPeerRequest(solicitationToken.Value, username, Constants.ConnectionType.Peer), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Peer), cancellationToken)
                     .ConfigureAwait(false);
 
                 using var incomingConnection = await SoulseekClient.Waiter
@@ -732,7 +744,7 @@ namespace Soulseek.Network
             }
             finally
             {
-                PendingSolicitationDictionary.TryRemove(solicitationToken.Value, out _);
+                PendingSolicitationDictionary.TryRemove(solicitationToken, out _);
             }
         }
 
