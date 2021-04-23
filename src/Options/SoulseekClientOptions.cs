@@ -70,6 +70,7 @@ namespace Soulseek
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
+        /// <param name="undeliveredSearchResponseCacheTtl">The TTL of the cache for undelivered search responses, in miliseconds.</param>
         /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
@@ -111,6 +112,7 @@ namespace Soulseek
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
             IUserEndPointCache userEndPointCache = null,
+            int undeliveredSearchResponseCacheTtl = 180000,
             Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
             Func<string, IPEndPoint, Task<BrowseResponse>> browseResponseResolver = null,
             Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
@@ -151,6 +153,8 @@ namespace Soulseek
             DistributedConnectionOptions = distributedConnectionOptions ?? new ConnectionOptions();
 
             UserEndPointCache = userEndPointCache;
+
+            UndeliveredSearchResponseCacheTtl = undeliveredSearchResponseCacheTtl;
 
             SearchResponseResolver = searchResponseResolver;
             BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
@@ -279,6 +283,11 @@ namespace Soulseek
         public ConnectionOptions TransferConnectionOptions { get; }
 
         /// <summary>
+        ///     Gets the TTL of the cache for undelivered search responses, in miliseconds.
+        /// </summary>
+        public int UndeliveredSearchResponseCacheTtl { get; }
+
+        /// <summary>
         ///     Gets the user endpoint cache to use when resolving user endpoints.
         /// </summary>
         public IUserEndPointCache UserEndPointCache { get; }
@@ -377,6 +386,7 @@ namespace Soulseek
                 incomingConnectionOptions ?? IncomingConnectionOptions,
                 distributedConnectionOptions ?? DistributedConnectionOptions,
                 UserEndPointCache,
+                UndeliveredSearchResponseCacheTtl,
                 SearchResponseResolver,
                 BrowseResponseResolver,
                 DirectoryContentsResponseResolver,
