@@ -139,7 +139,7 @@ namespace Soulseek
 
                     _ = Task.Run(async () =>
                     {
-                        await Task.Delay(180000).ConfigureAwait(false);
+                        await Task.Delay(SoulseekClient.Options.UndeliveredSearchResponseCacheTtl).ConfigureAwait(false);
                         TryDiscardPendingResponse(responseToken);
                     });
 
