@@ -75,7 +75,7 @@ namespace Soulseek
             {
                 var (username, token, query, _) = record;
 
-                Diagnostic.Warning($"Discarded pending response {responseToken} to {username} for query '{query}' with token {token}");
+                Diagnostic.Debug($"Discarded pending response {responseToken} to {username} for query '{query}' with token {token}");
 
                 return true;
             }
@@ -133,7 +133,7 @@ namespace Soulseek
                 {
                     // direct connection failed, and user did not respond to the solicited connection request before the timeout, but may respond later.  cache the result along with the solicitation token
                     // that was sent so we can attempt a "second chance" delivery of results
-                    Diagnostic.Warning($"Failed to connect to {username} with solicitation token {responseToken} to deliver search results for query '{query}' with token {token}.  Caching response for potential delayed delivery.");
+                    Diagnostic.Debug($"Failed to connect to {username} with solicitation token {responseToken} to deliver search results for query '{query}' with token {token}.  Caching response for potential delayed delivery.");
 
                     PendingResponseDictionary.AddOrUpdate(responseToken, (username, token, query, searchResponse), (k, v) => (username, token, query, searchResponse));
 
@@ -148,13 +148,13 @@ namespace Soulseek
 
                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
-                Diagnostic.Warning($"Sent response containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
+                Diagnostic.Debug($"Sent response containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
 
                 return true;
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Failed to send search response to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+                Diagnostic.Debug($"Failed to send search response to {username} for query '{query}' with token {token}: {ex.Message}", ex);
             }
 
             return false;
@@ -176,11 +176,11 @@ namespace Soulseek
                     var peerConnection = await SoulseekClient.PeerConnectionManager.GetCachedMessageConnectionAsync(username).ConfigureAwait(false);
                     await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
-                    Diagnostic.Warning($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
+                    Diagnostic.Debug($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
                 }
                 catch (Exception ex)
                 {
-                    Diagnostic.Warning($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+                    Diagnostic.Debug($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
                 }
                 finally
                 {
