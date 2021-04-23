@@ -395,6 +395,22 @@
             Client.DistributedChildAdded += (e, args) => Console.WriteLine($"[DNET] Added child {args.Username} ({args.IPEndPoint})");
             Client.DistributedChildDisconnected += (e, args) => Console.WriteLine($"[DNET] Disconnected child {args.Username} ({args.IPEndPoint})");
 
+            Client.SearchRequestReceived += (e, args) =>
+            {
+                // very verbose!
+                // Console.WriteLine($"[SEARCH REQUEST] {args.Username} requesting '{args.Query}'");
+            };
+
+            Client.SearchRequestResponseDelivered += (e, args) =>
+            {
+                Console.WriteLine($"[SEARCH RESPONSE DELIVERY] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+            };
+
+            Client.SearchRequestResponseDiscarded += (e, args) =>
+            {
+                Console.WriteLine($"[SEARCH RESPONSE DISCARDED] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+            };
+
             Task.Run(async () =>
             {
                 await Client.ConnectAsync(Username, Password);

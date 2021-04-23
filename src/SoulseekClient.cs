@@ -108,6 +108,9 @@ namespace Soulseek
 
             SearchResponder = searchResponder ?? new SearchResponder(this);
             SearchResponder.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            SearchResponder.RequestReceived += (sender, e) => SearchRequestReceived?.Invoke(this, e);
+            SearchResponder.ResponseDelivered += (sender, e) => SearchRequestResponseDelivered?.Invoke(this, e);
+            SearchResponder.ResponseDiscarded += (sender, e) => SearchRequestResponseDiscarded?.Invoke(this, e);
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -310,6 +313,21 @@ namespace Soulseek
         ///     Occurs when a chat room ticker is removed.
         /// </summary>
         public event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
+
+        /// <summary>
+        ///     Occurs when a search request is received.
+        /// </summary>
+        public event EventHandler<SearchRequestEventArgs> SearchRequestReceived;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is delivered.
+        /// </summary>
+        public event EventHandler<SearchRequestResponseEventArgs> SearchRequestResponseDelivered;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is discarded.
+        /// </summary>
+        public event EventHandler<SearchRequestResponseEventArgs> SearchRequestResponseDiscarded;
 
         /// <summary>
         ///     Occurs when a new search result is received.
