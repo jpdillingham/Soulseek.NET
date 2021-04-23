@@ -44,6 +44,8 @@ namespace Soulseek
             SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+
+            DiscardAllCancellationTokenSource = new CancellationTokenSource();
         }
 
         /// <summary>
@@ -63,6 +65,18 @@ namespace Soulseek
             = new ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>();
 
         private SoulseekClient SoulseekClient { get; }
+        private CancellationTokenSource DiscardAllCancellationTokenSource { get; set; }
+
+        /// <summary>
+        ///     Discards all pending responses.
+        /// </summary>
+        public void DiscardAll()
+        {
+            var cts = DiscardAllCancellationTokenSource;
+            DiscardAllCancellationTokenSource = new CancellationTokenSource();
+
+            cts.Cancel();
+        }
 
         /// <summary>
         ///     Discards the pending response matching the specified <paramref name="responseToken"/>, if one exists.
@@ -139,7 +153,7 @@ namespace Soulseek
 
                     _ = Task.Run(async () =>
                     {
-                        await Task.Delay(SoulseekClient.Options.UndeliveredSearchResponseCacheTtl).ConfigureAwait(false);
+                        await Task.Delay(SoulseekClient.Options.UndeliveredSearchResponseCacheTtl, DiscardAllCancellationTokenSource.Token).ConfigureAwait(false);
                         TryDiscardPendingResponse(responseToken);
                     });
 

@@ -32,6 +32,11 @@ namespace Soulseek
         IReadOnlyDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponses { get; }
 
         /// <summary>
+        ///     Discards all pending responses.
+        /// </summary>
+        void DiscardAll();
+
+        /// <summary>
         ///     Discards the pending response matching the specified <paramref name="responseToken"/>, if one exists.
         /// </summary>
         /// <param name="responseToken">The token matching the pending response to discard.</param>
