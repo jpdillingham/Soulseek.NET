@@ -54,6 +54,21 @@ namespace Soulseek
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
+        ///     Occurs when a search request is received.
+        /// </summary>
+        public event EventHandler<SearchRequestEventArgs> RequestReceived;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is delivered.
+        /// </summary>
+        public event EventHandler<SearchRequestResponseEventArgs> ResponseDelivered;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is discarded.
+        /// </summary>
+        public event EventHandler<SearchRequestResponseEventArgs> ResponseDiscarded;
+
+        /// <summary>
         ///     Gets a dictionary containing search responses that have been cached for delayed retrieval.
         /// </summary>
         public IReadOnlyDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponses
@@ -61,11 +76,12 @@ namespace Soulseek
 
         private IDiagnosticFactory Diagnostic { get; }
 
+        private CancellationTokenSource DiscardAllCancellationTokenSource { get; set; }
+
         private ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponseDictionary { get; set; }
-            = new ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>();
+                    = new ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>();
 
         private SoulseekClient SoulseekClient { get; }
-        private CancellationTokenSource DiscardAllCancellationTokenSource { get; set; }
 
         /// <summary>
         ///     Discards all pending responses.
@@ -87,9 +103,10 @@ namespace Soulseek
         {
             if (PendingResponseDictionary.TryRemove(responseToken, out var record))
             {
-                var (username, token, query, _) = record;
+                var (username, token, query, searchResponse) = record;
 
                 Diagnostic.Debug($"Discarded pending response {responseToken} to {username} for query '{query}' with token {token}");
+                ResponseDiscarded?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
 
                 return true;
             }
@@ -106,6 +123,8 @@ namespace Soulseek
         /// <returns>The operation context, including a value indicating whether a response was successfully sent.</returns>
         public async Task<bool> TryRespondAsync(string username, int token, string query)
         {
+            RequestReceived?.Invoke(this, new SearchRequestEventArgs(username, token, query));
+
             if (SoulseekClient.Options.SearchResponseResolver == default)
             {
                 return false;
@@ -139,14 +158,15 @@ namespace Soulseek
 
                 try
                 {
-                    // attempt to connect and send the results immediately.  either a direct connection succeeds, or a user responds to a solicited
-                    // connection request prior to the configured connection timeout.
+                    // attempt to connect and send the results immediately. either a direct connection succeeds, or a user
+                    // responds to a solicited connection request prior to the configured connection timeout.
                     peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, solicitationToken: responseToken, CancellationToken.None).ConfigureAwait(false);
                 }
                 catch
                 {
-                    // direct connection failed, and user did not respond to the solicited connection request before the timeout, but may respond later.  cache the result along with the solicitation token
-                    // that was sent so we can attempt a "second chance" delivery of results
+                    // direct connection failed, and user did not respond to the solicited connection request before the timeout,
+                    // but may respond later. cache the result along with the solicitation token that was sent so we can attempt a
+                    // "second chance" delivery of results
                     Diagnostic.Debug($"Failed to connect to {username} with solicitation token {responseToken} to deliver search results for query '{query}' with token {token}.  Caching response for potential delayed delivery.");
 
                     PendingResponseDictionary.AddOrUpdate(responseToken, (username, token, query, searchResponse), (k, v) => (username, token, query, searchResponse));
@@ -163,6 +183,7 @@ namespace Soulseek
                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
                 Diagnostic.Debug($"Sent response containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
+                ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
 
                 return true;
             }
@@ -191,6 +212,7 @@ namespace Soulseek
                     await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
                     Diagnostic.Debug($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
+                    ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
                 }
                 catch (Exception ex)
                 {
@@ -198,7 +220,8 @@ namespace Soulseek
                 }
                 finally
                 {
-                    // regardless of whether the "second chance" response delivery was successful, discard the response. the remote client won't make a third attempt.
+                    // regardless of whether the "second chance" response delivery was successful, discard the response. the
+                    // remote client won't make a third attempt.
                     PendingResponseDictionary.TryRemove(responseToken, out _);
                 }
 

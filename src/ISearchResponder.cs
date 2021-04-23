@@ -17,6 +17,7 @@
 
 namespace Soulseek
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
@@ -26,6 +27,21 @@ namespace Soulseek
     /// </summary>
     internal interface ISearchResponder : IDiagnosticGenerator
     {
+        /// <summary>
+        ///     Occurs when a search request is received.
+        /// </summary>
+        event EventHandler<SearchRequestEventArgs> RequestReceived;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is delivered.
+        /// </summary>
+        event EventHandler<SearchRequestResponseEventArgs> ResponseDelivered;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is discarded.
+        /// </summary>
+        event EventHandler<SearchRequestResponseEventArgs> ResponseDiscarded;
+
         /// <summary>
         ///     Gets a dictionary containing search responses that have been cached for delayed retrieval.
         /// </summary>
