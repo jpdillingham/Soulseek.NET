@@ -283,52 +283,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
         }
 
-        [Trait("Category", "Diagnostic")]
-        [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
-        public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
-        {
-            var mocks = new Mocks();
-            var handler = new DistributedMessageHandler(
-                mocks.Client.Object);
-
-            mocks.Client.Setup(m => m.Options)
-                .Returns(new SoulseekClientOptions(searchResponseResolver: (a, b, c) => { throw new Exception(); }));
-
-            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
-
-            var conn = new Mock<IMessageConnection>();
-
-            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
-
-            var diagnostics = new List<DiagnosticEventArgs>();
-
-            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-            handler.HandleMessageRead(conn.Object, message);
-
-            diagnostics = diagnostics
-                .Where(d => d.Level == DiagnosticLevel.Warning)
-                .Where(d => d.Message.IndexOf("Error resolving search response", StringComparison.InvariantCultureIgnoreCase) > -1)
-                .ToList();
-
-            Assert.Single(diagnostics);
-        }
-
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
         public void Responds_To_SearchRequest(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-            var (handler, mocks) = GetFixture(options);
-
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
-
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
-
-            var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(peerConn.Object));
+            var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
 
@@ -336,29 +295,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
-
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(response.ToByteArray())), null), Times.Once);
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query));
         }
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Deduplicates SearchRequest when deduplicate option is set"), AutoData]
         public void Deduplicates_SearchRequest_When_Deduplicate_Option_Is_Set(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response), deduplicateSearchRequests: true);
-            var (handler, mocks) = GetFixture(options);
-
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
-
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
-
-            var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(peerConn.Object));
+            var (handler, mocks) = GetFixture(new SoulseekClientOptions(deduplicateSearchRequests: true));
 
             var conn = new Mock<IMessageConnection>();
 
@@ -367,25 +311,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(conn.Object, message);
             handler.HandleMessageRead(conn.Object, message);
 
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(response.ToByteArray())), null), Times.Once);
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Exactly(1));
         }
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Does not deduplicate SearchRequest when deduplicate option is unset"), AutoData]
         public void Does_Not_Deduplicate_SearchRequest_When_Deduplicate_Option_Is_Unset(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response), deduplicateSearchRequests: false);
-            var (handler, mocks) = GetFixture(options);
-
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
-
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
-
-            var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(peerConn.Object));
+            var (handler, mocks) = GetFixture(new SoulseekClientOptions(deduplicateSearchRequests: false));
 
             var conn = new Mock<IMessageConnection>();
 
@@ -394,53 +327,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(conn.Object, message);
             handler.HandleMessageRead(conn.Object, message);
 
-            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(response.ToByteArray())), null), Times.Exactly(2));
-        }
-
-        [Trait("Category", "Message")]
-        [Theory(DisplayName = "Generates diagnostic on failure to send search results"), AutoData]
-        public void Generates_Diagnostic_On_Failure_To_Send_Search_Results(string username, int token, string query)
-        {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-            var (handler, mocks) = GetFixture(options);
-
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
-
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
-
-            var ex = new Exception("foo");
-
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<IMessageConnection>(ex));
-
-            var conn = new Mock<IMessageConnection>();
-
-            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
-
-            handler.HandleMessageRead(conn.Object, message);
-
-            mocks.Diagnostic.Verify(m => m.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex), Times.Once);
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Exactly(2));
         }
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Responds to ServerSearchRequest"), AutoData]
         public void Responds_To_ServerSearchRequest(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-            var (handler, mocks) = GetFixture(options);
-
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
-
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
-
-            var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(peerConn.Object));
+            var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
 
@@ -455,10 +349,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
-
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(response.ToByteArray())), null), Times.Once);
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -731,18 +622,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "HandleEmbeddedMessage responds to search request"), AutoData]
         public void HandleEmbeddedMessage_Responds_To_Search_Request(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-            var (handler, mocks) = GetFixture(options);
-
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
-
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
-
-            var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(peerConn.Object));
+            var (handler, mocks) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.EmbeddedMessage)
@@ -755,10 +635,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleEmbeddedMessage(message);
 
-            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
-
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(response.ToByteArray())), null), Times.Once);
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query));
         }
 
         [Trait("Category", "HandleChildMessageWritten")]
@@ -822,6 +699,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 Client.Setup(m => m.Downloads).Returns(Downloads);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
+                Client.Setup(m => m.SearchResponder).Returns(SearchResponder.Object);
             }
 
             public Mock<SoulseekClient> Client { get; }
@@ -831,6 +709,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
+            public Mock<ISearchResponder> SearchResponder { get; } = new Mock<ISearchResponder>();
         }
     }
 }

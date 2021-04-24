@@ -1757,52 +1757,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             distributedHandler.Verify(m => m.HandleEmbeddedMessage(message), Times.Once);
         }
 
-        [Trait("Category", "Diagnostic")]
-        [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
-        public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
-        {
-            var mocks = new Mocks();
-            var handler = new ServerMessageHandler(
-                mocks.Client.Object);
-
-            mocks.Client.Setup(m => m.Options)
-                .Returns(new SoulseekClientOptions(searchResponseResolver: (a, b, c) => { throw new Exception(); }));
-
-            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
-
-            var conn = new Mock<IMessageConnection>();
-
-            var message = GetServerSearchRequest(username, token, query);
-
-            var diagnostics = new List<DiagnosticEventArgs>();
-
-            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-            handler.HandleMessageRead(conn.Object, message);
-
-            diagnostics = diagnostics
-                .Where(d => d.Level == DiagnosticLevel.Warning)
-                .Where(d => d.Message.IndexOf("Error resolving search response", StringComparison.InvariantCultureIgnoreCase) > -1)
-                .ToList();
-
-            Assert.Single(diagnostics);
-        }
-
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
         public void Responds_To_SearchRequest(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1") });
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-            var (handler, mocks) = GetFixture(options);
-
-            var endpoint = new IPEndPoint(IPAddress.None, 0);
-
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
-
-            var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(peerConn.Object));
+            var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
 
@@ -1810,10 +1769,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
-
-            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(response.ToByteArray())), null), Times.Once);
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -2104,6 +2060,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 Client.Setup(m => m.Downloads).Returns(Downloads);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
+                Client.Setup(m => m.SearchResponder).Returns(SearchResponder.Object);
             }
 
             public Mock<SoulseekClient> Client { get; }
@@ -2113,6 +2070,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
+            public Mock<ISearchResponder> SearchResponder { get; } = new Mock<ISearchResponder>();
         }
     }
 }
