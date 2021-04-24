@@ -18,9 +18,6 @@
 namespace Soulseek
 {
     using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
@@ -44,8 +41,6 @@ namespace Soulseek
             SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-
-            DiscardAllCancellationTokenSource = new CancellationTokenSource();
         }
 
         /// <summary>
@@ -63,56 +58,9 @@ namespace Soulseek
         /// </summary>
         public event EventHandler<SearchRequestResponseEventArgs> ResponseDelivered;
 
-        /// <summary>
-        ///     Occurs when the response to a search request is discarded.
-        /// </summary>
-        public event EventHandler<SearchRequestResponseEventArgs> ResponseDiscarded;
-
-        /// <summary>
-        ///     Gets a dictionary containing search responses that have been cached for delayed retrieval.
-        /// </summary>
-        public IReadOnlyDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponses
-            => new ReadOnlyDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>(PendingResponseDictionary);
-
         private IDiagnosticFactory Diagnostic { get; }
 
-        private CancellationTokenSource DiscardAllCancellationTokenSource { get; set; }
-
-        private ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> PendingResponseDictionary { get; set; }
-                    = new ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>();
-
         private SoulseekClient SoulseekClient { get; }
-
-        /// <summary>
-        ///     Discards all pending responses.
-        /// </summary>
-        public void DiscardAll()
-        {
-            var cts = DiscardAllCancellationTokenSource;
-            DiscardAllCancellationTokenSource = new CancellationTokenSource();
-
-            cts.Cancel();
-        }
-
-        /// <summary>
-        ///     Discards the pending response matching the specified <paramref name="responseToken"/>, if one exists.
-        /// </summary>
-        /// <param name="responseToken">The token matching the pending response to discard.</param>
-        /// <returns>A value indicating whether a response was discarded.</returns>
-        public bool TryDiscardPendingResponse(int responseToken)
-        {
-            if (PendingResponseDictionary.TryRemove(responseToken, out var record))
-            {
-                var (username, token, query, searchResponse) = record;
-
-                Diagnostic.Debug($"Discarded pending response {responseToken} to {username} for query '{query}' with token {token}");
-                ResponseDiscarded?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
-
-                return true;
-            }
-
-            return false;
-        }
 
         /// <summary>
         ///     Responds to the given search request, if a response could be resolved and matche(s) were found.
@@ -167,15 +115,18 @@ namespace Soulseek
                     // direct connection failed, and user did not respond to the solicited connection request before the timeout,
                     // but may respond later. cache the result along with the solicitation token that was sent so we can attempt a
                     // "second chance" delivery of results
-                    Diagnostic.Debug($"Failed to connect to {username} with solicitation token {responseToken} to deliver search results for query '{query}' with token {token}.  Caching response for potential delayed delivery.");
-
-                    PendingResponseDictionary.AddOrUpdate(responseToken, (username, token, query, searchResponse), (k, v) => (username, token, query, searchResponse));
-
-                    _ = Task.Run(async () =>
+                    if (SoulseekClient.Options.SearchResponseCache != default)
                     {
-                        await Task.Delay(SoulseekClient.Options.UndeliveredSearchResponseCacheTtl, DiscardAllCancellationTokenSource.Token).ConfigureAwait(false);
-                        TryDiscardPendingResponse(responseToken);
-                    });
+                        try
+                        {
+                            SoulseekClient.Options.SearchResponseCache.AddOrUpdate(responseToken, (username, token, query, searchResponse));
+                            Diagnostic.Debug($"Failed to connect to {username} with solicitation token {responseToken} to deliver search results for query '{query}' with token {token}.  Cached response for potential delayed delivery.");
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Error caching undelivered search response {responseToken} for query '{query}' requested by {username} with token {token}: {ex.Message}", ex);
+                        }
+                    }
 
                     throw;
                 }
@@ -202,8 +153,20 @@ namespace Soulseek
         /// <returns>The operation context, including a value indicating whether a response was successfully sent.</returns>
         public async Task<bool> TryRespondAsync(int responseToken)
         {
-            if (PendingResponseDictionary.TryGetValue(responseToken, out var record))
+            if (SoulseekClient.Options.SearchResponseCache != default)
             {
+                (string Username, int Token, string Query, SearchResponse SearchResponse) record;
+
+                try
+                {
+                    SoulseekClient.Options.SearchResponseCache.TryGet(responseToken, out record);
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Error retrieving cached search response {responseToken}: {ex.Message}", ex);
+                    return false;
+                }
+
                 var (username, token, query, searchResponse) = record;
 
                 try
@@ -217,12 +180,20 @@ namespace Soulseek
                 catch (Exception ex)
                 {
                     Diagnostic.Debug($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+                    return false;
                 }
                 finally
                 {
                     // regardless of whether the "second chance" response delivery was successful, discard the response. the
                     // remote client won't make a third attempt.
-                    PendingResponseDictionary.TryRemove(responseToken, out _);
+                    try
+                    {
+                        SoulseekClient.Options.SearchResponseCache.TryRemove(responseToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostic.Warning($"Error removing cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+                    }
                 }
 
                 return true;

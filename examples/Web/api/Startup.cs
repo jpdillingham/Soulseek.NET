@@ -1,6 +1,7 @@
 ﻿namespace WebAPI
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -261,7 +262,8 @@
                 browseResponseResolver: BrowseResponseResolver,
                 directoryContentsResponseResolver: DirectoryContentsResponseResolver,
                 enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
-                searchResponseResolver: SearchResponseResolver);
+                searchResponseResolver: SearchResponseResolver,
+                searchResponseCache: new SearchResponseCache());
 
             Client = new SoulseekClient(options: clientOptions);
             SharedCounts = (Directories: 0, Files: 0);
@@ -593,6 +595,40 @@
             public bool TryGet(string username, out IPEndPoint endPoint)
             {
                 return Cache.TryGetValue(username, out endPoint);
+            }
+        }
+
+        public class SearchResponseCache : ISearchResponseCache
+        {
+            private ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> Cache { get; }
+                = new ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>();
+
+            public void AddOrUpdate(int responseToken, (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                Cache.AddOrUpdate(responseToken, response, (k, v) => response);
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(180000);
+                    TryRemove(responseToken);
+                });
+
+                Console.WriteLine($"Cached {responseToken} for {response.Username}");
+            }
+
+            public bool TryGet(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                return Cache.TryGetValue(responseToken, out response);
+            }
+
+            public bool TryRemove(int responseToken)
+            {
+                if (Cache.TryRemove(responseToken, out var response))
+                {
+                    Console.WriteLine($"Removed {responseToken} for {response.Username}");
+                    return true;
+                }
+
+                return false;
             }
         }
     }

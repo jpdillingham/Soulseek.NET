@@ -110,7 +110,6 @@ namespace Soulseek
             SearchResponder.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
             SearchResponder.RequestReceived += (sender, e) => SearchRequestReceived?.Invoke(this, e);
             SearchResponder.ResponseDelivered += (sender, e) => SearchRequestResponseDelivered?.Invoke(this, e);
-            SearchResponder.ResponseDiscarded += (sender, e) => SearchRequestResponseDiscarded?.Invoke(this, e);
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
