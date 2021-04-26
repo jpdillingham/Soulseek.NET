@@ -22,10 +22,19 @@ namespace Soulseek
     /// </summary>
     public interface ISearchResponseCache
     {
-        bool TryGet(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response);
-
+        /// <summary>
+        ///     Adds or updates the cached <see cref="SearchResponse"/> and context for the specified <paramref name="responseToken"/>.
+        /// </summary>
+        /// <param name="responseToken">The token for which the response is to be added or updated.</param>
+        /// <param name="response">The response and context to cache.</param>
         void AddOrUpdate(int responseToken, (string Username, int Token, string Query, SearchResponse SearchResponse) response);
 
-        bool TryRemove(int responseToken);
+        /// <summary>
+        ///     Attempts to remove a cached <see cref="SearchResponse"/> and context for the specified <paramref name="responseToken"/>.
+        /// </summary>
+        /// <param name="responseToken">The token for the cached response to remove.</param>
+        /// <param name="response">The cached response and context, if removed.</param>
+        /// <returns>A value indicating whether a response for the specified <paramref name="responseToken"/> was removed.</returns>
+        bool TryRemove(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response);
     }
 }
