@@ -30,6 +30,14 @@ namespace Soulseek
         void AddOrUpdate(int responseToken, (string Username, int Token, string Query, SearchResponse SearchResponse) response);
 
         /// <summary>
+        ///     Attempts to fetch a cached <see cref="SearchResponse"/> and context for the specified <paramref name="responseToken"/>.
+        /// </summary>
+        /// <param name="responseToken">The token for the cached response.</param>
+        /// <param name="response">The cached response and context, if present.</param>
+        /// <returns>A value indicating whether a response for the specified <paramref name="responseToken"/> is cached.</returns>
+        bool TryGet(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response);
+
+        /// <summary>
         ///     Attempts to remove a cached <see cref="SearchResponse"/> and context for the specified <paramref name="responseToken"/>.
         /// </summary>
         /// <param name="responseToken">The token for the cached response to remove.</param>

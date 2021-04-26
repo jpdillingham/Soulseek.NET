@@ -622,6 +622,11 @@
                 Console.WriteLine($"Cached {responseToken} for {response.Username}");
             }
 
+            public bool TryGet(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                return Cache.TryGetValue(responseToken, out response);
+            }
+
             public bool TryRemove(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
             {
                 response = default;
