@@ -56,11 +56,45 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the response to a search request is delivered.
         /// </summary>
-        public event EventHandler<SearchRequestResponseEventArgs> ResponseDelivered;
+        public event EventHandler<SearchResponseDeliveryEventArgs> ResponseDelivered;
+
+        /// <summary>
+        ///     Occurs when the delivery of a response to a search request fails.
+        /// </summary>
+        public event EventHandler<SearchResponseDeliveryEventArgs> ResponseDeliveryFailed;
 
         private IDiagnosticFactory Diagnostic { get; }
-
         private SoulseekClient SoulseekClient { get; }
+
+        /// <summary>
+        ///     Discards the cached response matching the specified <paramref name="responseToken"/>, if one exists.
+        /// </summary>
+        /// <param name="responseToken">The token matching the cached response to discard.</param>
+        /// <returns>A value indicating whether the cached response was discarded.</returns>
+        public bool TryDiscard(int responseToken)
+        {
+            if (SoulseekClient.Options.SearchResponseCache != default)
+            {
+                try
+                {
+                    if (SoulseekClient.Options.SearchResponseCache.TryRemove(responseToken, out var response))
+                    {
+                        var (username, token, query, searchResponse) = response;
+
+                        Diagnostic.Debug($"Discarded cached search response {responseToken} to {username} for query '{query}' with token {token}");
+                        ResponseDeliveryFailed?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Error removing cached search response {responseToken}: {ex.Message}", ex);
+                    return false;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         ///     Responds to the given search request, if a response could be resolved and matche(s) were found.
@@ -134,7 +168,7 @@ namespace Soulseek
                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
                 Diagnostic.Debug($"Sent response containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
-                ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
+                ResponseDelivered?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
 
                 return true;
             }
@@ -155,11 +189,12 @@ namespace Soulseek
         {
             if (SoulseekClient.Options.SearchResponseCache != default)
             {
+                var cached = false;
                 (string Username, int Token, string Query, SearchResponse SearchResponse) record;
 
                 try
                 {
-                    SoulseekClient.Options.SearchResponseCache.TryGet(responseToken, out record);
+                    cached = SoulseekClient.Options.SearchResponseCache.TryRemove(responseToken, out record);
                 }
                 catch (Exception ex)
                 {
@@ -167,36 +202,25 @@ namespace Soulseek
                     return false;
                 }
 
-                var (username, token, query, searchResponse) = record;
+                if (cached)
+                {
+                    var (username, token, query, searchResponse) = record;
 
-                try
-                {
-                    var peerConnection = await SoulseekClient.PeerConnectionManager.GetCachedMessageConnectionAsync(username).ConfigureAwait(false);
-                    await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
-
-                    Diagnostic.Debug($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
-                    ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
-                }
-                catch (Exception ex)
-                {
-                    Diagnostic.Debug($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
-                    return false;
-                }
-                finally
-                {
-                    // regardless of whether the "second chance" response delivery was successful, discard the response. the
-                    // remote client won't make a third attempt.
                     try
                     {
-                        SoulseekClient.Options.SearchResponseCache.TryRemove(responseToken);
+                        var peerConnection = await SoulseekClient.PeerConnectionManager.GetCachedMessageConnectionAsync(username).ConfigureAwait(false);
+                        await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+
+                        Diagnostic.Debug($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
+                        ResponseDelivered?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
+                        return true;
                     }
                     catch (Exception ex)
                     {
-                        Diagnostic.Warning($"Error removing cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+                        Diagnostic.Debug($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
+                        ResponseDeliveryFailed?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
                     }
                 }
-
-                return true;
             }
 
             return false;
