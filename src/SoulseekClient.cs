@@ -109,8 +109,8 @@ namespace Soulseek
             SearchResponder = searchResponder ?? new SearchResponder(this);
             SearchResponder.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
             SearchResponder.RequestReceived += (sender, e) => SearchRequestReceived?.Invoke(this, e);
-            SearchResponder.ResponseDelivered += (sender, e) => SearchRequestResponseDelivered?.Invoke(this, e);
-            SearchResponder.ResponseDeliveryFailed += (sender, e) => SearchRequestResponseDeliveryFailed?.Invoke(this, e);
+            SearchResponder.ResponseDelivered += (sender, e) => SearchResponseDelivered?.Invoke(this, e);
+            SearchResponder.ResponseDeliveryFailed += (sender, e) => SearchResponseDeliveryFailed?.Invoke(this, e);
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -322,12 +322,12 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the response to a search request is delivered.
         /// </summary>
-        public event EventHandler<SearchResponseDeliveryEventArgs> SearchRequestResponseDelivered;
+        public event EventHandler<SearchResponseDeliveryEventArgs> SearchResponseDelivered;
 
         /// <summary>
         ///     Occurs when the delivery of a response to a search request fails.
         /// </summary>
-        public event EventHandler<SearchResponseDeliveryEventArgs> SearchRequestResponseDeliveryFailed;
+        public event EventHandler<SearchResponseDeliveryEventArgs> SearchResponseDeliveryFailed;
 
         /// <summary>
         ///     Occurs when a new search result is received.

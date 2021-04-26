@@ -244,6 +244,8 @@
                 connectTimeout: ConnectTimeout,
                 inactivityTimeout: InactivityTimeout);
 
+            var searchResponseCache = new SearchResponseCache();
+
             // create options for the client.
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
@@ -263,7 +265,7 @@
                 directoryContentsResponseResolver: DirectoryContentsResponseResolver,
                 enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
                 searchResponseResolver: SearchResponseResolver,
-                searchResponseCache: new SearchResponseCache());
+                searchResponseCache: searchResponseCache);
 
             Client = new SoulseekClient(options: clientOptions);
             SharedCounts = (Directories: 0, Files: 0);
@@ -403,14 +405,19 @@
                 // Console.WriteLine($"[SEARCH REQUEST] {args.Username} requesting '{args.Query}'");
             };
 
-            Client.SearchRequestResponseDelivered += (e, args) =>
+            Client.SearchResponseDelivered += (e, args) =>
             {
                 Console.WriteLine($"[SEARCH RESPONSE DELIVERY] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
             };
 
-            Client.SearchRequestResponseDiscarded += (e, args) =>
+            Client.SearchResponseDeliveryFailed += (e, args) =>
             {
-                Console.WriteLine($"[SEARCH RESPONSE DISCARDED] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+                Console.WriteLine($"[SEARCH RESPONSE DELIVERY FAILED] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+            };
+
+            Client.UserCannotConnect += (e, args) =>
+            {
+                Console.WriteLine($"[CANNOT CONNECT] Token: {args.Token}, Username: {args.Username ?? "<null>"}");
             };
 
             Task.Run(async () =>
@@ -609,20 +616,17 @@
                 _ = Task.Run(async () =>
                 {
                     await Task.Delay(180000);
-                    TryRemove(responseToken);
+                    TryRemove(responseToken, out var _);
                 });
 
                 Console.WriteLine($"Cached {responseToken} for {response.Username}");
             }
 
-            public bool TryGet(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            public bool TryRemove(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
             {
-                return Cache.TryGetValue(responseToken, out response);
-            }
+                response = default;
 
-            public bool TryRemove(int responseToken)
-            {
-                if (Cache.TryRemove(responseToken, out var response))
+                if (Cache.TryRemove(responseToken, out response))
                 {
                     Console.WriteLine($"Removed {responseToken} for {response.Username}");
                     return true;
