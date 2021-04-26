@@ -34,7 +34,19 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the response to a search request is delivered.
         /// </summary>
-        event EventHandler<SearchRequestResponseEventArgs> ResponseDelivered;
+        event EventHandler<SearchResponseDeliveryEventArgs> ResponseDelivered;
+
+        /// <summary>
+        ///     Occurs when the delivery of a response to a search request fails.
+        /// </summary>
+        event EventHandler<SearchResponseDeliveryEventArgs> ResponseDeliveryFailed;
+
+        /// <summary>
+        ///     Discards the cached response matching the specified <paramref name="responseToken"/>, if one exists.
+        /// </summary>
+        /// <param name="responseToken">The token matching the cached response to discard.</param>
+        /// <returns>A value indicating whether the cached response was discarded.</returns>
+        bool TryDiscard(int responseToken);
 
         /// <summary>
         ///     Responds to the given search request, if a response could be resolved and matche(s) were found.
