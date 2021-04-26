@@ -302,15 +302,6 @@ namespace Soulseek.Messaging.Handlers
                         var cannotConnect = CannotConnect.FromByteArray(message);
                         Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
 
-                        try
-                        {
-                            SoulseekClient.Options.SearchResponseCache?.TryRemove(cannotConnect.Token);
-                        }
-                        catch (Exception ex)
-                        {
-                            Diagnostic.Warning($"Error removing cached search response {cannotConnect.Token}: {ex.Message}", ex);
-                        }
-
                         if (!string.IsNullOrEmpty(cannotConnect.Username))
                         {
                             UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
