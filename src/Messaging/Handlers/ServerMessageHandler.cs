@@ -302,6 +302,8 @@ namespace Soulseek.Messaging.Handlers
                         var cannotConnect = CannotConnect.FromByteArray(message);
                         Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
 
+                        SoulseekClient.SearchResponder.TryDiscard(cannotConnect.Token);
+
                         if (!string.IsNullOrEmpty(cannotConnect.Username))
                         {
                             UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
