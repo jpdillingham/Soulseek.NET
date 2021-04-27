@@ -2731,7 +2731,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetCachedMessageConnectionAsync")]
         [Theory(DisplayName = "GetCachedMessageConnectionAsync returns null if retrieval throws"), AutoData]
-        public async Task GetCachedMessageConnectionAsync_Returns_Null_If_Retrieval_Throws(string username, IPEndPoint endpoint)
+        public async Task GetCachedMessageConnectionAsync_Returns_Null_If_Retrieval_Throws(string username)
         {
             var (manager, _) = GetFixture();
 
@@ -2747,7 +2747,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetCachedMessageConnectionAsync")]
         [Theory(DisplayName = "GetCachedMessageConnectionAsync produces diagnostic if retrieval throws"), AutoData]
-        public async Task GetCachedMessageConnectionAsync_Produces_Diagnostic_If_Retrieval_Throws(string username, IPEndPoint endpoint)
+        public async Task GetCachedMessageConnectionAsync_Produces_Diagnostic_If_Retrieval_Throws(string username)
         {
             var (manager, mocks) = GetFixture();
 
