@@ -56,12 +56,12 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the response to a search request is delivered.
         /// </summary>
-        public event EventHandler<SearchResponseDeliveryEventArgs> ResponseDelivered;
+        public event EventHandler<SearchRequestResponseEventArgs> ResponseDelivered;
 
         /// <summary>
         ///     Occurs when the delivery of a response to a search request fails.
         /// </summary>
-        public event EventHandler<SearchResponseDeliveryEventArgs> ResponseDeliveryFailed;
+        public event EventHandler<SearchRequestResponseEventArgs> ResponseDeliveryFailed;
 
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
@@ -82,7 +82,7 @@ namespace Soulseek
                         var (username, token, query, searchResponse) = response;
 
                         Diagnostic.Debug($"Discarded cached search response {responseToken} to {username} for query '{query}' with token {token}");
-                        ResponseDeliveryFailed?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
+                        ResponseDeliveryFailed?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
                         return true;
                     }
                 }
@@ -168,7 +168,7 @@ namespace Soulseek
                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
                 Diagnostic.Debug($"Sent response containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
-                ResponseDelivered?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
+                ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
 
                 return true;
             }
@@ -212,13 +212,13 @@ namespace Soulseek
                         await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
                         Diagnostic.Debug($"Sent cached response {responseToken} containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
-                        ResponseDelivered?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
+                        ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
                         return true;
                     }
                     catch (Exception ex)
                     {
                         Diagnostic.Debug($"Failed to send cached search response {responseToken} to {username} for query '{query}' with token {token}: {ex.Message}", ex);
-                        ResponseDeliveryFailed?.Invoke(this, new SearchResponseDeliveryEventArgs(username, token, query, searchResponse));
+                        ResponseDeliveryFailed?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
                     }
                 }
             }

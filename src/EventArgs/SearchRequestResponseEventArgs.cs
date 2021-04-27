@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchResponseDeliveryEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="SearchRequestResponseEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,16 +20,16 @@ namespace Soulseek
     /// <summary>
     ///     Event arguments for events raised upon the disposition of a search request response.
     /// </summary>
-    public class SearchResponseDeliveryEventArgs : SearchRequestEventArgs
+    public class SearchRequestResponseEventArgs : SearchRequestEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponseDeliveryEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="SearchRequestResponseEventArgs"/> class.
         /// </summary>
         /// <param name="username">The username of the requesting user.</param>
         /// <param name="token">The unique token for the request.</param>
         /// <param name="query">The search query.</param>
         /// <param name="searchResponse">The search response.</param>
-        public SearchResponseDeliveryEventArgs(string username, int token, string query, SearchResponse searchResponse)
+        public SearchRequestResponseEventArgs(string username, int token, string query, SearchResponse searchResponse)
             : base(username, token, query)
         {
             SearchResponse = searchResponse;

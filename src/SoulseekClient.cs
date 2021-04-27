@@ -322,12 +322,12 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the response to a search request is delivered.
         /// </summary>
-        public event EventHandler<SearchResponseDeliveryEventArgs> SearchResponseDelivered;
+        public event EventHandler<SearchRequestResponseEventArgs> SearchResponseDelivered;
 
         /// <summary>
         ///     Occurs when the delivery of a response to a search request fails.
         /// </summary>
-        public event EventHandler<SearchResponseDeliveryEventArgs> SearchResponseDeliveryFailed;
+        public event EventHandler<SearchRequestResponseEventArgs> SearchResponseDeliveryFailed;
 
         /// <summary>
         ///     Occurs when a new search result is received.
