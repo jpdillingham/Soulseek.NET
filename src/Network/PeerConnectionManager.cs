@@ -298,13 +298,13 @@ namespace Soulseek.Network
                     Diagnostic.Debug($"Retrieved cached message connection to {connection.Username} ({connection.IPEndPoint}) (type: {connection.Type}, id: {connection.Id})");
                     return connection;
                 }
-
-                return null;
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                Diagnostic.Debug($"Failed to retrieve cached message connection to {username}: {ex.Message}");
             }
+
+            return null;
         }
 
         /// <summary>

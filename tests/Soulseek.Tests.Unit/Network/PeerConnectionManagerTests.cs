@@ -2680,6 +2680,87 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "GetCachedMessageConnectionAsync")]
+        [Theory(DisplayName = "GetCachedMessageConnectionAsync returns cached connection if cached"), AutoData]
+        public async Task GetCachedMessageConnectionAsync_Returns_Cached_Connection_If_Cached(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+            dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(Task.FromResult(conn.Object)));
+
+            using (manager)
+            using (var cachedConn = await manager.GetCachedMessageConnectionAsync(username))
+            {
+                Assert.Equal(conn.Object, cachedConn);
+            }
+        }
+
+        [Trait("Category", "GetCachedMessageConnectionAsync")]
+        [Theory(DisplayName = "GetCachedMessageConnectionAsync returns null if not cached"), AutoData]
+        public async Task GetCachedMessageConnectionAsync_Returns_Null_If_Not_Cached(string username)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            using (var cachedConn = await manager.GetCachedMessageConnectionAsync(username))
+            {
+                Assert.Null(cachedConn);
+            }
+        }
+
+        [Trait("Category", "GetCachedMessageConnectionAsync")]
+        [Theory(DisplayName = "GetCachedMessageConnectionAsync produces diagnostic if cached"), AutoData]
+        public async Task GetCachedMessageConnectionAsync_Produces_Diagnostic_If_Cached(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+            dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(Task.FromResult(conn.Object)));
+
+            using (manager)
+            using (var cachedConn = await manager.GetCachedMessageConnectionAsync(username))
+            {
+                mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Retrieved cached message connection"))), Times.Once);
+            }
+        }
+
+        [Trait("Category", "GetCachedMessageConnectionAsync")]
+        [Theory(DisplayName = "GetCachedMessageConnectionAsync returns null if retrieval throws"), AutoData]
+        public async Task GetCachedMessageConnectionAsync_Returns_Null_If_Retrieval_Throws(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+            dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(Task.FromException<IMessageConnection>(new ConnectionException())));
+
+            using (manager)
+            using (var cachedConn = await manager.GetCachedMessageConnectionAsync(username))
+            {
+                Assert.Null(cachedConn);
+            }
+        }
+
+        [Trait("Category", "GetCachedMessageConnectionAsync")]
+        [Theory(DisplayName = "GetCachedMessageConnectionAsync produces diagnostic if retrieval throws"), AutoData]
+        public async Task GetCachedMessageConnectionAsync_Produces_Diagnostic_If_Retrieval_Throws(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
+            dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(Task.FromException<IMessageConnection>(new ConnectionException())));
+
+            using (manager)
+            using (var cachedConn = await manager.GetCachedMessageConnectionAsync(username))
+            {
+                mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to retrieve cached message connection"))), Times.Once);
+            }
+        }
+
         [Trait("Category", "AwaitTransferConnectionAsync")]
         [Theory(DisplayName = "AwaitTransferConnectionAsync returns indirect when indirect connects"), AutoData]
         internal async Task AwaitTransferConnectionAsync_Returns_Indirect_When_Indirect_Connects(string username, string filename, int token, IPEndPoint endpoint)
