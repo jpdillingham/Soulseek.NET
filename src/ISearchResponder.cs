@@ -34,12 +34,12 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the response to a search request is delivered.
         /// </summary>
-        event EventHandler<SearchResponseDeliveryEventArgs> ResponseDelivered;
+        event EventHandler<SearchRequestResponseEventArgs> ResponseDelivered;
 
         /// <summary>
         ///     Occurs when the delivery of a response to a search request fails.
         /// </summary>
-        event EventHandler<SearchResponseDeliveryEventArgs> ResponseDeliveryFailed;
+        event EventHandler<SearchRequestResponseEventArgs> ResponseDeliveryFailed;
 
         /// <summary>
         ///     Discards the cached response matching the specified <paramref name="responseToken"/>, if one exists.

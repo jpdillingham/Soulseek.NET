@@ -179,12 +179,12 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when the response to a search request is delivered.
         /// </summary>
-        event EventHandler<SearchResponseDeliveryEventArgs> SearchResponseDelivered;
+        event EventHandler<SearchRequestResponseEventArgs> SearchResponseDelivered;
 
         /// <summary>
         ///     Occurs when the delivery of a response to a search request fails.
         /// </summary>
-        event EventHandler<SearchResponseDeliveryEventArgs> SearchResponseDeliveryFailed;
+        event EventHandler<SearchRequestResponseEventArgs> SearchResponseDeliveryFailed;
 
         /// <summary>
         ///     Occurs when a new search response is received.
