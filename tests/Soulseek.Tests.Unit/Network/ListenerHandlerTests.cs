@@ -382,6 +382,54 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Verify(m => m.Complete(expectedKey, mocks.Connection.Object), Times.Once);
         }
 
+        [Trait("Category", "PierceFirewall")]
+        [Theory(DisplayName = "Adds connection on SearchResponse PierceFirewall"), AutoData]
+        public void Adds_Connection_On_SearchResponse_PierceFirewall(IPEndPoint endpoint, string username, int token, string query)
+        {
+            (string Username, int Token, string Query, SearchResponse SearchResponse) response = (username, token, query, null);
+
+            var cache = new Mock<ISearchResponseCache>();
+            cache.Setup(m => m.TryGet(token, out response)).Returns(true);
+
+            var (handler, mocks) = GetFixture(endpoint, new SoulseekClientOptions(searchResponseCache: cache.Object));
+
+            var message = new PierceFirewall(token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            mocks.PeerConnectionManager.Verify(m => m.AddMessageConnectionAsync(username, mocks.Connection.Object), Times.Once);
+        }
+
+        [Trait("Category", "PierceFirewall")]
+        [Theory(DisplayName = "Responds to search on SearchResponse PierceFirewall"), AutoData]
+        public void Responds_To_Search_On_SearchResponse_PierceFirewall(IPEndPoint endpoint, string username, int token, string query)
+        {
+            (string Username, int Token, string Query, SearchResponse SearchResponse) response = (username, token, query, null);
+
+            var cache = new Mock<ISearchResponseCache>();
+            cache.Setup(m => m.TryGet(token, out response)).Returns(true);
+
+            var (handler, mocks) = GetFixture(endpoint, new SoulseekClientOptions(searchResponseCache: cache.Object));
+
+            var message = new PierceFirewall(token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(token), Times.Once);
+        }
+
         private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPEndPoint endpoint, SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
@@ -416,6 +464,7 @@ namespace Soulseek.Tests.Unit.Network
                 Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
                 Client.Setup(m => m.Listener).Returns(Listener.Object);
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
+                Client.Setup(m => m.SearchResponder).Returns(SearchResponder.Object);
             }
 
             public Mock<SoulseekClient> Client { get; }
@@ -425,6 +474,7 @@ namespace Soulseek.Tests.Unit.Network
             public Mock<IConnection> Connection { get; } = new Mock<IConnection>();
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
+            public Mock<ISearchResponder> SearchResponder { get; } = new Mock<ISearchResponder>();
         }
     }
 }
