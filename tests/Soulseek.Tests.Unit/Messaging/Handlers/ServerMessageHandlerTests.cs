@@ -178,8 +178,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Raises UserCannotConnect event on CannotConnect"), AutoData]
-        public void Raises_UserCannotConnect_Event_On_CannotConnect(int token, string username)
+        [Theory(DisplayName = "Raises UserCannotConnect event on CannotConnect if username"), AutoData]
+        public void Raises_UserCannotConnect_Event_On_CannotConnect_If_Username(int token, string username)
         {
             var (handler, mocks) = GetFixture();
 
@@ -197,6 +197,41 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.NotNull(response);
             Assert.Equal(token, response.Token);
             Assert.Equal(username, response.Username);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises UserCannotConnect event on CannotConnect if no username"), AutoData]
+        public void Does_Not_Raise_UserCannotConnect_Event_On_CannotConnect_If_No_Username(int token)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotConnect)
+                .WriteInteger(token)
+                .Build();
+
+            UserCannotConnectEventArgs response = null;
+            handler.UserCannotConnect += (_, cannotConnect) => response = cannotConnect;
+
+            handler.HandleMessageRead(null, msg);
+
+            Assert.Null(response);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Discards SearchResponse on CannotConnect"), AutoData]
+        public void Discards_SearchResponse_On_CannotConnect(int token)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.CannotConnect)
+                .WriteInteger(token)
+                .Build();
+
+            handler.HandleMessageRead(null, msg);
+
+            mocks.SearchResponder.Verify(m => m.TryDiscard(token), Times.Once);
         }
 
         [Trait("Category", "Message")]
