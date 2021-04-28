@@ -320,12 +320,10 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.ConnectToPeer:
-                        ConnectToPeerResponse connectToPeerResponse = default;
+                        var connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
 
                         try
                         {
-                            connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
-
                             if (connectToPeerResponse.Type == Constants.ConnectionType.Transfer)
                             {
                                 Diagnostic.Debug($"Received transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token}");
@@ -370,7 +368,7 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
-                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse?.Username} ({connectToPeerResponse?.IPEndPoint}): {ex.Message}");
+                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
                         }
 
                         break;
