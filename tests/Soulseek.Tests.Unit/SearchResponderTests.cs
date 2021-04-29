@@ -18,6 +18,7 @@
 namespace Soulseek.Tests.Unit
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -201,6 +202,84 @@ namespace Soulseek.Tests.Unit
             Assert.False(removed);
 
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive($"Error removing cached search response {responseToken}")), expectedEx), Times.Once);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver is null"), AutoData]
+        public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Is_Null(string username, int token, string query)
+        {
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: null));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver throws"), AutoData]
+        public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Throws(string username, int token, string query)
+        {
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => throw new Exception()));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync generates warning if ResponseResolver throws"), AutoData]
+        public async Task TryRespondAsync_Generates_Warning_If_ResponseResolver_Throws(string username, int token, string query)
+        {
+            var ex = new Exception();
+
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => throw ex));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Error resolving search response")), ex), Times.Once);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver returns null"), AutoData]
+        public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Returns_Null(string username, int token, string query)
+        {
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null)));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver returns zero files"), AutoData]
+        public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Returns_Zero_Files(string username, int token, string query)
+        {
+            var response = new SearchResponse(username, token, 0, 0, 0, new List<File>());
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response)));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync raises RequestReceived"), AutoData]
+        public async Task TryRespondAsync_Raises_RequestReceived(string username, int token, string query)
+        {
+            var (responder, _) = GetFixture();
+
+            SearchRequestEventArgs args = null;
+            responder.RequestReceived += (sender, e) => args = e;
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+            Assert.NotNull(args);
+            Assert.Equal(username, args.Username);
+            Assert.Equal(token, args.Token);
+            Assert.Equal(query, args.Query);
         }
 
         [Trait("Category", "TryRespondAsync")]
