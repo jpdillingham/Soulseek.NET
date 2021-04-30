@@ -19,11 +19,13 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
 
@@ -63,6 +65,21 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(ex);
             Assert.NotNull(r.GetProperty<IDiagnosticFactory>("Diagnostic"));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Uses given Diagnostic")]
+        public void Uses_Given_Diagnostic()
+        {
+            var (_, mocks) = GetFixture();
+
+            var diagnostic = new Mock<IDiagnosticFactory>().Object;
+
+            SearchResponder r = default;
+            var ex = Record.Exception(() => r = new SearchResponder(mocks.Client.Object, diagnostic));
+
+            Assert.Null(ex);
+            Assert.Equal(diagnostic, r.GetProperty<IDiagnosticFactory>("Diagnostic"));
         }
 
         [Trait("Category", "TryDiscard")]
@@ -280,6 +297,209 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(username, args.Username);
             Assert.Equal(token, args.Token);
             Assert.Equal(query, args.Query);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync sends response and returns true"), AutoData]
+        public async Task TryRespondAsync_Sends_Response_And_Returns_True(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.True(responded);
+
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(searchResponse.ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync raises ResponseDelivered when sending response"), AutoData]
+        public async Task TryRespondAsync_Raises_ResponseDelivered_When_Sending_Response(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            SearchRequestResponseEventArgs args = null;
+            responder.ResponseDelivered += (sender, e) => args = e;
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.True(responded);
+
+            Assert.NotNull(args);
+            Assert.Equal(username, args.Username);
+            Assert.Equal(token, args.Token);
+            Assert.Equal(query, args.Query);
+            Assert.Equal(searchResponse, args.SearchResponse);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync generates debug when resolving response"), AutoData]
+        public async Task TryRespondAsync_Generates_Debug_When_Resolving_Response(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.True(responded);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Resolved"))), Times.Once);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync generates debug when sending response"), AutoData]
+        public async Task TryRespondAsync_Generates_Debug_When_Sending_Response(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.True(responded);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Sent response containing"))), Times.Once);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false on failure"), AutoData]
+        public async Task TryRespondAsync_Returns_False_On_Failure(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var ex = new ConnectionException();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IMessageConnection>(ex));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync caches response on connect failure"), AutoData]
+        public async Task TryRespondAsync_Caches_Response_On_Connect_Failure(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var cache = new Mock<ISearchResponseCache>();
+
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(
+                searchResponseCache: cache.Object,
+                searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var ex = new ConnectionException();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IMessageConnection>(ex));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+
+            var value = (username, token, query, searchResponse);
+            cache.Verify(m => m.AddOrUpdate(responseToken, value), Times.Once);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync generates warning on cache add failure"), AutoData]
+        public async Task TryRespondAsync_Generates_Warning_On_Cache_Add_Failure(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var value = (username, token, query, searchResponse);
+            var cacheEx = new Exception();
+
+            var cache = new Mock<ISearchResponseCache>();
+            cache.Setup(m => m.AddOrUpdate(responseToken, value))
+                .Throws(cacheEx);
+
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(
+                searchResponseCache: cache.Object,
+                searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var ex = new ConnectionException();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IMessageConnection>(ex));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Error caching undelivered search response")), cacheEx), Times.Once);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync generates debug on failure"), AutoData]
+        public async Task TryRespondAsync_Generates_Debug_On_Failure(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
+        {
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(responseToken);
+
+            var ex = new ConnectionException();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, responseToken, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IMessageConnection>(ex));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to send search response")), ex), Times.Once);
         }
 
         [Trait("Category", "TryRespondAsync")]
