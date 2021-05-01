@@ -61,7 +61,7 @@ namespace Soulseek.Tests.Unit
             var (_, mocks) = GetFixture();
 
             SearchResponder r = default;
-            var ex = Record.Exception(() => r = new SearchResponder(mocks.Client.Object, null));
+            var ex = Record.Exception(() => r = new SearchResponder(mocks.Client.Object));
 
             Assert.Null(ex);
             Assert.NotNull(r.GetProperty<IDiagnosticFactory>("Diagnostic"));
@@ -752,6 +752,36 @@ namespace Soulseek.Tests.Unit
                 .Throws(new Exception());
 
             var ex = await Record.ExceptionAsync(() => responder.TryRespondAsync(responseToken));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Diagnostic raises DiagnosticGenerated")]
+        public void Diagnostic_Raises_DiagnosticGenerated()
+        {
+            var (_, mocks) = GetFixture();
+            var responder = new SearchResponder(mocks.Client.Object);
+
+            bool fired = false;
+            responder.DiagnosticGenerated += (sender, e) => fired = true;
+
+            var diag = responder.GetProperty<IDiagnosticFactory>("Diagnostic");
+            diag.Info("test");
+
+            Assert.True(fired);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Diagnostic does not throw raising unbound DiagnosticGenerated")]
+        public void Diagnostic_Does_Not_Throw_Raising_Unbound_DiagnosticGenerated()
+        {
+            var (_, mocks) = GetFixture();
+            var responder = new SearchResponder(mocks.Client.Object);
+
+            var diag = responder.GetProperty<IDiagnosticFactory>("Diagnostic");
+
+            var ex = Record.Exception(() => diag.Info("test"));
 
             Assert.Null(ex);
         }
