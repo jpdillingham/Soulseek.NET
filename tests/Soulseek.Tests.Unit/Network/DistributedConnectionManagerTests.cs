@@ -1933,8 +1933,8 @@ namespace Soulseek.Tests.Unit.Network
 
                 manager.ResetStatus();
 
-                Assert.Equal(default(string), manager.GetProperty<string>("LastStatusHash"));
-                Assert.Equal(default(DateTime), manager.GetProperty<DateTime>("LastStatusTimestamp"));
+                Assert.Equal(default, manager.GetProperty<string>("LastStatusHash"));
+                Assert.Equal(default, manager.GetProperty<DateTime>("LastStatusTimestamp"));
                 Assert.False(manager.IsBranchRoot);
             }
         }
