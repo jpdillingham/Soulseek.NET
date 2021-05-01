@@ -1649,8 +1649,8 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
-        [Theory(DisplayName = "DiagnosticGenerated fires when handler raises"), AutoData]
-        public void DiagnosticGenerated_Fires_When_Handler_Raises(DiagnosticLevel level, string message)
+        [Theory(DisplayName = "ServerMessageHandler DiagnosticGenerated fires when handler raises"), AutoData]
+        public void ServerMessageHandler_DiagnosticGenerated_Fires_When_Handler_Raises(DiagnosticLevel level, string message)
         {
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new DiagnosticEventArgs(level, message);
@@ -1674,6 +1674,129 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new DiagnosticEventArgs(level, message);
 
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchRequestReceived fires when responder raises"), AutoData]
+        public void SearchRequestReceived_Fires_When_Responder_Raises(SearchRequestEventArgs args)
+        {
+            var mock = new Mock<ISearchResponder>();
+            SearchRequestEventArgs actual = default;
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            {
+                s.SearchRequestReceived += (sender, e) => actual = e;
+                mock.Raise(m => m.RequestReceived += null, mock.Object, args);
+
+                Assert.Equal(args, actual);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchRequestReceived does not throw if event not bound"), AutoData]
+        public void SearchRequestReceived_Does_Not_Throw_If_Event_Not_Bound(SearchRequestEventArgs args)
+        {
+            var mock = new Mock<ISearchResponder>();
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.RequestReceived += null, mock.Object, args));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchRequestReceived fires when responder raises"), AutoData]
+        public void SearchResponseDelivered_Fires_When_Responder_Raises(SearchRequestResponseEventArgs args)
+        {
+            var mock = new Mock<ISearchResponder>();
+            SearchRequestResponseEventArgs actual = default;
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            {
+                s.SearchResponseDelivered += (sender, e) => actual = e;
+                mock.Raise(m => m.ResponseDelivered += null, mock.Object, args);
+
+                Assert.Equal(args, actual);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchResponseDelivered does not throw if event not bound"), AutoData]
+        public void SearchResponseDelivered_Does_Not_Throw_If_Event_Not_Bound(SearchRequestResponseEventArgs args)
+        {
+            var mock = new Mock<ISearchResponder>();
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.ResponseDelivered += null, mock.Object, args));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchRequestReceived fires when responder raises"), AutoData]
+        public void SearchResponseDeliveryFailed_Fires_When_Responder_Raises(SearchRequestResponseEventArgs args)
+        {
+            var mock = new Mock<ISearchResponder>();
+            SearchRequestResponseEventArgs actual = default;
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            {
+                s.SearchResponseDeliveryFailed += (sender, e) => actual = e;
+                mock.Raise(m => m.ResponseDeliveryFailed += null, mock.Object, args);
+
+                Assert.Equal(args, actual);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchResponseDeliveryFailed does not throw if event not bound"), AutoData]
+        public void SearchResponseDeliveryFailed_Does_Not_Throw_If_Event_Not_Bound(SearchRequestResponseEventArgs args)
+        {
+            var mock = new Mock<ISearchResponder>();
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.ResponseDeliveryFailed += null, mock.Object, args));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchResponder DiagnosticGenerated fires when handler raises"), AutoData]
+        public void SearchResponder_DiagnosticGenerated_Fires_When_SearchResponder_Raises(DiagnosticLevel level, string message)
+        {
+            var mock = new Mock<ISearchResponder>();
+            var expectedArgs = new DiagnosticEventArgs(level, message);
+            DiagnosticEventArgs actualArgs = null;
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            {
+                s.DiagnosticGenerated += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "SearchResponder Event")]
+        [Theory(DisplayName = "SearchResponder DiagnosticGenerated does not throw if event not bound"), AutoData]
+        public void SearchResponder_DiagnosticGenerated_Does_Not_Throw_If_Event_Not_Bound(DiagnosticLevel level, string message)
+        {
+            var mock = new Mock<ISearchResponder>();
+            var expectedArgs = new DiagnosticEventArgs(level, message);
+
+            using (var s = new SoulseekClient(searchResponder: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
