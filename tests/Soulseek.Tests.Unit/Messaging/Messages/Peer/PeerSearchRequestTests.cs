@@ -1,4 +1,4 @@
-﻿// <copyright file="QueueFailedResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="PeerSearchRequestTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,6 @@
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
-    using System;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;

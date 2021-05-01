@@ -17,11 +17,11 @@
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
+    using System;
+    using System.Linq;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using System;
-    using System.Linq;
     using Xunit;
 
     public class EmbeddedMessageTests
