@@ -1,6 +1,7 @@
 ﻿namespace WebAPI
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -73,7 +74,7 @@
             EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", true);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
-            ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
+            ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 10000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
             SecurityTokenTTL = Configuration.GetValue<int>("SECURITY_TOKEN_TTL", 604800000); // 7 days
@@ -243,6 +244,8 @@
                 connectTimeout: ConnectTimeout,
                 inactivityTimeout: InactivityTimeout);
 
+            var searchResponseCache = new SearchResponseCache();
+
             // create options for the client.
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
@@ -261,7 +264,8 @@
                 browseResponseResolver: BrowseResponseResolver,
                 directoryContentsResponseResolver: DirectoryContentsResponseResolver,
                 enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
-                searchResponseResolver: SearchResponseResolver);
+                searchResponseResolver: SearchResponseResolver,
+                searchResponseCache: searchResponseCache);
 
             Client = new SoulseekClient(options: clientOptions);
             SharedCounts = (Directories: 0, Files: 0);
@@ -394,6 +398,27 @@
             Client.DistributedParentDisconnected += (e, args) => Console.WriteLine($"[DNET] Disconnected from parent {args.Username} ({args.IPEndPoint}) [Level: {args.BranchLevel}; Root: {args.BranchRoot}]");
             Client.DistributedChildAdded += (e, args) => Console.WriteLine($"[DNET] Added child {args.Username} ({args.IPEndPoint})");
             Client.DistributedChildDisconnected += (e, args) => Console.WriteLine($"[DNET] Disconnected child {args.Username} ({args.IPEndPoint})");
+
+            Client.SearchRequestReceived += (e, args) =>
+            {
+                // very verbose!
+                // Console.WriteLine($"[SEARCH REQUEST] {args.Username} requesting '{args.Query}'");
+            };
+
+            Client.SearchResponseDelivered += (e, args) =>
+            {
+                Console.WriteLine($"[SEARCH RESPONSE DELIVERY] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+            };
+
+            Client.SearchResponseDeliveryFailed += (e, args) =>
+            {
+                Console.WriteLine($"[SEARCH RESPONSE DELIVERY FAILED] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");
+            };
+
+            Client.UserCannotConnect += (e, args) =>
+            {
+                Console.WriteLine($"[CANNOT CONNECT] Token: {args.Token}, Username: {args.Username ?? "<null>"}");
+            };
 
             Task.Run(async () =>
             {
@@ -577,6 +602,42 @@
             public bool TryGet(string username, out IPEndPoint endPoint)
             {
                 return Cache.TryGetValue(username, out endPoint);
+            }
+        }
+
+        public class SearchResponseCache : ISearchResponseCache
+        {
+            private ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)> Cache { get; }
+                = new ConcurrentDictionary<int, (string Username, int Token, string Query, SearchResponse SearchResponse)>();
+
+            public void AddOrUpdate(int responseToken, (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                Cache.AddOrUpdate(responseToken, response, (k, v) => response);
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(180000);
+                    TryRemove(responseToken, out var _);
+                });
+
+                Console.WriteLine($"Cached {responseToken} for {response.Username}");
+            }
+
+            public bool TryGet(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                return Cache.TryGetValue(responseToken, out response);
+            }
+
+            public bool TryRemove(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                response = default;
+
+                if (Cache.TryRemove(responseToken, out response))
+                {
+                    Console.WriteLine($"Removed {responseToken} for {response.Username}");
+                    return true;
+                }
+
+                return false;
             }
         }
     }

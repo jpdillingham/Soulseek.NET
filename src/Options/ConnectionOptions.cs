@@ -33,7 +33,7 @@ namespace Soulseek
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
-            int connectTimeout = 5000,
+            int connectTimeout = 10000,
             int inactivityTimeout = 15000,
             ProxyOptions proxyOptions = null)
         {
@@ -46,7 +46,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the connection timeout, in milliseconds, for client and peer TCP connections. (Default = 5000).
+        ///     Gets the connection timeout, in milliseconds, for client and peer TCP connections. (Default = 10000).
         /// </summary>
         public int ConnectTimeout { get; }
 

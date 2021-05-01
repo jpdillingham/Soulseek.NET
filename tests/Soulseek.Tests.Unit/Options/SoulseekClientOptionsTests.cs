@@ -97,6 +97,9 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
             Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
             Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+
+            Assert.Null(o.UserEndPointCache);
+            Assert.Null(o.SearchResponseCache);
         }
 
         [Trait("Category", "Instantiation")]
@@ -116,6 +119,7 @@ namespace Soulseek.Tests.Unit
             Assert.NotNull(o.ServerConnectionOptions);
             Assert.NotNull(o.PeerConnectionOptions);
             Assert.NotNull(o.TransferConnectionOptions);
+            Assert.NotNull(o.DistributedConnectionOptions);
         }
 
         [Trait("Category", "Instantiation")]
@@ -147,6 +151,19 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(o.SearchResponseResolver);
             Assert.Null(o.DirectoryContentsResponseResolver);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with given cache implementations")]
+        public void Instantiates_With_Given_Cache_Implementations()
+        {
+            var user = new UserEndPointCache();
+            var search = new SearchResponseCache();
+
+            var o = new SoulseekClientOptions(userEndPointCache: user, searchResponseCache: search);
+
+            Assert.Equal(user, o.UserEndPointCache);
+            Assert.Equal(search, o.SearchResponseCache);
         }
 
         [Trait("Category", "Instantiation")]
@@ -323,6 +340,37 @@ namespace Soulseek.Tests.Unit
             var ex = Record.Exception(() => new SoulseekClientOptions().With());
 
             Assert.Null(ex);
+        }
+
+        private class UserEndPointCache : IUserEndPointCache
+        {
+            public void AddOrUpdate(string username, IPEndPoint endPoint)
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool TryGet(string username, out IPEndPoint endPoint)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private class SearchResponseCache : ISearchResponseCache
+        {
+            public void AddOrUpdate(int responseToken, (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool TryGet(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool TryRemove(int responseToken, out (string Username, int Token, string Query, SearchResponse SearchResponse) response)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

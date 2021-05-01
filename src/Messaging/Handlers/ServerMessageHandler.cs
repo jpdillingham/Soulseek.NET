@@ -300,8 +300,15 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.CannotConnect:
                         var cannotConnect = CannotConnect.FromByteArray(message);
-                        Diagnostic.Debug($"Received CannotConnect message from {cannotConnect.Username} for token {cannotConnect.Token}");
-                        UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
+                        Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
+
+                        SoulseekClient.SearchResponder.TryDiscard(cannotConnect.Token);
+
+                        if (!string.IsNullOrEmpty(cannotConnect.Username))
+                        {
+                            UserCannotConnect?.Invoke(this, new UserCannotConnectEventArgs(cannotConnect));
+                        }
+
                         break;
 
                     case MessageCode.Server.CannotJoinRoom:
@@ -313,12 +320,10 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.ConnectToPeer:
-                        ConnectToPeerResponse connectToPeerResponse = default;
+                        var connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
 
                         try
                         {
-                            connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
-
                             if (connectToPeerResponse.Type == Constants.ConnectionType.Transfer)
                             {
                                 Diagnostic.Debug($"Received transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token}");
@@ -363,7 +368,7 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
-                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse?.Username} ({connectToPeerResponse?.IPEndPoint}): {ex.Message}");
+                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
                         }
 
                         break;
@@ -474,27 +479,7 @@ namespace Soulseek.Messaging.Handlers
                             break;
                         }
 
-                        if (SoulseekClient.Options.SearchResponseResolver == default)
-                        {
-                            break;
-                        }
-
-                        try
-                        {
-                            var searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
-
-                            if (searchResponse != null && searchResponse.FileCount + searchResponse.LockedFileCount > 0)
-                            {
-                                var endpoint = await SoulseekClient.GetUserEndPointAsync(searchRequest.Username).ConfigureAwait(false);
-
-                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, endpoint, CancellationToken.None).ConfigureAwait(false);
-                                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {searchRequest.Username} with token {searchRequest.Token}: {ex.Message}", ex);
-                        }
+                        await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
                         break;
 

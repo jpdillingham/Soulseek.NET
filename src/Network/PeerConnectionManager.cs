@@ -138,17 +138,16 @@ namespace Soulseek.Network
                 {
                     if (PendingInboundIndirectConnectionDictionary.TryGetValue(username, out var pendingCts))
                     {
-                        // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed
-                        // because the remote client would supersede this connection with it.
+                        // cancel any connection pending due to a ConnectToPeer message; we don't want it to succeed because the
+                        // remote client would supersede this connection with it.
                         Diagnostic.Debug($"Cancelling pending inbound indirect message connection to {username}");
                         pendingCts.Cancel();
                     }
 
                     try
                     {
-                        // because we cancelled any pending connection above, the Lazy<> function has completed
-                        // executing and we know that awaiting .Value will return immediately, allowing us to tear down the
-                        // existing connection.
+                        // because we cancelled any pending connection above, the Lazy<> function has completed executing and we
+                        // know that awaiting .Value will return immediately, allowing us to tear down the existing connection.
                         var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
                         cachedConnection.Disconnected -= MessageConnection_Disconnected;
                         Diagnostic.Debug($"Superseding cached message connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
@@ -285,6 +284,30 @@ namespace Soulseek.Network
         }
 
         /// <summary>
+        ///     Gets an existing message connection to the specified <paramref name="username"/>, if one exists.
+        /// </summary>
+        /// <param name="username">The username of the user for which to retrieve the cached connection.</param>
+        /// <returns>The operation context, including the cached connection, or null if one does not exist.</returns>
+        public async Task<IMessageConnection> GetCachedMessageConnectionAsync(string username)
+        {
+            try
+            {
+                if (MessageConnectionDictionary.TryGetValue(username, out var cached))
+                {
+                    var connection = await cached.Value.ConfigureAwait(false);
+                    Diagnostic.Debug($"Retrieved cached message connection to {connection.Username} ({connection.IPEndPoint}) (type: {connection.Type}, id: {connection.Id})");
+                    return connection;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Debug($"Failed to retrieve cached message connection to {username}: {ex.Message}");
+            }
+
+            return null;
+        }
+
+        /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
@@ -318,9 +341,9 @@ namespace Soulseek.Network
                 var msg = $"Failed to establish an inbound indirect message connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
 
-                // only purge the connection if the thrown exception is something other than OperationCanceledException.
-                // if this is thrown then a direct connection superseded this connection while it was being established,
-                // and ChildConnectionDictionary contains the new, direct connection.
+                // only purge the connection if the thrown exception is something other than OperationCanceledException. if this
+                // is thrown then a direct connection superseded this connection while it was being established, and
+                // ChildConnectionDictionary contains the new, direct connection.
                 if (!(ex is OperationCanceledException))
                 {
                     Diagnostic.Debug($"Purging message connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
@@ -332,9 +355,9 @@ namespace Soulseek.Network
                     {
                         var connection = await removed.Value.ConfigureAwait(false);
 
-                        // if the connection we removed is Direct, then a direct connection managed to come in
-                        // after this attempt had timed out or failed, but before that connection was able to cancel the pending token
-                        // this should be an extreme edge case, but log it as a warning so we can see how common it is.
+                        // if the connection we removed is Direct, then a direct connection managed to come in after this attempt
+                        // had timed out or failed, but before that connection was able to cancel the pending token this should be
+                        // an extreme edge case, but log it as a warning so we can see how common it is.
                         if (connection.Type.HasFlag(ConnectionTypes.Direct))
                         {
                             Diagnostic.Warning($"Erroneously purged direct message connection to {r.Username} upon indirect failure");
@@ -409,7 +432,22 @@ namespace Soulseek.Network
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
-        public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
+        public Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
+            => GetOrAddMessageConnectionAsync(username, ipEndPoint, SoulseekClient.GetNextToken(), cancellationToken);
+
+        /// <summary>
+        ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <remarks>
+        ///     If a connection doesn't exist, new direct and indirect connections are attempted simultaneously, and the first to
+        ///     connect is returned.
+        /// </remarks>
+        /// <param name="username">The username of the user to which to connect.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
+        /// <param name="solicitationToken">The optional token for the indirect connection solicitation.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the new or existing connection.</returns>
+        public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, int solicitationToken, CancellationToken cancellationToken)
         {
             bool cached = true;
 
@@ -445,7 +483,7 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Attempting simultaneous direct and indirect message connections to {username} ({ipEndPoint})");
 
                 var direct = GetMessageConnectionOutboundDirectAsync(username, ipEndPoint, directLinkedCts.Token);
-                var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
+                var indirect = GetMessageConnectionOutboundIndirectAsync(username, solicitationToken, indirectLinkedCts.Token);
 
                 var tasks = new[] { direct, indirect }.ToList();
                 Task<IMessageConnection> task;
@@ -666,10 +704,8 @@ namespace Soulseek.Network
             return connection;
         }
 
-        private async Task<IMessageConnection> GetMessageConnectionOutboundIndirectAsync(string username, CancellationToken cancellationToken)
+        private async Task<IMessageConnection> GetMessageConnectionOutboundIndirectAsync(string username, int solicitationToken, CancellationToken cancellationToken)
         {
-            var solicitationToken = SoulseekClient.GetNextToken();
-
             Diagnostic.Debug($"Soliciting indirect message connection to {username} with token {solicitationToken}");
 
             try

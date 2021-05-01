@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Collections.Generic;
+    using AutoFixture.Xunit2;
     using Xunit;
 
     public class SearchEventArgsTests
@@ -62,6 +63,31 @@ namespace Soulseek.Tests.Unit
                 Assert.Equal(SearchStates.None, e.PreviousState);
                 Assert.Equal(SearchStates.Completed, e.Search.State);
             }
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "SearchRequestEventArgs")]
+        [Theory(DisplayName = "Instantiates with context"), AutoData]
+        public void SearchRequestEventArgs_Instantiates_With_Context(string username, int token, string query)
+        {
+            var e = new SearchRequestEventArgs(username, token, query);
+
+            Assert.Equal(username, e.Username);
+            Assert.Equal(token, e.Token);
+            Assert.Equal(query, e.Query);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "SearchRequestResponseEventArgs")]
+        [Theory(DisplayName = "Instantiates with SearchResponse and context"), AutoData]
+        public void SearchRequestResponseEventArgs_Instantiates_SearchResponse_And_Context(string username, int token, string query, SearchResponse searchResponse)
+        {
+            var e = new SearchRequestResponseEventArgs(username, token, query, searchResponse);
+
+            Assert.Equal(username, e.Username);
+            Assert.Equal(token, e.Token);
+            Assert.Equal(query, e.Query);
+            Assert.Equal(searchResponse, e.SearchResponse);
         }
     }
 }

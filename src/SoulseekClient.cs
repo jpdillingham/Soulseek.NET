@@ -72,6 +72,7 @@ namespace Soulseek
         /// <param name="distributedMessageHandler">The IDistributedMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
         /// <param name="listenerHandler">The IListenerHandler instance to use.</param>
+        /// <param name="searchResponder">The ISearchResponder instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
@@ -87,6 +88,7 @@ namespace Soulseek
             IDistributedMessageHandler distributedMessageHandler = null,
             IListener listener = null,
             IListenerHandler listenerHandler = null,
+            ISearchResponder searchResponder = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
@@ -103,6 +105,12 @@ namespace Soulseek
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             Listener = listener;
+
+            SearchResponder = searchResponder ?? new SearchResponder(this);
+            SearchResponder.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            SearchResponder.RequestReceived += (sender, e) => SearchRequestReceived?.Invoke(this, e);
+            SearchResponder.ResponseDelivered += (sender, e) => SearchResponseDelivered?.Invoke(this, e);
+            SearchResponder.ResponseDeliveryFailed += (sender, e) => SearchResponseDeliveryFailed?.Invoke(this, e);
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -307,6 +315,21 @@ namespace Soulseek
         public event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
+        ///     Occurs when a search request is received.
+        /// </summary>
+        public event EventHandler<SearchRequestEventArgs> SearchRequestReceived;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is delivered.
+        /// </summary>
+        public event EventHandler<SearchRequestResponseEventArgs> SearchResponseDelivered;
+
+        /// <summary>
+        ///     Occurs when the delivery of a response to a search request fails.
+        /// </summary>
+        public event EventHandler<SearchRequestResponseEventArgs> SearchResponseDeliveryFailed;
+
+        /// <summary>
         ///     Occurs when a new search result is received.
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
@@ -396,6 +419,7 @@ namespace Soulseek
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
         internal virtual IPeerMessageHandler PeerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, SearchInternal> Searches { get; set; } = new ConcurrentDictionary<int, SearchInternal>();
+        internal virtual ISearchResponder SearchResponder { get; }
         internal virtual IMessageConnection ServerConnection { get; private set; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, TransferInternal> Uploads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
@@ -2997,9 +3021,10 @@ namespace Soulseek
 
                 if (connected && ((enableDistributedNetworkChanged && !patch.EnableDistributedNetwork.Value) || distributedConnectionOptionsChanged))
                 {
-                    // reconnect to avoid state issues that might be caused by disabling this on the fly. if we are changing
-                    // the big concerns are in half-open parent or child connections; we can stop the server from sending NetInfo/demote us from branch root
-                    // by sending HaveNoParents=false.  if changing from disabled to enabled, there's no restart required.
+                    // reconnect to avoid state issues that might be caused by disabling this on the fly. if we are disabling the
+                    // big concerns are in half-open parent or child connections; we can stop the server from sending
+                    // NetInfo/demote us from branch root by sending HaveNoParents=false. if changing from disabled to enabled,
+                    // there's no restart required.
                     reconnectRequired = true;
                 }
 

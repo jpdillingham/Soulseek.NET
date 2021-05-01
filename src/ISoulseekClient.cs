@@ -172,6 +172,21 @@ namespace Soulseek
         event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
+        ///     Occurs when a search request is received.
+        /// </summary>
+        event EventHandler<SearchRequestEventArgs> SearchRequestReceived;
+
+        /// <summary>
+        ///     Occurs when the response to a search request is delivered.
+        /// </summary>
+        event EventHandler<SearchRequestResponseEventArgs> SearchResponseDelivered;
+
+        /// <summary>
+        ///     Occurs when the delivery of a response to a search request fails.
+        /// </summary>
+        event EventHandler<SearchRequestResponseEventArgs> SearchResponseDeliveryFailed;
+
+        /// <summary>
         ///     Occurs when a new search response is received.
         /// </summary>
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;

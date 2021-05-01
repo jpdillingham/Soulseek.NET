@@ -167,7 +167,7 @@ namespace Soulseek.Messaging.Handlers
 
                                 _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(embeddedMessage.DistributedMessage).ConfigureAwait(false);
 
-                                await TrySendSearchResults(embeddedSearchRequest.Username, embeddedSearchRequest.Token, embeddedSearchRequest.Query).ConfigureAwait(false);
+                                await SoulseekClient.SearchResponder.TryRespondAsync(embeddedSearchRequest.Username, embeddedSearchRequest.Token, embeddedSearchRequest.Query).ConfigureAwait(false);
 
                                 break;
                             default:
@@ -183,7 +183,7 @@ namespace Soulseek.Messaging.Handlers
 
                         _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
 
-                        await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+                        await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
                         break;
 
@@ -265,7 +265,7 @@ namespace Soulseek.Messaging.Handlers
 
                         _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
 
-                        await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+                        await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
                         break;
                     default:
@@ -277,56 +277,6 @@ namespace Soulseek.Messaging.Handlers
             {
                 Diagnostic.Warning($"Error handling embedded message: {code}; {ex.Message}", ex);
             }
-        }
-
-        private async Task<bool> TrySendSearchResults(string username, int token, string query)
-        {
-            if (SoulseekClient.Options.SearchResponseResolver == default)
-            {
-                return false;
-            }
-
-            SearchResponse searchResponse = null;
-
-            try
-            {
-                searchResponse = await SoulseekClient.Options.SearchResponseResolver(username, token, SearchQuery.FromText(query)).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Diagnostic.Warning($"Error resolving search response for query '{query}' requested by {username} with token {token}: {ex.Message}", ex);
-                return false;
-            }
-
-            if (searchResponse == null)
-            {
-                return false;
-            }
-
-            if (searchResponse.FileCount <= 0)
-            {
-                return false;
-            }
-
-            try
-            {
-                Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
-
-                var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
-
-                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None).ConfigureAwait(false);
-                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
-
-                Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {username} for query '{query}' with token {token}");
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Diagnostic.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
-            }
-
-            return false;
         }
     }
 }
