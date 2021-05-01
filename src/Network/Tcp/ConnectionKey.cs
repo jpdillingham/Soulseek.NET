@@ -89,7 +89,11 @@ namespace Soulseek.Network.Tcp
         public override int GetHashCode()
         {
             var str = $"{Username}:{IPEndPoint?.Address}:{IPEndPoint?.Port}";
+#if NETSTANDARD2_0
+            return str.GetHashCode();
+#else
             return str.GetHashCode(StringComparison.CurrentCulture);
+#endif
         }
     }
 }

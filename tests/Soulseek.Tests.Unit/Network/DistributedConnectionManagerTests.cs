@@ -1921,7 +1921,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ResetStatus")]
         [Theory(DisplayName = "ResetStatus resets status and demotes from branch root"), AutoData]
-        internal async Task ResetStatus_Resets_Status_And_Demotes_From_Branch_Root(string lastStatus, DateTime lastStatusTimestamp)
+        internal void ResetStatus_Resets_Status_And_Demotes_From_Branch_Root(string lastStatus, DateTime lastStatusTimestamp)
         {
             var (manager, _) = GetFixture();
 
@@ -1933,8 +1933,8 @@ namespace Soulseek.Tests.Unit.Network
 
                 manager.ResetStatus();
 
-                Assert.Equal(default(string), manager.GetProperty<string>("LastStatusHash"));
-                Assert.Equal(default(DateTime), manager.GetProperty<DateTime>("LastStatusTimestamp"));
+                Assert.Equal(default, manager.GetProperty<string>("LastStatusHash"));
+                Assert.Equal(default, manager.GetProperty<DateTime>("LastStatusTimestamp"));
                 Assert.False(manager.IsBranchRoot);
             }
         }

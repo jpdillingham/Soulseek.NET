@@ -236,8 +236,13 @@ namespace Soulseek.Network.Tcp
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
                     // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same
                     // TCS. either the timeout or the external token can now cancel the operation.
+#if NETSTANDARD2_0
+                    using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
+                    using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+#else
                     await using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
                     await using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+#endif
                     {
                         var completedTask = await Task.WhenAny(connectTask, timeoutTaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
 
@@ -560,7 +565,11 @@ namespace Soulseek.Network.Tcp
 
         private async Task<byte[]> ReadInternalAsync(long length, CancellationToken cancellationToken)
         {
+#if NETSTANDARD2_0
+            using var stream = new MemoryStream();
+#else
             await using var stream = new MemoryStream();
+#endif
 
             await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
             return stream.ToArray();
@@ -591,7 +600,11 @@ namespace Soulseek.Network.Tcp
 
                     totalBytesRead += bytesRead;
 
+#if NETSTANDARD2_0
+                    await outputStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+#else
                     await outputStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
+#endif
 
                     Interlocked.CompareExchange(ref DataRead, null, null)?
                         .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
@@ -622,7 +635,11 @@ namespace Soulseek.Network.Tcp
 
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
+#if NETSTANDARD2_0
+            using var stream = new MemoryStream(bytes);
+#else
             await using var stream = new MemoryStream(bytes);
+#endif
 
             await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
         }
@@ -643,7 +660,11 @@ namespace Soulseek.Network.Tcp
                     var bytesRemaining = length - totalBytesWritten;
 
                     var bytesToRead = bytesRemaining >= inputBuffer.Length ? inputBuffer.Length : (int)bytesRemaining;
+#if NETSTANDARD2_0
+                    var bytesRead = await inputStream.ReadAsync(inputBuffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+#else
                     var bytesRead = await inputStream.ReadAsync(inputBuffer.AsMemory(0, bytesToRead), cancellationToken).ConfigureAwait(false);
+#endif
 
                     await Stream.WriteAsync(inputBuffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 

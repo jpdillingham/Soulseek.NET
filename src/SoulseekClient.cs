@@ -2496,8 +2496,11 @@ namespace Soulseek
                 options.MaximumLingerTime,
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
-
+#if NETSTANDARD2_0
+            using var memoryStream = new MemoryStream();
+#else
             await using var memoryStream = new MemoryStream();
+#endif
 
             await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
             return memoryStream.ToArray();
@@ -2572,7 +2575,11 @@ namespace Soulseek
                         .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
                 }
+#if NETSTANDARD2_0
+                else if (transferRequestAcknowledgement.Message.Contains("not shared"))
+#else
                 else if (transferRequestAcknowledgement.Message.Contains("not shared", StringComparison.InvariantCultureIgnoreCase))
+#endif
                 {
                     throw new TransferRejectedException(transferRequestAcknowledgement.Message);
                 }
@@ -2731,7 +2738,11 @@ namespace Soulseek
                     }
                     finally
                     {
+#if NETSTANDARD2_0
+                        outputStream.Dispose();
+#else
                         await outputStream.DisposeAsync().ConfigureAwait(false);
+#endif
                     }
                 }
             }
@@ -3278,7 +3289,12 @@ namespace Soulseek
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
+#if NETSTANDARD2_0
+            using var memoryStream = new MemoryStream(data);
+#else
             await using var memoryStream = new MemoryStream(data);
+#endif
+
             await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
         }
 
@@ -3532,7 +3548,11 @@ namespace Soulseek
 
                 if (options.DisposeInputStreamOnCompletion)
                 {
+#if NETSTANDARD2_0
+                    inputStream.Dispose();
+#else
                     await inputStream.DisposeAsync().ConfigureAwait(false);
+#endif
                 }
             }
         }
