@@ -75,13 +75,13 @@ namespace Soulseek.Network
 
                     if (peerInit.ConnectionType == Constants.ConnectionType.Peer)
                     {
-                        await SoulseekClient.PeerConnectionManager.AddMessageConnectionAsync(
+                        await SoulseekClient.PeerConnectionManager.AddOrUpdateMessageConnectionAsync(
                             peerInit.Username,
                             connection).ConfigureAwait(false);
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
-                        var (transferConnection, remoteToken) = await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(
+                        var (transferConnection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(
                             peerInit.Username,
                             peerInit.Token,
                             connection).ConfigureAwait(false);
@@ -117,7 +117,7 @@ namespace Soulseek.Network
                             // users may connect to retrieve search results long after we've given up waiting for them.  if this is the case, accept the connection,
                             // cache it with the manager for potential reuse, then try to send the pending response.
                             Diagnostic.Debug($"PierceFirewall matching pending search response received from {cachedSearchResponse.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
-                            await SoulseekClient.PeerConnectionManager.AddMessageConnectionAsync(cachedSearchResponse.Username, connection).ConfigureAwait(false);
+                            await SoulseekClient.PeerConnectionManager.AddOrUpdateMessageConnectionAsync(cachedSearchResponse.Username, connection).ConfigureAwait(false);
                             await SoulseekClient.SearchResponder.TryRespondAsync(pierceFirewall.Token).ConfigureAwait(false);
                         }
                     }

@@ -261,7 +261,7 @@ namespace Soulseek.Tests.Unit.Network
 
             handler.HandleConnection(null, mocks.Connection.Object);
 
-            mocks.PeerConnectionManager.Verify(m => m.AddMessageConnectionAsync(username, It.IsAny<IConnection>()));
+            mocks.PeerConnectionManager.Verify(m => m.AddOrUpdateMessageConnectionAsync(username, It.IsAny<IConnection>()));
         }
 
         [Trait("Category", "PeerInit")]
@@ -281,7 +281,7 @@ namespace Soulseek.Tests.Unit.Network
 
             handler.HandleConnection(null, mocks.Connection.Object);
 
-            mocks.PeerConnectionManager.Verify(m => m.AddTransferConnectionAsync(username, token, It.IsAny<IConnection>()));
+            mocks.PeerConnectionManager.Verify(m => m.GetTransferConnectionAsync(username, token, It.IsAny<IConnection>()));
         }
 
         [Trait("Category", "PeerInit")]
@@ -301,7 +301,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var newTransfer = new Mock<IConnection>();
 
-            mocks.PeerConnectionManager.Setup(m => m.AddTransferConnectionAsync(username, token, It.IsAny<IConnection>()))
+            mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(username, token, It.IsAny<IConnection>()))
                 .Returns(Task.FromResult((newTransfer.Object, token)));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -403,7 +403,7 @@ namespace Soulseek.Tests.Unit.Network
 
             handler.HandleConnection(null, mocks.Connection.Object);
 
-            mocks.PeerConnectionManager.Verify(m => m.AddMessageConnectionAsync(username, mocks.Connection.Object), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.AddOrUpdateMessageConnectionAsync(username, mocks.Connection.Object), Times.Once);
         }
 
         [Trait("Category", "PierceFirewall")]
