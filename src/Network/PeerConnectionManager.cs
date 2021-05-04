@@ -96,7 +96,7 @@ namespace Soulseek.Network
         /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
-        public async Task AddMessageConnectionAsync(string username, IConnection incomingConnection)
+        public async Task AddOrUpdateMessageConnectionAsync(string username, IConnection incomingConnection)
         {
             var c = incomingConnection;
 
@@ -171,46 +171,6 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
-        }
-
-        /// <summary>
-        ///     Adds a new transfer connection from an incoming connection.
-        /// </summary>
-        /// <param name="username">The username of the user from which the connection originated.</param>
-        /// <param name="token">The token with which the firewall was pierced.</param>
-        /// <param name="incomingConnection">The accepted connection.</param>
-        /// <returns>The operation context.</returns>
-        public async Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(string username, int token, IConnection incomingConnection)
-        {
-            Diagnostic.Debug($"Inbound transfer connection to {username} ({incomingConnection.IPEndPoint}) for token {token} accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
-
-            var connection = ConnectionFactory.GetTransferConnection(
-                incomingConnection.IPEndPoint,
-                SoulseekClient.Options.TransferConnectionOptions,
-                incomingConnection.HandoffTcpClient());
-
-            connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {token} disconnected. (type: {connection.Type}, id: {connection.Id})");
-
-            Diagnostic.Debug($"Inbound transfer connection to {username} ({connection.IPEndPoint}) for token {token} handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
-
-            int remoteToken;
-
-            try
-            {
-                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-                remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
-            }
-            catch (Exception ex)
-            {
-                var msg = $"Failed to establish an inbound transfer connection to {username} ({incomingConnection.IPEndPoint}) for token {token}: {ex.Message}";
-                Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
-                connection.Dispose();
-                throw new ConnectionException(msg, ex);
-            }
-
-            Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {remoteToken} established. (type: {connection.Type}, id: {connection.Id})");
-            return (connection, remoteToken);
         }
 
         /// <summary>
@@ -534,6 +494,46 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
+        }
+
+        /// <summary>
+        ///     Adds a new transfer connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username of the user from which the connection originated.</param>
+        /// <param name="token">The token with which the firewall was pierced.</param>
+        /// <param name="incomingConnection">The accepted connection.</param>
+        /// <returns>The operation context.</returns>
+        public async Task<(IConnection Connection, int RemoteToken)> GetTransferConnectionAsync(string username, int token, IConnection incomingConnection)
+        {
+            Diagnostic.Debug($"Inbound transfer connection to {username} ({incomingConnection.IPEndPoint}) for token {token} accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
+
+            var connection = ConnectionFactory.GetTransferConnection(
+                incomingConnection.IPEndPoint,
+                SoulseekClient.Options.TransferConnectionOptions,
+                incomingConnection.HandoffTcpClient());
+
+            connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {token} disconnected. (type: {connection.Type}, id: {connection.Id})");
+
+            Diagnostic.Debug($"Inbound transfer connection to {username} ({connection.IPEndPoint}) for token {token} handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+
+            int remoteToken;
+
+            try
+            {
+                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+                remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+            }
+            catch (Exception ex)
+            {
+                var msg = $"Failed to establish an inbound transfer connection to {username} ({incomingConnection.IPEndPoint}) for token {token}: {ex.Message}";
+                Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
+                connection.Dispose();
+                throw new ConnectionException(msg, ex);
+            }
+
+            Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {remoteToken} established. (type: {connection.Type}, id: {connection.Id})");
+            return (connection, remoteToken);
         }
 
         /// <summary>

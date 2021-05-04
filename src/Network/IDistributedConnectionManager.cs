@@ -107,20 +107,12 @@ namespace Soulseek.Network
         IReadOnlyDictionary<int, string> PendingSolicitations { get; }
 
         /// <summary>
-        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
-        ///     pierces the remote peer's firewall.
-        /// </summary>
-        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <returns>The operation context.</returns>
-        Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
-
-        /// <summary>
         ///     Adds a new child connection from an incoming connection.
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
-        Task AddChildConnectionAsync(string username, IConnection incomingConnection);
+        Task AddOrUpdateChildConnectionAsync(string username, IConnection incomingConnection);
 
         /// <summary>
         ///     Asynchronously connects to one of the specified <paramref name="parentCandidates"/>.
@@ -141,6 +133,14 @@ namespace Soulseek.Network
         ///     Demotes the client from a branch root on the distributed network.
         /// </summary>
         void DemoteFromBranchRoot();
+
+        /// <summary>
+        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
+        ///     pierces the remote peer's firewall.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context.</returns>
+        Task GetOrAddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
 
         /// <summary>
         ///     Promotes the client to a branch root on the distributed network.

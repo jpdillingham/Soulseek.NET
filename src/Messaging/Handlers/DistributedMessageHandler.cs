@@ -79,15 +79,11 @@ namespace Soulseek.Messaging.Handlers
                 switch (code)
                 {
                     case MessageCode.Distributed.ChildDepth:
-                        var childDepth = DistributedChildDepth.FromByteArray(message);
-                        Diagnostic.Debug($"Child depth of {childDepth.Depth} received from {connection.Username}");
                         break;
 
                     case MessageCode.Distributed.Ping:
-                        Diagnostic.Debug("PING?");
                         var pingResponse = new DistributedPingResponse(SoulseekClient.GetNextToken());
                         await connection.WriteAsync(pingResponse).ConfigureAwait(false);
-                        Diagnostic.Debug("PONG!");
                         break;
 
                     default:

@@ -359,7 +359,7 @@ namespace Soulseek.Messaging.Handlers
                             else if (connectToPeerResponse.Type == Constants.ConnectionType.Distributed)
                             {
                                 Diagnostic.Debug($"Received distributed ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
-                                await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                                await SoulseekClient.DistributedConnectionManager.GetOrAddChildConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                             }
                             else
                             {

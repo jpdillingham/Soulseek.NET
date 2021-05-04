@@ -161,7 +161,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var (connection, remoteToken) = await manager.AddTransferConnectionAsync(username, token, incomingConn.Object);
+                var (connection, remoteToken) = await manager.GetTransferConnectionAsync(username, token, incomingConn.Object);
 
                 Assert.Equal(conn.Object, connection);
                 Assert.Equal(token, remoteToken);
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -221,7 +221,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -251,7 +251,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddTransferConnectionAsync(username, token, incomingConn.Object);
+                await manager.GetTransferConnectionAsync(username, token, incomingConn.Object);
             }
 
             conn.VerifySet(m => m.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct);
@@ -274,7 +274,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
             }
@@ -299,7 +299,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -328,7 +328,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+                await manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object);
             }
 
             conn.Verify(m => m.StartReadingContinuously());
@@ -358,7 +358,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var caught = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+                var caught = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
 
                 Assert.NotNull(caught);
                 Assert.IsType<ConnectionException>(caught);
@@ -388,7 +388,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+                await manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object);
 
                 Assert.Single(manager.MessageConnections);
                 Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPEndPoint == endpoint);
@@ -420,7 +420,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+                await manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object);
 
                 Assert.Single(manager.MessageConnections);
                 Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPEndPoint == endpoint);
@@ -430,7 +430,7 @@ namespace Soulseek.Tests.Unit.Network
                     .Returns(conn2.Object);
 
                 // call this again to force the first connection out and second in its place
-                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+                await manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object);
 
                 // make sure we still have just the one
                 Assert.Single(manager.MessageConnections);
@@ -467,7 +467,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("MessageConnectionDictionary", dict);
 
-                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
 
                 Assert.Null(ex);
             }
@@ -503,7 +503,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 manager.SetProperty("PendingInboundIndirectConnectionDictionary", pendingDict);
 
-                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+                await manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object);
 
                 Assert.True(cts.IsCancellationRequested);
             }
@@ -528,7 +528,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -555,7 +555,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
 
                 Assert.NotNull(ex);
 
@@ -580,7 +580,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
 
                 Assert.NotNull(ex);
             }
@@ -608,7 +608,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+                await manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object);
             }
 
             conn.VerifySet(m => m.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct);

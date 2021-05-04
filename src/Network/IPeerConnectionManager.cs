@@ -52,16 +52,7 @@ namespace Soulseek.Network
         /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
-        Task AddMessageConnectionAsync(string username, IConnection incomingConnection);
-
-        /// <summary>
-        ///     Adds a new transfer connection from an incoming connection.
-        /// </summary>
-        /// <param name="username">The username of the user from which the connection originated.</param>
-        /// <param name="token">The token with which the firewall was pierced.</param>
-        /// <param name="incomingConnection">The the accepted connection.</param>
-        /// <returns>The operation context.</returns>
-        Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(string username, int token, IConnection incomingConnection);
+        Task AddOrUpdateMessageConnectionAsync(string username, IConnection incomingConnection);
 
         /// <summary>
         ///     Awaits an incoming transfer connection from the specified <paramref name="username"/> for the specified
@@ -124,6 +115,15 @@ namespace Soulseek.Network
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
         Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, int solicitationToken, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Adds a new transfer connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username of the user from which the connection originated.</param>
+        /// <param name="token">The token with which the firewall was pierced.</param>
+        /// <param name="incomingConnection">The the accepted connection.</param>
+        /// <returns>The operation context.</returns>
+        Task<(IConnection Connection, int RemoteToken)> GetTransferConnectionAsync(string username, int token, IConnection incomingConnection);
 
         /// <summary>
         ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>,

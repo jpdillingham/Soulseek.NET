@@ -736,7 +736,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var (handler, mocks) = GetFixture();
 
             mocks.DistributedConnectionManager
-                .Setup(m => m.AddChildConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
+                .Setup(m => m.GetOrAddChildConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
                 .Callback<ConnectToPeerResponse>(r => result = r);
 
             var ipBytes = ip.GetAddressBytes();

@@ -497,7 +497,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "HandleChildMessageRead")]
-        [Theory(DisplayName = "HandleChildMessageRead logs ChildDepth"), AutoData]
+        [Theory(DisplayName = "HandleChildMessageRead handles ChildDepth silently"), AutoData]
         public void HandleChildMessageRead_Logs_ChildDepth(int token)
         {
             var (handler, mocks) = GetFixture();
@@ -511,7 +511,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleChildMessageRead(conn.Object, message);
 
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Child depth of 0 received"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Child depth of 0 received"))), Times.Never);
         }
 
         [Trait("Category", "HandleChildMessageRead")]

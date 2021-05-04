@@ -679,7 +679,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
@@ -696,7 +696,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
@@ -724,7 +724,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
 
                 var child = manager.Children.FirstOrDefault();
 
@@ -762,7 +762,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 manager.ChildAdded += (sender, args) => actualArgs = args;
 
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
 
                 Assert.NotNull(actualArgs);
                 Assert.Equal(ctpr.Username, actualArgs.Username);
@@ -795,7 +795,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.False(timer.Enabled);
 
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
 
                 var child = manager.Children.FirstOrDefault();
 
@@ -831,7 +831,7 @@ namespace Soulseek.Tests.Unit.Network
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
                 dict.TryAdd(ctpr.Username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
 
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("ignored; connection already exists."))));
@@ -863,7 +863,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -899,7 +899,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+                await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
 
                 Assert.Empty(manager.Children);
             }
@@ -943,7 +943,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+                await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
 
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
 
@@ -981,7 +981,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
             }
 
             mocks.Diagnostic
@@ -1013,7 +1013,7 @@ namespace Soulseek.Tests.Unit.Network
                 manager.SetProperty("ParentConnection", conn.Object); // fake any connection
                 manager.SetParentBranchLevel(level);
                 manager.SetParentBranchRoot(root);
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
             }
 
             var expected = new List<byte>();
@@ -1049,7 +1049,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+                await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
             }
 
             mocks.Diagnostic
@@ -1084,7 +1084,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -1118,7 +1118,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                var task = manager.AddChildConnectionAsync(ctpr);
+                var task = manager.GetOrAddChildConnectionAsync(ctpr);
 
                 var dict = manager.GetProperty<ConcurrentDictionary<string, CancellationTokenSource>>("PendingInboundIndirectConnectionDictionary");
                 var exists = dict.ContainsKey(ctpr.Username);
@@ -1153,7 +1153,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await manager.AddChildConnectionAsync(ctpr);
+                await manager.GetOrAddChildConnectionAsync(ctpr);
 
                 var dict = manager.GetProperty<ConcurrentDictionary<string, CancellationTokenSource>>("PendingInboundIndirectConnectionDictionary");
                 Assert.False(dict.ContainsKey(ctpr.Username));
@@ -1185,7 +1185,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
 
@@ -1202,7 +1202,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
@@ -1217,7 +1217,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, conn.Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, conn.Object);
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
@@ -1247,7 +1247,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.NotNull(ex);
 
@@ -1278,7 +1278,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
@@ -1300,7 +1300,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
@@ -1328,7 +1328,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 var child = manager.Children.FirstOrDefault();
 
@@ -1365,7 +1365,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.False(timer.Enabled);
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 var child = manager.Children.FirstOrDefault();
 
@@ -1406,7 +1406,7 @@ namespace Soulseek.Tests.Unit.Network
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
                 dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 var child = manager.Children.FirstOrDefault();
 
@@ -1448,7 +1448,7 @@ namespace Soulseek.Tests.Unit.Network
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
                 dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 var child = manager.Children.FirstOrDefault();
 
@@ -1492,7 +1492,7 @@ namespace Soulseek.Tests.Unit.Network
                 dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
 
                 var ex = await Record.ExceptionAsync(() =>
-                    manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+                    manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.Null(ex);
             }
@@ -1533,7 +1533,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 manager.SetProperty("PendingInboundIndirectConnectionDictionary", pendingDict);
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 Assert.True(cts.IsCancellationRequested);
             }
@@ -1558,7 +1558,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+                await Record.ExceptionAsync(() => manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.Empty(manager.Children);
             }
@@ -1585,7 +1585,7 @@ namespace Soulseek.Tests.Unit.Network
                 manager.SetProperty("ParentConnection", conn.Object); // fake any connection
                 manager.SetParentBranchLevel(level);
                 manager.SetParentBranchRoot(root);
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             var expected = new List<byte>();
@@ -1617,7 +1617,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             conn.Verify(m => m.StartReadingContinuously(), Times.Once);
@@ -1648,7 +1648,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             mocks.Diagnostic
@@ -1687,7 +1687,7 @@ namespace Soulseek.Tests.Unit.Network
                 DistributedChildEventArgs actualArgs = default;
                 manager.ChildAdded += (sender, args) => actualArgs = args;
 
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 Assert.Equal(username, actualArgs.Username);
                 Assert.Equal(endpoint, actualArgs.IPEndPoint);
@@ -1718,7 +1718,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", parent.Object);
 
-                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+                await Record.ExceptionAsync(() => manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
             }
 
             mocks.Diagnostic
