@@ -90,7 +90,7 @@ namespace Soulseek.Network
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {
-                        await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(
+                        await SoulseekClient.DistributedConnectionManager.AddOrUpdateChildConnectionAsync(
                             peerInit.Username,
                             connection).ConfigureAwait(false);
                     }

@@ -327,7 +327,7 @@ namespace Soulseek.Tests.Unit.Network
 
             handler.HandleConnection(null, mocks.Connection.Object);
 
-            mocks.DistributedConnectionManager.Verify(m => m.AddChildConnectionAsync(username, It.IsAny<IConnection>()));
+            mocks.DistributedConnectionManager.Verify(m => m.AddOrUpdateChildConnectionAsync(username, It.IsAny<IConnection>()));
         }
 
         [Trait("Category", "PierceFirewall")]

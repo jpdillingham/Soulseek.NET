@@ -1,18 +1,13 @@
 ﻿// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 //
-//     You should have received a copy of the GNU General Public License
-//     along with this program.  If not, see https://www.gnu.org/licenses/.
+//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
 namespace Soulseek.Network
@@ -206,134 +201,6 @@ namespace Soulseek.Network
         private SystemTimer WatchdogTimer { get; }
 
         /// <summary>
-        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
-        ///     pierces the remote peer's firewall.
-        /// </summary>
-        /// <remarks>
-        ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an
-        ///     unsolicited <see cref="ConnectToPeerResponse"/> of type 'D' only. This connection should only be initiated if
-        ///     there is no existing connection; superseding should be avoided if possible.
-        /// </remarks>
-        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <returns>The operation context.</returns>
-        public async Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
-        {
-            bool cached = true;
-            var r = connectToPeerResponse;
-
-            if (!CanAcceptChildren)
-            {
-                Diagnostic.Debug($"Inbound child connection to {r.Username} ({r.IPEndPoint}) rejected: enabled {Enabled}; has parent: {HasParent}; is branch root: {IsBranchRoot}; children: {ChildDictionary.Count}/{ChildLimit}");
-                await UpdateStatusAsync().ConfigureAwait(false);
-                return;
-            }
-
-            try
-            {
-                await ChildConnectionDictionary.GetOrAdd(
-                    r.Username,
-                    key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
-
-                if (cached)
-                {
-                    Diagnostic.Debug($"Child connection from {r.Username} ({r.IPEndPoint}) for token {r.Token} ignored; connection already exists.");
-                }
-            }
-            catch (Exception ex)
-            {
-                var msg = $"Failed to establish an inbound indirect child connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
-                Diagnostic.Debug(msg);
-
-                // only purge the connection if the thrown exception is something other than OperationCanceledException. if this
-                // is thrown then a direct connection superseded this connection while it was being established, and
-                // ChildConnectionDictionary contains the new, direct connection.
-                if (!(ex is OperationCanceledException))
-                {
-                    Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
-
-                    // remove the current record, which *should* be the one we added above.
-                    ChildConnectionDictionary.TryRemove(r.Username, out var removed);
-
-                    try
-                    {
-                        var connection = await removed.Value.ConfigureAwait(false);
-
-                        // if the connection we removed is Direct, then a direct connection managed to come in after this attempt
-                        // had timed out or failed, but before that connection was able to cancel the pending token this should be
-                        // an extreme edge case, but log it as a warning so we can see how common it is.
-                        if (connection.Type.HasFlag(ConnectionTypes.Direct))
-                        {
-                            Diagnostic.Warning($"Erroneously purged direct child connection to {r.Username} upon indirect failure");
-                            ChildConnectionDictionary.TryAdd(r.Username, removed);
-                        }
-                    }
-                    catch
-                    {
-                        // noop
-                    }
-                }
-
-                throw new ConnectionException(msg, ex);
-            }
-
-            async Task<IMessageConnection> GetConnection()
-            {
-                cached = false;
-
-                Diagnostic.Debug($"Attempting inbound indirect child connection to {r.Username} ({r.IPEndPoint}) for token {r.Token}");
-
-                var connection = ConnectionFactory.GetDistributedConnection(
-                    r.Username,
-                    r.IPEndPoint,
-                    SoulseekClient.Options.DistributedConnectionOptions);
-
-                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
-                connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
-                connection.Disconnected += (sender, args) => ((IConnection)sender).Dispose();
-
-                using (var cts = new CancellationTokenSource())
-                {
-                    // add a record to the pending dictionary so we can tell whether the following code is waiting
-                    PendingInboundIndirectConnectionDictionary.AddOrUpdate(r.Username, cts, (username, existingCts) => cts);
-
-                    try
-                    {
-                        await connection.ConnectAsync(cts.Token).ConfigureAwait(false);
-
-                        var request = new PierceFirewall(r.Token);
-                        await connection.WriteAsync(request.ToByteArray(), cts.Token).ConfigureAwait(false);
-
-                        await connection.WriteAsync(GetBranchInformation(), cts.Token).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        connection.Dispose();
-                        throw;
-                    }
-                    finally
-                    {
-                        // let everyone know this code is done executing and that .Value of the containing cache is safe to await
-                        // with no delay.
-                        PendingInboundIndirectConnectionDictionary.TryRemove(r.Username, out _);
-                    }
-                }
-
-                connection.Disconnected += ChildConnection_Disconnected;
-
-                ChildDictionary.AddOrUpdate(r.Username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
-
-                Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-                Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
-                ChildAdded?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint));
-
-                _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
-
-                return connection;
-            }
-        }
-
-        /// <summary>
         ///     Adds a new child connection from an incoming connection.
         /// </summary>
         /// <remarks>
@@ -344,7 +211,7 @@ namespace Soulseek.Network
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
-        public async Task AddChildConnectionAsync(string username, IConnection incomingConnection)
+        public async Task AddOrUpdateChildConnectionAsync(string username, IConnection incomingConnection)
         {
             var c = incomingConnection;
 
@@ -599,6 +466,134 @@ namespace Soulseek.Network
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
+        ///     pierces the remote peer's firewall.
+        /// </summary>
+        /// <remarks>
+        ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an
+        ///     unsolicited <see cref="ConnectToPeerResponse"/> of type 'D' only. This connection should only be initiated if
+        ///     there is no existing connection; superseding should be avoided if possible.
+        /// </remarks>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context.</returns>
+        public async Task GetOrAddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
+        {
+            bool cached = true;
+            var r = connectToPeerResponse;
+
+            if (!CanAcceptChildren)
+            {
+                Diagnostic.Debug($"Inbound child connection to {r.Username} ({r.IPEndPoint}) rejected: enabled {Enabled}; has parent: {HasParent}; is branch root: {IsBranchRoot}; children: {ChildDictionary.Count}/{ChildLimit}");
+                await UpdateStatusAsync().ConfigureAwait(false);
+                return;
+            }
+
+            try
+            {
+                await ChildConnectionDictionary.GetOrAdd(
+                    r.Username,
+                    key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
+
+                if (cached)
+                {
+                    Diagnostic.Debug($"Child connection from {r.Username} ({r.IPEndPoint}) for token {r.Token} ignored; connection already exists.");
+                }
+            }
+            catch (Exception ex)
+            {
+                var msg = $"Failed to establish an inbound indirect child connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
+                Diagnostic.Debug(msg);
+
+                // only purge the connection if the thrown exception is something other than OperationCanceledException. if this
+                // is thrown then a direct connection superseded this connection while it was being established, and
+                // ChildConnectionDictionary contains the new, direct connection.
+                if (!(ex is OperationCanceledException))
+                {
+                    Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
+
+                    // remove the current record, which *should* be the one we added above.
+                    ChildConnectionDictionary.TryRemove(r.Username, out var removed);
+
+                    try
+                    {
+                        var connection = await removed.Value.ConfigureAwait(false);
+
+                        // if the connection we removed is Direct, then a direct connection managed to come in after this attempt
+                        // had timed out or failed, but before that connection was able to cancel the pending token this should be
+                        // an extreme edge case, but log it as a warning so we can see how common it is.
+                        if (connection.Type.HasFlag(ConnectionTypes.Direct))
+                        {
+                            Diagnostic.Warning($"Erroneously purged direct child connection to {r.Username} upon indirect failure");
+                            ChildConnectionDictionary.TryAdd(r.Username, removed);
+                        }
+                    }
+                    catch
+                    {
+                        // noop
+                    }
+                }
+
+                throw new ConnectionException(msg, ex);
+            }
+
+            async Task<IMessageConnection> GetConnection()
+            {
+                cached = false;
+
+                Diagnostic.Debug($"Attempting inbound indirect child connection to {r.Username} ({r.IPEndPoint}) for token {r.Token}");
+
+                var connection = ConnectionFactory.GetDistributedConnection(
+                    r.Username,
+                    r.IPEndPoint,
+                    SoulseekClient.Options.DistributedConnectionOptions);
+
+                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
+                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
+                connection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleChildMessageWritten;
+                connection.Disconnected += (sender, args) => ((IConnection)sender).Dispose();
+
+                using (var cts = new CancellationTokenSource())
+                {
+                    // add a record to the pending dictionary so we can tell whether the following code is waiting
+                    PendingInboundIndirectConnectionDictionary.AddOrUpdate(r.Username, cts, (username, existingCts) => cts);
+
+                    try
+                    {
+                        await connection.ConnectAsync(cts.Token).ConfigureAwait(false);
+
+                        var request = new PierceFirewall(r.Token);
+                        await connection.WriteAsync(request.ToByteArray(), cts.Token).ConfigureAwait(false);
+
+                        await connection.WriteAsync(GetBranchInformation(), cts.Token).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        connection.Dispose();
+                        throw;
+                    }
+                    finally
+                    {
+                        // let everyone know this code is done executing and that .Value of the containing cache is safe to await
+                        // with no delay.
+                        PendingInboundIndirectConnectionDictionary.TryRemove(r.Username, out _);
+                    }
+                }
+
+                connection.Disconnected += ChildConnection_Disconnected;
+
+                ChildDictionary.AddOrUpdate(r.Username, connection.IPEndPoint, (k, v) => connection.IPEndPoint);
+
+                Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
+                ChildAdded?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint));
+
+                _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
+
+                return connection;
+            }
         }
 
         /// <summary>
