@@ -27,14 +27,16 @@
     <AdditionalFiles Include=".\.CodeAnalysis\stylecop.json" Link="Properties\stylecop.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
+    <None Include="..\README.md" Pack="true" PackagePath="\" Link="Properties\README.md"/>
   </ItemGroup>
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.3.1</Version>
+    <Version>2.3.2</Version>
     <Authors>JP Dillingham</Authors>
     <Product>Soulseek.NET</Product>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
+    <PackageLicense>https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE</PackageLicense>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <Description>A .NET Standard client library for the Soulseek network.</Description>
     <Copyright>Copyright (c) JP Dillingham</Copyright>
@@ -46,6 +48,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
