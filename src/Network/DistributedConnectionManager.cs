@@ -404,7 +404,7 @@ namespace Soulseek.Network
                     successfulConnections.Remove((ParentConnection, ParentBranchLevel, ParentBranchRoot));
                     ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
 
-                    Diagnostic.Debug($"Connected parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
+                    Diagnostic.Debug($"Connected parent candidates not selected: {(ParentCandidateList.Count > 0 ? string.Join(", ", ParentCandidateList.Select(p => p.Username)) : "<none>")}");
 
                     foreach (var connection in successfulConnections)
                     {
