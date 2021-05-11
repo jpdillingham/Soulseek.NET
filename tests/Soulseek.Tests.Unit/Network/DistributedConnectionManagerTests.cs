@@ -3192,6 +3192,74 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
+        [Theory(DisplayName = "AddParentConnectionAsync retains only connected unselected candidates in ParentCandidateList"), AutoData]
+        internal async Task AddParentConnectionAsync_Retains_Only_Connected_Unselected_Candidates_In_ParentCandidateList(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var candidates = new List<(string Username, IPEndPoint IPEndPoint)>
+            {
+                (username1, endpoint1),
+                (username2, endpoint2),
+            };
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            // mocks for connection #1
+            var conn1 = GetMessageConnectionMock(username1, endpoint1);
+            conn1.Setup(m => m.Id)
+                .Returns(id1);
+            conn1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn1.Object);
+
+            // mocks for connection #2
+            var conn2 = GetMessageConnectionMock(username2, endpoint2);
+            conn2.Setup(m => m.Id)
+                .Returns(id2);
+            conn2.Setup(m => m.State)
+                .Returns(ConnectionState.Disconnected);
+
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn2.Object);
+
+            // message mocks, to allow either connection to be established fully
+            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Id);
+            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Id);
+            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Id);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Id);
+            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Id);
+            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Id);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.Delay(5000)); // ensure conn1 completes first
+
+            using (manager)
+            {
+                await manager.AddParentConnectionAsync(candidates);
+
+                var goodCandidates = manager.GetProperty<List<(string Username, IPEndPoint IPEndPoint)>>("ParentCandidateList");
+
+                Assert.Empty(goodCandidates);
+            }
+        }
+
+        [Trait("Category", "AddParentConnectionAsync")]
         [Theory(DisplayName = "AddParentConnectionAsync does not throw if only one parent candidate connects"), AutoData]
         internal async Task AddParentConnectionAsync_Does_Not_Throw_If_ParentCandidateList_Is_Empty(string localUser, string username1, IPEndPoint endpoint1, Guid id1)
         {
