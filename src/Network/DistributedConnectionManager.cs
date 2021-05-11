@@ -376,7 +376,7 @@ namespace Soulseek.Network
                 .Where(t => t.Status == TaskStatus.RanToCompletion)
                 .Select(async t => await t.ConfigureAwait(false))
                 .Select(t => t.Result)
-                .Where(t => t.Connection.State == ConnectionState.Connected)
+                .Where(t => t.Connection.State == ConnectionState.Connected) // successful connections that may have disconnected while we waited for others to settle
                 .OrderBy(c => c.BranchLevel)
                 .ToList();
 
@@ -394,6 +394,11 @@ namespace Soulseek.Network
                     ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
                     ParentConnection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleMessageWritten;
 
+                    // there is a very small chance that a connection will disconnect between the time it was filtered above and before this code executes.
+                    // we may or may not have bound the parent disconnect handler in time, meaning we may or may not have fired ParentDisconnected prior to
+                    // firing ParentAdopted. this should be an extreme edge case and should self-correct, so this case is unhandled for the time being.
+                    // if this becomes more common (ParentDisconnected firing before ParentAdopted, or ParentAdopted firing but status not updating because !HasParent),
+                    // handle it here somewhere.
                     Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Type}, id: {ParentConnection.Id})");
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
                     ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
