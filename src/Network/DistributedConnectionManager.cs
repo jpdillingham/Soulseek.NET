@@ -192,7 +192,7 @@ namespace Soulseek.Network
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
         private bool Enabled => SoulseekClient.Options.EnableDistributedNetwork;
-        private string LastStatusHash { get; set; }
+        private string LastStatus { get; set; }
         private DateTime LastStatusTimestamp { get; set; }
         private int ParentBranchLevel { get; set; } = 0;
         private string ParentBranchRoot { get; set; } = string.Empty;
@@ -376,6 +376,7 @@ namespace Soulseek.Network
                 .Where(t => t.Status == TaskStatus.RanToCompletion)
                 .Select(async t => await t.ConfigureAwait(false))
                 .Select(t => t.Result)
+                .Where(t => t.Connection.State == ConnectionState.Connected) // successful connections that may have disconnected while we waited for others to settle
                 .OrderBy(c => c.BranchLevel)
                 .ToList();
 
@@ -393,7 +394,12 @@ namespace Soulseek.Network
                     ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
                     ParentConnection.MessageWritten += SoulseekClient.DistributedMessageHandler.HandleMessageWritten;
 
-                    Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
+                    // there is a very small chance that a connection will disconnect between the time it was filtered above and before this code executes.
+                    // we may or may not have bound the parent disconnect handler in time, meaning we may or may not have fired ParentDisconnected prior to
+                    // firing ParentAdopted. this should be an extreme edge case and should self-correct, so this case is unhandled for the time being.
+                    // if this becomes more common (ParentDisconnected firing before ParentAdopted, or ParentAdopted firing but status not updating because !HasParent),
+                    // handle it here somewhere.
+                    Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Type}, id: {ParentConnection.Id})");
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
                     ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
                     DemoteFromBranchRoot();
@@ -639,7 +645,7 @@ namespace Soulseek.Network
         /// </summary>
         public void ResetStatus()
         {
-            LastStatusHash = default;
+            LastStatus = default;
             LastStatusTimestamp = default;
             DemoteFromBranchRoot();
         }
@@ -680,31 +686,36 @@ namespace Soulseek.Network
 
             try
             {
-                var payload = new List<byte>();
+                var branchLevel = BranchLevel;
+                var branchRoot = BranchRoot;
+                var childDepth = ChildDictionary.Count;
+                var canAcceptChildren = CanAcceptChildren;
+                var haveNoParents = Enabled && !HasParent;
 
-                payload.AddRange(new BranchLevelCommand(BranchLevel).ToByteArray());
-                payload.AddRange(new BranchRootCommand(BranchRoot).ToByteArray());
-                payload.AddRange(new ChildDepthCommand(ChildDictionary.Count).ToByteArray());
-                payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
-                payload.AddRange(new HaveNoParentsCommand(Enabled && !HasParent).ToByteArray());
+                var status = new StringBuilder()
+                    .Append($"Requesting parent: {haveNoParents}, ")
+                    .Append($"Branch level: {branchLevel}, Branch root: {branchRoot}, ")
+                    .Append($"Number of children: {childDepth}/{ChildLimit}, Accepting children: {canAcceptChildren}");
 
-                var statusHash = Convert.ToBase64String(payload.ToArray());
-
-                if (!statusHash.Equals(LastStatusHash, StringComparison.InvariantCultureIgnoreCase))
+                if (!status.ToString().Equals(LastStatus, StringComparison.InvariantCultureIgnoreCase))
                 {
+                    Diagnostic.Debug($"Status changed; {status}");
+
                     try
                     {
+                        var payload = new List<byte>();
+
+                        payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
+                        payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
+                        payload.AddRange(new ChildDepthCommand(childDepth).ToByteArray());
+                        payload.AddRange(new AcceptChildrenCommand(canAcceptChildren).ToByteArray());
+                        payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
+
                         await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray(), cancellationToken).ConfigureAwait(false);
 
-                        var sb = new StringBuilder("Updated distributed status; ");
-                        sb
-                            .Append($"Requesting parent: {Enabled && !HasParent}, ")
-                            .Append($"Branch level: {BranchLevel}, Branch root: {BranchRoot}, ")
-                            .Append($"Number of children: {ChildDictionary.Count}/{ChildLimit}, Accepting children: {CanAcceptChildren}");
+                        Diagnostic.Info($"Updated distributed status; {status}");
 
-                        Diagnostic.Info(sb.ToString());
-
-                        LastStatusHash = statusHash;
+                        LastStatus = status.ToString();
                         LastStatusTimestamp = DateTime.UtcNow;
                     }
                     catch (Exception ex)
@@ -720,6 +731,10 @@ namespace Soulseek.Network
                             Diagnostic.Debug(msg, ex);
                         }
                     }
+                }
+                else
+                {
+                    Diagnostic.Debug($"Update skipped; status has not changed: {status}");
                 }
             }
             finally
