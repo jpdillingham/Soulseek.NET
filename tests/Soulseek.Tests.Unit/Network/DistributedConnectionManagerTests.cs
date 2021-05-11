@@ -1776,8 +1776,8 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                // bit of a hack here, but this is the expected hash on an uninitialized instance
-                manager.SetProperty("LastStatusHash", "CAAAAH4AAAABAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
+                // bit of a hack here, but this is the expected status on an uninitialized instance
+                manager.SetProperty("LastStatus", "Requesting parent: False, Branch level: 1, Branch root: , Number of children: 0/25, Accepting children: True");
                 manager.SetProperty("ParentConnection", conn.Object);
                 await manager.UpdateStatusAsync();
             }
@@ -1927,13 +1927,13 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                manager.SetProperty("LastStatusHash", lastStatus);
+                manager.SetProperty("LastStatus", lastStatus);
                 manager.SetProperty("LastStatusTimestamp", lastStatusTimestamp);
                 manager.SetProperty("IsBranchRoot", true);
 
                 manager.ResetStatus();
 
-                Assert.Equal(default, manager.GetProperty<string>("LastStatusHash"));
+                Assert.Equal(default, manager.GetProperty<string>("LastStatus"));
                 Assert.Equal(default, manager.GetProperty<DateTime>("LastStatusTimestamp"));
                 Assert.False(manager.IsBranchRoot);
             }
@@ -3009,6 +3009,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
             conn1.Setup(m => m.Id)
                 .Returns(id1);
+            conn1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
@@ -3073,6 +3075,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
             conn1.Setup(m => m.Id)
                 .Returns(id1);
+            conn1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
@@ -3081,6 +3085,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn2 = GetMessageConnectionMock(username2, endpoint2);
             conn2.Setup(m => m.Id)
                 .Returns(id2);
+            conn2.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
@@ -3135,6 +3141,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
             conn1.Setup(m => m.Id)
                 .Returns(id1);
+            conn1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
@@ -3143,6 +3151,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn2 = GetMessageConnectionMock(username2, endpoint2);
             conn2.Setup(m => m.Id)
                 .Returns(id2);
+            conn2.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
@@ -3201,6 +3211,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
             conn1.Setup(m => m.Id)
                 .Returns(id1);
+            conn1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
@@ -3247,6 +3259,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
             conn1.Setup(m => m.Id)
                 .Returns(id1);
+            conn1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
@@ -3310,6 +3324,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
             conn1.Setup(m => m.Id)
                 .Returns(id1);
+            conn1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
