@@ -2722,13 +2722,9 @@ namespace Soulseek
 
                 download.Connection?.Dispose();
 
-                // change state so we can fire the progress update a final time with the updated state. little bit of a hack to
-                // avoid cloning the download
-                download.State = TransferStates.Completed | download.State;
-                UpdateProgress(download.StartOffset + outputStream.Position);
-                UpdateState(download.State);
-
                 Downloads.TryRemove(download.Token, out _);
+
+                var finalStreamPosition = outputStream.Position;
 
                 if (options.DisposeOutputStreamOnCompletion)
                 {
@@ -2745,6 +2741,10 @@ namespace Soulseek
 #endif
                     }
                 }
+
+                download.State = TransferStates.Completed | download.State;
+                UpdateProgress(download.StartOffset + finalStreamPosition);
+                UpdateState(download.State);
             }
         }
 
@@ -3523,10 +3523,6 @@ namespace Soulseek
 
                 upload.Connection?.Dispose();
 
-                upload.State = TransferStates.Completed | upload.State;
-                UpdateProgress(inputStream.Position);
-                UpdateState(upload.State);
-
                 if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
                 {
                     try
@@ -3546,6 +3542,8 @@ namespace Soulseek
 
                 Uploads.TryRemove(upload.Token, out _);
 
+                var finalStreamPosition = inputStream.Position;
+
                 if (options.DisposeInputStreamOnCompletion)
                 {
 #if NETSTANDARD2_0
@@ -3554,6 +3552,10 @@ namespace Soulseek
                     await inputStream.DisposeAsync().ConfigureAwait(false);
 #endif
                 }
+
+                upload.State = TransferStates.Completed | upload.State;
+                UpdateProgress(finalStreamPosition);
+                UpdateState(upload.State);
             }
         }
     }
