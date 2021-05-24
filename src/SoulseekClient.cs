@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -832,7 +832,7 @@ namespace Soulseek
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including a byte array containing the file contents.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the transfer context and a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
@@ -850,7 +850,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<(Transfer Transfer, byte[] Data)> DownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -911,7 +911,7 @@ namespace Soulseek
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including a byte array containing the file contents.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the transfer context.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
@@ -933,7 +933,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task DownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> DownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -2485,7 +2485,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
@@ -2502,11 +2502,11 @@ namespace Soulseek
             await using var memoryStream = new MemoryStream();
 #endif
 
-            await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
-            return memoryStream.ToArray();
+            var transfer = await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
+            return (transfer, memoryStream.ToArray());
         }
 
-        private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new TransferInternal(TransferDirection.Download, username, filename, token, options)
             {
@@ -2677,6 +2677,12 @@ namespace Soulseek
                 // wait for the download to complete this wait is either completed (on success) or thrown (on anything other than
                 // success) in the Disconnected event handler of the transfer connection
                 await downloadCompleted.ConfigureAwait(false);
+
+                download.State = TransferStates.Completed | download.State;
+                UpdateProgress(download.StartOffset + outputStream.Position);
+                UpdateState(download.State);
+
+                return new Transfer(download);
             }
             catch (TransferRejectedException ex)
             {
@@ -2742,9 +2748,12 @@ namespace Soulseek
                     }
                 }
 
-                download.State = TransferStates.Completed | download.State;
-                UpdateProgress(download.StartOffset + finalStreamPosition);
-                UpdateState(download.State);
+                if (!download.State.HasFlag(TransferStates.Completed))
+                {
+                    download.State = TransferStates.Completed | download.State;
+                    UpdateProgress(download.StartOffset + finalStreamPosition);
+                    UpdateState(download.State);
+                }
             }
         }
 
