@@ -391,12 +391,18 @@ namespace Soulseek.Tests.Unit.Client
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
                 handler.HandleMessageRead(conn.Object, msg);
 
-                var responses = await task.ConfigureAwait(false);
+                var (search, responses) = await task.ConfigureAwait(false);
 
                 var res = responses.ToList()[0];
 
                 Assert.Equal(username, res.Username);
                 Assert.Equal(token, res.Token);
+
+                Assert.Equal(SearchStates.Completed | SearchStates.TimedOut, search.State);
+                Assert.Equal(searchText, search.SearchText);
+                Assert.Equal(token, search.Token);
+                Assert.Equal(1, search.ResponseCount);
+                Assert.Equal(1, search.FileCount);
             }
         }
 
@@ -464,12 +470,18 @@ namespace Soulseek.Tests.Unit.Client
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
                 handler.HandleMessageRead(conn.Object, msg);
 
-                await task.ConfigureAwait(false);
+                var search = await task.ConfigureAwait(false);
 
                 var res = responses.ToList()[0];
 
                 Assert.Equal(username, res.Username);
                 Assert.Equal(token, res.Token);
+
+                Assert.Equal(SearchStates.Completed | SearchStates.TimedOut, search.State);
+                Assert.Equal(searchText, search.SearchText);
+                Assert.Equal(token, search.Token);
+                Assert.Equal(1, search.ResponseCount);
+                Assert.Equal(1, search.FileCount);
             }
         }
 
