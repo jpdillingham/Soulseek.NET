@@ -127,7 +127,7 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, startOffset: 0, token: index++, options: new TransferOptions(stateChanged: (e) =>
+                    var (transfer, bytes) = await client.DownloadAsync(username, file, startOffset: 0, token: index++, options: new TransferOptions(stateChanged: (e) =>
                     {
                         var key = (e.Transfer.Username, e.Transfer.Filename, e.Transfer.Token);
                         var progress = Downloads.GetOrAdd(key, (e.Transfer.State, null, new ProgressBar(10)));
