@@ -233,8 +233,6 @@
             var totalFiles = 0;
             var state = SearchStates.None;
 
-            IEnumerable<SearchResponse> responses = Enumerable.Empty<SearchResponse>();
-
             using (var timer = new Timer(100))
             {
 
@@ -247,7 +245,7 @@
 
                 timer.Start();
 
-                responses = await client.SearchAsync(SearchQuery.FromText(searchText),
+                var (search, responses) = await client.SearchAsync(SearchQuery.FromText(searchText),
                     options: new SearchOptions(
                         filterResponses: true,
                         minimumResponseFileCount: minimumFileCount,
@@ -263,9 +261,9 @@
                 timer.Stop();
                 complete = true;
                 updateStatus();
+                
+                return responses;
             }
-
-            return responses;
         }
 
         private static async Task<Artist> SelectArtist(string artist)

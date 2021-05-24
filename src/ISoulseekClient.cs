@@ -851,7 +851,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously searches for the specified <paramref name="query"/> using the specified unique
@@ -876,7 +876,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task SearchAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
