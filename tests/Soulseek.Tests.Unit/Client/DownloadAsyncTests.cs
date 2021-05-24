@@ -1305,13 +1305,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task<Transfer>>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, new TransferOptions(), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("done"));
 
-                var ex = await Record.ExceptionAsync(() => task);
+                var transfer = await task;
 
-                Assert.Null(ex);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, transfer.State);
+                Assert.Equal(username, transfer.Username);
+                Assert.Equal(token, transfer.Token);
+                Assert.Equal(filename, transfer.Filename);
             }
         }
 
