@@ -1617,7 +1617,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (query == null)
             {
@@ -1685,7 +1685,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task SearchAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (query == null)
             {
@@ -3144,7 +3144,7 @@ namespace Soulseek
             }
         }
 
-        private async Task SearchToCallbackAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task<Search> SearchToCallbackAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var search = new SearchInternal(query.SearchText, token, options);
             var lastState = SearchStates.None;
@@ -3184,6 +3184,8 @@ namespace Soulseek
                 UpdateState(SearchStates.InProgress);
 
                 await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
+
+                return new Search(search);
             }
             catch (OperationCanceledException)
             {
@@ -3209,7 +3211,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(SearchQuery query, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchToCollectionAsync(SearchQuery query, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var responseBag = new ConcurrentBag<SearchResponse>();
 
@@ -3218,8 +3220,8 @@ namespace Soulseek
                 responseBag.Add(response);
             }
 
-            await SearchToCallbackAsync(query, ResponseReceived, scope, token, options, cancellationToken).ConfigureAwait(false);
-            return responseBag.ToList().AsReadOnly();
+            var search = await SearchToCallbackAsync(query, ResponseReceived, scope, token, options, cancellationToken).ConfigureAwait(false);
+            return (search, responseBag.ToList().AsReadOnly());
         }
 
         private async Task SendConfigurationMessagesAsync(CancellationToken cancellationToken)
