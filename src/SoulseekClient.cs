@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -1607,7 +1607,7 @@ namespace Soulseek
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the search context and results.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="query"/> is null.</exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the search text of the specified <paramref name="query"/> is null, empty, or consists of only whitespace..
@@ -1672,7 +1672,7 @@ namespace Soulseek
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the search context.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="query"/> is null.</exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the search text of the specified <paramref name="query"/> is null, empty, or consists of only whitespace..
