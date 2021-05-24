@@ -1,4 +1,4 @@
-// <copyright file="ISoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="ISoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -455,7 +455,7 @@ namespace Soulseek
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including a byte array containing the file contents.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the transfer context and a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
@@ -473,7 +473,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<(Transfer Transfer, byte[] Data)> DownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
@@ -492,7 +492,7 @@ namespace Soulseek
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including a byte array containing the file contents.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the transfer context.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
@@ -514,7 +514,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task DownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> DownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously removes the currently logged in user from the list of members in the specified private <paramref name="roomName"/>.
