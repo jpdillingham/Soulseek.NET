@@ -672,10 +672,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync completes following normal transfer connection disconnect"), AutoData]
-        public async Task UploadFromByteArrayAsync_Completes_Following_Normal_Transfer_Connection_Disconnect(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Completes_Following_Normal_Transfer_Connection_Disconnect(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
-            var response = new TransferResponse(token, size);
+            var response = new TransferResponse(token, data.Length);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -708,13 +708,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(maximumLingerTime: 0), null);
+                var task = s.InvokeMethod<Task<Transfer>>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(maximumLingerTime: 0), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("done"));
 
-                var ex = await Record.ExceptionAsync(() => task);
+                var transfer = await task;
 
-                Assert.Null(ex);
+                Assert.Equal(username, transfer.Username);
+                Assert.Equal(filename, transfer.Filename);
+                Assert.Equal(token, transfer.Token);
+                Assert.Equal(data.Length, transfer.Size);
             }
         }
 
