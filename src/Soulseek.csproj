@@ -27,7 +27,6 @@
     <AdditionalFiles Include=".\.CodeAnalysis\stylecop.json" Link="Properties\stylecop.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
-    <None Include="..\README.md" Pack="true" PackagePath="\" Link="Properties\README.md"/>
   </ItemGroup>
 
   <PropertyGroup>
@@ -48,7 +47,6 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
