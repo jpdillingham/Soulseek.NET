@@ -122,20 +122,20 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
-        [Theory(DisplayName = "UploadAsync stream throws ArgumentException bad length")]
+        [Theory(DisplayName = "UploadAsync stream throws ArgumentException bad size")]
         [InlineData(0)]
         [InlineData(-1)]
         [InlineData(-12413)]
-        public async Task UploadAsync_Stream_Throws_ArgumentException_Given_Bad_Length(long length)
+        public async Task UploadAsync_Stream_Throws_ArgumentException_Given_Bad_Size(long size)
         {
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", length, stream));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", size, stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
-                Assert.Contains("length", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains("size", ex.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
 
