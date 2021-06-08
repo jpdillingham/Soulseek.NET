@@ -2073,7 +2073,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="filename">The filename of the file to upload.</param>
-        /// <param name="length">The size of the file to upload, in bytes.</param>
+        /// <param name="size">The size of the file to upload, in bytes.</param>
         /// <param name="inputStream">The stream from which to retrieve the file contents.</param>
         /// <param name="token">The unique upload token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
@@ -2082,7 +2082,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="size"/> is less than 1.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the specified <paramref name="inputStream"/> is not readable.
@@ -2098,7 +2098,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> UploadAsync(string username, string filename, long length, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> UploadAsync(string username, string filename, long size, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -2110,9 +2110,9 @@ namespace Soulseek
                 throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
-            if (length <= 0)
+            if (size <= 0)
             {
-                throw new ArgumentException("The requested length must be greater than or equal to zero", nameof(length));
+                throw new ArgumentException("The requested size must be greater than or equal to zero", nameof(size));
             }
 
             if (inputStream == null)
@@ -2144,7 +2144,7 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return UploadFromStreamAsync(username, filename, length, inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return UploadFromStreamAsync(username, filename, size, inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -3309,11 +3309,11 @@ namespace Soulseek
             return await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Transfer> UploadFromStreamAsync(string username, string filename, long length, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> UploadFromStreamAsync(string username, string filename, long size, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var upload = new TransferInternal(TransferDirection.Upload, username, filename, token, options)
             {
-                Size = length,
+                Size = size,
             };
 
             Uploads.TryAdd(upload.Token, upload);
@@ -3374,7 +3374,7 @@ namespace Soulseek
                     new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token), null, cancellationToken);
 
                 // request to start the upload
-                var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, length);
+                var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, size);
                 await messageConnection.WriteAsync(transferRequest, cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
@@ -3436,9 +3436,9 @@ namespace Soulseek
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(startOffset);
 
-                    if (length - startOffset > 0)
+                    if (size - startOffset > 0)
                     {
-                        await upload.Connection.WriteAsync(length - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
+                        await upload.Connection.WriteAsync(size - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
                     }
 
                     upload.State = TransferStates.Succeeded;

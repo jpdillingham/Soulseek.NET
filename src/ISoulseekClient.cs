@@ -1028,7 +1028,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="filename">The filename of the file to upload.</param>
-        /// <param name="length">The size of the file to upload, in bytes.</param>
+        /// <param name="size">The size of the file to upload, in bytes.</param>
         /// <param name="inputStream">The stream from which to retrieve the file contents.</param>
         /// <param name="token">The unique upload token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
@@ -1037,7 +1037,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="size"/> is less than 1.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the specified <paramref name="inputStream"/> is not readable.
@@ -1053,6 +1053,6 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> UploadAsync(string username, string filename, long length, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> UploadAsync(string username, string filename, long size, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
     }
 }
