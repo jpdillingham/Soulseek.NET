@@ -431,7 +431,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Sends resolved UserInfoResponse"), AutoData]
         public void Sends_Resolved_UserInfoResponse(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
         {
-            var response = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeUploadSlot);
+            var response = new UserInfo(description, uploadSlots, queueLength, hasFreeUploadSlot, picture);
             var options = new SoulseekClientOptions(userInfoResponseResolver: (u, i) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);

@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync returns expected info"), AutoData]
         public async Task GetUserInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfo(description, uploadSlots, queueLength, hasFreeSlot, picture);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserInfo>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -111,7 +111,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GetUserInfoAsync_Uses_Given_CancellationToken(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
             var cancellationToken = new CancellationToken();
-            var result = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfo(description, uploadSlots, queueLength, hasFreeSlot, picture);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserInfo>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -145,7 +145,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync throws TimeoutException on timeout"), AutoData]
         public async Task GetUserInfoAsync_Throws_TimeoutException_On_Timeout(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfo(description, uploadSlots, queueLength, hasFreeSlot, picture);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserInfo>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -181,7 +181,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync throws OperationCanceledException on cancellation"), AutoData]
         public async Task GetUserInfoAsync_Throws_OperationCanceledException_On_Cancellation(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfo(description, uploadSlots, queueLength, hasFreeSlot, picture);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserInfo>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -240,7 +240,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync throws SoulseekClientException on throw"), AutoData]
         public async Task GetUserInfoAsync_Throws_SoulseekClientException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfo(description, uploadSlots, queueLength, hasFreeSlot, picture);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserInfo>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
