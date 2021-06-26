@@ -73,7 +73,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte(1) // exists = true
                 .WriteInteger((int)userData.Status)
                 .WriteInteger(userData.AverageSpeed)
-                .WriteLong(userData.DownloadCount)
+                .WriteLong(userData.UploadCount)
                 .WriteInteger(userData.FileCount)
                 .WriteInteger(userData.DirectoryCount)
                 .WriteString(userData.CountryCode)
@@ -85,7 +85,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.True(r.Exists);
             Assert.Equal(userData.Status, r.UserData.Status);
             Assert.Equal(userData.AverageSpeed, r.UserData.AverageSpeed);
-            Assert.Equal(userData.DownloadCount, r.UserData.DownloadCount);
+            Assert.Equal(userData.UploadCount, r.UserData.UploadCount);
             Assert.Equal(userData.FileCount, r.UserData.FileCount);
             Assert.Equal(userData.DirectoryCount, r.UserData.DirectoryCount);
             Assert.Equal(userData.CountryCode, r.UserData.CountryCode);
@@ -118,7 +118,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte(1) // exists = true
                 .WriteInteger((int)userData.Status)
                 .WriteInteger(userData.AverageSpeed)
-                .WriteLong(userData.DownloadCount)
+                .WriteLong(userData.UploadCount)
                 .WriteInteger(userData.FileCount)
                 .WriteInteger(userData.DirectoryCount)
                 .WriteString(string.Empty)
@@ -130,7 +130,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.True(r.Exists);
             Assert.Equal(userData.Status, r.UserData.Status);
             Assert.Equal(userData.AverageSpeed, r.UserData.AverageSpeed);
-            Assert.Equal(userData.DownloadCount, r.UserData.DownloadCount);
+            Assert.Equal(userData.UploadCount, r.UserData.UploadCount);
             Assert.Equal(userData.FileCount, r.UserData.FileCount);
             Assert.Equal(userData.DirectoryCount, r.UserData.DirectoryCount);
             Assert.Empty(r.UserData.CountryCode);

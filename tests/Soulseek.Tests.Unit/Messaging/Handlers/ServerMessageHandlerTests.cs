@@ -802,7 +802,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte(1) // exists = true
                 .WriteInteger((int)userData.Status)
                 .WriteInteger(userData.AverageSpeed)
-                .WriteLong(userData.DownloadCount)
+                .WriteLong(userData.UploadCount)
                 .WriteInteger(userData.FileCount)
                 .WriteInteger(userData.DirectoryCount)
                 .WriteString(userData.CountryCode)
@@ -814,7 +814,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(exists, result.Exists);
             Assert.Equal(userData.Status, result.UserData.Status);
             Assert.Equal(userData.AverageSpeed, result.UserData.AverageSpeed);
-            Assert.Equal(userData.DownloadCount, result.UserData.DownloadCount);
+            Assert.Equal(userData.UploadCount, result.UserData.UploadCount);
             Assert.Equal(userData.FileCount, result.UserData.FileCount);
             Assert.Equal(userData.DirectoryCount, result.UserData.DirectoryCount);
             Assert.Equal(userData.CountryCode, result.UserData.CountryCode);
@@ -1080,7 +1080,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(username)
                 .WriteInteger((int)data.Status)
                 .WriteInteger(data.AverageSpeed)
-                .WriteLong(data.DownloadCount)
+                .WriteLong(data.UploadCount)
                 .WriteInteger(data.FileCount)
                 .WriteInteger(data.DirectoryCount)
                 .WriteInteger(data.SlotsFree.Value)
@@ -1096,7 +1096,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(username, actual.Username);
             Assert.Equal(data.Status, actual.UserData.Status);
             Assert.Equal(data.AverageSpeed, actual.UserData.AverageSpeed);
-            Assert.Equal(data.DownloadCount, actual.UserData.DownloadCount);
+            Assert.Equal(data.UploadCount, actual.UserData.UploadCount);
             Assert.Equal(data.FileCount, actual.UserData.FileCount);
             Assert.Equal(data.DirectoryCount, actual.UserData.DirectoryCount);
             Assert.Equal(data.CountryCode, actual.UserData.CountryCode);
@@ -1114,7 +1114,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(username)
                 .WriteInteger((int)data.Status)
                 .WriteInteger(data.AverageSpeed)
-                .WriteLong(data.DownloadCount)
+                .WriteLong(data.UploadCount)
                 .WriteInteger(data.FileCount)
                 .WriteInteger(data.DirectoryCount)
                 .WriteInteger(data.SlotsFree.Value)
