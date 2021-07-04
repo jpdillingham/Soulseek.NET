@@ -17,7 +17,9 @@
 
 namespace Soulseek.Messaging
 {
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     ///     Extensions for <see cref="MessageReader{T}"/>.
@@ -34,11 +36,22 @@ namespace Soulseek.Messaging
         /// <returns>The file.</returns>
         internal static File ReadFile(this MessageReader<MessageCode.Peer> reader)
         {
-            var file = new File(
-                code: reader.ReadByte(),
-                filename: reader.ReadString(),
-                size: reader.ReadLong(),
-                extension: reader.ReadString());
+            var code = reader.ReadByte();
+            var filename = reader.ReadString();
+            var size = reader.ReadLong();
+            var extension = reader.ReadString();
+
+            // check for an overflow, most likely sent from Soulseek NS due to a file size
+            // exceeding 2gb.
+            if (size < 0)
+            {
+                var sizeBytes = BitConverter.GetBytes(size);
+
+                if (sizeBytes.Skip(4).All(b => b == 0xFF))
+                {
+                    size = BitConverter.ToUInt32(sizeBytes.Take(4).ToArray(), 0);
+                }
+            }
 
             var attributeCount = reader.ReadInteger();
             var attributeList = new List<FileAttribute>();
@@ -53,11 +66,11 @@ namespace Soulseek.Messaging
             }
 
             return new File(
-                code: file.Code,
-                filename: file.Filename,
-                size: file.Size,
-                extension: file.Extension,
-                attributeList: attributeList);
+                code,
+                filename,
+                size,
+                extension,
+                attributeList);
         }
 
         /// <summary>
