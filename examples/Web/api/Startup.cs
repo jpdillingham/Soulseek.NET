@@ -378,9 +378,9 @@
 
                     if (CurrentReconnectAttempts <= MaxReconnectAttempts)
                     {
-                        var wait = CurrentReconnectAttempts ^ 3;
+                        var wait = Math.Pow(CurrentReconnectAttempts, 3);
                         Console.WriteLine($"Waiting {wait} second(s) before reconnect...");
-                        await Task.Delay(wait);
+                        await Task.Delay((int)wait);
 
                         Console.WriteLine($"Attepting to reconnect...");
                         await Client.ConnectAsync(Username, Password);
