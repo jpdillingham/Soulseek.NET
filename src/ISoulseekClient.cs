@@ -62,6 +62,11 @@ namespace Soulseek
         event EventHandler<DistributedChildEventArgs> DistributedChildDisconnected;
 
         /// <summary>
+        ///     Occurs when the server requests a distributed network reset.
+        /// </summary>
+        event EventHandler DistributedNetworkReset;
+
+        /// <summary>
         ///     Occurs when a new parent is adopted.
         /// </summary>
         event EventHandler<DistributedParentEventArgs> DistributedParentAdopted;
@@ -455,7 +460,10 @@ namespace Soulseek
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the transfer context and a byte array containing the file contents.</returns>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the transfer context and a byte array containing the
+        ///     file contents.
+        /// </returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>

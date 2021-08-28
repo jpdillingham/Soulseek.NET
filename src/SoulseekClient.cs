@@ -154,6 +154,7 @@ namespace Soulseek
             ServerMessageHandler.RoomListReceived += (sender, e) => RoomListReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
             ServerMessageHandler.GlobalMessageReceived += (sender, e) => GlobalMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.DistributedNetworkReset += (sender, e) => DistributedNetworkReset?.Invoke(this, e);
 
             ServerMessageHandler.KickedFromServer += (sender, e) =>
             {
@@ -197,6 +198,11 @@ namespace Soulseek
         ///     Occurs when a child connection is disconnected.
         /// </summary>
         public event EventHandler<DistributedChildEventArgs> DistributedChildDisconnected;
+
+        /// <summary>
+        ///     Occurs when the server requests a distributed network reset.
+        /// </summary>
+        public event EventHandler DistributedNetworkReset;
 
         /// <summary>
         ///     Occurs when a new parent is adopted.

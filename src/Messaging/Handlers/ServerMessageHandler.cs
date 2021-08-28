@@ -51,6 +51,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
+        ///     Occurs when the server requests a distributed network reset.
+        /// </summary>
+        public event EventHandler DistributedNetworkReset;
+
+        /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
         public event EventHandler<string> GlobalMessageReceived;
@@ -296,6 +301,8 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.DistributedReset:
                         Diagnostic.Info($"Distributed network reset received from the server");
+                        DistributedNetworkReset?.Invoke(this, EventArgs.Empty);
+
                         SoulseekClient.DistributedConnectionManager.RemoveAndDisposeAll();
                         SoulseekClient.DistributedConnectionManager.ResetStatus();
 

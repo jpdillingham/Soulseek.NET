@@ -26,6 +26,11 @@ namespace Soulseek.Messaging.Handlers
     internal interface IServerMessageHandler : IMessageHandler
     {
         /// <summary>
+        ///     Occurs when the server requests a distributed network reset.
+        /// </summary>
+        event EventHandler DistributedNetworkReset;
+
+        /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
         event EventHandler<string> GlobalMessageReceived;
