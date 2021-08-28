@@ -294,6 +294,13 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
+                    case MessageCode.Server.DistributedReset:
+                        Diagnostic.Info($"Distributed network reset received from the server");
+                        SoulseekClient.DistributedConnectionManager.RemoveAndDisposeAll();
+                        SoulseekClient.DistributedConnectionManager.ResetStatus();
+
+                        break;
+
                     case MessageCode.Server.CannotConnect:
                         var cannotConnect = CannotConnect.FromByteArray(message);
                         Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
