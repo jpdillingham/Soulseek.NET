@@ -875,6 +875,37 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "DistributedNetworkReset fires when handler raises")]
+        public void DistributedNetworkReset_Fires_When_Handler_Raises()
+        {
+            var mock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                bool fired = false;
+
+                s.DistributedNetworkReset += (sender, args) => fired = true;
+                mock.Raise(m => m.DistributedNetworkReset += null, mock.Object, EventArgs.Empty);
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "DistributedNetworkReset does not throw if event not bound")]
+        public void DistributedNetworkReset_Does_Not_Throw_If_Event_Not_Bound()
+        {
+            var mock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.DistributedNetworkReset += null, mock.Object, EventArgs.Empty));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "PrivateMessageReceived fires when handler raises"), AutoData]
         public void PrivateMessageReceived_Fires_When_Handler_Raises(int id, DateTime timestamp, string username, string message, bool isAdmin)
         {
