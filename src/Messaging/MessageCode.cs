@@ -498,6 +498,11 @@ namespace Soulseek.Messaging
             ChildDepth = 129,
 
             /// <summary>
+            ///     130
+            /// </summary>
+            DistributedReset = 130,
+
+            /// <summary>
             ///     133
             /// </summary>
             PrivateRoomUsers = 133,

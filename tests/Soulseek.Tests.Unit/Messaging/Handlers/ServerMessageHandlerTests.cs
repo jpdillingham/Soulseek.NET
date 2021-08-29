@@ -1264,6 +1264,41 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Fact(DisplayName = "Raises DistributedNetworkReset on DistributedReset")]
+        public void Raises_DistributedNetworkReset_On_DistributedReset()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.DistributedReset)
+                .Build();
+
+            bool fired = false;
+
+            handler.DistributedNetworkReset += (sender, args) => fired = true;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.True(fired);
+        }
+
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Raises DistributedNetworkReset on DistributedReset")]
+        public void Raises_Resets_Distributed_Network_On_DistributedReset()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.DistributedReset)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.DistributedConnectionManager.Verify(m => m.ResetStatus(), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.RemoveAndDisposeAll(), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Acknowledges NotifyPrivileges when AutoAcknowledgePrivilegeNotifications is true"), AutoData]
         public void Acknowledges_NotifyPrivileges_When_AutoAcknowledgePrivilegeNotifications_Is_True(string username, int id)
         {
