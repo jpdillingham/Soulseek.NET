@@ -2963,6 +2963,32 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
+        [Fact(DisplayName = "AddParentConnectionAsync returns if already processing")]
+        internal async Task AddParentConnectionAsync_Returns_If_Already_Processing()
+        {
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var candidates = new List<(string Username, IPEndPoint IPEndPoint)>
+            {
+                ("foo", new IPEndPoint(IPAddress.None, 1)),
+                ("bar", new IPEndPoint(IPAddress.None, 2)),
+            };
+
+            using (manager)
+            {
+                var semaphore = manager.GetProperty<SemaphoreSlim>("ParentSyncRoot");
+                semaphore.Wait();
+
+                await manager.AddParentConnectionAsync(candidates);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Parent connection solicitation ignored; already in the process of establishing a connection."))), Times.Once);
+        }
+
+        [Trait("Category", "AddParentConnectionAsync")]
         [Fact(DisplayName = "AddParentConnectionAsync produces warning diagnostic, does not throw, and updates status if no candidates connect")]
         internal async Task AddParentConnectionAsync_Produces_Warning_Diagnostic_Does_Not_Throw_And_Updates_Status_If_No_Candidates_Connect()
         {
