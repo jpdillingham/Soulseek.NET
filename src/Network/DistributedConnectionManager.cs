@@ -334,37 +334,38 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates)
         {
-            if (SoulseekClient.State.HasFlag(SoulseekClientStates.Disconnected) || SoulseekClient.State.HasFlag(SoulseekClientStates.Disconnecting))
-            {
-                return;
-            }
-
             if (!Enabled)
             {
                 Diagnostic.Debug($"Parent connection solicitation ignored; distributed network is not enabled.");
                 return;
             }
 
-            if (!(await ParentSyncRoot.WaitAsync(millisecondsTimeout: 0)))
+            if (SoulseekClient.State.HasFlag(SoulseekClientStates.Disconnected) || SoulseekClient.State.HasFlag(SoulseekClientStates.Disconnecting))
             {
+                return;
+            }
+
+            ParentCandidateList = parentCandidates.ToList();
+
+            if (HasParent || ParentCandidateList.Count == 0)
+            {
+                var msg = HasParent ?
+                    $"Parent connection solicitation ignored; already connected to parent {Parent.Username}" :
+                    $"Parent candidate cache is empty; requesting a new list of candidates from the server";
+
+                Diagnostic.Debug(msg);
+                await UpdateStatusAsync().ConfigureAwait(false);
+                return;
+            }
+
+            if (!await ParentSyncRoot.WaitAsync(millisecondsTimeout: 0).ConfigureAwait(false))
+            {
+                Diagnostic.Debug($"Parent connection solicitation ignored; already in the process of establishing a connection.");
                 return;
             }
 
             try
             {
-                ParentCandidateList = parentCandidates.ToList();
-
-                if (HasParent || ParentCandidateList.Count == 0)
-                {
-                    var msg = HasParent ?
-                        $"Parent connection solicitation ignored; already connected to parent {Parent.Username}" :
-                        $"Parent candidate cache is empty; requesting a new list of candidates from the server";
-
-                    Diagnostic.Debug(msg);
-                    await UpdateStatusAsync().ConfigureAwait(false);
-                    return;
-                }
-
                 Diagnostic.Info($"Attempting to establish a new parent connection from {ParentCandidateList.Count} candidates");
                 Diagnostic.Debug($"Parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
 
