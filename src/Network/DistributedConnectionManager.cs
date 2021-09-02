@@ -198,6 +198,7 @@ namespace Soulseek.Network
         private string ParentBranchRoot { get; set; } = string.Empty;
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
+        private SemaphoreSlim ParentSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ConcurrentDictionary<string, CancellationTokenSource> PendingInboundIndirectConnectionDictionary { get; set; } = new ConcurrentDictionary<string, CancellationTokenSource>();
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
@@ -344,44 +345,49 @@ namespace Soulseek.Network
                 return;
             }
 
-            ParentCandidateList = parentCandidates.ToList();
-
-            if (HasParent || ParentCandidateList.Count == 0)
+            if (!(await ParentSyncRoot.WaitAsync(millisecondsTimeout: 0)))
             {
-                var msg = HasParent ?
-                    $"Parent connection solicitation ignored; already connected to parent {Parent.Username}" :
-                    $"Parent candidate cache is empty; requesting a new list of candidates from the server";
-
-                Diagnostic.Debug(msg);
-                await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
 
-            Diagnostic.Info($"Attempting to establish a new parent connection from {ParentCandidateList.Count} candidates");
-            Diagnostic.Debug($"Parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
-
-            using var cts = new CancellationTokenSource();
-            var tasks = ParentCandidateList.Select(p => GetParentCandidateConnectionAsync(p.Username, p.IPEndPoint, cts.Token)).ToList();
-
             try
             {
-                await Task.WhenAll(tasks).ConfigureAwait(false);
-            }
-            catch
-            {
-                // noop
-            }
+                ParentCandidateList = parentCandidates.ToList();
 
-            var successfulConnections = tasks
-                .Where(t => t.Status == TaskStatus.RanToCompletion)
-                .Select(async t => await t.ConfigureAwait(false))
-                .Select(t => t.Result)
-                .Where(t => t.Connection.State == ConnectionState.Connected) // successful connections that may have disconnected while we waited for others to settle
-                .OrderBy(c => c.BranchLevel)
-                .ToList();
+                if (HasParent || ParentCandidateList.Count == 0)
+                {
+                    var msg = HasParent ?
+                        $"Parent connection solicitation ignored; already connected to parent {Parent.Username}" :
+                        $"Parent candidate cache is empty; requesting a new list of candidates from the server";
 
-            try
-            {
+                    Diagnostic.Debug(msg);
+                    await UpdateStatusAsync().ConfigureAwait(false);
+                    return;
+                }
+
+                Diagnostic.Info($"Attempting to establish a new parent connection from {ParentCandidateList.Count} candidates");
+                Diagnostic.Debug($"Parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
+
+                using var cts = new CancellationTokenSource();
+                var tasks = ParentCandidateList.Select(p => GetParentCandidateConnectionAsync(p.Username, p.IPEndPoint, cts.Token)).ToList();
+
+                try
+                {
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // noop
+                }
+
+                var successfulConnections = tasks
+                    .Where(t => t.Status == TaskStatus.RanToCompletion)
+                    .Select(async t => await t.ConfigureAwait(false))
+                    .Select(t => t.Result)
+                    .Where(t => t.Connection.State == ConnectionState.Connected) // successful connections that may have disconnected while we waited for others to settle
+                    .OrderBy(c => c.BranchLevel)
+                    .ToList();
+
                 if (successfulConnections.Count > 0)
                 {
                     Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
@@ -428,6 +434,7 @@ namespace Soulseek.Network
             finally
             {
                 await UpdateStatusAsync().ConfigureAwait(false);
+                ParentSyncRoot.Release();
             }
         }
 
