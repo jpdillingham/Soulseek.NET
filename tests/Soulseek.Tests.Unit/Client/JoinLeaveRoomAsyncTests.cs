@@ -193,6 +193,30 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws RoomJoinForbiddenException when server rejects"), AutoData]
+        public async Task JoinRoomAsync_Throws_RoomJoinForbiddenException_When_Server_Rejects(string roomName)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<RoomData>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Throws(new RoomJoinForbiddenException());
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<RoomJoinForbiddenException>(ex);
+            }
+        }
+
         [Trait("Category", "LeaveRoomAsync")]
         [Theory(DisplayName = "LeaveRoomAsync throws InvalidOperationException when not connected"), AutoData]
         public async Task LeaveRoomAsync_Throws_InvalidOperationException_When_Not_Connected(string roomName)
