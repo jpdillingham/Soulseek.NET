@@ -18,11 +18,9 @@
 namespace Soulseek.Tests.Unit.Client
 {
     using System;
-    using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -351,6 +349,16 @@ namespace Soulseek.Tests.Unit.Client
                 incomingConnectionOptions: new ConnectionOptions(),
                 distributedConnectionOptions: new ConnectionOptions()));
 
+            var userEndPointCache = new Mock<IUserEndPointCache>();
+            var searchResponseCache = new Mock<ISearchResponseCache>();
+
+            var searchResponseResolver = new Func<string, int, SearchQuery, Task<SearchResponse>>((s, i, q) => Task.FromResult<SearchResponse>(null));
+            var browseResponseResolver = new Func<string, IPEndPoint, Task<BrowseResponse>>((s, i) => Task.FromResult<BrowseResponse>(null));
+            var directoryContentsResponseResolver = new Func<string, IPEndPoint, int, string, Task<Directory>>((s, i, ii, ss) => Task.FromResult<Directory>(null));
+            var userInfoResponseResolver = new Func<string, IPEndPoint, Task<UserInfo>>((s, i) => Task.FromResult<UserInfo>(null));
+            var enqueueDownloadAction = new Func<string, IPEndPoint, string, Task>((s, i, ss) => Task.CompletedTask);
+            var placeInQueueResponseResolver = new Func<string, IPEndPoint, string, Task<int?>>((s, i, ss) => Task.FromResult<int?>(0));
+
             var patch = new SoulseekClientOptionsPatch(
                 enableListener: true,
                 listenPort: Mocks.Port,
@@ -365,7 +373,15 @@ namespace Soulseek.Tests.Unit.Client
                 peerConnectionOptions: new ConnectionOptions(),
                 transferConnectionOptions: new ConnectionOptions(readBufferSize: 200),
                 incomingConnectionOptions: new ConnectionOptions(),
-                distributedConnectionOptions: new ConnectionOptions());
+                distributedConnectionOptions: new ConnectionOptions(),
+                userEndPointCache: userEndPointCache.Object,
+                searchResponseResolver: searchResponseResolver,
+                searchResponseCache: searchResponseCache.Object,
+                browseResponseResolver: browseResponseResolver,
+                directoryContentsResponseResolver: directoryContentsResponseResolver,
+                userInfoResponseResolver: userInfoResponseResolver,
+                enqueueDownloadAction: enqueueDownloadAction,
+                placeInQueueResponseResolver: placeInQueueResponseResolver);
 
             using (client)
             {
@@ -388,6 +404,15 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(patch.ServerConnectionOptions.ReadBufferSize, client.Options.ServerConnectionOptions.ReadBufferSize);
                 Assert.Equal(patch.TransferConnectionOptions.ReadBufferSize, client.Options.TransferConnectionOptions.ReadBufferSize);
+
+                Assert.Equal(patch.UserEndPointCache, client.Options.UserEndPointCache);
+                Assert.Equal(patch.SearchResponseCache, client.Options.SearchResponseCache);
+                Assert.Equal(patch.SearchResponseResolver, client.Options.SearchResponseResolver);
+                Assert.Equal(patch.BrowseResponseResolver, client.Options.BrowseResponseResolver);
+                Assert.Equal(patch.DirectoryContentsResponseResolver, client.Options.DirectoryContentsResponseResolver);
+                Assert.Equal(patch.UserInfoResponseResolver, client.Options.UserInfoResponseResolver);
+                Assert.Equal(patch.EnqueueDownloadAction, client.Options.EnqueueDownloadAction);
+                Assert.Equal(patch.PlaceInQueueResponseResolver, client.Options.PlaceInQueueResponseResolver);
             }
         }
 
