@@ -324,7 +324,15 @@ namespace Soulseek
                 patch.PeerConnectionOptions,
                 patch.TransferConnectionOptions,
                 patch.IncomingConnectionOptions,
-                patch.DistributedConnectionOptions);
+                patch.DistributedConnectionOptions,
+                patch.UserEndPointCache,
+                patch.SearchResponseResolver,
+                patch.SearchResponseCache,
+                patch.BrowseResponseResolver,
+                patch.DirectoryContentsResponseResolver,
+                patch.UserInfoResponseResolver,
+                patch.EnqueueDownloadAction,
+                patch.PlaceInQueueResponseResolver);
         }
 
         /// <summary>
@@ -350,6 +358,24 @@ namespace Soulseek
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
+        /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
+        /// <param name="searchResponseResolver">
+        ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
+        /// </param>
+        /// <param name="searchResponseCache">The search response cache to use when a response is not able to be delivered immediately.</param>
+        /// <param name="browseResponseResolver">
+        ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
+        /// </param>
+        /// <param name="directoryContentsResponseResolver">
+        ///     The delegate used to resolve the <see cref="FolderContentsResponse"/> for an incoming <see cref="FolderContentsRequest"/>.
+        /// </param>
+        /// <param name="userInfoResponseResolver">
+        ///     The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.
+        /// </param>
+        /// <param name="enqueueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
+        /// <param name="placeInQueueResponseResolver">
+        ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
+        /// </param>
         /// <returns>The cloned instance.</returns>
         internal SoulseekClientOptions With(
             bool? enableListener = null,
@@ -365,7 +391,15 @@ namespace Soulseek
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
-            ConnectionOptions distributedConnectionOptions = null)
+            ConnectionOptions distributedConnectionOptions = null,
+            IUserEndPointCache userEndPointCache = null,
+            Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
+            ISearchResponseCache searchResponseCache = null,
+            Func<string, IPEndPoint, Task<BrowseResponse>> browseResponseResolver = null,
+            Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
+            Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
+            Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
             return new SoulseekClientOptions(
                 enableListener ?? EnableListener,
@@ -385,14 +419,14 @@ namespace Soulseek
                 (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
                 incomingConnectionOptions ?? IncomingConnectionOptions,
                 distributedConnectionOptions ?? DistributedConnectionOptions,
-                UserEndPointCache,
-                SearchResponseResolver,
-                SearchResponseCache,
-                BrowseResponseResolver,
-                DirectoryContentsResponseResolver,
-                UserInfoResponseResolver,
-                EnqueueDownloadAction,
-                PlaceInQueueResponseResolver);
+                userEndPointCache ?? UserEndPointCache,
+                searchResponseResolver ?? SearchResponseResolver,
+                searchResponseCache ?? SearchResponseCache,
+                browseResponseResolver ?? BrowseResponseResolver,
+                directoryContentsResponseResolver ?? DirectoryContentsResponseResolver,
+                userInfoResponseResolver ?? UserInfoResponseResolver,
+                enqueueDownloadAction ?? EnqueueDownloadAction,
+                placeInQueueResponseResolver ?? PlaceInQueueResponseResolver);
         }
     }
 }

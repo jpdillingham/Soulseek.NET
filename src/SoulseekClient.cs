@@ -3097,7 +3097,15 @@ namespace Soulseek
                     peerConnectionOptions: patch.PeerConnectionOptions,
                     transferConnectionOptions: patch.TransferConnectionOptions,
                     incomingConnectionOptions: patch.IncomingConnectionOptions,
-                    distributedConnectionOptions: patch.DistributedConnectionOptions);
+                    distributedConnectionOptions: patch.DistributedConnectionOptions,
+                    userEndPointCache: patch.UserEndPointCache,
+                    searchResponseResolver: patch.SearchResponseResolver,
+                    searchResponseCache: patch.SearchResponseCache,
+                    browseResponseResolver: patch.BrowseResponseResolver,
+                    directoryContentsResponseResolver: patch.DirectoryContentsResponseResolver,
+                    userInfoResponseResolver: patch.UserInfoResponseResolver,
+                    enqueueDownloadAction: patch.EnqueueDownloadAction,
+                    placeInQueueResponseResolver: patch.PlaceInQueueResponseResolver);
 
                 Diagnostic.Info("Options reconfigured successfully");
 

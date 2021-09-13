@@ -18,7 +18,10 @@
 namespace Soulseek.Tests.Unit
 {
     using System;
+    using System.Net;
+    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
+    using Moq;
     using Xunit;
 
     public class SoulseekClientOptionsPatchTests
@@ -41,6 +44,16 @@ namespace Soulseek.Tests.Unit
             var incomingConnectionOptions = new ConnectionOptions();
             var distributedConnectionOptions = new ConnectionOptions();
 
+            var userEndPointCache = new Mock<IUserEndPointCache>();
+            var searchResponseCache = new Mock<ISearchResponseCache>();
+
+            var searchResponseResolver = new Func<string, int, SearchQuery, Task<SearchResponse>>((s, i, q) => Task.FromResult<SearchResponse>(null));
+            var browseResponseResolver = new Func<string, IPEndPoint, Task<BrowseResponse>>((s, i) => Task.FromResult<BrowseResponse>(null));
+            var directoryContentsResponseResolver = new Func<string, IPEndPoint, int, string, Task<Directory>>((s, i, ii, ss) => Task.FromResult<Directory>(null));
+            var userInfoResponseResolver = new Func<string, IPEndPoint, Task<UserInfo>>((s, i) => Task.FromResult<UserInfo>(null));
+            var enqueueDownloadAction = new Func<string, IPEndPoint, string, Task>((s, i, ss) => Task.CompletedTask);
+            var placeInQueueResponseResolver = new Func<string, IPEndPoint, string, Task<int?>>((s, i, ss) => Task.FromResult<int?>(0));
+
             var rnd = new Random();
             var listenPort = rnd.Next(1024, 65535);
 
@@ -58,7 +71,15 @@ namespace Soulseek.Tests.Unit
                 peerConnectionOptions: peerConnectionOptions,
                 transferConnectionOptions: transferConnectionOptions,
                 incomingConnectionOptions: incomingConnectionOptions,
-                distributedConnectionOptions: distributedConnectionOptions);
+                distributedConnectionOptions: distributedConnectionOptions,
+                userEndPointCache: userEndPointCache.Object,
+                searchResponseResolver: searchResponseResolver,
+                searchResponseCache: searchResponseCache.Object,
+                browseResponseResolver: browseResponseResolver,
+                directoryContentsResponseResolver: directoryContentsResponseResolver,
+                userInfoResponseResolver: userInfoResponseResolver,
+                enqueueDownloadAction: enqueueDownloadAction,
+                placeInQueueResponseResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
@@ -82,6 +103,15 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
             Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
             Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+
+            Assert.Equal(userEndPointCache.Object, o.UserEndPointCache);
+            Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
+            Assert.Equal(searchResponseCache.Object, o.SearchResponseCache);
+            Assert.Equal(browseResponseResolver, o.BrowseResponseResolver);
+            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResponseResolver);
+            Assert.Equal(userInfoResponseResolver, o.UserInfoResponseResolver);
+            Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
+            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
         }
 
         [Trait("Category", "Instantiation")]
