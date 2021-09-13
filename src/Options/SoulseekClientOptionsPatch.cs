@@ -19,6 +19,8 @@ namespace Soulseek
 {
     using System;
     using System.Net;
+    using System.Threading.Tasks;
+    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     A patch for SoulseekClientOptions.
@@ -48,6 +50,26 @@ namespace Soulseek
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
+        /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
+        /// <param name="searchResponseResolver">
+        ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
+        /// </param>
+        /// <param name="searchResponseCache">
+        ///     The search response cache to use when a response is not able to be delivered immediately.
+        /// </param>
+        /// <param name="browseResponseResolver">
+        ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
+        /// </param>
+        /// <param name="directoryContentsResponseResolver">
+        ///     The delegate used to resolve the <see cref="FolderContentsResponse"/> for an incoming <see cref="FolderContentsRequest"/>.
+        /// </param>
+        /// <param name="userInfoResponseResolver">
+        ///     The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.
+        /// </param>
+        /// <param name="enqueueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
+        /// <param name="placeInQueueResponseResolver">
+        ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
+        /// </param>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
         /// </exception>
@@ -68,7 +90,15 @@ namespace Soulseek
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
-            ConnectionOptions distributedConnectionOptions = null)
+            ConnectionOptions distributedConnectionOptions = null,
+            IUserEndPointCache userEndPointCache = null,
+            Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
+            ISearchResponseCache searchResponseCache = null,
+            Func<string, IPEndPoint, Task<BrowseResponse>> browseResponseResolver = null,
+            Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
+            Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
+            Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
             EnableListener = enableListener;
             ListenPort = listenPort;
@@ -98,6 +128,18 @@ namespace Soulseek
             TransferConnectionOptions = transferConnectionOptions?.WithoutInactivityTimeout();
             IncomingConnectionOptions = incomingConnectionOptions;
             DistributedConnectionOptions = distributedConnectionOptions;
+
+            UserEndPointCache = userEndPointCache;
+
+            SearchResponseResolver = searchResponseResolver;
+            SearchResponseCache = searchResponseCache;
+
+            BrowseResponseResolver = browseResponseResolver;
+            DirectoryContentsResponseResolver = directoryContentsResponseResolver;
+
+            UserInfoResponseResolver = userInfoResponseResolver;
+            EnqueueDownloadAction = enqueueDownloadAction;
+            PlaceInQueueResponseResolver = placeInQueueResponseResolver;
         }
 
         /// <summary>
@@ -121,9 +163,19 @@ namespace Soulseek
         public bool? AutoAcknowledgePrivilegeNotifications { get; }
 
         /// <summary>
+        ///     Gets the delegate used to resolve the response for an incoming browse request.
+        /// </summary>
+        public Func<string, IPEndPoint, Task<BrowseResponse>> BrowseResponseResolver { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether duplicated distributed search requests should be discarded.
         /// </summary>
         public bool? DeduplicateSearchRequests { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the response for an incoming directory contents request.
+        /// </summary>
+        public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResponseResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed distributed children.
@@ -141,9 +193,18 @@ namespace Soulseek
         public bool? EnableDistributedNetwork { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
+        ///     Gets a value indicating whether to listen for incoming connections.
         /// </summary>
         public bool? EnableListener { get; }
+
+        /// <summary>
+        ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.
+        /// </summary>
+        /// <remarks>
+        ///     This delegate must throw an Exception to indicate a rejected download. If the thrown Exception is of type
+        ///     <see cref="DownloadEnqueueException"/> the message will be sent to the client, otherwise a default message will be sent.
+        /// </remarks>
+        public Func<string, IPEndPoint, string, Task> EnqueueDownloadAction { get; }
 
         /// <summary>
         ///     Gets the options for incoming connections.
@@ -161,6 +222,21 @@ namespace Soulseek
         public ConnectionOptions PeerConnectionOptions { get; }
 
         /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
+        /// </summary>
+        public Func<string, IPEndPoint, string, Task<int?>> PlaceInQueueResponseResolver { get; }
+
+        /// <summary>
+        ///     Gets the search response cache to use when a response is not able to be delivered immediately.
+        /// </summary>
+        public ISearchResponseCache SearchResponseCache { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
+        /// </summary>
+        public Func<string, int, SearchQuery, Task<SearchResponse>> SearchResponseResolver { get; }
+
+        /// <summary>
         ///     Gets the options for the server message connection.
         /// </summary>
         public ConnectionOptions ServerConnectionOptions { get; }
@@ -169,5 +245,15 @@ namespace Soulseek
         ///     Gets the options for peer transfer connections.
         /// </summary>
         public ConnectionOptions TransferConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the user endpoint cache to use when resolving user endpoints.
+        /// </summary>
+        public IUserEndPointCache UserEndPointCache { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request.
+        /// </summary>
+        public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResponseResolver { get; }
     }
 }
