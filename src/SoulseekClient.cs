@@ -3069,6 +3069,8 @@ namespace Soulseek
 
                 if (enableListenerChanged || listenPortChanged || incomingConnectionOptionsChanged)
                 {
+                    var wasListening = Listener?.Listening ?? false;
+
                     Listener?.Stop();
                     Listener = null;
 
@@ -3077,7 +3079,7 @@ namespace Soulseek
                         listenPort: patch.ListenPort,
                         incomingConnectionOptions: patch.IncomingConnectionOptions);
 
-                    if (Options.EnableListener)
+                    if (wasListening && Options.EnableListener)
                     {
                         Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;

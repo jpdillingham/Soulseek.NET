@@ -261,7 +261,9 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "Reconfigures listener if ListenPort changed")]
         public async Task Reconfigures_Listener_If_ListenPort_Changed()
         {
-            var (client, _) = GetFixture(new SoulseekClientOptions(listenPort: Mocks.Port));
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(listenPort: Mocks.Port));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(true);
 
             var patch = new SoulseekClientOptionsPatch(listenPort: Mocks.Port);
 
@@ -279,7 +281,9 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "Reconfigures listener if IncomingConnectionOptions changed")]
         public async Task Reconfigures_Listener_If_IncomingConnectionOptions_Changed()
         {
-            var (client, _) = GetFixture(new SoulseekClientOptions(incomingConnectionOptions: new ConnectionOptions()));
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(incomingConnectionOptions: new ConnectionOptions()));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(true);
 
             var patch = new SoulseekClientOptionsPatch(incomingConnectionOptions: new ConnectionOptions());
 
@@ -290,6 +294,27 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ReconfigureOptionsAsync(patch);
 
                 Assert.Equal(patch.IncomingConnectionOptions, client.Listener.ConnectionOptions);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Does not reconfigure listener if options changed but was not listening")]
+        public async Task Does_Not_Reconfigure_Listener_If_Options_Changed_But_Was_Not_Listening()
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(incomingConnectionOptions: new ConnectionOptions()));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(false);
+
+            var patch = new SoulseekClientOptionsPatch(incomingConnectionOptions: new ConnectionOptions());
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.Equal(patch.IncomingConnectionOptions, client.Options.IncomingConnectionOptions);
+                Assert.Null(client.Listener);
             }
         }
 
