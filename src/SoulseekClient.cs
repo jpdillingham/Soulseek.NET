@@ -3016,7 +3016,7 @@ namespace Soulseek
                     throw new NoResponseException($"The server didn't respond to the request to join chat room {roomName}. This probably indicates that the room is already joined.");
                 }
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException) && !(ex is RoomJoinForbiddenException))
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException) && !(ex is RoomJoinForbiddenException) && !(ex is NoResponseException))
             {
                 throw new SoulseekClientException($"Failed to join chat room {roomName}: {ex.Message}", ex);
             }
