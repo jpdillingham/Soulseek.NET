@@ -175,6 +175,28 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws NoResponseException on wait timeout"), AutoData]
+        public async Task JoinRoomAsync_Throws_NoResponseException_On_Wait_Timeout(string roomName)
+        {
+            var conn = new Mock<IMessageConnection>();
+
+            var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<RoomData>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.JoinRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<NoResponseException>(ex);
+            }
+        }
+
+        [Trait("Category", "JoinRoomAsync")]
         [Theory(DisplayName = "JoinRoomAsync throws OperationCanceledException on cancellation"), AutoData]
         public async Task JoinRoomAsync_Throws_OperationCanceledException_On_Cancellation(string roomName)
         {
