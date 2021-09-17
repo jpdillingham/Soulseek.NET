@@ -746,6 +746,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomJoinForbiddenException">Thrown when the server rejects the request.</exception>
+        /// <exception cref="NoResponseException">Thrown when the server does not respond to the request.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken? cancellationToken = null);
 
