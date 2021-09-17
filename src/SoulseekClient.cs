@@ -1395,6 +1395,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomJoinForbiddenException">Thrown when the server rejects the request.</exception>
+        /// <exception cref="NoResponseException">Thrown when the server does not respond to the request.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken? cancellationToken = null)
         {
@@ -3000,11 +3001,20 @@ namespace Soulseek
         {
             try
             {
+                // the server may send a CannotJoinRoom message, which will cause the wait to throw RoomJoinForbiddenException
+                // if the room is already joined, the server won't respond at all, which 
                 var joinRoomWait = Waiter.Wait<RoomData>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new JoinRoomRequest(roomName, isPrivate), cancellationToken).ConfigureAwait(false);
 
-                var response = await joinRoomWait.ConfigureAwait(false);
-                return response;
+                try
+                {
+                    var response = await joinRoomWait.ConfigureAwait(false);
+                    return response;
+                }
+                catch (TimeoutException)
+                {
+                    throw new NoResponseException($"The server didn't respond to the request to join chat room {roomName}. This probably indicates that the room is already joined.");
+                }
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException) && !(ex is RoomJoinForbiddenException))
             {
