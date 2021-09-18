@@ -985,6 +985,29 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises RoomLeft on LeaveRoom"), AutoData]
+        public void Raises_RoomLeft_On_LeaveRoom(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username).Returns(username);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.LeaveRoom)
+                .WriteString(roomName);
+
+            var message = builder.Build();
+            RoomLeftEventArgs args = null;
+
+            handler.RoomLeft += (sender, a) => args = a;
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(args);
+            Assert.Equal(roomName, args.RoomName);
+            Assert.Equal(username, args.Username);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles SayInChatRoom"), AutoData]
         public void Handles_SayInChatRoom(string roomName, string username, string msg)
         {

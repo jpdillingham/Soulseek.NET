@@ -753,6 +753,7 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously leaves the chat room with the specified <paramref name="roomName"/>.
         /// </summary>
+        /// <remarks>When successful, a corresponding <see cref="RoomLeft"/> event will be raised.</remarks>
         /// <param name="roomName">The name of the chat room to leave.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
