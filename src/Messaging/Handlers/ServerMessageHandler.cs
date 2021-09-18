@@ -418,6 +418,12 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.LeaveRoom:
                         var leaveRoomResponse = LeaveRoomResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, leaveRoomResponse.RoomName));
+
+                        // the server doesn't send a UserLeftRoom message when the current user is the one who left,
+                        // whereas we do get a UserJoinedRoom message when the current user joins a room.  to keep the API
+                        // consistent, raise RoomLeft to mimic this behavior client side.  this may result in duplicate events
+                        // if the server behavior changes.
+                        RoomLeft?.Invoke(this, new RoomLeftEventArgs(leaveRoomResponse.RoomName, SoulseekClient.Username));
                         break;
 
                     case MessageCode.Server.SayInChatRoom:
