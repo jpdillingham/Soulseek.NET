@@ -183,7 +183,7 @@ namespace Soulseek.Tests.Unit.Client
             var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<RoomData>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
-                .Throws(new TimeoutException());
+                .Returns(Task.FromException<RoomData>(new TimeoutException()));
 
             using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
@@ -305,6 +305,30 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
 
                 Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync throws NoResponseException on wait timeout"), AutoData]
+        public async Task LeaveRoomAsync_Throws_NoResponseException_On_Wait_Timeout(string roomName)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var key = new WaitKey(MessageCode.Server.LeaveRoom, roomName);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException(new TimeoutException()));
+
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<NoResponseException>(ex);
             }
         }
 

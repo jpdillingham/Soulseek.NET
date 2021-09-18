@@ -1392,10 +1392,10 @@ namespace Soulseek
         ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomJoinForbiddenException">Thrown when the server rejects the request.</exception>
         /// <exception cref="NoResponseException">Thrown when the server does not respond to the request.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken? cancellationToken = null)
         {
@@ -1423,6 +1423,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="NoResponseException">Thrown when the server does not respond to the request.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
@@ -3030,9 +3031,16 @@ namespace Soulseek
                 var leaveRoomWait = Waiter.Wait(new WaitKey(MessageCode.Server.LeaveRoom, roomName), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new LeaveRoomRequest(roomName), cancellationToken).ConfigureAwait(false);
 
-                await leaveRoomWait.ConfigureAwait(false);
+                try
+                {
+                    await leaveRoomWait.ConfigureAwait(false);
+                }
+                catch (TimeoutException)
+                {
+                    throw new NoResponseException($"The server didn't respond to the request to leave chat room {roomName}.  This probably indicates that the room is not joined.");
+                }
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException) && !(ex is NoResponseException))
             {
                 throw new SoulseekClientException($"Failed to leave chat room {roomName}: {ex.Message}", ex);
             }
