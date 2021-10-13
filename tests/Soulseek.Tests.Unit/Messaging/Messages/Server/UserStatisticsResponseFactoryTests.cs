@@ -1,4 +1,4 @@
-﻿// <copyright file="UserStatsResponseFactoryTests.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatisticsResponseFactoryTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class UserStatsResponseFactoryTests
+    public class UserStatisticsResponseFactoryTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
