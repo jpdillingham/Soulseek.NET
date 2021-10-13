@@ -978,7 +978,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             UserStatistics eventArgs = null;
 
-            handler.UserStatsChanged += (sender, args) => eventArgs = args;
+            handler.UserStatisticsChanged += (sender, args) => eventArgs = args;
 
             handler.HandleMessageRead(null, message);
 

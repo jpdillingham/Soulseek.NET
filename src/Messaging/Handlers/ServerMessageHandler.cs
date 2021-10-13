@@ -402,7 +402,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.GetUserStats:
                         var stats = UserStatisticssResponseFactory.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, stats.Username), stats);
-                        UserStatsChanged?.Invoke(this, stats);
+                        UserStatisticsChanged?.Invoke(this, stats);
                         break;
 
                     case MessageCode.Server.PrivateMessage:
