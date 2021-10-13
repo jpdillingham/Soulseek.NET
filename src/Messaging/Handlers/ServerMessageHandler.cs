@@ -157,6 +157,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
 
         /// <summary>
+        ///     Occurs when a user's stats change.
+        /// </summary>
+        public event EventHandler<UserStatsChangedEventArgs> UserStatsChanged;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
@@ -389,9 +394,15 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetStatus:
-                        var statsResponse = UserStatusResponse.FromByteArray(message);
+                        var statusResponse = UserStatusResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, statusResponse.Username), statusResponse);
+                        UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statusResponse));
+                        break;
+
+                    case MessageCode.Server.GetUserStats:
+                        var statsResponse = UserStatsResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
-                        UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
+                        UserStatsChanged?.Invoke(this, new UserStatsChangedEventArgs(statsResponse));
                         break;
 
                     case MessageCode.Server.PrivateMessage:
@@ -419,10 +430,9 @@ namespace Soulseek.Messaging.Handlers
                         var leaveRoomResponse = LeaveRoomResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, leaveRoomResponse.RoomName));
 
-                        // the server doesn't send a UserLeftRoom message when the current user is the one who left,
-                        // whereas we do get a UserJoinedRoom message when the current user joins a room.  to keep the API
-                        // consistent, raise RoomLeft to mimic this behavior client side.  this may result in duplicate events
-                        // if the server behavior changes.
+                        // the server doesn't send a UserLeftRoom message when the current user is the one who left, whereas we do
+                        // get a UserJoinedRoom message when the current user joins a room. to keep the API consistent, raise
+                        // RoomLeft to mimic this behavior client side. this may result in duplicate events if the server behavior changes.
                         RoomLeft?.Invoke(this, new RoomLeftEventArgs(leaveRoomResponse.RoomName, SoulseekClient.Username));
                         break;
 
