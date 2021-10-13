@@ -159,7 +159,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a user's stats change.
         /// </summary>
-        public event EventHandler<UserStatsChangedEventArgs> UserStatsChanged;
+        public event EventHandler<UserStats> UserStatsChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -400,9 +400,9 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetUserStats:
-                        var statsResponse = UserStatsResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
-                        UserStatsChanged?.Invoke(this, new UserStatsChangedEventArgs(statsResponse));
+                        var stats = UserStatsResponseFactory.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, stats.Username), stats);
+                        UserStatsChanged?.Invoke(this, stats);
                         break;
 
                     case MessageCode.Server.PrivateMessage:

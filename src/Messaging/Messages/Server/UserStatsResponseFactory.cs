@@ -1,4 +1,4 @@
-﻿// <copyright file="UserStatsResponse.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatsResponseFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,42 +20,21 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a peer stats request.
     /// </summary>
-    internal sealed class UserStatsResponse : IIncomingMessage
+    internal static class UserStatsResponseFactory
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStatsResponse"/> class.
-        /// </summary>
-        /// <param name="username">The username of the user.</param>
-        /// <param name="userStats">The user's stats.</param>
-        public UserStatsResponse(string username, UserStats userStats)
-        {
-            Username = username;
-            UserStats = userStats;
-        }
-
-        /// <summary>
-        ///     Gets the user's stats.
-        /// </summary>
-        public UserStats UserStats { get; }
-
-        /// <summary>
-        ///     Gets the username of the user.
-        /// </summary>
-        public string Username { get; }
-
-        /// <summary>
-        ///     Creates a new instance of <see cref="UserStatsResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="UserStats"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static UserStatsResponse FromByteArray(byte[] bytes)
+        public static UserStats FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.GetUserStats)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(UserStatsResponse)} (expected: {(int)MessageCode.Server.GetUserStats}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(UserStats)} (expected: {(int)MessageCode.Server.GetUserStats}, received: {(int)code})");
             }
 
             var username = reader.ReadString();
@@ -64,9 +43,7 @@ namespace Soulseek.Messaging.Messages
             var fileCount = reader.ReadInteger();
             var directoryCount = reader.ReadInteger();
 
-            var stats = new UserStats(username, averageSpeed, uploadCount, fileCount, directoryCount);
-
-            return new UserStatsResponse(username, stats);
+            return new UserStats(username, averageSpeed, uploadCount, fileCount, directoryCount);
         }
     }
 }
