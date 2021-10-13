@@ -227,6 +227,11 @@ namespace Soulseek
         event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
 
         /// <summary>
+        ///     Occurs when a user's stats change.
+        /// </summary>
+        public event EventHandler<UserStatsChangedEventArgs> UserStatsChanged;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         /// <remarks>Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.</remarks>

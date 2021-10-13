@@ -135,6 +135,7 @@ namespace Soulseek
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
+            ServerMessageHandler.UserStatsChanged += (sender, e) => UserStatsChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomMembershipAdded += (sender, e) => PrivateRoomMembershipAdded?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomMembershipRemoved += (sender, e) => PrivateRoomMembershipRemoved?.Invoke(this, e);
@@ -369,6 +370,11 @@ namespace Soulseek
         ///     Occurs when a user fails to connect.
         /// </summary>
         public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
+
+        /// <summary>
+        ///     Occurs when a user's stats change.
+        /// </summary>
+        public event EventHandler<UserStatsChangedEventArgs> UserStatsChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.

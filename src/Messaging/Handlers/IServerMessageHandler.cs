@@ -132,6 +132,11 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
 
         /// <summary>
+        ///     Occurs when a user's stats change.
+        /// </summary>
+        event EventHandler<UserStatsChangedEventArgs> UserStatsChanged;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
