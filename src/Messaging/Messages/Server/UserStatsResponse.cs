@@ -26,38 +26,17 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="UserStatsResponse"/> class.
         /// </summary>
         /// <param name="username">The username of the user.</param>
-        /// <param name="averageSpeed">The average upload speed of the user.</param>
-        /// <param name="uploadCount">The number of uploads tracked by the server for this user.</param>
-        /// <param name="fileCount">The number of files shared by the user.</param>
-        /// <param name="directoryCount">The number of directories shared by the user.</param>
-        public UserStatsResponse(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
+        /// <param name="userStats">The user's stats.</param>
+        public UserStatsResponse(string username, UserStats userStats)
         {
             Username = username;
-            AverageSpeed = averageSpeed;
-            UploadCount = uploadCount;
-            FileCount = fileCount;
-            DirectoryCount = directoryCount;
+            UserStats = userStats;
         }
 
         /// <summary>
-        ///     Gets the average upload speed of the user.
+        ///     Gets the user's stats.
         /// </summary>
-        public int AverageSpeed { get; }
-
-        /// <summary>
-        ///     Gets the number of directories shared by the user.
-        /// </summary>
-        public int DirectoryCount { get; }
-
-        /// <summary>
-        ///     Gets the number of files shared by the user.
-        /// </summary>
-        public int FileCount { get; }
-
-        /// <summary>
-        ///     Gets the number of uploads tracked by the server for this user.
-        /// </summary>
-        public long UploadCount { get; }
+        public UserStats UserStats { get; }
 
         /// <summary>
         ///     Gets the username of the user.
@@ -85,7 +64,9 @@ namespace Soulseek.Messaging.Messages
             var fileCount = reader.ReadInteger();
             var directoryCount = reader.ReadInteger();
 
-            return new UserStatsResponse(username, averageSpeed, uploadCount, fileCount, directoryCount);
+            var stats = new UserStats(username, averageSpeed, uploadCount, fileCount, directoryCount);
+
+            return new UserStatsResponse(username, stats);
         }
     }
 }

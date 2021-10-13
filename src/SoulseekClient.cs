@@ -1296,6 +1296,11 @@ namespace Soulseek
             return GetUserPrivilegedInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
+        public Task<UserStats> GetUserStatsAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            return null;
+        }
+
         /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
         /// </summary>

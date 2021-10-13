@@ -28,17 +28,11 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="UserStatsChangedEventArgs"/> class.
         /// </summary>
         /// <param name="username">The username of the user.</param>
-        /// <param name="averageSpeed">The average upload speed of the user.</param>
-        /// <param name="uploadCount">The number of uploads tracked by the server for this user.</param>
-        /// <param name="fileCount">The number of files shared by the user.</param>
-        /// <param name="directoryCount">The number of directories shared by the user.</param>
-        public UserStatsChangedEventArgs(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
+        /// <param name="userStats">The user's stats.</param>
+        public UserStatsChangedEventArgs(string username, UserStats userStats)
             : base(username)
         {
-            AverageSpeed = averageSpeed;
-            UploadCount = uploadCount;
-            FileCount = fileCount;
-            DirectoryCount = directoryCount;
+            UserStats = userStats;
         }
 
         /// <summary>
@@ -46,28 +40,13 @@ namespace Soulseek
         /// </summary>
         /// <param name="userStatsResponse">The stats response which generated the event.</param>
         internal UserStatsChangedEventArgs(UserStatsResponse userStatsResponse)
-            : this(userStatsResponse.Username, userStatsResponse.AverageSpeed, userStatsResponse.UploadCount, userStatsResponse.FileCount, userStatsResponse.DirectoryCount)
+            : this(userStatsResponse.Username, userStatsResponse.UserStats)
         {
         }
 
         /// <summary>
-        ///     Gets the average upload speed of the user.
+        ///     Gets the user's stats.
         /// </summary>
-        public int AverageSpeed { get; }
-
-        /// <summary>
-        ///     Gets the number of directories shared by the user.
-        /// </summary>
-        public int DirectoryCount { get; }
-
-        /// <summary>
-        ///     Gets the number of files shared by the user.
-        /// </summary>
-        public int FileCount { get; }
-
-        /// <summary>
-        ///     Gets the number of uploads tracked by the server for this user.
-        /// </summary>
-        public long UploadCount { get; }
+        public UserStats UserStats { get; }
     }
 }
