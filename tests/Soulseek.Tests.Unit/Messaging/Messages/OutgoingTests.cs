@@ -326,6 +326,31 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
+        [Trait("Request", "UserStatsRequest")]
+        [Theory(DisplayName = "UserStatsRequest instantiates properly"), AutoData]
+        public void UserStatsRequest_Instantiates_Properly(string username)
+        {
+            var a = new UserStatsRequest(username);
+
+            Assert.Equal(username, a.Username);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "UserStatsRequest")]
+        [Theory(DisplayName = "UserStatsRequest constructs the correct message"), AutoData]
+        public void UserStatsRequest_Constructs_The_Correct_Message(string username)
+        {
+            var a = new UserStatsRequest(username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.GetUserStats, code);
+            Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
         [Trait("Request", "SetListenPort")]
         [Fact(DisplayName = "SetListenPort instantiates properly")]
         public void SetListenPort_Instantiates_Properly()
