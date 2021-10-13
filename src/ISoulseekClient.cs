@@ -229,7 +229,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a user's stats change.
         /// </summary>
-        public event EventHandler<UserStatsChangedEventArgs> UserStatsChanged;
+        public event EventHandler<UserStats> UserStatsChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.

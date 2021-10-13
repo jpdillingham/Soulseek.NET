@@ -1,4 +1,4 @@
-﻿// <copyright file="UserStatsResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatsResponseFactoryTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -22,22 +22,19 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class UserStatsResponseTests
+    public class UserStatsResponseFactoryTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
         {
-            var stats = new UserStats(username, averageSpeed, uploadCount, fileCount, directoryCount);
-            var r = new UserStatsResponse(username, stats);
+            var r = new UserStats(username, averageSpeed, uploadCount, fileCount, directoryCount);
 
             Assert.Equal(username, r.Username);
-            Assert.Equal(stats, r.UserStats);
-            Assert.Equal(stats.Username, username);
-            Assert.Equal(stats.AverageSpeed, averageSpeed);
-            Assert.Equal(stats.UploadCount, uploadCount);
-            Assert.Equal(stats.FileCount, fileCount);
-            Assert.Equal(stats.DirectoryCount, directoryCount);
+            Assert.Equal(averageSpeed, r.AverageSpeed);
+            Assert.Equal(uploadCount, r.UploadCount);
+            Assert.Equal(fileCount, r.FileCount);
+            Assert.Equal(directoryCount, r.DirectoryCount);
         }
 
         [Trait("Category", "Parse")]
@@ -48,7 +45,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => UserStatsResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UserStatsResponseFactory.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -62,7 +59,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.GetUserStats)
                 .Build();
 
-            var ex = Record.Exception(() => UserStatsResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UserStatsResponseFactory.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -81,13 +78,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(directoryCount)
                 .Build();
 
-            var r = UserStatsResponse.FromByteArray(msg);
+            var r = UserStatsResponseFactory.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
-            Assert.Equal(averageSpeed, r.UserStats.AverageSpeed);
-            Assert.Equal(uploadCount, r.UserStats.UploadCount);
-            Assert.Equal(fileCount, r.UserStats.FileCount);
-            Assert.Equal(directoryCount, r.UserStats.DirectoryCount);
+            Assert.Equal(averageSpeed, r.AverageSpeed);
+            Assert.Equal(uploadCount, r.UploadCount);
+            Assert.Equal(fileCount, r.FileCount);
+            Assert.Equal(directoryCount, r.DirectoryCount);
         }
     }
 }

@@ -821,7 +821,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Handles ServerGetStatus"), AutoData]
+        [Theory(DisplayName = "Handles Server.GetStatus"), AutoData]
         public void Handles_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
             UserStatusResponse result = null;
@@ -842,6 +842,34 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(username, result.Username);
             Assert.Equal(status, result.Status);
             Assert.Equal(privileged, result.IsPrivileged);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GetUserStats"), AutoData]
+        public void Handles_GetUserStats(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
+        {
+            UserStats result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStats>()))
+                .Callback<WaitKey, UserStats>((key, response) => result = response);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetUserStats)
+                .WriteString(username)
+                .WriteInteger(averageSpeed)
+                .WriteLong(uploadCount)
+                .WriteInteger(fileCount)
+                .WriteInteger(directoryCount)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(username, result.Username);
+            Assert.Equal(averageSpeed, result.AverageSpeed);
+            Assert.Equal(uploadCount, result.UploadCount);
+            Assert.Equal(fileCount, result.FileCount);
+            Assert.Equal(directoryCount, result.DirectoryCount);
         }
 
         [Trait("Category", "Message")]
@@ -913,11 +941,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
         public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
-            UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
-
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatusResponse>()))
-                .Callback<WaitKey, UserStatusResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)
@@ -935,6 +959,34 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(username, eventArgs.Username);
             Assert.Equal(status, eventArgs.Status);
             Assert.Equal(privileged, eventArgs.IsPrivileged);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises UserStatsChanged on GetUserStats"), AutoData]
+        public void Raises_UserStatsChanged_On_GetUserStats(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetUserStats)
+                .WriteString(username)
+                .WriteInteger(averageSpeed)
+                .WriteLong(uploadCount)
+                .WriteInteger(fileCount)
+                .WriteInteger(directoryCount)
+                .Build();
+
+            UserStats eventArgs = null;
+
+            handler.UserStatsChanged += (sender, args) => eventArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.Equal(username, eventArgs.Username);
+            Assert.Equal(averageSpeed, eventArgs.AverageSpeed);
+            Assert.Equal(uploadCount, eventArgs.UploadCount);
+            Assert.Equal(fileCount, eventArgs.FileCount);
+            Assert.Equal(directoryCount, eventArgs.DirectoryCount);
         }
 
         [Trait("Category", "Message")]
