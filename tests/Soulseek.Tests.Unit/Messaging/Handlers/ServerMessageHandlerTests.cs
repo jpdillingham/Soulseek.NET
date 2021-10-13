@@ -848,11 +848,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles GetUserStats"), AutoData]
         public void Handles_GetUserStats(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
         {
-            UserStats result = null;
+            UserStatistics result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStats>()))
-                .Callback<WaitKey, UserStats>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatistics>()))
+                .Callback<WaitKey, UserStatistics>((key, response) => result = response);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetUserStats)
@@ -976,7 +976,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(directoryCount)
                 .Build();
 
-            UserStats eventArgs = null;
+            UserStatistics eventArgs = null;
 
             handler.UserStatsChanged += (sender, args) => eventArgs = args;
 

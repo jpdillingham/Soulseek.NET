@@ -1,4 +1,4 @@
-﻿// <copyright file="UserStats.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatistics.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -18,19 +18,19 @@
 namespace Soulseek
 {
     /// <summary>
-    ///     User stats.
+    ///     User statistics.
     /// </summary>
-    public class UserStats
+    public class UserStatistics
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStats"/> class.
+        ///     Initializes a new instance of the <see cref="UserStatistics"/> class.
         /// </summary>
         /// <param name="username">The username of the user.</param>
         /// <param name="averageSpeed">The average upload speed of the user.</param>
         /// <param name="uploadCount">The number of uploads tracked by the server for this user.</param>
         /// <param name="fileCount">The number of files shared by the user.</param>
         /// <param name="directoryCount">The number of directories shared by the user.</param>
-        public UserStats(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
+        public UserStatistics(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
         {
             Username = username;
             AverageSpeed = averageSpeed;

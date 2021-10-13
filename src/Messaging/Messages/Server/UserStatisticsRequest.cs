@@ -1,4 +1,4 @@
-﻿// <copyright file="UserStatsRequest.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatisticsRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,19 +20,19 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests statistics for a peer.
     /// </summary>
-    internal sealed class UserStatsRequest : IOutgoingMessage
+    internal sealed class UserStatisticsRequest : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStatsRequest"/> class.
+        ///     Initializes a new instance of the <see cref="UserStatisticsRequest"/> class.
         /// </summary>
-        /// <param name="username">The username of the peer for which to retreive status information.</param>
-        public UserStatsRequest(string username)
+        /// <param name="username">The username of the peer for which to retreive statistics.</param>
+        public UserStatisticsRequest(string username)
         {
             Username = username;
         }
 
         /// <summary>
-        ///     Gets the username of the peer for which to retreive status information.
+        ///     Gets the username of the peer for which to retreive statistics.
         /// </summary>
         public string Username { get; }
 

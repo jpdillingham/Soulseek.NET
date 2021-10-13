@@ -227,9 +227,9 @@ namespace Soulseek
         event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
 
         /// <summary>
-        ///     Occurs when a user's stats change.
+        ///     Occurs when a user's statistics change.
         /// </summary>
-        public event EventHandler<UserStats> UserStatsChanged;
+        public event EventHandler<UserStatistics> UserStatisticsChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -677,7 +677,7 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<bool> GetUserPrivilegedAsync(string username, CancellationToken? cancellationToken = null);
 
-        Task<UserStats> GetUserStatsAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserStatistics> GetUserStatsAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.

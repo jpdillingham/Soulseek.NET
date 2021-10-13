@@ -135,7 +135,7 @@ namespace Soulseek
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
-            ServerMessageHandler.UserStatsChanged += (sender, e) => UserStatsChanged?.Invoke(this, e);
+            ServerMessageHandler.UserStatisticsChanged += (sender, e) => UserStatisticsChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomMembershipAdded += (sender, e) => PrivateRoomMembershipAdded?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomMembershipRemoved += (sender, e) => PrivateRoomMembershipRemoved?.Invoke(this, e);
@@ -372,9 +372,9 @@ namespace Soulseek
         public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
 
         /// <summary>
-        ///     Occurs when a user's stats change.
+        ///     Occurs when a user's statistics change.
         /// </summary>
-        public event EventHandler<UserStats> UserStatsChanged;
+        public event EventHandler<UserStatistics> UserStatisticsChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -1296,7 +1296,7 @@ namespace Soulseek
             return GetUserPrivilegedInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
-        public Task<UserStats> GetUserStatsAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserStatistics> GetUserStatsAsync(string username, CancellationToken? cancellationToken = null)
         {
             return null;
         }

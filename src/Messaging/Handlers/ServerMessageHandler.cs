@@ -157,9 +157,9 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
 
         /// <summary>
-        ///     Occurs when a user's stats change.
+        ///     Occurs when a user's statistics change.
         /// </summary>
-        public event EventHandler<UserStats> UserStatsChanged;
+        public event EventHandler<UserStatistics> UserStatisticsChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -400,7 +400,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetUserStats:
-                        var stats = UserStatsResponseFactory.FromByteArray(message);
+                        var stats = UserStatisticssResponseFactory.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, stats.Username), stats);
                         UserStatsChanged?.Invoke(this, stats);
                         break;

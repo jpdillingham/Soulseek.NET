@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
         {
-            var r = new UserStats(username, averageSpeed, uploadCount, fileCount, directoryCount);
+            var r = new UserStatistics(username, averageSpeed, uploadCount, fileCount, directoryCount);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(averageSpeed, r.AverageSpeed);
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => UserStatsResponseFactory.FromByteArray(msg));
+            var ex = Record.Exception(() => UserStatisticssResponseFactory.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.GetUserStats)
                 .Build();
 
-            var ex = Record.Exception(() => UserStatsResponseFactory.FromByteArray(msg));
+            var ex = Record.Exception(() => UserStatisticssResponseFactory.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -78,7 +78,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(directoryCount)
                 .Build();
 
-            var r = UserStatsResponseFactory.FromByteArray(msg);
+            var r = UserStatisticssResponseFactory.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(averageSpeed, r.AverageSpeed);

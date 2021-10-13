@@ -330,7 +330,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "UserStatsRequest instantiates properly"), AutoData]
         public void UserStatsRequest_Instantiates_Properly(string username)
         {
-            var a = new UserStatsRequest(username);
+            var a = new UserStatisticsRequest(username);
 
             Assert.Equal(username, a.Username);
         }
@@ -340,7 +340,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "UserStatsRequest constructs the correct message"), AutoData]
         public void UserStatsRequest_Constructs_The_Correct_Message(string username)
         {
-            var a = new UserStatsRequest(username);
+            var a = new UserStatisticsRequest(username);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);

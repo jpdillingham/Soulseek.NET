@@ -20,21 +20,21 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a peer stats request.
     /// </summary>
-    internal static class UserStatsResponseFactory
+    internal static class UserStatisticssResponseFactory
     {
         /// <summary>
-        ///     Creates a new instance of <see cref="UserStats"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="UserStatistics"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static UserStats FromByteArray(byte[] bytes)
+        public static UserStatistics FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.GetUserStats)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(UserStats)} (expected: {(int)MessageCode.Server.GetUserStats}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(UserStatistics)} (expected: {(int)MessageCode.Server.GetUserStats}, received: {(int)code})");
             }
 
             var username = reader.ReadString();
@@ -43,7 +43,7 @@ namespace Soulseek.Messaging.Messages
             var fileCount = reader.ReadInteger();
             var directoryCount = reader.ReadInteger();
 
-            return new UserStats(username, averageSpeed, uploadCount, fileCount, directoryCount);
+            return new UserStatistics(username, averageSpeed, uploadCount, fileCount, directoryCount);
         }
     }
 }
