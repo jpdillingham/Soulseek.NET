@@ -147,5 +147,27 @@
                 return NotFound(ex.Message);
             }
         }
+
+        /// <summary>
+        ///     Retrieves statistics for the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user.</param>
+        /// <returns></returns>
+        [HttpGet("{username}/statistics")]
+        [Authorize]
+        [ProducesResponseType(typeof(UserStatus), 200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Statistics([FromRoute, Required] string username)
+        {
+            try
+            {
+                var response = await Client.GetUserStatisticsAsync(username);
+                return Ok(response);
+            }
+            catch (UserOfflineException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
     }
 }
