@@ -158,7 +158,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.GetUserStatusAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.GetUserStatisticsAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
