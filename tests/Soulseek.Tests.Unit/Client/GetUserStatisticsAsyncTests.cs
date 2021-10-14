@@ -120,27 +120,6 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserStatisticsAsync")]
-        [Theory(DisplayName = "GetUserStatisticsAsync throws UserOfflineException on user offline"), AutoData]
-        public async Task GetUserStatisticsAsync_Throws_UserOfflineException_On_User_Offline(string username)
-        {
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<UserStatistics>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<UserStatistics>(new UserOfflineException()));
-
-            var serverConn = new Mock<IMessageConnection>();
-
-            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-                var ex = await Record.ExceptionAsync(() => s.GetUserStatisticsAsync(username));
-
-                Assert.NotNull(ex);
-                Assert.IsType<UserOfflineException>(ex);
-            }
-        }
-
-        [Trait("Category", "GetUserStatisticsAsync")]
         [Theory(DisplayName = "GetUserStatisticsAsync throws SoulseekClientException on throw"), AutoData]
         public async Task GetUserStatisticsAsync_Throws_SoulseekClientExceptionn_On_Throw(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
         {

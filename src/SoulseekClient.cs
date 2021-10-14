@@ -1299,6 +1299,11 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously fetches statistics for the specified <paramref name="username"/>.
         /// </summary>
+        /// <remarks>
+        ///     Statistics are returned for any given username, regardless of online status, even if no user with that name exists
+        ///     or has ever existed. All values are zero in the case of an unknown user, and presumably the last reported values
+        ///     are returned when a user exists but is offline.
+        /// </remarks>
         /// <param name="username">The username of the user for which to fetch statistics.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
@@ -1308,7 +1313,6 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserStatistics> GetUserStatisticsAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -3014,7 +3018,7 @@ namespace Soulseek
 
                 return await getStatisticsWait.ConfigureAwait(false);
             }
-            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to retrieve statistics for user {Username}: {ex.Message}", ex);
             }
