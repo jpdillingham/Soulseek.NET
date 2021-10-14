@@ -875,6 +875,39 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserStatisticsChanged fires when handler raises"), AutoData]
+        public void UserStatisticsChangedFires_When_Handler_Raises(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserStatistics(username, averageSpeed, uploadCount, fileCount, directoryCount);
+            UserStatistics actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.UserStatisticsChanged += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.UserStatisticsChanged += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "UserStatisticsChanged does not throw if event not bound"), AutoData]
+        public void UserStatisticsChanged_Does_Not_Throw_If_Event_Not_Bound(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = new UserStatistics(username, averageSpeed, uploadCount, fileCount, directoryCount);
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.UserStatisticsChanged += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Fact(DisplayName = "DistributedNetworkReset fires when handler raises")]
         public void DistributedNetworkReset_Fires_When_Handler_Raises()
         {

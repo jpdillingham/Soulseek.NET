@@ -135,6 +135,7 @@ namespace Soulseek
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
+            ServerMessageHandler.UserStatisticsChanged += (sender, e) => UserStatisticsChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomMembershipAdded += (sender, e) => PrivateRoomMembershipAdded?.Invoke(this, e);
             ServerMessageHandler.PrivateRoomMembershipRemoved += (sender, e) => PrivateRoomMembershipRemoved?.Invoke(this, e);
@@ -369,6 +370,11 @@ namespace Soulseek
         ///     Occurs when a user fails to connect.
         /// </summary>
         public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
+
+        /// <summary>
+        ///     Occurs when a user's statistics change.
+        /// </summary>
+        public event EventHandler<UserStatistics> UserStatisticsChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -1288,6 +1294,39 @@ namespace Soulseek
             }
 
             return GetUserPrivilegedInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously fetches statistics for the specified <paramref name="username"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Statistics are returned for any given username, regardless of online status, even if no user with that name exists
+        ///     or has ever existed. All values are zero in the case of an unknown user, and presumably the last reported values
+        ///     are returned when a user exists but is offline.
+        /// </remarks>
+        /// <param name="username">The username of the user for which to fetch statistics.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<UserStatistics> GetUserStatisticsAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user statistics (currently: {State})");
+            }
+
+            return GetUserStatisticsInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2967,6 +3006,21 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new SoulseekClientException($"Failed to get privileges for {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<UserStatistics> GetUserStatisticsInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var getStatisticsWait = Waiter.Wait<UserStatistics>(new WaitKey(MessageCode.Server.GetUserStats, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new UserStatisticsRequest(username), cancellationToken).ConfigureAwait(false);
+
+                return await getStatisticsWait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to retrieve statistics for user {Username}: {ex.Message}", ex);
             }
         }
 
