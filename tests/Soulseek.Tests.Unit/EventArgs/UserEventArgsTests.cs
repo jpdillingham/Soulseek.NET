@@ -23,17 +23,6 @@ namespace Soulseek.Tests.Unit
 
     public class UserEventArgsTests
     {
-        [Trait("Category", "UserStatusChangedEventArgs Instantiation")]
-        [Theory(DisplayName = "UserStatusChangedEventArgs Instantiates with the given data"), AutoData]
-        public void UserStatusChangedEventArgs_Instantiates_With_The_Given_Data(string username, UserPresence status, bool privileged)
-        {
-            var e = new UserStatusChangedEventArgs(new UserStatusResponse(username, status, privileged));
-
-            Assert.Equal(username, e.Username);
-            Assert.Equal(status, e.Status);
-            Assert.Equal(privileged, e.IsPrivileged);
-        }
-
         [Trait("Category", "UserCannotConnectEventArgs Instantiation")]
         [Theory(DisplayName = "UserCannotConnectEventArgs Instantiates with the given data"), AutoData]
         public void UserCannotConnectEventArgs_Instantiates_With_The_Given_Data(int token, string username)

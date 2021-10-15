@@ -824,11 +824,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles Server.GetStatus"), AutoData]
         public void Handles_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
-            UserStatusResponse result = null;
+            UserStatus result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatusResponse>()))
-                .Callback<WaitKey, UserStatusResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatus>()))
+                .Callback<WaitKey, UserStatus>((key, response) => result = response);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)
@@ -840,7 +840,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(null, message);
 
             Assert.Equal(username, result.Username);
-            Assert.Equal(status, result.Status);
+            Assert.Equal(status, result.Presence);
             Assert.Equal(privileged, result.IsPrivileged);
         }
 
@@ -950,14 +950,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(privileged ? 1 : 0))
                 .Build();
 
-            UserStatusChangedEventArgs eventArgs = null;
+            UserStatus eventArgs = null;
 
             handler.UserStatusChanged += (sender, args) => eventArgs = args;
 
             handler.HandleMessageRead(null, message);
 
             Assert.Equal(username, eventArgs.Username);
-            Assert.Equal(status, eventArgs.Status);
+            Assert.Equal(status, eventArgs.Presence);
             Assert.Equal(privileged, eventArgs.IsPrivileged);
         }
 
