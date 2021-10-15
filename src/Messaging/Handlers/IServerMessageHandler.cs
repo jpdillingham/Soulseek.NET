@@ -139,6 +139,6 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
-        event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
+        event EventHandler<UserStatus> UserStatusChanged;
     }
 }
