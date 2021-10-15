@@ -1,4 +1,4 @@
-﻿// <copyright file="UserStatsResponseFactory.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatisticsResponseFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a peer stats request.
     /// </summary>
-    internal static class UserStatisticssResponseFactory
+    internal static class UserStatisticsResponseFactory
     {
         /// <summary>
         ///     Creates a new instance of <see cref="UserStatistics"/> from the specified <paramref name="bytes"/>.
