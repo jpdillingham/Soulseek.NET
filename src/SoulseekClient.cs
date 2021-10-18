@@ -380,7 +380,7 @@ namespace Soulseek
         ///     Occurs when a watched user's status changes.
         /// </summary>
         /// <remarks>Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.</remarks>
-        public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
+        public event EventHandler<UserStatus> UserStatusChanged;
 
         /// <summary>
         ///     Gets the unresolved server address.
@@ -3028,12 +3028,10 @@ namespace Soulseek
         {
             try
             {
-                var getStatusWait = Waiter.Wait<UserStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
+                var getStatusWait = Waiter.Wait<UserStatus>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new UserStatusRequest(username), cancellationToken).ConfigureAwait(false);
 
-                var response = await getStatusWait.ConfigureAwait(false);
-
-                return new UserStatus(response.Status, response.IsPrivileged);
+                return await getStatusWait.ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {

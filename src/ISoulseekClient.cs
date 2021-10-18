@@ -235,7 +235,7 @@ namespace Soulseek
         ///     Occurs when a watched user's status changes.
         /// </summary>
         /// <remarks>Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.</remarks>
-        event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
+        event EventHandler<UserStatus> UserStatusChanged;
 
         /// <summary>
         ///     Gets the unresolved server address.

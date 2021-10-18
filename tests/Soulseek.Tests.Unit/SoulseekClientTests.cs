@@ -846,8 +846,8 @@ namespace Soulseek.Tests.Unit
         public void UserStatusChanged_Fires_When_Handler_Raises(string username, UserPresence presense, bool privileged)
         {
             var mock = new Mock<IServerMessageHandler>();
-            var expectedArgs = new UserStatusChangedEventArgs(username, presense, privileged);
-            UserStatusChangedEventArgs actualArgs = null;
+            var expectedArgs = new UserStatus(username, presense, privileged);
+            UserStatus actualArgs = null;
 
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
             {
@@ -864,7 +864,7 @@ namespace Soulseek.Tests.Unit
         public void UserStatusChanged_Does_Not_Throw_If_Event_Not_Bound(string username, UserPresence presense, bool privileged)
         {
             var mock = new Mock<IServerMessageHandler>();
-            var expectedArgs = new UserStatusChangedEventArgs(username, presense, privileged);
+            var expectedArgs = new UserStatus(username, presense, privileged);
 
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
             {

@@ -164,7 +164,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
-        public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
+        public event EventHandler<UserStatus> UserStatusChanged;
 
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
@@ -248,7 +248,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.RoomList:
-                        var roomList = RoomListResponse.FromByteArray(message);
+                        var roomList = RoomListResponseFactory.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code), roomList);
                         RoomListReceived?.Invoke(this, roomList);
                         break;
@@ -394,13 +394,13 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetStatus:
-                        var statusResponse = UserStatusResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, statusResponse.Username), statusResponse);
-                        UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statusResponse));
+                        var status = UserStatusResponseFactory.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, status.Username), status);
+                        UserStatusChanged?.Invoke(this, status);
                         break;
 
                     case MessageCode.Server.GetUserStats:
-                        var stats = UserStatisticssResponseFactory.FromByteArray(message);
+                        var stats = UserStatisticsResponseFactory.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, stats.Username), stats);
                         UserStatisticsChanged?.Invoke(this, stats);
                         break;
