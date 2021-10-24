@@ -906,6 +906,55 @@ namespace Soulseek
             return DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
+        public async Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (size.HasValue && size.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
+            }
+
+            if (startOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
+            }
+
+            token ??= GetNextToken();
+
+            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            {
+                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
+            }
+
+            if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
+            {
+                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
+            }
+
+            options ??= new TransferOptions();
+
+            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            var task = DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None, enqueuedTaskCompletionSource);
+
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+            return task;
+        }
+
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
         ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>
@@ -997,6 +1046,65 @@ namespace Soulseek
             options ??= new TransferOptions();
 
             return DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (size.HasValue && size.Value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
+            }
+
+            if (startOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
+            }
+
+            if (outputStream == null)
+            {
+                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null");
+            }
+
+            if (!outputStream.CanWrite)
+            {
+                throw new InvalidOperationException("The specified output stream is not writeable");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
+            }
+
+            token ??= GetNextToken();
+
+            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            {
+                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
+            }
+
+            if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
+            {
+                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
+            }
+
+            options ??= new TransferOptions();
+
+            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            var task = DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None, enqueuedTaskCompletionSource);
+
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+            return task;
         }
 
         /// <summary>
@@ -2534,7 +2642,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken, TaskCompletionSource<bool> enqueuedTaskCompletionSource = null)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
@@ -2551,11 +2659,11 @@ namespace Soulseek
             await using var memoryStream = new MemoryStream();
 #endif
 
-            var transfer = await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
+            var transfer = await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken, enqueuedTaskCompletionSource).ConfigureAwait(false);
             return (transfer, memoryStream.ToArray());
         }
 
-        private async Task<Transfer> DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken, TaskCompletionSource<bool> enqueuedTaskCompletionSource = null)
         {
             var download = new TransferInternal(TransferDirection.Download, username, filename, token, options)
             {
@@ -2636,6 +2744,7 @@ namespace Soulseek
                 {
                     // the download is remotely queued, so put it in the local queue.
                     UpdateState(TransferStates.Queued);
+                    enqueuedTaskCompletionSource?.SetResult(true);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
@@ -2737,7 +2846,10 @@ namespace Soulseek
             {
                 download.State = TransferStates.Rejected;
 
-                throw new TransferRejectedException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
+                var wrappedEx = new TransferRejectedException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
+
+                enqueuedTaskCompletionSource?.SetException(wrappedEx);
+                throw wrappedEx;
             }
             catch (OperationCanceledException ex)
             {
@@ -2745,6 +2857,8 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer cancelled", ex);
 
                 Diagnostic.Debug(ex.ToString());
+
+                enqueuedTaskCompletionSource?.SetException(ex);
                 throw;
             }
             catch (TimeoutException ex)
@@ -2753,6 +2867,8 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer timed out", ex);
 
                 Diagnostic.Debug(ex.ToString());
+
+                enqueuedTaskCompletionSource?.SetException(ex);
                 throw;
             }
             catch (Exception ex)
@@ -2764,10 +2880,14 @@ namespace Soulseek
 
                 if (ex is UserOfflineException)
                 {
+                    enqueuedTaskCompletionSource?.SetException(ex);
                     throw;
                 }
 
-                throw new SoulseekClientException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                var wrappedEx = new SoulseekClientException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+
+                enqueuedTaskCompletionSource?.SetException(wrappedEx);
+                throw wrappedEx;
             }
             finally
             {
