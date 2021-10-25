@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -906,53 +906,42 @@ namespace Soulseek
             return DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<(Transfer Transfer, byte[] Data)>> RequestDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrWhiteSpace(username))
+            // initialize the task we'll use for the actual download to a dummy value to get around compiler errors
+            // this is pretty gross, but downloadTask will have been reassigned by the time the code block that references it
+            // executes
+            Task<(Transfer Transfer, byte[] Data)> downloadTask = Task.FromResult<(Transfer Transfer, byte[] Data)>((null, null));
+
+            var requestedTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            options = new TransferOptions(stateChanged: async (args) =>
             {
-                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
-            }
+                if (new[] { TransferStates.Cancelled, TransferStates.Errored, TransferStates.TimedOut, TransferStates.Rejected }.Contains(args.Transfer.State))
+                {
+                    // if the transfer transitions to a terminal, non complete state, it was never requested successfully.
+                    // await the downloadTask to grab the exception that caused it to fail, then complete the task completion source
+                    // with it so the calling code gets the full picture.  the stack trace is unlikely to make a lot of sense here
+                    try
+                    {
+                        await downloadTask.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        requestedTaskCompletionSource.SetException(ex);
+                    }
+                }
+                else if (args.Transfer.State == TransferStates.Requested)
+                {
+                    requestedTaskCompletionSource.SetResult(true);
+                }
+            });
 
-            if (string.IsNullOrWhiteSpace(filename))
-            {
-                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
-            }
+            // this may throw immediately, if there are issues with the input
+            downloadTask = DownloadAsync(username, filename, size, startOffset, token.Value, options, cancellationToken);
 
-            if (size.HasValue && size.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
-            }
-
-            if (startOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
-            }
-
-            token ??= GetNextToken();
-
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
-            {
-                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
-            }
-
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
-            {
-                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
-            }
-
-            options ??= new TransferOptions();
-
-            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
-
-            var task = DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None, enqueuedTaskCompletionSource);
-
-            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
-            return task;
+            await requestedTaskCompletionSource.Task.ConfigureAwait(false);
+            return downloadTask;
         }
 
         /// <summary>
@@ -1048,63 +1037,39 @@ namespace Soulseek
             return DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> RequestDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrWhiteSpace(username))
+            Task<Transfer> downloadTask = Task.FromResult<Transfer>(null);
+
+            var requestedTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            options = new TransferOptions(stateChanged: async (args) =>
             {
-                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
-            }
+                if (args.Transfer.State.HasFlag(TransferStates.Completed) && args.Transfer.State.HasFlag(TransferStates.Errored))
+                {
+                    // if the transfer transitions to a terminal, non complete state, it was never requested successfully.
+                    // await the downloadTask to grab the exception that caused it to fail, then complete the task completion source
+                    // with it so the calling code gets the full picture.  the stack trace is unlikely to make a lot of sense here
+                    try
+                    {
+                        await downloadTask.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        requestedTaskCompletionSource.SetException(ex);
+                    }
+                }
+                else if (args.Transfer.State == TransferStates.Requested)
+                {
+                    requestedTaskCompletionSource.SetResult(true);
+                }
+            });
 
-            if (string.IsNullOrWhiteSpace(filename))
-            {
-                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
-            }
+            // this may throw immediately, if there are issues with the input
+            downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token, options, cancellationToken);
 
-            if (size.HasValue && size.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
-            }
-
-            if (startOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
-            }
-
-            if (outputStream == null)
-            {
-                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null");
-            }
-
-            if (!outputStream.CanWrite)
-            {
-                throw new InvalidOperationException("The specified output stream is not writeable");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
-            }
-
-            token ??= GetNextToken();
-
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
-            {
-                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
-            }
-
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
-            {
-                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
-            }
-
-            options ??= new TransferOptions();
-
-            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
-
-            var task = DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None, enqueuedTaskCompletionSource);
-
-            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
-            return task;
+            await requestedTaskCompletionSource.Task.ConfigureAwait(false);
+            return downloadTask;
         }
 
         /// <summary>
