@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -3131,7 +3131,7 @@ namespace Soulseek
             try
             {
                 // the server may send a CannotJoinRoom message, which will cause the wait to throw RoomJoinForbiddenException
-                // if the room is already joined, the server won't respond at all, which 
+                // if the room is already joined, the server won't respond at all, which will eventually cause a TimeoutException
                 var joinRoomWait = Waiter.Wait<RoomData>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new JoinRoomRequest(roomName, isPrivate), cancellationToken).ConfigureAwait(false);
 
