@@ -2607,7 +2607,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken, TaskCompletionSource<bool> enqueuedTaskCompletionSource = null)
+        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
@@ -2624,11 +2624,11 @@ namespace Soulseek
             await using var memoryStream = new MemoryStream();
 #endif
 
-            var transfer = await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken, enqueuedTaskCompletionSource).ConfigureAwait(false);
+            var transfer = await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
             return (transfer, memoryStream.ToArray());
         }
 
-        private async Task<Transfer> DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken, TaskCompletionSource<bool> enqueuedTaskCompletionSource = null)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new TransferInternal(TransferDirection.Download, username, filename, token, options)
             {
@@ -2709,7 +2709,6 @@ namespace Soulseek
                 {
                     // the download is remotely queued, so put it in the local queue.
                     UpdateState(TransferStates.Queued);
-                    enqueuedTaskCompletionSource?.SetResult(true);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
@@ -2811,10 +2810,7 @@ namespace Soulseek
             {
                 download.State = TransferStates.Rejected;
 
-                var wrappedEx = new TransferRejectedException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
-
-                enqueuedTaskCompletionSource?.SetException(wrappedEx);
-                throw wrappedEx;
+                throw new TransferRejectedException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
@@ -2823,7 +2819,6 @@ namespace Soulseek
 
                 Diagnostic.Debug(ex.ToString());
 
-                enqueuedTaskCompletionSource?.SetException(ex);
                 throw;
             }
             catch (TimeoutException ex)
@@ -2833,7 +2828,6 @@ namespace Soulseek
 
                 Diagnostic.Debug(ex.ToString());
 
-                enqueuedTaskCompletionSource?.SetException(ex);
                 throw;
             }
             catch (Exception ex)
@@ -2845,14 +2839,10 @@ namespace Soulseek
 
                 if (ex is UserOfflineException)
                 {
-                    enqueuedTaskCompletionSource?.SetException(ex);
                     throw;
                 }
 
-                var wrappedEx = new SoulseekClientException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
-
-                enqueuedTaskCompletionSource?.SetException(wrappedEx);
-                throw wrappedEx;
+                throw new SoulseekClientException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             finally
             {
