@@ -2781,7 +2781,7 @@ namespace Soulseek
                 {
                     try
                     {
-                        await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                        await outputStream.FlushAsync().ConfigureAwait(false);
                     }
                     finally
                     {
@@ -3631,7 +3631,7 @@ namespace Soulseek
                     {
                         // fetch the endpoint again, in case it failed or was never fetched because the semaphore wasn't obtained.
                         // this allows us to send UploadDenied for cancelled queued files
-                        endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
+                        endpoint = await GetUserEndPointAsync(username).ConfigureAwait(false);
                         var messageConnection = await PeerConnectionManager
                             .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                             .ConfigureAwait(false);
