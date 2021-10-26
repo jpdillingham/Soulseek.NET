@@ -3532,7 +3532,7 @@ namespace Soulseek
                 // threads waiting on it, and it is added back after it is awaited above.
                 UploadSemaphores.TryRemove(username, out var _);
 
-                // make sure we successfully obtained the semaphore before releasing it this will be false if the semaphore wait
+                // make sure we successfully obtained the semaphore before releasing it. this will be false if the semaphore wait
                 // threw due to cancellation
                 if (semaphoreAcquired)
                 {
@@ -3542,16 +3542,19 @@ namespace Soulseek
 
                 upload.Connection?.Dispose();
 
-                if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
+                if (!upload.State.HasFlag(TransferStates.Succeeded))
                 {
+                    // if the upload failed, try to send a message to the user informing them.
                     try
                     {
-                        // if the upload failed, send a message to the user informing them.
-                        // but only if it wasn't cancelled
+                        // fetch the endpoint again, in case it failed or was never fetched because the semaphore wasn't obtained.
+                        // this allows us to send UploadDenied for cancelled queued files
+                        endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                         var messageConnection = await PeerConnectionManager
                             .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                             .ConfigureAwait(false);
 
+                        // send UploadDenied if we cancelled the transfer.  this should prevent the remote client from re-enqueuing
                         if (upload.State.HasFlag(TransferStates.Cancelled))
                         {
                             await messageConnection.WriteAsync(new UploadDenied(filename, "Cancelled")).ConfigureAwait(false);
@@ -3563,7 +3566,9 @@ namespace Soulseek
                     }
                     catch
                     {
-                        // swallow any exceptions here
+                        // swallow any exceptions here.  the user may be offline, we might fail to connect,
+                        // we might fail to send the message.  we don't *need* this to succeed, and there's a good chance
+                        // that it won't if the user lost connectivity, causing the upload to fail in the first place
                     }
                 }
 
