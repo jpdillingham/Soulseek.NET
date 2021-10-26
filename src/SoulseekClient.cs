@@ -2581,11 +2581,7 @@ namespace Soulseek
                         .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
                 }
-#if NETSTANDARD2_0
-                else if (transferRequestAcknowledgement.Message.Contains("not shared"))
-#else
-                else if (transferRequestAcknowledgement.Message.Contains("not shared", StringComparison.InvariantCultureIgnoreCase))
-#endif
+                else if (!string.Equals(transferRequestAcknowledgement.Message.TrimEnd('.'), "Queued", StringComparison.OrdinalIgnoreCase))
                 {
                     throw new TransferRejectedException(transferRequestAcknowledgement.Message);
                 }
