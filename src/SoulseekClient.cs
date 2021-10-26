@@ -2738,7 +2738,7 @@ namespace Soulseek
                 {
                     try
                     {
-                        await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                        await outputStream.FlushAsync().ConfigureAwait(false);
                     }
                     finally
                     {
