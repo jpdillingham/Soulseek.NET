@@ -3542,13 +3542,14 @@ namespace Soulseek
 
                 upload.Connection?.Dispose();
 
-                if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
+                if (!upload.State.HasFlag(TransferStates.Succeeded) && !upload.State.HasFlag(TransferStates.Cancelled) && endpoint != default)
                 {
                     try
                     {
                         // if the upload failed, send a message to the user informing them.
+                        // but only if it wasn't cancelled
                         var messageConnection = await PeerConnectionManager
-                            .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
+                            .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                             .ConfigureAwait(false);
 
                         await messageConnection.WriteAsync(new UploadFailed(filename)).ConfigureAwait(false);
