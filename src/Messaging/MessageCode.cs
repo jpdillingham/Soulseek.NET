@@ -157,7 +157,7 @@ namespace Soulseek.Messaging
             /// <summary>
             ///     50
             /// </summary>
-            QueueFailed = 50,
+            UploadDenied = 50,
 
             /// <summary>
             ///     51

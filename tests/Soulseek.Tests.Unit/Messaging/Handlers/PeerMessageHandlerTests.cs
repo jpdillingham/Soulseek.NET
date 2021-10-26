@@ -351,13 +351,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Throws TransferRequest wait on PeerQueueFailed"), AutoData]
-        public void Throws_TransferRequest_Wait_On_PeerQueueFailed(string username, IPEndPoint endpoint, string filename, string message)
+        [Theory(DisplayName = "Throws TransferRequest wait on PeerUploadDenied"), AutoData]
+        public void Throws_TransferRequest_Wait_On_PeerUploadDenied(string username, IPEndPoint endpoint, string filename, string message)
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.QueueFailed)
+                .WriteCode(MessageCode.Peer.UploadDenied)
                 .WriteString(filename)
                 .WriteString(message)
                 .Build();
@@ -853,7 +853,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
             var expectedTransferResponse = new TransferResponse(token, "Enqueue failed due to internal error").ToByteArray();
-            var expectedQueueFailedResponse = new QueueFailedResponse(filename, "Enqueue failed due to internal error").ToByteArray();
+            var expectedQueueFailedResponse = new UploadDenied(filename, "Enqueue failed due to internal error").ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
@@ -870,7 +870,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
             var expectedTransferResponse = new TransferResponse(token, rejectMessage).ToByteArray();
-            var expectedQueueFailedResponse = new QueueFailedResponse(filename, rejectMessage).ToByteArray();
+            var expectedQueueFailedResponse = new UploadDenied(filename, rejectMessage).ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
