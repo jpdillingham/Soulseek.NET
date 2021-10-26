@@ -1723,6 +1723,42 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]
+        [Theory(DisplayName = "UploadFromByteArrayAsync writes UploadDenied on cancellation"), AutoData]
+        public async Task UploadFromByteArrayAsync_Writes_UploadDenied_On_Cancellation(string username, string filename, byte[] data, int token, IPEndPoint endpoint)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var peerConn = new Mock<IMessageConnection>();
+            peerConn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            peerConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException("Cancelled"));
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            using (var s = new SoulseekClient(null, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+
+            var expectedBytes = new UploadDenied(filename, "Cancelled").ToByteArray();
+            peerConn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
+        }
+
+        [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws SoulseekClientException and ConnectionException on transfer exception"), AutoData]
         public async Task UploadFromByteArrayAsync_Throws_SoulseekClientException_And_ConnectionException_On_Transfer_Exception(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
