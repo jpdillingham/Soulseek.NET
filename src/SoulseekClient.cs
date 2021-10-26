@@ -3542,7 +3542,7 @@ namespace Soulseek
 
                 upload.Connection?.Dispose();
 
-                if (!upload.State.HasFlag(TransferStates.Succeeded) && !upload.State.HasFlag(TransferStates.Cancelled) && endpoint != default)
+                if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
                 {
                     try
                     {
@@ -3552,7 +3552,14 @@ namespace Soulseek
                             .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                             .ConfigureAwait(false);
 
-                        await messageConnection.WriteAsync(new UploadFailed(filename)).ConfigureAwait(false);
+                        if (upload.State.HasFlag(TransferStates.Cancelled))
+                        {
+                            await messageConnection.WriteAsync(new UploadDenied(filename, "Cancelled")).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await messageConnection.WriteAsync(new UploadFailed(filename)).ConfigureAwait(false);
+                        }
                     }
                     catch
                     {
