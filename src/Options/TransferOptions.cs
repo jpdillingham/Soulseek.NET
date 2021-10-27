@@ -90,5 +90,25 @@ namespace Soulseek
         ///     Gets the Action to invoke when the transfer changes state. (Default = no action).
         /// </summary>
         public Action<TransferStateChangedEventArgs> StateChanged { get; }
+
+        /// <summary>
+        ///     Returns a new instance with <see cref="StateChanged"/> wrapped in a new delegate that first invokes <paramref name="stateChanged"/>.
+        /// </summary>
+        /// <param name="stateChanged">A new delegate to execute prior to the existing delegate.</param>
+        /// <returns>A new instance with the combined StateChanged delegates.</returns>
+        public TransferOptions WithAdditionalStateChanged(Action<TransferStateChangedEventArgs> stateChanged)
+        {
+            return new TransferOptions(
+                Governor,
+                stateChanged: (args) =>
+                {
+                    stateChanged?.Invoke(args);
+                    StateChanged?.Invoke(args);
+                },
+                ProgressUpdated,
+                MaximumLingerTime,
+                DisposeInputStreamOnCompletion,
+                DisposeOutputStreamOnCompletion);
+        }
     }
 }
