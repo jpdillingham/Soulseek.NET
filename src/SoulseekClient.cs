@@ -938,7 +938,7 @@ namespace Soulseek
             });
 
             // this may throw immediately, if there are issues with the input
-            downloadTask = DownloadAsync(username, filename, size, startOffset, token.Value, options, cancellationToken);
+            downloadTask = DownloadAsync(username, filename, size, startOffset, token, options, cancellationToken);
 
             await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
             return downloadTask;
@@ -1069,7 +1069,7 @@ namespace Soulseek
             });
 
             // this may throw immediately, if there are issues with the input
-            downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken);
+            downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token, options, cancellationToken);
 
             await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
             return downloadTask;
