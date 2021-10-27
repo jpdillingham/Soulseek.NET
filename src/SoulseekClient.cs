@@ -1037,7 +1037,7 @@ namespace Soulseek
             return DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task<Task<Transfer>> RequestDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             Task<Transfer> downloadTask = Task.FromResult<Transfer>(null);
 
