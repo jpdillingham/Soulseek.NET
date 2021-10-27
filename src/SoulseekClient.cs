@@ -906,41 +906,41 @@ namespace Soulseek
             return DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task<Task<(Transfer Transfer, byte[] Data)>> RequestDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
-            // initialize the task we'll use for the actual download to a dummy value to get around compiler errors
-            // this is pretty gross, but downloadTask will have been reassigned by the time the code block that references it
-            // executes
             Task<(Transfer Transfer, byte[] Data)> downloadTask = Task.FromResult<(Transfer Transfer, byte[] Data)>((null, null));
 
-            var requestedTaskCompletionSource = new TaskCompletionSource<bool>();
+            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
-            options = new TransferOptions(stateChanged: async (args) =>
+            options ??= new TransferOptions();
+            options = options.WithAdditionalStateChanged(async (args) =>
             {
-                if (new[] { TransferStates.Cancelled, TransferStates.Errored, TransferStates.TimedOut, TransferStates.Rejected }.Contains(args.Transfer.State))
+                var state = args.Transfer.State;
+
+                if (state == TransferStates.Queued)
                 {
-                    // if the transfer transitions to a terminal, non complete state, it was never requested successfully.
-                    // await the downloadTask to grab the exception that caused it to fail, then complete the task completion source
-                    // with it so the calling code gets the full picture.  the stack trace is unlikely to make a lot of sense here
+                    enqueuedTaskCompletionSource.TrySetResult(true);
+                }
+                else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
+                {
+                    // if the transfer transitions to a terminal, non successful state,
+                    // await the downloadTask to grab the exception that caused it to fail, then try to complete the task completion source
+                    // with it so the calling code gets the full picture.  the stack trace is unlikely to make a lot of sense here.
                     try
                     {
                         await downloadTask.ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
-                        requestedTaskCompletionSource.SetException(ex);
+                        enqueuedTaskCompletionSource.TrySetException(ex);
                     }
-                }
-                else if (args.Transfer.State == TransferStates.Requested)
-                {
-                    requestedTaskCompletionSource.SetResult(true);
                 }
             });
 
             // this may throw immediately, if there are issues with the input
             downloadTask = DownloadAsync(username, filename, size, startOffset, token.Value, options, cancellationToken);
 
-            await requestedTaskCompletionSource.Task.ConfigureAwait(false);
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
             return downloadTask;
         }
 
@@ -1041,34 +1041,37 @@ namespace Soulseek
         {
             Task<Transfer> downloadTask = Task.FromResult<Transfer>(null);
 
-            var requestedTaskCompletionSource = new TaskCompletionSource<bool>();
+            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
-            options = new TransferOptions(stateChanged: async (args) =>
+            options ??= new TransferOptions();
+            options = options.WithAdditionalStateChanged(async (args) =>
             {
-                if (args.Transfer.State.HasFlag(TransferStates.Completed) && args.Transfer.State.HasFlag(TransferStates.Errored))
+                var state = args.Transfer.State;
+
+                if (state == TransferStates.Queued)
                 {
-                    // if the transfer transitions to a terminal, non complete state, it was never requested successfully.
-                    // await the downloadTask to grab the exception that caused it to fail, then complete the task completion source
-                    // with it so the calling code gets the full picture.  the stack trace is unlikely to make a lot of sense here
+                    enqueuedTaskCompletionSource.TrySetResult(true);
+                }
+                else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
+                {
+                    // if the transfer transitions to a terminal, non successful state,
+                    // await the downloadTask to grab the exception that caused it to fail, then try to complete the task completion source
+                    // with it so the calling code gets the full picture.  the stack trace is unlikely to make a lot of sense here.
                     try
                     {
                         await downloadTask.ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
-                        requestedTaskCompletionSource.SetException(ex);
+                        enqueuedTaskCompletionSource.TrySetException(ex);
                     }
-                }
-                else if (args.Transfer.State == TransferStates.Requested)
-                {
-                    requestedTaskCompletionSource.SetResult(true);
                 }
             });
 
             // this may throw immediately, if there are issues with the input
-            downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token, options, cancellationToken);
+            downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken);
 
-            await requestedTaskCompletionSource.Task.ConfigureAwait(false);
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
             return downloadTask;
         }
 
