@@ -15,7 +15,7 @@
 //     along with this program.  If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tests.Unit
+namespace Soulseek.Tests.Unit.Options
 {
     using System;
     using System.Threading;
@@ -65,6 +65,63 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(o.StateChanged);
             Assert.Null(o.ProgressUpdated);
+        }
+
+        [Trait("Category", "WithAdditionalStateChanged")]
+        [Theory(DisplayName = "WithAdditionalStateChanged returns copy other than StateChanged"), AutoData]
+        public void WithAdditionalStateChanged_Returns_Copy_Other_Than_StateChanged(
+            bool disposeInput,
+            bool disposeOutput,
+            Func<Transfer, CancellationToken, Task> governor,
+            Action<TransferStateChangedEventArgs> stateChanged,
+            int maximumLingerTime,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated)
+        {
+            var n = new TransferOptions(
+                governor,
+                stateChanged,
+                progressUpdated,
+                maximumLingerTime,
+                disposeInput,
+                disposeOutput);
+
+            var o = n.WithAdditionalStateChanged(null);
+
+            Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
+            Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
+            Assert.Equal(governor, o.Governor);
+            Assert.Equal(progressUpdated, o.ProgressUpdated);
+            Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+
+            Assert.NotEqual(stateChanged, o.StateChanged);
+        }
+
+        [Trait("Category", "WithAdditionalStateChanged")]
+        [Fact(DisplayName = "WithAdditionalStateChanged returns copy that executes both StateChanged")]
+        public void WithAdditionalStateChanged_Returns_Copy_That_Executes_Both_StateChanged()
+        {
+            var one = false;
+            var two = false;
+
+            var n = new TransferOptions(stateChanged: (_) => { one = true; });
+
+            var o = n.WithAdditionalStateChanged((_) => { two = true; });
+
+            o.StateChanged(null);
+
+            Assert.True(one);
+            Assert.True(two);
+        }
+
+        [Trait("Category", "WithAdditionalStateChanged")]
+        [Fact(DisplayName = "WithAdditionalStateChanged returns copy that does not throw if both StateChanged are null")]
+        public void WithAdditionalStateChanged_Returns_Copy_That_Does_Not_Throw_If_Both_StateChanged_Are_Null()
+        {
+            var n = new TransferOptions(stateChanged: null);
+
+            var o = n.WithAdditionalStateChanged(null);
+
+            var ex = Record.Exception(() => o.StateChanged(null));
         }
     }
 }
