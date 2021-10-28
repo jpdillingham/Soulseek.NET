@@ -190,7 +190,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Distributed.BranchLevel:
-                        var branchLevel = DistributedBranchLevel.FromByteArray(message);
+                        var branchLevel = DistributedBranchLevelCommand.FromByteArray(message);
 
                         if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
@@ -200,7 +200,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
-                        var branchRoot = DistributedBranchRoot.FromByteArray(message);
+                        var branchRoot = DistributedBranchRootResponse.FromByteArray(message);
 
                         if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
@@ -210,7 +210,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Distributed.ChildDepth:
-                        var childDepth = DistributedChildDepth.FromByteArray(message);
+                        var childDepth = DistributedChildDepthCommand.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), childDepth.Depth);
                         break;
 

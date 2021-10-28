@@ -1,4 +1,4 @@
-﻿// <copyright file="ServerPing.cs" company="JP Dillingham">
+﻿// <copyright file="ServerPingCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,31 +20,31 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A server ping.
     /// </summary>
-    internal sealed class ServerPing : IIncomingMessage, IOutgoingMessage
+    internal sealed class ServerPingCommand : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ServerPing"/> class.
+        ///     Initializes a new instance of the <see cref="ServerPingCommand"/> class.
         /// </summary>
-        public ServerPing()
+        public ServerPingCommand()
         {
         }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="ServerPing"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="ServerPingCommand"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static ServerPing FromByteArray(byte[] bytes)
+        public static ServerPingCommand FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.Ping)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(ServerPing)} (expected: {(int)MessageCode.Server.Ping}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(ServerPingCommand)} (expected: {(int)MessageCode.Server.Ping}, received: {(int)code})");
             }
 
-            return new ServerPing();
+            return new ServerPingCommand();
         }
 
         /// <summary>

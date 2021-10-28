@@ -39,7 +39,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="UserCannotConnectEventArgs"/> class.
         /// </summary>
         /// <param name="cannotConnect">The server message which generated the event.</param>
-        internal UserCannotConnectEventArgs(CannotConnect cannotConnect)
+        internal UserCannotConnectEventArgs(CannotConnectResponse cannotConnect)
             : this(cannotConnect.Token, cannotConnect.Username)
         {
         }

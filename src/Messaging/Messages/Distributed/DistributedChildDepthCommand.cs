@@ -1,4 +1,4 @@
-﻿// <copyright file="DistributedChildDepth.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedChildDepthCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs distributed parents of a child's child depth.
     /// </summary>
-    internal sealed class DistributedChildDepth : IIncomingMessage, IOutgoingMessage
+    internal sealed class DistributedChildDepthCommand : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DistributedChildDepth"/> class.
+        ///     Initializes a new instance of the <see cref="DistributedChildDepthCommand"/> class.
         /// </summary>
         /// <param name="depth">The current depth of the child.</param>
-        public DistributedChildDepth(int depth)
+        public DistributedChildDepthCommand(int depth)
         {
             Depth = depth;
         }
@@ -37,23 +37,23 @@ namespace Soulseek.Messaging.Messages
         public int Depth { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="DistributedChildDepth"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="DistributedChildDepthCommand"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static DistributedChildDepth FromByteArray(byte[] bytes)
+        public static DistributedChildDepthCommand FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Distributed>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Distributed.ChildDepth)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(DistributedChildDepth)} (expected: {(int)MessageCode.Distributed.ChildDepth}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(DistributedChildDepthCommand)} (expected: {(int)MessageCode.Distributed.ChildDepth}, received: {(int)code})");
             }
 
             var depth = reader.ReadInteger();
 
-            return new DistributedChildDepth(depth);
+            return new DistributedChildDepthCommand(depth);
         }
 
         /// <summary>

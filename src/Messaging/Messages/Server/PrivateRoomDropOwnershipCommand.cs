@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateRoomDropOwnership.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateRoomDropOwnershipCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The command to drop ownership of a private room.
     /// </summary>
-    internal sealed class PrivateRoomDropOwnership : IOutgoingMessage
+    internal sealed class PrivateRoomDropOwnershipCommand : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateRoomDropOwnership"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateRoomDropOwnershipCommand"/> class.
         /// </summary>
         /// <param name="roomName">The room for which to drop ownership.</param>
-        public PrivateRoomDropOwnership(string roomName)
+        public PrivateRoomDropOwnershipCommand(string roomName)
         {
             RoomName = roomName;
         }

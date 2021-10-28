@@ -1,4 +1,4 @@
-﻿// <copyright file="UploadDenied.cs" company="JP Dillingham">
+﻿// <copyright file="UploadFailedNotification.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -18,50 +18,42 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     A notification that an upload has been denied.
+    ///     A notification that an upload has failed.
     /// </summary>
-    internal sealed class UploadDenied : IIncomingMessage, IOutgoingMessage
+    internal sealed class UploadFailedNotification : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UploadDenied"/> class.
+        ///     Initializes a new instance of the <see cref="UploadFailedNotification"/> class.
         /// </summary>
-        /// <param name="filename">The filename for which the upload was denied.</param>
-        /// <param name="message">The reason for the denial.</param>
-        public UploadDenied(string filename, string message)
+        /// <param name="filename">The filename which failed to be uploaded.</param>
+        public UploadFailedNotification(string filename)
         {
             Filename = filename;
-            Message = message;
         }
 
         /// <summary>
-        ///     Gets the filename for which the upload was denied.
+        ///     Gets the filename which failed to be uploaded.
         /// </summary>
         public string Filename { get; }
 
         /// <summary>
-        ///     Gets the reason for the denial.
-        /// </summary>
-        public string Message { get; }
-
-        /// <summary>
-        ///     Creates a new instance of <see cref="UploadDenied"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="UploadFailedNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static UploadDenied FromByteArray(byte[] bytes)
+        public static UploadFailedNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Peer.UploadDenied)
+            if (code != MessageCode.Peer.UploadFailed)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(UploadDenied)} (expected: {(int)MessageCode.Peer.UploadDenied}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(UploadFailedNotification)} (expected: {(int)MessageCode.Peer.UploadFailed}, received: {(int)code})");
             }
 
             var filename = reader.ReadString();
-            var msg = reader.ReadString();
 
-            return new UploadDenied(filename, msg);
+            return new UploadFailedNotification(filename);
         }
 
         /// <summary>
@@ -71,9 +63,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Peer.UploadDenied)
+                .WriteCode(MessageCode.Peer.UploadFailed)
                 .WriteString(Filename)
-                .WriteString(Message)
                 .Build();
         }
     }

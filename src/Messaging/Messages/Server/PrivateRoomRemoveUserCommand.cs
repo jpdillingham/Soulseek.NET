@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateRoomRemoveUser.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateRoomRemoveUserCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The command and response to a removal of a member from a private room.
     /// </summary>
-    internal sealed class PrivateRoomRemoveUser : IIncomingMessage, IOutgoingMessage
+    internal sealed class PrivateRoomRemoveUserCommand : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateRoomRemoveUser"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateRoomRemoveUserCommand"/> class.
         /// </summary>
         /// <param name="roomName">The room to which to add the user.</param>
         /// <param name="username">The username of the user to add.</param>
-        public PrivateRoomRemoveUser(string roomName, string username)
+        public PrivateRoomRemoveUserCommand(string roomName, string username)
         {
             RoomName = roomName;
             Username = username;
@@ -44,11 +44,11 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PrivateRoomRemoveUser"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PrivateRoomRemoveUserCommand"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PrivateRoomRemoveUser FromByteArray(byte[] bytes)
+        public static PrivateRoomRemoveUserCommand FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -61,7 +61,7 @@ namespace Soulseek.Messaging.Messages
             var roomName = reader.ReadString();
             var username = reader.ReadString();
 
-            return new PrivateRoomRemoveUser(roomName, username);
+            return new PrivateRoomRemoveUserCommand(roomName, username);
         }
 
         /// <summary>

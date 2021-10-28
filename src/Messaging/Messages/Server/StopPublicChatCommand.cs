@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateRoomDropMembership.cs" company="JP Dillingham">
+﻿// <copyright file="StopPublicChatCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -18,23 +18,16 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     The command to drop membership in a private chat room.
+    ///     Stops receiving public chat messages.
     /// </summary>
-    internal sealed class PrivateRoomDropMembership : IOutgoingMessage
+    internal sealed class StopPublicChatCommand : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateRoomDropMembership"/> class.
+        ///     Initializes a new instance of the <see cref="StopPublicChatCommand"/> class.
         /// </summary>
-        /// <param name="roomName">The room for which to drop membership.</param>
-        public PrivateRoomDropMembership(string roomName)
+        public StopPublicChatCommand()
         {
-            RoomName = roomName;
         }
-
-        /// <summary>
-        ///     Gets the room for which to drop membership.
-        /// </summary>
-        public string RoomName { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -43,8 +36,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.PrivateRoomDropMembership)
-                .WriteString(RoomName)
+                .WriteCode(MessageCode.Server.StopPublicChat)
                 .Build();
         }
     }

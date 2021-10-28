@@ -1,4 +1,4 @@
-﻿// <copyright file="NewPassword.cs" company="JP Dillingham">
+﻿// <copyright file="NewPasswordCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The command and response to a password change.
     /// </summary>
-    internal sealed class NewPassword : IIncomingMessage, IOutgoingMessage
+    internal sealed class NewPasswordCommand : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="NewPassword"/> class.
+        ///     Initializes a new instance of the <see cref="NewPasswordCommand"/> class.
         /// </summary>
         /// <param name="password">The new password.</param>
-        public NewPassword(string password)
+        public NewPasswordCommand(string password)
         {
             Password = password;
         }
@@ -37,11 +37,11 @@ namespace Soulseek.Messaging.Messages
         public string Password { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="NewPassword"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="NewPasswordCommand"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static NewPassword FromByteArray(byte[] bytes)
+        public static NewPasswordCommand FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -53,7 +53,7 @@ namespace Soulseek.Messaging.Messages
 
             var password = reader.ReadString();
 
-            return new NewPassword(password);
+            return new NewPasswordCommand(password);
         }
 
         /// <summary>

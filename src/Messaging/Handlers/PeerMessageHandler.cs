@@ -213,7 +213,7 @@ namespace Soulseek.Messaging.Handlers
 
                         if (queueRejected)
                         {
-                            await connection.WriteAsync(new UploadDenied(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
+                            await connection.WriteAsync(new UploadDeniedNotification(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
                         }
                         else
                         {
@@ -245,7 +245,7 @@ namespace Soulseek.Messaging.Handlers
                             if (transferRejected)
                             {
                                 await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage)).ConfigureAwait(false);
-                                await connection.WriteAsync(new UploadDenied(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
+                                await connection.WriteAsync(new UploadDeniedNotification(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
                             }
                             else
                             {
@@ -257,7 +257,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.UploadDenied:
-                        var uploadDeniedResponse = UploadDenied.FromByteArray(message);
+                        var uploadDeniedResponse = UploadDeniedNotification.FromByteArray(message);
                         SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, uploadDeniedResponse.Filename), new TransferRejectedException(uploadDeniedResponse.Message));
                         break;
 
@@ -273,7 +273,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.UploadFailed:
-                        var uploadFailedResponse = UploadFailed.FromByteArray(message);
+                        var uploadFailedResponse = UploadFailedNotification.FromByteArray(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
