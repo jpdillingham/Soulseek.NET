@@ -2014,7 +2014,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StartPublicChat(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StartPublicChatCommand(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2040,7 +2040,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StopPublicChat(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StopPublicChatCommand(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2809,7 +2809,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomDropMembership(roomName), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomDropMembershipCommand(roomName), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -2826,7 +2826,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomDropOwnership(roomName), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomDropOwnershipCommand(roomName), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
