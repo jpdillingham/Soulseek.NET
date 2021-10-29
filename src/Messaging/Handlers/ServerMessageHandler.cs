@@ -225,12 +225,12 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.NewPassword:
-                        var confirmedPassword = NewPasswordCommand.FromByteArray(message).Password;
+                        var confirmedPassword = NewPassword.FromByteArray(message).Password;
                         SoulseekClient.Waiter.Complete(new WaitKey(code), confirmedPassword);
                         break;
 
                     case MessageCode.Server.PrivateRoomToggle:
-                        var acceptInvitations = PrivateRoomToggleCommand.FromByteArray(message).AcceptInvitations;
+                        var acceptInvitations = PrivateRoomToggle.FromByteArray(message).AcceptInvitations;
                         SoulseekClient.Waiter.Complete(new WaitKey(code), acceptInvitations);
                         break;
 
@@ -314,7 +314,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.CannotConnect:
-                        var cannotConnect = CannotConnectResponse.FromByteArray(message);
+                        var cannotConnect = CannotConnect.FromByteArray(message);
                         Diagnostic.Debug($"Received CannotConnect message for token {cannotConnect.Token}{(!string.IsNullOrEmpty(cannotConnect.Username) ? $" from user {cannotConnect.Username}" : string.Empty)}");
 
                         SoulseekClient.SearchResponder.TryDiscard(cannotConnect.Token);
@@ -327,7 +327,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.CannotJoinRoom:
-                        var cannotJoinRoom = CannotJoinRoomNotification.FromByteArray(message);
+                        var cannotJoinRoom = CannotJoinRoom.FromByteArray(message);
                         SoulseekClient.Waiter.Throw(
                             new WaitKey(MessageCode.Server.JoinRoom, cannotJoinRoom.RoomName),
                             new RoomJoinForbiddenException($"The server rejected the request to join room {cannotJoinRoom.RoomName}"));
@@ -472,22 +472,22 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.PrivateRoomAddUser:
-                        var privateRoomAddUserResponse = PrivateRoomAddUserCommand.FromByteArray(message);
+                        var privateRoomAddUserResponse = PrivateRoomAddUser.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddUserResponse.RoomName, privateRoomAddUserResponse.Username));
                         break;
 
                     case MessageCode.Server.PrivateRoomRemoveUser:
-                        var privateRoomRemoveUserResponse = PrivateRoomRemoveUserCommand.FromByteArray(message);
+                        var privateRoomRemoveUserResponse = PrivateRoomRemoveUser.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveUserResponse.RoomName, privateRoomRemoveUserResponse.Username));
                         break;
 
                     case MessageCode.Server.PrivateRoomAddOperator:
-                        var privateRoomAddOperatorResponse = PrivateRoomAddOperatorCommand.FromByteArray(message);
+                        var privateRoomAddOperatorResponse = PrivateRoomAddOperator.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomAddOperatorResponse.RoomName, privateRoomAddOperatorResponse.Username));
                         break;
 
                     case MessageCode.Server.PrivateRoomRemoveOperator:
-                        var privateRoomRemoveOperatorResponse = PrivateRoomRemoveOperatorCommand.FromByteArray(message);
+                        var privateRoomRemoveOperatorResponse = PrivateRoomRemoveOperator.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, privateRoomRemoveOperatorResponse.RoomName, privateRoomRemoveOperatorResponse.Username));
                         break;
 

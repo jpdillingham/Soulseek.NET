@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateRoomToggleCommand.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateRoomToggle.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The command and response to a request to toggle receipt of private room invitations.
     /// </summary>
-    internal sealed class PrivateRoomToggleCommand : IIncomingMessage, IOutgoingMessage
+    internal sealed class PrivateRoomToggle : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateRoomToggleCommand"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateRoomToggle"/> class.
         /// </summary>
         /// <param name="acceptInvitations">A value indicating whether to accept private room invitations.</param>
-        public PrivateRoomToggleCommand(bool acceptInvitations)
+        public PrivateRoomToggle(bool acceptInvitations)
         {
             AcceptInvitations = acceptInvitations;
         }
@@ -37,11 +37,11 @@ namespace Soulseek.Messaging.Messages
         public bool AcceptInvitations { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PrivateRoomToggleCommand"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PrivateRoomToggle"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PrivateRoomToggleCommand FromByteArray(byte[] bytes)
+        public static PrivateRoomToggle FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -53,7 +53,7 @@ namespace Soulseek.Messaging.Messages
 
             var acceptInvitations = reader.ReadByte() > 0;
 
-            return new PrivateRoomToggleCommand(acceptInvitations);
+            return new PrivateRoomToggle(acceptInvitations);
         }
 
         /// <summary>

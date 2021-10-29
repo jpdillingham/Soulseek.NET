@@ -1501,7 +1501,7 @@ namespace Soulseek
             try
             {
                 var wait = Waiter.Wait(new WaitKey(MessageCode.Server.Ping), null, cancellationToken);
-                var ping = new ServerPingCommand();
+                var ping = new ServerPing();
 
                 var sw = new Stopwatch();
                 sw.Start();
@@ -2014,7 +2014,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StartPublicChatCommand(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StartPublicChat(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2040,7 +2040,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StopPublicChatCommand(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StopPublicChat(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2256,7 +2256,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddUser, roomName, username);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomAddUserCommand(roomName, username), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomAddUser(roomName, username), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -2273,7 +2273,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomAddOperator, roomName, username);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomAddOperatorCommand(roomName, username), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomAddOperator(roomName, username), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -2396,7 +2396,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.NewPassword);
                 var wait = Waiter.Wait<string>(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new NewPasswordCommand(password), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new NewPassword(password), cancellationToken).ConfigureAwait(false);
 
                 response = await wait.ConfigureAwait(false);
             }
@@ -2809,7 +2809,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomDropMembershipCommand(roomName), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomDropMembership(roomName), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -2826,7 +2826,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomDropOwnershipCommand(roomName), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomDropOwnership(roomName), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -3210,7 +3210,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveUser, roomName, username);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomRemoveUserCommand(roomName, username), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomRemoveUser(roomName, username), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -3227,7 +3227,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoveOperator, roomName, username);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomRemoveOperatorCommand(roomName, username), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomRemoveOperator(roomName, username), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }

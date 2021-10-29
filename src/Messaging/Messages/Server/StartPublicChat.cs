@@ -1,4 +1,4 @@
-﻿// <copyright file="StartPublicChatCommand.cs" company="JP Dillingham">
+﻿// <copyright file="StartPublicChat.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,12 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Starts receiving public chat messages.
     /// </summary>
-    internal sealed class StartPublicChatCommand : IOutgoingMessage
+    internal sealed class StartPublicChat : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="StartPublicChatCommand"/> class.
+        ///     Initializes a new instance of the <see cref="StartPublicChat"/> class.
         /// </summary>
-        public StartPublicChatCommand()
+        public StartPublicChat()
         {
         }
 

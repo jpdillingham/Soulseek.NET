@@ -1,4 +1,4 @@
-﻿// <copyright file="CannotConnectResponse.cs" company="JP Dillingham">
+﻿// <copyright file="CannotConnect.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A message indicating an unsuccessful attempt to connect by a peer.
     /// </summary>
-    internal sealed class CannotConnectResponse : IIncomingMessage, IOutgoingMessage
+    internal sealed class CannotConnect : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="CannotConnectResponse"/> class.
+        ///     Initializes a new instance of the <see cref="CannotConnect"/> class.
         /// </summary>
         /// <param name="token">The unique connection token.</param>
         /// <param name="username">The username of the peer.</param>
-        public CannotConnectResponse(int token, string username = null)
+        public CannotConnect(int token, string username = null)
         {
             Token = token;
             Username = username;
@@ -44,18 +44,18 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="CannotConnectResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="CannotConnect"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static CannotConnectResponse FromByteArray(byte[] bytes)
+        public static CannotConnect FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.CannotConnect)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(CannotConnectResponse)} (expected: {(int)MessageCode.Server.CannotConnect}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(CannotConnect)} (expected: {(int)MessageCode.Server.CannotConnect}, received: {(int)code})");
             }
 
             var token = reader.ReadInteger();
@@ -67,7 +67,7 @@ namespace Soulseek.Messaging.Messages
                 username = reader.ReadString();
             }
 
-            return new CannotConnectResponse(token, username);
+            return new CannotConnect(token, username);
         }
 
         /// <summary>

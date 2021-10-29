@@ -785,8 +785,8 @@ namespace Soulseek.Network
         {
             var payload = new List<byte>();
 
-            payload.AddRange(new DistributedBranchLevelCommand(BranchLevel).ToByteArray());
-            payload.AddRange(new DistributedBranchRootResponse(BranchRoot).ToByteArray());
+            payload.AddRange(new DistributedBranchLevel(BranchLevel).ToByteArray());
+            payload.AddRange(new DistributedBranchRoot(BranchRoot).ToByteArray());
 
             return payload.ToArray();
         }
@@ -996,12 +996,12 @@ namespace Soulseek.Network
                         break;
 
                     case MessageCode.Distributed.BranchLevel:
-                        var branchLevel = DistributedBranchLevelCommand.FromByteArray(e.Message);
+                        var branchLevel = DistributedBranchLevel.FromByteArray(e.Message);
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Id), branchLevel.Level);
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
-                        var branchRoot = DistributedBranchRootResponse.FromByteArray(e.Message);
+                        var branchRoot = DistributedBranchRoot.FromByteArray(e.Message);
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Id), branchRoot.Username);
                         break;
 

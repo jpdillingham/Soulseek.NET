@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateRoomAddOperatorCommand.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateRoomRemoveOperator.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -18,16 +18,16 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     The command and response to add a moderator to a private chat room.
+    ///     The command and response to a removal of an operator from a private room.
     /// </summary>
-    internal sealed class PrivateRoomAddOperatorCommand : IIncomingMessage, IOutgoingMessage
+    internal sealed class PrivateRoomRemoveOperator : IIncomingMessage, IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateRoomAddOperatorCommand"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateRoomRemoveOperator"/> class.
         /// </summary>
         /// <param name="roomName">The room to which to add the user.</param>
         /// <param name="username">The username of the user to add.</param>
-        public PrivateRoomAddOperatorCommand(string roomName, string username)
+        public PrivateRoomRemoveOperator(string roomName, string username)
         {
             RoomName = roomName;
             Username = username;
@@ -44,24 +44,24 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PrivateRoomAddOperatorCommand"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PrivateRoomRemoveOperator"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PrivateRoomAddOperatorCommand FromByteArray(byte[] bytes)
+        public static PrivateRoomRemoveOperator FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Server.PrivateRoomAddOperator)
+            if (code != MessageCode.Server.PrivateRoomRemoveOperator)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(MessageCode.Server.PrivateRoomAddOperator)} (expected: {(int)MessageCode.Server.PrivateRoomAddOperator}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating {nameof(MessageCode.Server.PrivateRoomRemoveOperator)} (expected: {(int)MessageCode.Server.PrivateRoomRemoveOperator}, received: {(int)code})");
             }
 
             var roomName = reader.ReadString();
             var username = reader.ReadString();
 
-            return new PrivateRoomAddOperatorCommand(roomName, username);
+            return new PrivateRoomRemoveOperator(roomName, username);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.PrivateRoomAddOperator)
+                .WriteCode(MessageCode.Server.PrivateRoomRemoveOperator)
                 .WriteString(RoomName)
                 .WriteString(Username)
                 .Build();
