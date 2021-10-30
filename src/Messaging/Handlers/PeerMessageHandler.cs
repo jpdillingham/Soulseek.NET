@@ -213,7 +213,7 @@ namespace Soulseek.Messaging.Handlers
 
                         if (queueRejected)
                         {
-                            await connection.WriteAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
+                            await connection.WriteAsync(new UploadDenied(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
                         }
                         else
                         {
@@ -245,7 +245,7 @@ namespace Soulseek.Messaging.Handlers
                             if (transferRejected)
                             {
                                 await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage)).ConfigureAwait(false);
-                                await connection.WriteAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
+                                await connection.WriteAsync(new UploadDenied(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
                             }
                             else
                             {
@@ -256,9 +256,9 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
-                    case MessageCode.Peer.QueueFailed:
-                        var queueFailedResponse = QueueFailedResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
+                    case MessageCode.Peer.UploadDenied:
+                        var uploadDeniedResponse = UploadDenied.FromByteArray(message);
+                        SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, uploadDeniedResponse.Filename), new TransferRejectedException(uploadDeniedResponse.Message));
                         break;
 
                     case MessageCode.Peer.PlaceInQueueResponse:

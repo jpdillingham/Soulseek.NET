@@ -2122,7 +2122,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StartPublicChat(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StartPublicChatCommand(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2148,7 +2148,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StopPublicChat(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StopPublicChatCommand(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2732,11 +2732,7 @@ namespace Soulseek
                         .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
                 }
-#if NETSTANDARD2_0
-                else if (transferRequestAcknowledgement.Message.Contains("not shared"))
-#else
-                else if (transferRequestAcknowledgement.Message.Contains("not shared", StringComparison.InvariantCultureIgnoreCase))
-#endif
+                else if (!string.Equals(transferRequestAcknowledgement.Message.TrimEnd('.'), "Queued", StringComparison.OrdinalIgnoreCase))
                 {
                     throw new TransferRejectedException(transferRequestAcknowledgement.Message);
                 }
@@ -2905,7 +2901,7 @@ namespace Soulseek
                 {
                     try
                     {
-                        await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                        await outputStream.FlushAsync().ConfigureAwait(false);
                     }
                     finally
                     {
@@ -2933,7 +2929,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomDropMembership(roomName), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomDropMembershipCommand(roomName), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -2950,7 +2946,7 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Server.PrivateRoomRemoved, roomName);
                 var wait = Waiter.Wait(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new PrivateRoomDropOwnership(roomName), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateRoomDropOwnershipCommand(roomName), cancellationToken).ConfigureAwait(false);
 
                 await wait.ConfigureAwait(false);
             }
@@ -3738,7 +3734,7 @@ namespace Soulseek
                 // threads waiting on it, and it is added back after it is awaited above.
                 UploadSemaphores.TryRemove(username, out var _);
 
-                // make sure we successfully obtained the semaphore before releasing it this will be false if the semaphore wait
+                // make sure we successfully obtained the semaphore before releasing it. this will be false if the semaphore wait
                 // threw due to cancellation
                 if (semaphoreAcquired)
                 {
@@ -3748,20 +3744,33 @@ namespace Soulseek
 
                 upload.Connection?.Dispose();
 
-                if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
+                if (!upload.State.HasFlag(TransferStates.Succeeded))
                 {
+                    // if the upload failed, try to send a message to the user informing them.
                     try
                     {
-                        // if the upload failed, send a message to the user informing them.
+                        // fetch the endpoint again, in case it failed or was never fetched because the semaphore wasn't obtained.
+                        // this allows us to send UploadDenied for cancelled queued files
+                        endpoint = await GetUserEndPointAsync(username).ConfigureAwait(false);
                         var messageConnection = await PeerConnectionManager
-                            .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
+                            .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                             .ConfigureAwait(false);
 
-                        await messageConnection.WriteAsync(new UploadFailed(filename)).ConfigureAwait(false);
+                        // send UploadDenied if we cancelled the transfer.  this should prevent the remote client from re-enqueuing
+                        if (upload.State.HasFlag(TransferStates.Cancelled))
+                        {
+                            await messageConnection.WriteAsync(new UploadDenied(filename, "Cancelled")).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await messageConnection.WriteAsync(new UploadFailed(filename)).ConfigureAwait(false);
+                        }
                     }
                     catch
                     {
-                        // swallow any exceptions here
+                        // swallow any exceptions here.  the user may be offline, we might fail to connect,
+                        // we might fail to send the message.  we don't *need* this to succeed, and there's a good chance
+                        // that it won't if the user lost connectivity, causing the upload to fail in the first place
                     }
                 }
 
