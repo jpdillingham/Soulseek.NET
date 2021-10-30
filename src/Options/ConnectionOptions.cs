@@ -75,9 +75,9 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Returns this instance with <see cref="InactivityTimeout"/> fixed to -1, disabling it.
+        ///     Returns a new instance with <see cref="InactivityTimeout"/> fixed to -1, disabling it.
         /// </summary>
-        /// <returns>This instance with InactivityTimeout disabled.</returns>
+        /// <returns>A new instance with InactivityTimeout disabled.</returns>
         public ConnectionOptions WithoutInactivityTimeout()
         {
             return new ConnectionOptions(ReadBufferSize, WriteBufferSize, ConnectTimeout, inactivityTimeout: -1, ProxyOptions);

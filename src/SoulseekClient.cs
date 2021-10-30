@@ -844,7 +844,10 @@ namespace Soulseek
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the transfer context and a byte array containing the file contents.</returns>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the transfer context and a byte array containing the
+        ///     file contents.
+        /// </returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
@@ -904,55 +907,6 @@ namespace Soulseek
             options ??= new TransferOptions();
 
             return DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
-        }
-
-        public async Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
-            }
-
-            if (string.IsNullOrWhiteSpace(filename))
-            {
-                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
-            }
-
-            if (size.HasValue && size.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
-            }
-
-            if (startOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
-            }
-
-            token ??= GetNextToken();
-
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
-            {
-                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
-            }
-
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
-            {
-                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
-            }
-
-            options ??= new TransferOptions();
-
-            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
-
-            var task = DownloadToByteArrayAsync(username, filename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None, enqueuedTaskCompletionSource);
-
-            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
-            return task;
         }
 
         /// <summary>
@@ -1048,65 +1002,6 @@ namespace Soulseek
             return DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
-            }
-
-            if (string.IsNullOrWhiteSpace(filename))
-            {
-                throw new ArgumentException("The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
-            }
-
-            if (size.HasValue && size.Value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
-            }
-
-            if (startOffset < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
-            }
-
-            if (outputStream == null)
-            {
-                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null");
-            }
-
-            if (!outputStream.CanWrite)
-            {
-                throw new InvalidOperationException("The specified output stream is not writeable");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
-            }
-
-            token ??= GetNextToken();
-
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
-            {
-                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
-            }
-
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
-            {
-                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
-            }
-
-            options ??= new TransferOptions();
-
-            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
-
-            var task = DownloadToStreamAsync(username, filename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None, enqueuedTaskCompletionSource);
-
-            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
-            return task;
-        }
-
         /// <summary>
         ///     Asynchronously removes the currently logged in user from the list of members in the specified private <paramref name="roomName"/>.
         /// </summary>
@@ -1161,6 +1056,168 @@ namespace Soulseek
             }
 
             return DropPrivateRoomOwnershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     <para>
+        ///         Asynchronously enqueues a download for the specified <paramref name="filename"/> from the specified
+        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///     </para>
+        ///     <para>
+        ///         Functionally the same as
+        ///         <see cref="DownloadAsync(string, string, long?, long, int?, TransferOptions, CancellationToken?)"/>, but
+        ///         returns the download Task as soon as the download has been remotely enqueued.
+        ///     </para>
+        /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
+        /// <param name="token">The unique download token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous download operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            Task<(Transfer Transfer, byte[] Data)> downloadTask = Task.FromResult<(Transfer Transfer, byte[] Data)>((null, null));
+
+            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            options ??= new TransferOptions();
+            options = options.WithAdditionalStateChanged(async (args) =>
+            {
+                var state = args.Transfer.State;
+
+                if (state == TransferStates.Queued)
+                {
+                    enqueuedTaskCompletionSource.TrySetResult(true);
+                }
+                else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
+                {
+                    // if the transfer transitions to a terminal, non successful state, await the downloadTask to grab the
+                    // exception that caused it to fail, then try to complete the task completion source with it so the calling
+                    // code gets the full picture. the stack trace is unlikely to make a lot of sense here.
+                    try
+                    {
+                        await downloadTask.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        enqueuedTaskCompletionSource.TrySetException(ex);
+                    }
+                }
+            });
+
+            // this may throw immediately, if there are issues with the input
+            downloadTask = DownloadAsync(username, filename, size, startOffset, token, options, cancellationToken);
+
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+            return downloadTask;
+        }
+
+        /// <summary>
+        ///     <para>
+        ///         Asynchronously enqueues a download for the specified <paramref name="filename"/> from the specified
+        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
+        ///         <paramref name="cancellationToken"/> to the specified <paramref name="outputStream"/>.
+        ///     </para>
+        ///     <para>
+        ///         Functionally the same as
+        ///         <see cref="DownloadAsync(string, string, Stream, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         but returns the download Task as soon as the download has been remotely enqueued.
+        ///     </para>
+        /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
+        /// <param name="token">The unique download token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous download operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            Task<Transfer> downloadTask = Task.FromResult<Transfer>(null);
+
+            var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            options ??= new TransferOptions();
+            options = options.WithAdditionalStateChanged(async (args) =>
+            {
+                var state = args.Transfer.State;
+
+                if (state == TransferStates.Queued)
+                {
+                    enqueuedTaskCompletionSource.TrySetResult(true);
+                }
+                else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
+                {
+                    // if the transfer transitions to a terminal, non successful state, await the downloadTask to grab the
+                    // exception that caused it to fail, then try to complete the task completion source with it so the calling
+                    // code gets the full picture. the stack trace is unlikely to make a lot of sense here.
+                    try
+                    {
+                        await downloadTask.ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        enqueuedTaskCompletionSource.TrySetException(ex);
+                    }
+                }
+            });
+
+            // this may throw immediately, if there are issues with the input
+            downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token, options, cancellationToken);
+
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+            return downloadTask;
         }
 
         /// <summary>
@@ -2642,7 +2699,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken, TaskCompletionSource<bool> enqueuedTaskCompletionSource = null)
+        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string filename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
@@ -2659,11 +2716,11 @@ namespace Soulseek
             await using var memoryStream = new MemoryStream();
 #endif
 
-            var transfer = await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken, enqueuedTaskCompletionSource).ConfigureAwait(false);
+            var transfer = await DownloadToStreamAsync(username, filename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
             return (transfer, memoryStream.ToArray());
         }
 
-        private async Task<Transfer> DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken, TaskCompletionSource<bool> enqueuedTaskCompletionSource = null)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string filename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new TransferInternal(TransferDirection.Download, username, filename, token, options)
             {
@@ -2740,7 +2797,6 @@ namespace Soulseek
                 {
                     // the download is remotely queued, so put it in the local queue.
                     UpdateState(TransferStates.Queued);
-                    enqueuedTaskCompletionSource?.SetResult(true);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
@@ -2842,10 +2898,7 @@ namespace Soulseek
             {
                 download.State = TransferStates.Rejected;
 
-                var wrappedEx = new TransferRejectedException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
-
-                enqueuedTaskCompletionSource?.SetException(wrappedEx);
-                throw wrappedEx;
+                throw new TransferRejectedException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
@@ -2854,7 +2907,6 @@ namespace Soulseek
 
                 Diagnostic.Debug(ex.ToString());
 
-                enqueuedTaskCompletionSource?.SetException(ex);
                 throw;
             }
             catch (TimeoutException ex)
@@ -2864,7 +2916,6 @@ namespace Soulseek
 
                 Diagnostic.Debug(ex.ToString());
 
-                enqueuedTaskCompletionSource?.SetException(ex);
                 throw;
             }
             catch (Exception ex)
@@ -2876,14 +2927,10 @@ namespace Soulseek
 
                 if (ex is UserOfflineException)
                 {
-                    enqueuedTaskCompletionSource?.SetException(ex);
                     throw;
                 }
 
-                var wrappedEx = new SoulseekClientException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
-
-                enqueuedTaskCompletionSource?.SetException(wrappedEx);
-                throw wrappedEx;
+                throw new SoulseekClientException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             finally
             {
@@ -3171,8 +3218,8 @@ namespace Soulseek
         {
             try
             {
-                // the server may send a CannotJoinRoom message, which will cause the wait to throw RoomJoinForbiddenException
-                // if the room is already joined, the server won't respond at all, which 
+                // the server may send a CannotJoinRoom message, which will cause the wait to throw RoomJoinForbiddenException if
+                // the room is already joined, the server won't respond at all, which will eventually cause a TimeoutException
                 var joinRoomWait = Waiter.Wait<RoomData>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new JoinRoomRequest(roomName, isPrivate), cancellationToken).ConfigureAwait(false);
 
@@ -3756,7 +3803,7 @@ namespace Soulseek
                             .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                             .ConfigureAwait(false);
 
-                        // send UploadDenied if we cancelled the transfer.  this should prevent the remote client from re-enqueuing
+                        // send UploadDenied if we cancelled the transfer. this should prevent the remote client from re-enqueuing
                         if (upload.State.HasFlag(TransferStates.Cancelled))
                         {
                             await messageConnection.WriteAsync(new UploadDenied(filename, "Cancelled")).ConfigureAwait(false);
@@ -3768,9 +3815,9 @@ namespace Soulseek
                     }
                     catch
                     {
-                        // swallow any exceptions here.  the user may be offline, we might fail to connect,
-                        // we might fail to send the message.  we don't *need* this to succeed, and there's a good chance
-                        // that it won't if the user lost connectivity, causing the upload to fail in the first place
+                        // swallow any exceptions here. the user may be offline, we might fail to connect, we might fail to send
+                        // the message. we don't *need* this to succeed, and there's a good chance that it won't if the user lost
+                        // connectivity, causing the upload to fail in the first place
                     }
                 }
 
