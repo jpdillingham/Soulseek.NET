@@ -709,11 +709,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PrivateRoomDropMembership")]
-        [Theory(DisplayName = "PrivateRoomDropMembership constructs the correct message"), AutoData]
-        public void PrivateRoomDropMembership_Constructs_The_Correct_Message(string roomName)
+        [Trait("Request", "PrivateRoomDropMembershipCommand")]
+        [Theory(DisplayName = "PrivateRoomDropMembershipCommand constructs the correct message"), AutoData]
+        public void PrivateRoomDropMembershipCommand_Constructs_The_Correct_Message(string roomName)
         {
-            var a = new PrivateRoomDropMembership(roomName);
+            var a = new PrivateRoomDropMembershipCommand(roomName);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -724,11 +724,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PrivateRoomDropOwnership")]
-        [Theory(DisplayName = "PrivateRoomDropOwnership constructs the correct message"), AutoData]
-        public void PrivateRoomDropOwnership_Constructs_The_Correct_Message(string roomName)
+        [Trait("Request", "PrivateRoomDropOwnershipCommand")]
+        [Theory(DisplayName = "PrivateRoomDropOwnershipCommand constructs the correct message"), AutoData]
+        public void PrivateRoomDropOwnershipCommand_Constructs_The_Correct_Message(string roomName)
         {
-            var a = new PrivateRoomDropOwnership(roomName);
+            var a = new PrivateRoomDropOwnershipCommand(roomName);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -739,11 +739,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "StartPublicChat")]
-        [Fact(DisplayName = "StartPublicChat constructs the correct message")]
-        public void StartPublicChat_Constructs_The_Correct_Message()
+        [Trait("Request", "StartPublicChatCommand")]
+        [Fact(DisplayName = "StartPublicChatCommand constructs the correct message")]
+        public void StartPublicChatCommand_Constructs_The_Correct_Message()
         {
-            var a = new StartPublicChat();
+            var a = new StartPublicChatCommand();
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -753,11 +753,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "StopPublicChat")]
-        [Fact(DisplayName = "StopPublicChat constructs the correct message")]
-        public void StopPublicChat_Constructs_The_Correct_Message()
+        [Trait("Request", "StopPublicChatCommand")]
+        [Fact(DisplayName = "StopPublicChatCommand constructs the correct message")]
+        public void StopPublicChatCommand_Constructs_The_Correct_Message()
         {
-            var a = new StopPublicChat();
+            var a = new StopPublicChatCommand();
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
