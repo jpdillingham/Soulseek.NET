@@ -1100,12 +1100,10 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
-            Task<(Transfer Transfer, byte[] Data)> downloadTask = Task.FromResult<(Transfer Transfer, byte[] Data)>((null, null));
-
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
             options ??= new TransferOptions();
-            options = options.WithAdditionalStateChanged(async (args) =>
+            options = options.WithAdditionalStateChanged(args =>
             {
                 var state = args.Transfer.State;
 
@@ -1115,24 +1113,20 @@ namespace Soulseek
                 }
                 else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
                 {
-                    // if the transfer transitions to a terminal, non successful state, await the downloadTask to grab the
-                    // exception that caused it to fail, then try to complete the task completion source with it so the calling
-                    // code gets the full picture. the stack trace is unlikely to make a lot of sense here.
-                    try
-                    {
-                        await downloadTask.ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        enqueuedTaskCompletionSource.TrySetException(ex);
-                    }
+                    enqueuedTaskCompletionSource.TrySetResult(false);
                 }
             });
 
             // this may throw immediately, if there are issues with the input
-            downloadTask = DownloadAsync(username, filename, size, startOffset, token, options, cancellationToken);
+            var downloadTask = DownloadAsync(username, filename, size, startOffset, token, options, cancellationToken);
 
-            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+            var success = await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+
+            if (!success)
+            {
+                await downloadTask.ConfigureAwait(false);
+            }
+
             return downloadTask;
         }
 
@@ -1184,12 +1178,10 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
-            Task<Transfer> downloadTask = Task.FromResult<Transfer>(null);
-
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
             options ??= new TransferOptions();
-            options = options.WithAdditionalStateChanged(async (args) =>
+            options = options.WithAdditionalStateChanged(args =>
             {
                 var state = args.Transfer.State;
 
@@ -1199,24 +1191,20 @@ namespace Soulseek
                 }
                 else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
                 {
-                    // if the transfer transitions to a terminal, non successful state, await the downloadTask to grab the
-                    // exception that caused it to fail, then try to complete the task completion source with it so the calling
-                    // code gets the full picture. the stack trace is unlikely to make a lot of sense here.
-                    try
-                    {
-                        await downloadTask.ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        enqueuedTaskCompletionSource.TrySetException(ex);
-                    }
+                    enqueuedTaskCompletionSource.TrySetResult(false);
                 }
             });
 
             // this may throw immediately, if there are issues with the input
-            downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token, options, cancellationToken);
+            var downloadTask = DownloadAsync(username, filename, outputStream, size, startOffset, token, options, cancellationToken);
 
-            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+            var success = await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
+
+            if (!success)
+            {
+                await downloadTask.ConfigureAwait(false);
+            }
+
             return downloadTask;
         }
 
@@ -2775,6 +2763,7 @@ namespace Soulseek
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
+                    UpdateState(TransferStates.Queued);
                     UpdateState(TransferStates.Initializing);
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
