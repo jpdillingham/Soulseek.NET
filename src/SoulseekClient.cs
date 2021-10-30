@@ -2459,7 +2459,7 @@ namespace Soulseek
 
                 if (!response.Exists)
                 {
-                    throw new UserNotFoundException($"User {Username} does not exist");
+                    throw new UserNotFoundException($"User {username} does not exist");
                 }
 
                 return response.UserData;
