@@ -560,6 +560,96 @@ namespace Soulseek
         Task DropPrivateRoomOwnershipAsync(string roomName, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     <para>
+        ///         Asynchronously enqueues a download for the specified <paramref name="filename"/> from the specified
+        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///     </para>
+        ///     <para>
+        ///         Functionally the same as
+        ///         <see cref="DownloadAsync(string, string, long?, long, int?, TransferOptions, CancellationToken?)"/>, but
+        ///         returns the download Task as soon as the download has been remotely enqueued.
+        ///     </para>
+        /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
+        /// <param name="token">The unique download token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous download operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string filename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     <para>
+        ///         Asynchronously enqueues a download for the specified <paramref name="filename"/> from the specified
+        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
+        ///         <paramref name="cancellationToken"/> to the specified <paramref name="outputStream"/>.
+        ///     </para>
+        ///     <para>
+        ///         Functionally the same as
+        ///         <see cref="DownloadAsync(string, string, Stream, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         but returns the download Task as soon as the download has been remotely enqueued.
+        ///     </para>
+        /// </summary>
+        /// <remarks>
+        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        /// </remarks>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="size">The size of the file, in bytes.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
+        /// <param name="token">The unique download token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous download operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
+        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string filename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the directory contents.</param>
