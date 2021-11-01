@@ -32,6 +32,7 @@ namespace Soulseek
         private DateTime? lastProgressTime = null;
         private bool speedInitialized = false;
         private TransferStates state = TransferStates.None;
+        private long startOffset = 0;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferInternal"/> class.
@@ -125,7 +126,22 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the start offset of the transfer, in bytes.
         /// </summary>
-        public long StartOffset { get; set; }
+        public long StartOffset
+        {
+            get
+            {
+                return startOffset;
+            }
+            set
+            {
+                startOffset = value;
+
+                // fast-forward the transfer up to StartOffset so percent completion
+                // and transfer speed computation works properly
+                BytesTransferred = value;
+                lastProgressBytes = value;
+            }
+        }
 
         /// <summary>
         ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
@@ -183,13 +199,23 @@ namespace Soulseek
 
             var ts = DateTime.UtcNow - (lastProgressTime ?? StartTime);
 
-            if (ts.HasValue && ((!speedInitialized && bytesTransferred > 0) || ts.Value.TotalMilliseconds >= progressUpdateLimit || State.HasFlag(TransferStates.Completed)))
+            // only recompute the average speed if enough time has passed since the last computation, and if the transfer is still
+            // in progress. use a moving average to account for ramp-up and variation.
+            if (ts.HasValue && (ts.Value.TotalMilliseconds >= progressUpdateLimit) && !State.HasFlag(TransferStates.Completed))
             {
-                var currentSpeed = (bytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
+                var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
                 lastProgressTime = DateTime.UtcNow;
-                lastProgressBytes = bytesTransferred;
+                lastProgressBytes = BytesTransferred;
+            }
+
+            // once the transfer is complete, compute the actual average speed from total duration and transfer size
+            if (State.HasFlag(TransferStates.Completed))
+            {
+                var duration = (EndTime - StartTime).Value.TotalMilliseconds / 1000d;
+                var totalSpeed = (BytesTransferred - StartOffset) / duration;
+                AverageSpeed = totalSpeed;
             }
         }
     }
