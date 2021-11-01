@@ -197,13 +197,13 @@ namespace Soulseek
         {
             BytesTransferred = bytesTransferred;
 
-            var ts = DateTime.UtcNow - (lastProgressTime ?? StartTime);
+            var ts = DateTime.UtcNow - (lastProgressTime ?? (StartTime ?? DateTime.UtcNow));
 
             // only recompute the average speed if enough time has passed since the last computation, and if the transfer is still
             // in progress. use a moving average to account for ramp-up and variation.
-            if (ts.HasValue && (ts.Value.TotalMilliseconds >= progressUpdateLimit) && !State.HasFlag(TransferStates.Completed))
+            if (ts.TotalMilliseconds >= progressUpdateLimit && !State.HasFlag(TransferStates.Completed))
             {
-                var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
+                var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
                 lastProgressTime = DateTime.UtcNow;
@@ -213,7 +213,8 @@ namespace Soulseek
             // once the transfer is complete, compute the actual average speed from total duration and transfer size
             if (State.HasFlag(TransferStates.Completed))
             {
-                var duration = (EndTime - StartTime).Value.TotalMilliseconds / 1000d;
+                var start = StartTime ?? EndTime.Value.AddMilliseconds(-1);
+                var duration = (EndTime.Value - start).TotalMilliseconds / 1000d;
                 var totalSpeed = (BytesTransferred - StartOffset) / duration;
                 AverageSpeed = totalSpeed;
             }
