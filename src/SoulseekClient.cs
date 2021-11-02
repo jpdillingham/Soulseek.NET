@@ -2859,7 +2859,7 @@ namespace Soulseek
                     await download.Connection.WriteAsync(startOffsetBytes, cancellationToken).ConfigureAwait(false);
 
                     UpdateState(TransferStates.InProgress);
-                    UpdateProgress(startOffset);
+                    UpdateProgress(download.StartOffset);
 
                     await download.Connection.ReadAsync(download.Size.Value - startOffset, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
 
