@@ -122,6 +122,8 @@ namespace Soulseek.Tests.Unit.Options
             var o = n.WithAdditionalStateChanged(null);
 
             var ex = Record.Exception(() => o.StateChanged(null));
+
+            Assert.Null(ex);
         }
     }
 }
