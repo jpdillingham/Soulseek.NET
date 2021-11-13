@@ -55,7 +55,7 @@ namespace Soulseek
         /// <param name="task">The task to continue.</param>
         public static void Forget(this Task task)
         {
-            task.ContinueWith(t => { });
+            task.ContinueWith(t => { }, TaskContinuationOptions.RunContinuationsAsynchronously);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Soulseek
         public static void ForgetButThrowWhenFaulted<T>(this Task task)
             where T : Exception
         {
-            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
         }
 
         /// <summary>
