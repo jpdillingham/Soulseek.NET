@@ -101,7 +101,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Throws(new Exception());
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.Ping)
+                .WriteCode(MessageCode.Distributed.BranchLevel)
                 .Build();
 
             var diagnostics = new List<DiagnosticEventArgs>();
