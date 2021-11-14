@@ -466,7 +466,7 @@ namespace Soulseek.Network
                     _ = Task.Run(async () =>
                     {
                         var connection = await child.Value.ConfigureAwait(false);
-                        _ = connection.WriteBufferedAsync(bytes, disconnectOnFullBuffer: true, cancellationToken).ConfigureAwait(false);
+                        await connection.WriteBufferedAsync(bytes, disconnectOnFullBuffer: true, cancellationToken).ConfigureAwait(false);
                     }).ContinueWith(t => Diagnostic.Debug($"Failed to broadcast message: {t.Exception.Message}"), TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
                 }
             }
