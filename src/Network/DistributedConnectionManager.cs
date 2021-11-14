@@ -161,7 +161,7 @@ namespace Soulseek.Network
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private bool AcceptChildren => SoulseekClient.Options.AcceptDistributedChildren;
-        private SemaphoreSlim BroadcastSyncRoot = new SemaphoreSlim(10, 10);
+        private SemaphoreSlim BroadcastSyncRoot = new SemaphoreSlim(1000);
 
         /// <remarks>
         ///     <para>Provides a thread-safe collection for managing connecting and connected children.</para>
