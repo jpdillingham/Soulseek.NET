@@ -63,7 +63,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "FromByteArray")]
-        [Theory(DisplayName = "FromByteArray does not throw if message is missing token"), AutoData]
+        [Fact(DisplayName = "FromByteArray does not throw if message is missing token")]
         public void FromByteArray_Does_Not_Throw_If_Message_Is_Missing_Token()
         {
             var msg = new MessageBuilder()
