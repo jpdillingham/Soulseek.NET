@@ -127,7 +127,7 @@ namespace Soulseek.Network
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
+        Task<Task> BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Demotes the client from a branch root on the distributed network.

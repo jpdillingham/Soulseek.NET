@@ -448,27 +448,40 @@ namespace Soulseek.Network
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        public async Task<Task> BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
             if (BroadcastBufferSemaphore.CurrentCount == 0)
             {
                 Diagnostic.Warning("Broadcast queue depth exceeded limit.  Distributed message dropped.");
-                return;
+                return Task.CompletedTask;
             }
 
             cancellationToken ??= CancellationToken.None;
             await BroadcastBufferSemaphore.WaitAsync().ConfigureAwait(false);
 
+            async Task Write (KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
+            {
+                try
+                {
+                    var connection = await child.Value.Value.ConfigureAwait(false);
+                    await connection.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Failed to broadcast message to {child.Key}: {ex.Message}", ex);
+                }
+            }
+
+            var tasks = new List<Task>();
+
             try
             {
-                foreach (var child in ChildConnectionDictionary.Values)
+                foreach (var child in ChildConnectionDictionary)
                 {
-                    _ = Task.Run(async () =>
-                    {
-                        var connection = await child.Value.ConfigureAwait(false);
-                        await connection.WriteBufferedAsync(bytes, disconnectOnFullBuffer: true, cancellationToken).ConfigureAwait(false);
-                    }).ContinueWith(t => Diagnostic.Debug($"Failed to broadcast message: {t.Exception.Message}"), TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
+                    tasks.Add(Write(child, bytes, cancellationToken));
                 }
+
+                return Task.WhenAll(tasks);
             }
             finally
             {
