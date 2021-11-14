@@ -198,5 +198,23 @@ namespace Soulseek.Network.Tcp
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
         Task WriteAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously performs buffered writes of the specified bytes to the connection, not to exceed the configured
+        ///     <see cref="ConnectionOptions.WriteQueueDepth"/>.
+        /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="disconnectOnFullBuffer">A value indicating whether a failure to write due to full buffer should result in a disconnect.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        /// <exception cref="ConnectionWriteDroppedException">Thrown when a write is dropped due to buffer contention.</exception>
+        Task WriteBufferedAsync(byte[] bytes, bool disconnectOnFullBuffer = false, CancellationToken? cancellationToken = null);
     }
 }

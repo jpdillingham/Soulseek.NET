@@ -44,6 +44,7 @@ namespace Soulseek.Network.Tcp
             Options = options ?? new ConnectionOptions();
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
+            WriteBufferSemaphore = new SemaphoreSlim(Options.WriteQueueDepth);
 
             if (Options.InactivityTimeout > 0)
             {
@@ -176,6 +177,7 @@ namespace Soulseek.Network.Tcp
         protected DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
         private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private SemaphoreSlim WriteBufferSemaphore { get; set; }
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
@@ -503,6 +505,46 @@ namespace Soulseek.Network.Tcp
             }
 
             return WriteInternalAsync(length, inputStream, governor ?? ((t) => Task.CompletedTask), cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously performs buffered writes of the specified bytes to the connection, not to exceed the configured
+        ///     <see cref="ConnectionOptions.WriteQueueDepth"/>.
+        /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="disconnectOnFullBuffer">A value indicating whether a failure to write due to full buffer should result in a disconnect.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
+        /// <exception cref="ConnectionWriteDroppedException">Thrown when a write is dropped due to buffer contention.</exception>
+        public async Task WriteBufferedAsync(byte[] bytes, bool disconnectOnFullBuffer = false, CancellationToken? cancellationToken = null)
+        {
+            if (WriteBufferSemaphore.CurrentCount == 0)
+            {
+                if (disconnectOnFullBuffer)
+                {
+                    Disconnect("The write buffer is full");
+                }
+
+                throw new ConnectionWriteDroppedException($"Dropped buffered message to {IPEndPoint}; the write buffer is full");
+            }
+
+            await WriteBufferSemaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                await WriteInternalAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+            }
+            finally
+            {
+                WriteBufferSemaphore.Release();
+            }
         }
 
         /// <summary>
