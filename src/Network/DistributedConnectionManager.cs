@@ -60,6 +60,8 @@ namespace Soulseek.Network
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
+            BroadcastBufferSemaphore = new SemaphoreSlim(SoulseekClient.Options.DistributedBroadcastQueueDepth);
+
             StatusDebounceTimer = new SystemTimer()
             {
                 Interval = StatusDebounceTime,
@@ -161,7 +163,7 @@ namespace Soulseek.Network
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private bool AcceptChildren => SoulseekClient.Options.AcceptDistributedChildren;
-        private SemaphoreSlim BroadcastSyncRoot = new SemaphoreSlim(100);
+        private SemaphoreSlim BroadcastBufferSemaphore { get; set; }
 
         /// <remarks>
         ///     <para>Provides a thread-safe collection for managing connecting and connected children.</para>
@@ -448,35 +450,29 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
-            if (BroadcastSyncRoot.CurrentCount == 0)
+            if (BroadcastBufferSemaphore.CurrentCount == 0)
             {
                 Diagnostic.Warning("Broadcast queue depth exceeded limit.  Distributed message dropped.");
+                return;
             }
 
-            await BroadcastSyncRoot.WaitAsync();
+            cancellationToken ??= CancellationToken.None;
+            await BroadcastBufferSemaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
-                var tasks = ChildConnectionDictionary.Values.Select(async c =>
+                foreach (var child in ChildConnectionDictionary.Values)
                 {
-                    IMessageConnection connection = null;
-
-                    try
+                    _ = Task.Run(async () =>
                     {
-                        connection = await c.Value.ConfigureAwait(false);
-                        await connection.WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        connection?.Dispose();
-                    }
-                });
-
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                        var connection = await child.Value.ConfigureAwait(false);
+                        _ = connection.WriteBufferedAsync(bytes, disconnectOnFullBuffer: true, cancellationToken).ConfigureAwait(false);
+                    }).ContinueWith(t => Diagnostic.Debug($"Failed to broadcast message: {t.Exception.Message}"), TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
+                }
             }
             finally
             {
-                BroadcastSyncRoot.Release();
+                BroadcastBufferSemaphore.Release();
             }
         }
 
