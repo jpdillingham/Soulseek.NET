@@ -49,6 +49,7 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="distributedBroadcastQueueDepth">The depth of the distributed broadcast queue.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
         /// </param>
@@ -99,6 +100,7 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
+            int distributedBroadcastQueueDepth = 500,
             bool deduplicateSearchRequests = true,
             int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
@@ -135,6 +137,13 @@ namespace Soulseek
             if (DistributedChildLimit < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(distributedChildLimit), "Must be greater than or equal to zero");
+            }
+
+            DistributedBroadcastQueueDepth = distributedBroadcastQueueDepth;
+
+            if (DistributedBroadcastQueueDepth < 100)
+            {
+                throw new ArgumentOutOfRangeException(nameof(distributedBroadcastQueueDepth), "Must be greater than or equal to 100");
             }
 
             DeduplicateSearchRequests = deduplicateSearchRequests;
@@ -202,6 +211,11 @@ namespace Soulseek
         ///     with an empty directory).
         /// </summary>
         public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResponseResolver { get; }
+
+        /// <summary>
+        ///     Gets the depth of the distributed broadcast queue.  (Default = 500).
+        /// </summary>
+        public int DistributedBroadcastQueueDepth { get; }
 
         /// <summary>
         ///     Gets the number of allowed distributed children. (Default = 100).
@@ -316,6 +330,7 @@ namespace Soulseek
                 patch.EnableDistributedNetwork,
                 patch.AcceptDistributedChildren,
                 patch.DistributedChildLimit,
+                patch.DistributedBroadcastQueueDepth,
                 patch.DeduplicateSearchRequests,
                 patch.AutoAcknowledgePrivateMessages,
                 patch.AutoAcknowledgePrivilegeNotifications,
@@ -343,6 +358,7 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="distributedBroadcastQueueDepth">The depth of the distributed broadcast queue.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
         /// </param>
@@ -383,6 +399,7 @@ namespace Soulseek
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
             int? distributedChildLimit = null,
+            int? distributedBroadcastQueueDepth = null,
             bool? deduplicateSearchRequests = null,
             bool? autoAcknowledgePrivateMessages = null,
             bool? autoAcknowledgePrivilegeNotifications = null,
@@ -407,6 +424,7 @@ namespace Soulseek
                 enableDistributedNetwork ?? EnableDistributedNetwork,
                 acceptDistributedChildren ?? AcceptDistributedChildren,
                 distributedChildLimit ?? DistributedChildLimit,
+                distributedBroadcastQueueDepth ?? DistributedBroadcastQueueDepth,
                 deduplicateSearchRequests ?? DeduplicateSearchRequests,
                 MessageTimeout,
                 autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,

@@ -24,17 +24,18 @@ namespace Soulseek.Tests.Unit.Options
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates properly"), AutoData]
-        public void Instantiates_Properly(int read, int write, int timeout, int inactivity)
+        public void Instantiates_Properly(int read, int write, int depth, int timeout, int inactivity)
         {
             ConnectionOptions o = null;
 
-            var ex = Record.Exception(() => o = new ConnectionOptions(read, write, timeout, inactivity));
+            var ex = Record.Exception(() => o = new ConnectionOptions(read, write, depth, timeout, inactivity));
 
             Assert.Null(ex);
             Assert.NotNull(o);
 
             Assert.Equal(read, o.ReadBufferSize);
             Assert.Equal(write, o.WriteBufferSize);
+            Assert.Equal(depth, o.WriteQueueDepth);
             Assert.Equal(timeout, o.ConnectTimeout);
             Assert.Equal(inactivity, o.InactivityTimeout);
         }
