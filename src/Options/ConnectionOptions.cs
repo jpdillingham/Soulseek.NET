@@ -34,7 +34,7 @@ namespace Soulseek
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
-            int writeQueueDepth = 100,
+            int writeQueueDepth = 300,
             int connectTimeout = 10000,
             int inactivityTimeout = 15000,
             ProxyOptions proxyOptions = null)
