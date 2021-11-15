@@ -445,7 +445,7 @@ namespace Soulseek.Network
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public async Task<Task> BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        public Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
             cancellationToken ??= CancellationToken.None;
 
