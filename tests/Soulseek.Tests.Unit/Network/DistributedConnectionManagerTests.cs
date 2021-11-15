@@ -511,8 +511,8 @@ namespace Soulseek.Tests.Unit.Network
                 await await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
             }
 
-            c1.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None));
-            c2.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None));
+            c1.Verify(m => m.WriteBufferedAsync(It.Is<byte[]>(o => o.Matches(bytes)), true, CancellationToken.None));
+            c2.Verify(m => m.WriteBufferedAsync(It.Is<byte[]>(o => o.Matches(bytes)), true, CancellationToken.None));
         }
 
         [Trait("Category", "BroadcastMessageAsync")]
