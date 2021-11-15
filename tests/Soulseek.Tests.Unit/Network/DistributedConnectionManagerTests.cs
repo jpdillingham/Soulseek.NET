@@ -508,7 +508,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
             }
 
             c1.Verify(m => m.WriteBufferedAsync(It.Is<byte[]>(o => o.Matches(bytes)), true, CancellationToken.None));
