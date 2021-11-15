@@ -60,8 +60,6 @@ namespace Soulseek.Network
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
-            BroadcastBufferSemaphore = new SemaphoreSlim(SoulseekClient.Options.DistributedBroadcastQueueDepth);
-
             StatusDebounceTimer = new SystemTimer()
             {
                 Interval = StatusDebounceTime,
@@ -163,7 +161,6 @@ namespace Soulseek.Network
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private bool AcceptChildren => SoulseekClient.Options.AcceptDistributedChildren;
-        private SemaphoreSlim BroadcastBufferSemaphore { get; set; }
 
         /// <remarks>
         ///     <para>Provides a thread-safe collection for managing connecting and connected children.</para>
@@ -450,21 +447,14 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task<Task> BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
-            if (BroadcastBufferSemaphore.CurrentCount == 0)
-            {
-                Diagnostic.Warning("Broadcast queue depth exceeded limit.  Distributed message dropped.");
-                return Task.CompletedTask;
-            }
-
             cancellationToken ??= CancellationToken.None;
-            await BroadcastBufferSemaphore.WaitAsync().ConfigureAwait(false);
 
             async Task Write (KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
             {
                 try
                 {
                     var connection = await child.Value.Value.ConfigureAwait(false);
-                    await connection.WriteBufferedAsync(bytes, disconnectOnFullBuffer: false, cancellationToken).ConfigureAwait(false);
+                    await connection.WriteBufferedAsync(bytes, disconnectOnFullBuffer: true, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -474,19 +464,12 @@ namespace Soulseek.Network
 
             var tasks = new List<Task>();
 
-            try
+            foreach (var child in ChildConnectionDictionary)
             {
-                foreach (var child in ChildConnectionDictionary)
-                {
-                    tasks.Add(Write(child, bytes, cancellationToken));
-                }
+                tasks.Add(Write(child, bytes, cancellationToken));
+            }
 
-                return Task.WhenAll(tasks);
-            }
-            finally
-            {
-                BroadcastBufferSemaphore.Release();
-            }
+            return Task.WhenAll(tasks);
         }
 
         /// <summary>
