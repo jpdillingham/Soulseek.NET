@@ -464,7 +464,7 @@ namespace Soulseek.Network
                 try
                 {
                     var connection = await child.Value.Value.ConfigureAwait(false);
-                    await connection.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+                    await connection.WriteBufferedAsync(bytes, disconnectOnFullBuffer: false, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
