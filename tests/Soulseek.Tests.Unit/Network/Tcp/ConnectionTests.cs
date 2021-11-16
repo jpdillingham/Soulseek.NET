@@ -75,7 +75,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Instantiates with given options"), AutoData]
         public void Instantiates_With_Given_Options(IPEndPoint endpoint)
         {
-            var options = new ConnectionOptions(1, 1, 1);
+            var proxyOptions = new ProxyOptions("foo", 1);
+            var options = new ConnectionOptions(1, 1, 1, 1, 1, proxyOptions);
 
             using (var c = new Connection(endpoint, options))
             {
@@ -531,6 +532,26 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
                 }
+            }
+        }
+
+        [Trait("Category", "WriteQueueDepth")]
+        [Theory(DisplayName = "WriteQueueDepth computes depth"), AutoData]
+        public async Task WriteQueueDepth_Computes_Depth(IPEndPoint endpoint, int size)
+        {
+            using (var c = new Connection(endpoint, new ConnectionOptions(writeQueueSize: size)))
+            {
+                Assert.Equal(0, c.WriteQueueDepth);
+
+                var s = c.GetProperty<SemaphoreSlim>("WriteQueueSemaphore");
+
+                await s.WaitAsync();
+
+                Assert.Equal(1, c.WriteQueueDepth);
+
+                await s.WaitAsync();
+
+                Assert.Equal(2, c.WriteQueueDepth);
             }
         }
 
