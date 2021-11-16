@@ -75,7 +75,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Instantiates with given options"), AutoData]
         public void Instantiates_With_Given_Options(IPEndPoint endpoint)
         {
-            var proxyOptions = new ProxyOptions("foo", 1);
+            var proxyOptions = new ProxyOptions("192.168.1.1", 1);
             var options = new ConnectionOptions(1, 1, 1, 1, 1, proxyOptions);
 
             using (var c = new Connection(endpoint, options))
@@ -584,6 +584,32 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write throws and disconnect if queue is full"), AutoData]
+        public async Task Write_Throws_And_Disconnects_If_Queue_Is_Full(IPEndPoint endpoint)
+        {
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(endpoint, new ConnectionOptions(writeQueueSize: 1), tcpClient: t.Object))
+                {
+                    var s = c.GetProperty<SemaphoreSlim>("WriteQueueSemaphore");
+
+                    await s.WaitAsync();
+
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(new byte[] { 0x0, 0x0 }));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionWriteDroppedException>(ex);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
                 }
             }
         }
