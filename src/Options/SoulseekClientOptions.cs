@@ -204,11 +204,6 @@ namespace Soulseek
         public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResponseResolver { get; }
 
         /// <summary>
-        ///     Gets the depth of the distributed broadcast queue.  (Default = 500).
-        /// </summary>
-        public int DistributedBroadcastQueueDepth { get; }
-
-        /// <summary>
         ///     Gets the number of allowed distributed children. (Default = 100).
         /// </summary>
         public int DistributedChildLimit { get; }

@@ -34,7 +34,7 @@ namespace Soulseek
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
-            int writeQueueDepth = 300,
+            int writeQueueDepth = 500,
             int connectTimeout = 10000,
             int inactivityTimeout = 15000,
             ProxyOptions proxyOptions = null)
@@ -78,7 +78,7 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Gets the depth of the write queue for double buffered writes.  (Default = 100).
+        ///     Gets the depth of the write queue for double buffered writes.  (Default = 500).
         /// </summary>
         public int WriteQueueDepth { get; }
 
