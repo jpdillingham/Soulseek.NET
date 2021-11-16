@@ -35,7 +35,7 @@ namespace Soulseek.Tests.Unit.Options
 
             Assert.Equal(read, o.ReadBufferSize);
             Assert.Equal(write, o.WriteBufferSize);
-            Assert.Equal(depth, o.WriteQueueDepth);
+            Assert.Equal(depth, o.WriteQueueSize);
             Assert.Equal(timeout, o.ConnectTimeout);
             Assert.Equal(inactivity, o.InactivityTimeout);
         }

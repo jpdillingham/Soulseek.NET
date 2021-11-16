@@ -27,21 +27,21 @@ namespace Soulseek
         /// </summary>
         /// <param name="readBufferSize">The read buffer size for underlying TCP connections.</param>
         /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
-        /// <param name="writeQueueDepth">The depth of the write queue for double buffered writes.</param>
+        /// <param name="writeQueueSize">The size of the write queue for double buffered writes.</param>
         /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
         /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
         /// <param name="proxyOptions">Optional SOCKS 5 proxy configuration options.</param>
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
-            int writeQueueDepth = 500,
+            int writeQueueSize = 500,
             int connectTimeout = 10000,
             int inactivityTimeout = 15000,
             ProxyOptions proxyOptions = null)
         {
             ReadBufferSize = readBufferSize;
             WriteBufferSize = writeBufferSize;
-            WriteQueueDepth = writeQueueDepth;
+            WriteQueueSize = writeQueueSize;
             ConnectTimeout = connectTimeout;
             InactivityTimeout = inactivityTimeout;
 
@@ -78,9 +78,9 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Gets the depth of the write queue for double buffered writes.  (Default = 500).
+        ///     Gets the size of the write queue for double buffered writes.  (Default = 500).
         /// </summary>
-        public int WriteQueueDepth { get; }
+        public int WriteQueueSize { get; }
 
         /// <summary>
         ///     Returns a new instance with <see cref="InactivityTimeout"/> fixed to -1, disabling it.
@@ -88,7 +88,7 @@ namespace Soulseek
         /// <returns>A new instance with InactivityTimeout disabled.</returns>
         public ConnectionOptions WithoutInactivityTimeout()
         {
-            return new ConnectionOptions(ReadBufferSize, WriteBufferSize, WriteQueueDepth, ConnectTimeout, inactivityTimeout: -1, ProxyOptions);
+            return new ConnectionOptions(ReadBufferSize, WriteBufferSize, WriteQueueSize, ConnectTimeout, inactivityTimeout: -1, ProxyOptions);
         }
     }
 }
