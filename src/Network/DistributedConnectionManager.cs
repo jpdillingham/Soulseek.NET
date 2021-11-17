@@ -161,7 +161,6 @@ namespace Soulseek.Network
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private bool AcceptChildren => SoulseekClient.Options.AcceptDistributedChildren;
-        private SemaphoreSlim BroadcastSyncRoot = new SemaphoreSlim(100);
 
         /// <remarks>
         ///     <para>Provides a thread-safe collection for managing connecting and connected children.</para>
@@ -446,38 +445,31 @@ namespace Soulseek.Network
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        public Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
-            if (BroadcastSyncRoot.CurrentCount == 0)
-            {
-                Diagnostic.Warning("Broadcast queue depth exceeded limit.  Distributed message dropped.");
-            }
+            cancellationToken ??= CancellationToken.None;
 
-            await BroadcastSyncRoot.WaitAsync();
-
-            try
+            async Task Write (KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
             {
-                var tasks = ChildConnectionDictionary.Values.Select(async c =>
+                try
                 {
-                    IMessageConnection connection = null;
-
-                    try
-                    {
-                        connection = await c.Value.ConfigureAwait(false);
-                        await connection.WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        connection?.Dispose();
-                    }
-                });
-
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                    var connection = await child.Value.Value.ConfigureAwait(false);
+                    await connection.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Failed to broadcast message to {child.Key}: {ex.Message}", ex);
+                }
             }
-            finally
+
+            var tasks = new List<Task>();
+
+            foreach (var child in ChildConnectionDictionary)
             {
-                BroadcastSyncRoot.Release();
+                tasks.Add(Write(child, bytes, cancellationToken));
             }
+
+            return Task.WhenAll(tasks);
         }
 
         /// <summary>

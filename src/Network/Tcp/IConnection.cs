@@ -89,6 +89,11 @@ namespace Soulseek.Network.Tcp
         ConnectionTypes Type { get; set; }
 
         /// <summary>
+        ///     Gets the current depth of the double buffered write queue.
+        /// </summary>
+        int WriteQueueDepth { get; }
+
+        /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>

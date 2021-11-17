@@ -44,6 +44,7 @@ namespace Soulseek.Network.Tcp
             Options = options ?? new ConnectionOptions();
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
+            WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
 
             if (Options.InactivityTimeout > 0)
             {
@@ -146,6 +147,11 @@ namespace Soulseek.Network.Tcp
         public ConnectionTypes Type { get; set; }
 
         /// <summary>
+        ///     Gets the current depth of the double buffered write queue.
+        /// </summary>
+        public int WriteQueueDepth => Options.WriteQueueSize - WriteQueueSemaphore.CurrentCount;
+
+        /// <summary>
         ///     Gets or sets a value indicating whether the object is disposed.
         /// </summary>
         protected bool Disposed { get; set; } = false;
@@ -154,6 +160,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets or sets the timer used to monitor for transfer inactivity.
         /// </summary>
         protected SystemTimer InactivityTimer { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the time at which the last activity took place.
+        /// </summary>
+        protected DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         ///     Gets or sets the network stream for the connection.
@@ -170,12 +181,8 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         protected SystemTimer WatchdogTimer { get; set; }
 
-        /// <summary>
-        ///     Gets or sets the time at which the last activity took place.
-        /// </summary>
-        protected DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
-
         private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private SemaphoreSlim WriteQueueSemaphore { get; set; }
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
@@ -646,13 +653,25 @@ namespace Soulseek.Network.Tcp
 
         private async Task WriteInternalAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
         {
-            ResetInactivityTime();
+            // in the case of a bad (or failing) connection, it is possible for us to continue to write data, particularly
+            // distributed search requests, to the connection for quite a while before the underlying socket figures out that it
+            // is in a bad state. when this happens memory usage skyrockets. see https://github.com/slskd/slskd/issues/251 for
+            // more information
+            if (WriteQueueSemaphore.CurrentCount == 0)
+            {
+                Disconnect("The write buffer is full");
+                throw new ConnectionWriteDroppedException($"Dropped buffered message to {IPEndPoint}; the write buffer is full");
+            }
 
-            var inputBuffer = new byte[Options.WriteBufferSize];
-            var totalBytesWritten = 0;
+            await WriteQueueSemaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
+                ResetInactivityTime();
+
+                var inputBuffer = new byte[Options.WriteBufferSize];
+                var totalBytesWritten = 0;
+
                 while (totalBytesWritten < length)
                 {
                     await governor(cancellationToken).ConfigureAwait(false);
@@ -686,6 +705,10 @@ namespace Soulseek.Network.Tcp
                 }
 
                 throw new ConnectionWriteException($"Failed to write {length} bytes to {IPEndPoint}: {ex.Message}", ex);
+            }
+            finally
+            {
+                WriteQueueSemaphore.Release();
             }
         }
     }
