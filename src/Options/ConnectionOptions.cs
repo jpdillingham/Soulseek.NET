@@ -34,7 +34,7 @@ namespace Soulseek
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
-            int writeQueueSize = 500,
+            int writeQueueSize = 250,
             int connectTimeout = 10000,
             int inactivityTimeout = 15000,
             ProxyOptions proxyOptions = null)
@@ -78,7 +78,7 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Gets the size of the write queue for double buffered writes.  (Default = 500).
+        ///     Gets the size of the write queue for double buffered writes.  (Default = 250).
         /// </summary>
         public int WriteQueueSize { get; }
 
