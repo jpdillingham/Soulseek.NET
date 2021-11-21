@@ -84,6 +84,23 @@ namespace Soulseek.Network.Tcp
             return NetworkStream.ReadAsync(buffer, offset, size, cancellationToken);
         }
 
+#if NETSTANDARD2_1_OR_GREATER
+        /// <summary>
+        ///     Asynchronously reads data from the <see cref="NetworkStream"/>.
+        /// </summary>
+        /// <param name="buffer">An array of type <see cref="byte"/> into which the read data will be written.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The number of bytes read.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="buffer"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the stream is write only.</exception>
+        /// <exception cref="IOException">Thrown when an error occurs while reading from the network.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed.</exception>
+        public ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+        {
+            return NetworkStream.ReadAsync(buffer, cancellationToken);
+        }
+#endif
+
         /// <summary>
         ///     Asynchronously writes data to the <see cref="NetworkStream"/>.
         /// </summary>
