@@ -586,7 +586,12 @@ namespace Soulseek.Network.Tcp
         {
             ResetInactivityTime();
 
-            var buffer = new byte[Options.ReadBufferSize];
+#if NETSTANDARD2_0
+            var buffer = new byte[Options.WriteBufferSize];
+#else
+            var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(Options.ReadBufferSize);
+#endif
+
             long totalBytesRead = 0;
 
             try
@@ -632,6 +637,12 @@ namespace Soulseek.Network.Tcp
 
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPEndPoint}: {ex.Message}", ex);
             }
+#if NETSTANDARD2_1_OR_GREATER
+            finally
+            {
+                System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
+            }
+#endif
         }
 
         private void ResetInactivityTime()
@@ -665,27 +676,29 @@ namespace Soulseek.Network.Tcp
 
             await WriteQueueSemaphore.WaitAsync().ConfigureAwait(false);
 
+#if NETSTANDARD2_0
+            var buffer = new byte[Options.WriteBufferSize];
+#else
+            var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(Options.WriteBufferSize);
+#endif
+
             try
             {
                 ResetInactivityTime();
 
-                var inputBuffer = new byte[Options.WriteBufferSize];
                 var totalBytesWritten = 0;
 
                 while (totalBytesWritten < length)
                 {
                     await governor(cancellationToken).ConfigureAwait(false);
 
-                    var bytesRemaining = length - totalBytesWritten;
-
-                    var bytesToRead = bytesRemaining >= inputBuffer.Length ? inputBuffer.Length : (int)bytesRemaining;
 #if NETSTANDARD2_0
-                    var bytesRead = await inputStream.ReadAsync(inputBuffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                    await Stream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 #else
-                    var bytesRead = await inputStream.ReadAsync(inputBuffer.AsMemory(0, bytesToRead), cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(new Memory<byte>(buffer), cancellationToken).ConfigureAwait(false);
+                    await Stream.WriteAsync(new ReadOnlyMemory<byte>(buffer, 0, bytesRead), cancellationToken).ConfigureAwait(false);
 #endif
-
-                    await Stream.WriteAsync(inputBuffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 
                     totalBytesWritten += bytesRead;
 
@@ -709,6 +722,10 @@ namespace Soulseek.Network.Tcp
             finally
             {
                 WriteQueueSemaphore.Release();
+
+#if NETSTANDARD2_1_OR_GREATER
+                System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
+#endif
             }
         }
     }
