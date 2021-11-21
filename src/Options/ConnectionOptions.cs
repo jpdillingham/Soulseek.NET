@@ -32,8 +32,8 @@ namespace Soulseek
         /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
         /// <param name="proxyOptions">Optional SOCKS 5 proxy configuration options.</param>
         public ConnectionOptions(
-            int readBufferSize = 16384,
-            int writeBufferSize = 16384,
+            int readBufferSize = 40960,
+            int writeBufferSize = 81920,
             int writeQueueSize = 500,
             int connectTimeout = 10000,
             int inactivityTimeout = 15000,
@@ -68,12 +68,12 @@ namespace Soulseek
         public ProxyOptions ProxyOptions { get; }
 
         /// <summary>
-        ///     Gets the read buffer size for underlying TCP connections. (Default = 16384).
+        ///     Gets the read buffer size for underlying TCP connections. (Default = 40960).
         /// </summary>
         public int ReadBufferSize { get; }
 
         /// <summary>
-        ///     Gets the write buffer size for underlying TCP connections. (Default = 16384).
+        ///     Gets the write buffer size for underlying TCP connections. (Default = 81920).
         /// </summary>
         public int WriteBufferSize { get; }
 
