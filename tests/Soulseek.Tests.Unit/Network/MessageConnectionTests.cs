@@ -451,23 +451,23 @@ namespace Soulseek.Tests.Unit.Network
             int callCount = 0;
 
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Callback<Memory<byte>, CancellationToken>((bytes, token) =>
                 {
                     if (callCount % 2 == 0)
                     {
                         var data = BitConverter.GetBytes(4);
-                        Array.Copy(data, bytes, data.Length);
+                        data.AsSpan().CopyTo(bytes.Span);
                     }
                     else if (callCount % 2 == 1)
                     {
                         var data = BitConverter.GetBytes((int)MessageCode.Peer.InfoRequest);
-                        Array.Copy(data, bytes, data.Length);
+                        data.AsSpan().CopyTo(bytes.Span);
                     }
 
                     callCount++;
                 })
-                .Returns(Task.Run(() => 4));
+                .Returns(ValueTask.FromResult(4));
 
             var tcpMock = new Mock<ITcpClient>();
 
@@ -499,23 +499,23 @@ namespace Soulseek.Tests.Unit.Network
             int callCount = 0;
 
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Callback<Memory<byte>, CancellationToken>((bytes, token) =>
                 {
                     if (callCount % 2 == 0)
                     {
                         var data = BitConverter.GetBytes(4);
-                        Array.Copy(data, bytes, data.Length);
+                        data.AsSpan().CopyTo(bytes.Span);
                     }
                     else if (callCount % 2 == 1)
                     {
                         var data = BitConverter.GetBytes(code);
-                        Array.Copy(data, bytes, data.Length);
+                        data.AsSpan().CopyTo(bytes.Span);
                     }
 
                     callCount++;
                 })
-                .Returns(Task.Run(() => 4));
+                .Returns(ValueTask.FromResult(4));
 
             var tcpMock = new Mock<ITcpClient>();
 
@@ -554,23 +554,23 @@ namespace Soulseek.Tests.Unit.Network
             int callCount = 0;
 
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Callback<Memory<byte>, CancellationToken>((bytes, token) =>
                 {
                     if (callCount % 2 == 0)
                     {
                         var data = BitConverter.GetBytes(4);
-                        Array.Copy(data, bytes, data.Length);
+                        data.AsSpan().CopyTo(bytes.Span);
                     }
                     else if (callCount % 2 == 1)
                     {
                         var data = BitConverter.GetBytes(code);
-                        Array.Copy(data, bytes, data.Length);
+                        data.AsSpan().CopyTo(bytes.Span);
                     }
 
                     callCount++;
                 })
-                .Returns(Task.Run(() => 4));
+                .Returns(ValueTask.FromResult(4));
 
             var tcpMock = new Mock<ITcpClient>();
 
@@ -602,8 +602,8 @@ namespace Soulseek.Tests.Unit.Network
             bool b = false;
 
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Callback<Memory<byte>, CancellationToken>((bytes, token) =>
                 {
                     b = true;
                 })
@@ -629,7 +629,7 @@ namespace Soulseek.Tests.Unit.Network
                 }
             }
 
-            streamMock.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+            streamMock.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "ReadContinuously")]

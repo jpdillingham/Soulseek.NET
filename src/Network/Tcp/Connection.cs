@@ -603,20 +603,24 @@ namespace Soulseek.Network.Tcp
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining; // cast to int is safe because of the check against buffer length.
 
+#if NETSTANDARD2_0
                     var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+#else
+                    var bytesRead = await Stream.ReadAsync(new Memory<byte>(buffer, 0, bytesToRead), cancellationToken).ConfigureAwait(false);
+#endif
 
                     if (bytesRead == 0)
                     {
                         throw new ConnectionException("Remote connection closed");
                     }
 
-                    totalBytesRead += bytesRead;
-
 #if NETSTANDARD2_0
                     await outputStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 #else
-                    await outputStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken).ConfigureAwait(false);
+                    await outputStream.WriteAsync(new Memory<byte>(buffer, 0, bytesRead), cancellationToken).ConfigureAwait(false);
 #endif
+
+                    totalBytesRead += bytesRead;
 
                     Interlocked.CompareExchange(ref DataRead, null, null)?
                         .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
@@ -692,11 +696,14 @@ namespace Soulseek.Network.Tcp
                 {
                     await governor(cancellationToken).ConfigureAwait(false);
 
+                    var bytesRemaining = length - totalBytesWritten;
+                    var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining;
+
 #if NETSTANDARD2_0
-                    var bytesRead = await inputStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
                     await Stream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 #else
-                    var bytesRead = await inputStream.ReadAsync(new Memory<byte>(buffer), cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(new Memory<byte>(buffer, 0, bytesToRead), cancellationToken).ConfigureAwait(false);
                     await Stream.WriteAsync(new ReadOnlyMemory<byte>(buffer, 0, bytesRead), cancellationToken).ConfigureAwait(false);
 #endif
 

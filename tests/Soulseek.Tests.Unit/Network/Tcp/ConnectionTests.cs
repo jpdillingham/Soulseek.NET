@@ -1186,8 +1186,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Does_Not_Throw_If_Length_Is_Long_And_Larger_Than_Int(IPEndPoint endpoint, long length)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult((int)length));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
 
@@ -1211,8 +1211,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_To_Stream_Does_Not_Throw_If_Length_Is_Long_And_Larger_Than_Int(IPEndPoint endpoint, long length, Func<CancellationToken, Task> governor)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult((int)length));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
 
@@ -1237,8 +1237,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1254,7 +1254,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.Null(ex);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -1264,8 +1264,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_To_Stream_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1282,7 +1282,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.Null(ex);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -1292,8 +1292,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Passes_Given_CancellationToken(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1309,7 +1309,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 {
                     await c.ReadAsync(1, cancellationToken);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), cancellationToken), Times.Once);
                 }
             }
         }
@@ -1319,8 +1319,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Loops_Over_Stream_ReadAsync_On_Partial_Read(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1334,7 +1334,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 {
                     await c.ReadAsync(3);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
                 }
             }
         }
@@ -1344,8 +1344,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_To_Stream_Passes_CancellationToken(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1362,7 +1362,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 {
                     await c.ReadAsync(1, stream, (ct) => Task.CompletedTask, cancellationToken);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), cancellationToken), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), cancellationToken), Times.Once);
                 }
             }
         }
@@ -1372,8 +1372,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_To_Stream_Does_Not_Throw_Given_Governor(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1389,7 +1389,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     var ex = await Record.ExceptionAsync(() => c.ReadAsync(1, outputStream: stream, governor: null));
 
                     Assert.Null(ex);
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -1399,8 +1399,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_To_Stream_Loops_Over_Stream_ReadAsync_On_Partial_Read(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1415,7 +1415,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 {
                     await c.ReadAsync(3, stream, (ct) => Task.CompletedTask);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
                 }
             }
         }
@@ -1425,8 +1425,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_To_Stream_Limits_Reads_To_Buffer_Size(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 16));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(16));
 
             var t = new Mock<ITcpClient>();
 
@@ -1441,7 +1441,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 {
                     await c.ReadAsync(32, stream, (ct) => Task.CompletedTask);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), 16, It.IsAny<CancellationToken>()), Times.Exactly(2));
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
                 }
             }
         }
@@ -1451,7 +1451,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Throws_If_Stream_Throws(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
                 .Throws(new SocketException());
 
             var t = new Mock<ITcpClient>();
@@ -1472,7 +1472,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.Equal(ConnectionState.Disconnected, c.State);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -1482,7 +1482,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Throws_If_Stream_Times_Out(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             var t = new Mock<ITcpClient>();
@@ -1502,7 +1502,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.Equal(ConnectionState.Disconnected, c.State);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -1512,7 +1512,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Throws_If_Stream_Is_Cancelled(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             var t = new Mock<ITcpClient>();
@@ -1532,7 +1532,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.Equal(ConnectionState.Disconnected, c.State);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -1674,8 +1674,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Disconnects_If_Stream_Returns_0(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 0));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(0));
 
             var t = new Mock<ITcpClient>();
 
@@ -1694,7 +1694,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.Equal(ConnectionState.Disconnected, c.State);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -1704,8 +1704,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Raises_DataRead_Event(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
@@ -1731,7 +1731,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.Equal(3, eventArgs[2].CurrentLength);
                     Assert.Equal(3, eventArgs[2].TotalLength);
 
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+                    s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
                 }
             }
         }
@@ -1741,8 +1741,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public async Task Read_Resets_LastActivityTime(IPEndPoint endpoint)
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
+            s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.FromResult(1));
 
             var t = new Mock<ITcpClient>();
 
