@@ -587,7 +587,7 @@ namespace Soulseek.Network.Tcp
             ResetInactivityTime();
 
 #if NETSTANDARD2_0
-            var buffer = new byte[Options.WriteBufferSize];
+            var buffer = new byte[Options.ReadBufferSize];
 #else
             var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(Options.ReadBufferSize);
 #endif
