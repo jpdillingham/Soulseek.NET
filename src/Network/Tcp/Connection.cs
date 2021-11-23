@@ -53,7 +53,7 @@ namespace Soulseek.Network.Tcp
 
             if (Options.KeepAlive)
             {
-                TcpClient.Client.EnableKeepAlive(delay: 5000, interval: 5000);
+                TcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
             }
 
             WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);

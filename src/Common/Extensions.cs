@@ -119,36 +119,5 @@ namespace Soulseek
 
             return sBuilder.ToString();
         }
-
-        /// <summary>
-        ///     Enables TCP KeepAlive packets for this Socket.
-        /// </summary>
-        /// <remarks>
-        ///     https://darchuk.net/2019/01/04/c-setting-socket-keep-alive/.
-        /// </remarks>
-        /// <param name="socket">The socket for which to enable KeepAlives.</param>
-        /// <param name="delay">The delay since last activity before sending a KeepAlive.</param>
-        /// <param name="interval">The interval at which to send KeepAlives.</param>
-        public static void EnableKeepAlive(this Socket socket, uint delay, uint interval)
-        {
-            // Get the size of the uint to use to back the byte array
-            int size = Marshal.SizeOf(0U);
-
-            // Create the byte array
-            byte[] keepAlive = new byte[size * 3];
-
-            // Pack the byte array:
-            // Turn keepalive on
-            Buffer.BlockCopy(BitConverter.GetBytes(1U), 0, keepAlive, 0, size);
-
-            // Set amount of time without activity before sending a keepalive
-            Buffer.BlockCopy(BitConverter.GetBytes(delay), 0, keepAlive, size, size);
-
-            // Set keepalive interval
-            Buffer.BlockCopy(BitConverter.GetBytes(interval), 0, keepAlive, size * 2, size);
-
-            // Set the keep-alive settings on the underlying Socket
-            socket.IOControl(IOControlCode.KeepAliveValues, keepAlive, null);
-        }
     }
 }
