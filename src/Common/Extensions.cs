@@ -124,9 +124,9 @@ namespace Soulseek
         ///     Enables TCP KeepAlive packets for this Socket.
         /// </summary>
         /// <remarks>
-        ///     https://darchuk.net/2019/01/04/c-setting-socket-keep-alive/
+        ///     https://darchuk.net/2019/01/04/c-setting-socket-keep-alive/.
         /// </remarks>
-        /// <param name="socket">The socket for which to enable KeepAlives</param>
+        /// <param name="socket">The socket for which to enable KeepAlives.</param>
         /// <param name="delay">The delay since last activity before sending a KeepAlive.</param>
         /// <param name="interval">The interval at which to send KeepAlives.</param>
         public static void EnableKeepAlive(this Socket socket, uint delay, uint interval)
