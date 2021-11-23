@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public void Instantiates_With_Given_Options(IPEndPoint endpoint)
         {
             var proxyOptions = new ProxyOptions("192.168.1.1", 1);
-            var options = new ConnectionOptions(1, 1, 1, 1, 1, proxyOptions);
+            var options = new ConnectionOptions(1, 1, 1, 1, 1, 1, true, proxyOptions);
 
             using (var c = new Connection(endpoint, options))
             {
