@@ -44,6 +44,18 @@ namespace Soulseek.Network.Tcp
             Options = options ?? new ConnectionOptions();
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
+
+            // someone might be tempted to set the read and write buffer sizes on the
+            // TcpClient from options here; don't. for whatever reason this doesn't work
+            // as expected, especially not on Linux.  let the framework/OS handle this.
+            // the buffer size options refer to the buffer array used to chunk payloads.
+            TcpClient.Client.SendTimeout = Options.WriteTimeout;
+
+            if (Options.KeepAlive)
+            {
+                TcpClient.Client.EnableKeepAlive(delay: 5000, interval: 5000);
+            }
+
             WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
 
             if (Options.InactivityTimeout > 0)
