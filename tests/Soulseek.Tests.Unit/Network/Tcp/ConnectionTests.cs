@@ -143,6 +143,19 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Invokes ConfigureSocketAction and passes TcpClient Socket"), AutoData]
+        public void Invokes_ConfigureSocketAction(IPEndPoint endpoint)
+        {
+            Socket socket = null;
+
+            using (var c = new Connection(endpoint, options: new ConnectionOptions(configureSocketAction: (s) => socket = s)))
+            {
+                var tcpClient = c.GetProperty<TcpClientAdapter>("TcpClient");
+                Assert.Equal(tcpClient.Client, socket);
+            }
+        }
+
         [Trait("Category", "Dispose")]
         [Theory(DisplayName = "Disposes without throwing"), AutoData]
         public void Disposes_Without_Throwing(IPEndPoint endpoint)
