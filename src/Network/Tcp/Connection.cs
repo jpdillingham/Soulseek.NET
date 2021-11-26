@@ -153,11 +153,6 @@ namespace Soulseek.Network.Tcp
         public ConnectionOptions Options { get; protected set; }
 
         /// <summary>
-        ///     Gets the underlying Socket.
-        /// </summary>
-        public Socket Socket => TcpClient?.Client;
-
-        /// <summary>
         ///     Gets or sets the current connection state.
         /// </summary>
         public ConnectionState State { get; protected set; }

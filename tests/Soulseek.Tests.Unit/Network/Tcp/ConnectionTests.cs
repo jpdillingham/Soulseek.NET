@@ -57,7 +57,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             Assert.NotEqual(Guid.Empty, c.Id);
             Assert.Equal(ConnectionTypes.None, c.Type);
             Assert.NotEqual(new TimeSpan(), c.InactiveTime);
-            Assert.NotNull(c.Socket);
         }
 
         [Trait("Category", "Instantiation")]

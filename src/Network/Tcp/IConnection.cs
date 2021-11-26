@@ -80,11 +80,6 @@ namespace Soulseek.Network.Tcp
         ConnectionOptions Options { get; }
 
         /// <summary>
-        ///     Gets the underlying Socket.
-        /// </summary>
-        Socket Socket { get; }
-
-        /// <summary>
         ///     Gets the current connection state.
         /// </summary>
         ConnectionState State { get; }
