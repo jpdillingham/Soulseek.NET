@@ -338,6 +338,23 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Invokes ConfigureServerSocketAction")]
+        public async Task Invokes_ConfigureServerSocketAction()
+        {
+            var called = false;
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(configureServerSocketAction: (_) => { called = true; }));
+
+            using (client)
+            {
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync("u", "p"));
+
+                Assert.Null(ex);
+
+                Assert.True(called);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Fact(DisplayName = "Raises correct StateChanged sequence on success")]
         public async Task Raises_Correct_StateChanged_Sequence_On_Success()
         {
