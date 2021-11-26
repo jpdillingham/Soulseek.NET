@@ -95,6 +95,7 @@ namespace Soulseek
         {
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
+
             ServerConnection = serverConnection;
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
@@ -2620,6 +2621,8 @@ namespace Soulseek
                         ServerConnection_MessageWritten,
                         Options.ServerConnectionOptions);
 
+                    Options.ConfigureServerSocketAction(ServerConnection.Socket);
+
                     await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
                     Address = address;
@@ -3279,8 +3282,9 @@ namespace Soulseek
                 }
 
                 var serverConnectionOptionsChanged = patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions;
+                var configureServerSocketActionChanged = patch.ConfigureServerSocketAction != null && patch.ConfigureServerSocketAction != Options.ConfigureServerSocketAction;
 
-                if (connected && serverConnectionOptionsChanged)
+                if (connected && (serverConnectionOptionsChanged || configureServerSocketActionChanged))
                 {
                     // required because we need to re-instantiate ServerConnection in order to pass it the new options
                     reconnectRequired = true;
