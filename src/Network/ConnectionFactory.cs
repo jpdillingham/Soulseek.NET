@@ -69,7 +69,7 @@ namespace Soulseek.Network
             ConnectionOptions options = null,
             ITcpClient tcpClient = null)
         {
-            var connection = new MessageConnection(ipEndPoint, (options ?? new ConnectionOptions()).WithoutInactivityTimeout().WithKeepAlive(), tcpClient: tcpClient);
+            var connection = new MessageConnection(ipEndPoint, (options ?? new ConnectionOptions()).WithoutInactivityTimeout(), tcpClient: tcpClient);
             connection.Connected += connectedEventHandler;
             connection.Disconnected += disconnectedEventHandler;
             connection.MessageRead += messageReadEventHandler;

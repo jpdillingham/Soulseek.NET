@@ -95,6 +95,7 @@ namespace Soulseek
         {
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
+
             ServerConnection = serverConnection;
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);

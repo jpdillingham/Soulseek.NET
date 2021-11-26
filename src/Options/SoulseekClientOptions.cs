@@ -20,6 +20,7 @@ namespace Soulseek
     using System;
     using System.Linq;
     using System.Net;
+    using System.Net.Sockets;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
@@ -73,7 +74,9 @@ namespace Soulseek
         /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
-        /// <param name="searchResponseCache">The search response cache to use when a response is not able to be delivered immediately.</param>
+        /// <param name="searchResponseCache">
+        ///     The search response cache to use when a response is not able to be delivered immediately.
+        /// </param>
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
@@ -263,6 +266,11 @@ namespace Soulseek
         public Func<string, IPEndPoint, string, Task<int?>> PlaceInQueueResponseResolver { get; }
 
         /// <summary>
+        ///     Gets the search response cache to use when a response is not able to be delivered immediately.
+        /// </summary>
+        public ISearchResponseCache SearchResponseCache { get; }
+
+        /// <summary>
         ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
         /// </summary>
         public Func<string, int, SearchQuery, Task<SearchResponse>> SearchResponseResolver { get; }
@@ -281,11 +289,6 @@ namespace Soulseek
         ///     Gets the options for peer transfer connections.
         /// </summary>
         public ConnectionOptions TransferConnectionOptions { get; }
-
-        /// <summary>
-        ///     Gets the search response cache to use when a response is not able to be delivered immediately.
-        /// </summary>
-        public ISearchResponseCache SearchResponseCache { get; }
 
         /// <summary>
         ///     Gets the user endpoint cache to use when resolving user endpoints.
@@ -311,28 +314,28 @@ namespace Soulseek
             }
 
             return With(
-                patch.EnableListener,
-                patch.ListenPort,
-                patch.EnableDistributedNetwork,
-                patch.AcceptDistributedChildren,
-                patch.DistributedChildLimit,
-                patch.DeduplicateSearchRequests,
-                patch.AutoAcknowledgePrivateMessages,
-                patch.AutoAcknowledgePrivilegeNotifications,
-                patch.AcceptPrivateRoomInvitations,
-                patch.ServerConnectionOptions,
-                patch.PeerConnectionOptions,
-                patch.TransferConnectionOptions,
-                patch.IncomingConnectionOptions,
-                patch.DistributedConnectionOptions,
-                patch.UserEndPointCache,
-                patch.SearchResponseResolver,
-                patch.SearchResponseCache,
-                patch.BrowseResponseResolver,
-                patch.DirectoryContentsResponseResolver,
-                patch.UserInfoResponseResolver,
-                patch.EnqueueDownloadAction,
-                patch.PlaceInQueueResponseResolver);
+                enableListener: patch.EnableListener,
+                listenPort: patch.ListenPort,
+                enableDistributedNetwork: patch.EnableDistributedNetwork,
+                acceptDistributedChildren: patch.AcceptDistributedChildren,
+                distributedChildLimit: patch.DistributedChildLimit,
+                deduplicateSearchRequests: patch.DeduplicateSearchRequests,
+                autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
+                acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
+                serverConnectionOptions: patch.ServerConnectionOptions,
+                peerConnectionOptions: patch.PeerConnectionOptions,
+                transferConnectionOptions: patch.TransferConnectionOptions,
+                incomingConnectionOptions: patch.IncomingConnectionOptions,
+                distributedConnectionOptions: patch.DistributedConnectionOptions,
+                userEndPointCache: patch.UserEndPointCache,
+                searchResponseResolver: patch.SearchResponseResolver,
+                searchResponseCache: patch.SearchResponseCache,
+                browseResponseResolver: patch.BrowseResponseResolver,
+                directoryContentsResponseResolver: patch.DirectoryContentsResponseResolver,
+                userInfoResponseResolver: patch.UserInfoResponseResolver,
+                enqueueDownloadAction: patch.EnqueueDownloadAction,
+                placeInQueueResponseResolver: patch.PlaceInQueueResponseResolver);
         }
 
         /// <summary>
@@ -362,7 +365,9 @@ namespace Soulseek
         /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
-        /// <param name="searchResponseCache">The search response cache to use when a response is not able to be delivered immediately.</param>
+        /// <param name="searchResponseCache">
+        ///     The search response cache to use when a response is not able to be delivered immediately.
+        /// </param>
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
@@ -402,31 +407,31 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
             return new SoulseekClientOptions(
-                enableListener ?? EnableListener,
-                listenPort ?? ListenPort,
-                enableDistributedNetwork ?? EnableDistributedNetwork,
-                acceptDistributedChildren ?? AcceptDistributedChildren,
-                distributedChildLimit ?? DistributedChildLimit,
-                deduplicateSearchRequests ?? DeduplicateSearchRequests,
-                MessageTimeout,
-                autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,
-                autoAcknowledgePrivilegeNotifications ?? AutoAcknowledgePrivilegeNotifications,
-                acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
-                MinimumDiagnosticLevel,
-                StartingToken,
-                (serverConnectionOptions ?? ServerConnectionOptions).WithoutInactivityTimeout(),
-                peerConnectionOptions ?? PeerConnectionOptions,
-                (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
-                incomingConnectionOptions ?? IncomingConnectionOptions,
-                distributedConnectionOptions ?? DistributedConnectionOptions,
-                userEndPointCache ?? UserEndPointCache,
-                searchResponseResolver ?? SearchResponseResolver,
-                searchResponseCache ?? SearchResponseCache,
-                browseResponseResolver ?? BrowseResponseResolver,
-                directoryContentsResponseResolver ?? DirectoryContentsResponseResolver,
-                userInfoResponseResolver ?? UserInfoResponseResolver,
-                enqueueDownloadAction ?? EnqueueDownloadAction,
-                placeInQueueResponseResolver ?? PlaceInQueueResponseResolver);
+                enableListener: enableListener ?? EnableListener,
+                listenPort: listenPort ?? ListenPort,
+                enableDistributedNetwork: enableDistributedNetwork ?? EnableDistributedNetwork,
+                acceptDistributedChildren: acceptDistributedChildren ?? AcceptDistributedChildren,
+                distributedChildLimit: distributedChildLimit ?? DistributedChildLimit,
+                deduplicateSearchRequests: deduplicateSearchRequests ?? DeduplicateSearchRequests,
+                messageTimeout: MessageTimeout,
+                autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications: autoAcknowledgePrivilegeNotifications ?? AutoAcknowledgePrivilegeNotifications,
+                acceptPrivateRoomInvitations: acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
+                minimumDiagnosticLevel: MinimumDiagnosticLevel,
+                startingToken: StartingToken,
+                serverConnectionOptions: (serverConnectionOptions ?? ServerConnectionOptions).WithoutInactivityTimeout(),
+                peerConnectionOptions: peerConnectionOptions ?? PeerConnectionOptions,
+                transferConnectionOptions: (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
+                incomingConnectionOptions: incomingConnectionOptions ?? IncomingConnectionOptions,
+                distributedConnectionOptions: distributedConnectionOptions ?? DistributedConnectionOptions,
+                userEndPointCache: userEndPointCache ?? UserEndPointCache,
+                searchResponseResolver: searchResponseResolver ?? SearchResponseResolver,
+                searchResponseCache: searchResponseCache ?? SearchResponseCache,
+                browseResponseResolver: browseResponseResolver ?? BrowseResponseResolver,
+                directoryContentsResponseResolver: directoryContentsResponseResolver ?? DirectoryContentsResponseResolver,
+                userInfoResponseResolver: userInfoResponseResolver ?? UserInfoResponseResolver,
+                enqueueDownloadAction: enqueueDownloadAction ?? EnqueueDownloadAction,
+                placeInQueueResponseResolver: placeInQueueResponseResolver ?? PlaceInQueueResponseResolver);
         }
     }
 }
