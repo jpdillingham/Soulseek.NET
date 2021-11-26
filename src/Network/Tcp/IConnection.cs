@@ -20,6 +20,7 @@ namespace Soulseek.Network.Tcp
     using System;
     using System.IO;
     using System.Net;
+    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -77,6 +78,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets the options for the connection.
         /// </summary>
         ConnectionOptions Options { get; }
+
+        /// <summary>
+        ///     Gets the underlying Socket.
+        /// </summary>
+        Socket Socket { get; }
 
         /// <summary>
         ///     Gets the current connection state.
