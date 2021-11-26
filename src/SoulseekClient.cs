@@ -2621,8 +2621,6 @@ namespace Soulseek
                         ServerConnection_MessageWritten,
                         Options.ServerConnectionOptions);
 
-                    Options.ConfigureServerSocketAction(ServerConnection.Socket);
-
                     await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
                     Address = address;
@@ -3282,9 +3280,8 @@ namespace Soulseek
                 }
 
                 var serverConnectionOptionsChanged = patch.ServerConnectionOptions != null && patch.ServerConnectionOptions != Options.ServerConnectionOptions;
-                var configureServerSocketActionChanged = patch.ConfigureServerSocketAction != null && patch.ConfigureServerSocketAction != Options.ConfigureServerSocketAction;
 
-                if (connected && (serverConnectionOptionsChanged || configureServerSocketActionChanged))
+                if (connected && serverConnectionOptionsChanged)
                 {
                     // required because we need to re-instantiate ServerConnection in order to pass it the new options
                     reconnectRequired = true;

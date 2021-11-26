@@ -56,6 +56,10 @@ namespace Soulseek.Network.Tcp
                 TcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
             }
 
+            // invoke the configuration delegate to allow implementing code to configure
+            // the socket.  .NET standard has a limited feature set with respect to SetSocketOptions()
+            Options.ConfigureSocketAction(TcpClient.Client);
+
             WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
 
             if (Options.InactivityTimeout > 0)

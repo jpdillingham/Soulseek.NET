@@ -81,8 +81,7 @@ namespace Soulseek.Tests.Unit.Options
                 directoryContentsResponseResolver: directoryContentsResponseResolver,
                 userInfoResponseResolver: userInfoResponseResolver,
                 enqueueDownloadAction: enqueueDownloadAction,
-                placeInQueueResponseResolver: placeInQueueResponseResolver,
-                configureServerSocketAction: configureServerSocketAction);
+                placeInQueueResponseResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
@@ -115,7 +114,6 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(userInfoResponseResolver, o.UserInfoResponseResolver);
             Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
             Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
-            Assert.Equal(configureServerSocketAction, o.ConfigureServerSocketAction);
         }
 
         [Trait("Category", "Instantiation")]

@@ -185,27 +185,6 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
-        [Fact(DisplayName = "Returns true if client connected and ServerConnectionOptions changed")]
-        public async Task Returns_True_If_Client_Connected_And_ConfigureServerSocketAction_Changed()
-        {
-            Action<Socket> one = (s) => { };
-            Action<Socket> two = (s) => { };
-
-            var (client, _) = GetFixture(new SoulseekClientOptions(configureServerSocketAction: one));
-
-            var patch = new SoulseekClientOptionsPatch(configureServerSocketAction: two);
-
-            using (client)
-            {
-                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-                var reconnectRequired = await client.ReconfigureOptionsAsync(patch);
-
-                Assert.True(reconnectRequired);
-            }
-        }
-
-        [Trait("Category", "ReconfigureOptions")]
         [Fact(DisplayName = "Nulls listener if EnableListener changed from true to false")]
         public async Task Nulls_Listener_If_EnableListener_Changed()
         {

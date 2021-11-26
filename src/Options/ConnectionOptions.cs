@@ -17,11 +17,17 @@
 
 namespace Soulseek
 {
+    using System;
+    using System.Net.Sockets;
+
     /// <summary>
     ///     Options for connections.
     /// </summary>
     public class ConnectionOptions
     {
+        private readonly Action<Socket> defaultConfigureSocketAction =
+            (s) => { };
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionOptions"/> class.
         /// </summary>
@@ -33,6 +39,9 @@ namespace Soulseek
         /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
         /// <param name="keepAlive">A value indicating whether the connection should use TCP KeepAlives.</param>
         /// <param name="proxyOptions">Optional SOCKS 5 proxy configuration options.</param>
+        /// <param name="configureSocketAction">
+        ///     The delegate invoked during instantiation to configure the server Socket instance.
+        /// </param>
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
@@ -41,7 +50,8 @@ namespace Soulseek
             int writeTimeout = 5000,
             int inactivityTimeout = 15000,
             bool keepAlive = false,
-            ProxyOptions proxyOptions = null)
+            ProxyOptions proxyOptions = null,
+            Action<Socket> configureSocketAction = null)
         {
             ReadBufferSize = readBufferSize;
             WriteBufferSize = writeBufferSize;
@@ -53,7 +63,14 @@ namespace Soulseek
             KeepAlive = keepAlive;
 
             ProxyOptions = proxyOptions;
+
+            ConfigureSocketAction = configureSocketAction ?? defaultConfigureSocketAction;
         }
+
+        /// <summary>
+        ///     Gets the delegate invoked during instantiation to configure the server Socket instance.
+        /// </summary>
+        public Action<Socket> ConfigureSocketAction { get; }
 
         /// <summary>
         ///     Gets the connection timeout, in milliseconds, for client and peer TCP connections. (Default = 10000).
@@ -105,7 +122,16 @@ namespace Soulseek
         /// <returns>A new instance with InactivityTimeout disabled.</returns>
         public ConnectionOptions WithoutInactivityTimeout()
         {
-            return new ConnectionOptions(ReadBufferSize, WriteBufferSize, WriteQueueSize, ConnectTimeout, WriteTimeout, inactivityTimeout: -1, KeepAlive, ProxyOptions);
+            return new ConnectionOptions(
+                readBufferSize: ReadBufferSize,
+                writeBufferSize: WriteBufferSize,
+                writeQueueSize: WriteQueueSize,
+                connectTimeout: ConnectTimeout,
+                writeTimeout: WriteTimeout,
+                inactivityTimeout: -1,
+                keepAlive: KeepAlive,
+                proxyOptions: ProxyOptions,
+                configureSocketAction: ConfigureSocketAction);
         }
 
         /// <summary>
@@ -114,7 +140,16 @@ namespace Soulseek
         /// <returns>A new instance with KeepAlive enabled.</returns>
         public ConnectionOptions WithKeepAlive()
         {
-            return new ConnectionOptions(ReadBufferSize, WriteBufferSize, WriteQueueSize, ConnectTimeout, WriteTimeout, InactivityTimeout, keepAlive: true, ProxyOptions);
+            return new ConnectionOptions(
+                readBufferSize: ReadBufferSize,
+                writeBufferSize: WriteBufferSize,
+                writeQueueSize: WriteQueueSize,
+                connectTimeout: ConnectTimeout,
+                writeTimeout: WriteTimeout,
+                inactivityTimeout: InactivityTimeout,
+                keepAlive: true,
+                proxyOptions: ProxyOptions,
+                configureSocketAction: ConfigureSocketAction);
         }
     }
 }

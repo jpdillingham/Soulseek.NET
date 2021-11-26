@@ -71,9 +71,6 @@ namespace Soulseek
         /// <param name="placeInQueueResponseResolver">
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </param>
-        /// <param name="configureServerSocketAction">
-        ///     The delegate invoked during instantiation to configure the server Socket instance.
-        /// </param>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
         /// </exception>
@@ -102,8 +99,7 @@ namespace Soulseek
             Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
-            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null,
-            Action<Socket> configureServerSocketAction = null)
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
             EnableListener = enableListener;
             ListenPort = listenPort;
@@ -145,7 +141,6 @@ namespace Soulseek
             UserInfoResponseResolver = userInfoResponseResolver;
             EnqueueDownloadAction = enqueueDownloadAction;
             PlaceInQueueResponseResolver = placeInQueueResponseResolver;
-            ConfigureServerSocketAction = configureServerSocketAction;
         }
 
         /// <summary>
@@ -172,11 +167,6 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the response for an incoming browse request.
         /// </summary>
         public Func<string, IPEndPoint, Task<BrowseResponse>> BrowseResponseResolver { get; }
-
-        /// <summary>
-        ///     Gets the delegate invoked during instantiation to configure the server Socket instance.
-        /// </summary>
-        public Action<Socket> ConfigureServerSocketAction { get; }
 
         /// <summary>
         ///     Gets a value indicating whether duplicated distributed search requests should be discarded.
