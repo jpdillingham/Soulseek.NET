@@ -35,9 +35,9 @@ namespace Soulseek
         /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
         /// <param name="writeQueueSize">The size of the write queue for double buffered writes.</param>
         /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
-        /// <param name="writeTimeout">The timeout, in milliseconds, for write operations.</param>
+        /// <param name="writeTimeout">(Obsolete) The timeout, in milliseconds, for write operations.</param>
         /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
-        /// <param name="keepAlive">A value indicating whether the connection should use TCP KeepAlives.</param>
+        /// <param name="keepAlive">(Obsolete) A value indicating whether the connection should use TCP KeepAlives.</param>
         /// <param name="proxyOptions">Optional SOCKS 5 proxy configuration options.</param>
         /// <param name="configureSocketAction">
         ///     The delegate invoked during instantiation to configure the server Socket instance.
@@ -89,6 +89,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets a value indicating whether the connection should use TCP KeepAlives.  (Default = false).
         /// </summary>
+        [Obsolete("Use ConfigureSocketAction() to set KeepAlive and the various TcpKeepAlive parameters.  This will be removed in 4.x")]
         public bool KeepAlive { get; }
 
         /// <summary>
@@ -114,6 +115,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the timeout, in milliseconds, for write operations.  (Default = 5000).
         /// </summary>
+        [Obsolete("This will be removed in 4.x")]
         public int WriteTimeout { get; }
 
         /// <summary>

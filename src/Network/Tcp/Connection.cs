@@ -45,19 +45,10 @@ namespace Soulseek.Network.Tcp
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
-            // someone might be tempted to set the read and write buffer sizes on the
-            // TcpClient from options here; don't. for whatever reason this doesn't work
-            // as expected, especially not on Linux.  let the framework/OS handle this.
-            // the buffer size options refer to the buffer array used to chunk payloads.
-            TcpClient.Client.SendTimeout = Options.WriteTimeout;
-
-            if (Options.KeepAlive)
-            {
-                TcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-            }
-
             // invoke the configuration delegate to allow implementing code to configure
             // the socket.  .NET standard has a limited feature set with respect to SetSocketOptions()
+            // and there's a vast number of possible tweaks here, so delegating to implementing code
+            // is pretty much the only option.
             Options.ConfigureSocketAction(TcpClient.Client);
 
             WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
