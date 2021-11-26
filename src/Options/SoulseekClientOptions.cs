@@ -20,6 +20,7 @@ namespace Soulseek
     using System;
     using System.Linq;
     using System.Net;
+    using System.Net.Sockets;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
@@ -31,6 +32,9 @@ namespace Soulseek
     {
         private readonly Func<string, IPEndPoint, Task<BrowseResponse>> defaultBrowseResponse =
             (u, i) => Task.FromResult(new BrowseResponse(Enumerable.Empty<Directory>()));
+
+        private readonly Action<Socket> defaultConfigureServerSocketAction =
+            (s) => { };
 
         private readonly Func<string, IPEndPoint, string, Task> defaultEnqueueDownloadAction =
             (u, i, f) => Task.CompletedTask;
@@ -73,7 +77,9 @@ namespace Soulseek
         /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
-        /// <param name="searchResponseCache">The search response cache to use when a response is not able to be delivered immediately.</param>
+        /// <param name="searchResponseCache">
+        ///     The search response cache to use when a response is not able to be delivered immediately.
+        /// </param>
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
@@ -86,6 +92,9 @@ namespace Soulseek
         /// <param name="enqueueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
         /// <param name="placeInQueueResponseResolver">
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
+        /// </param>
+        /// <param name="configureServerSocketAction">
+        ///     The delegate invoked during instantiation to configure the server Socket instance.
         /// </param>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
@@ -118,7 +127,8 @@ namespace Soulseek
             Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
-            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null,
+            Action<Socket> configureServerSocketAction = null)
         {
             EnableListener = enableListener;
             ListenPort = listenPort;
@@ -163,6 +173,7 @@ namespace Soulseek
             UserInfoResponseResolver = userInfoResponseResolver ?? defaultUserInfoResponse;
             EnqueueDownloadAction = enqueueDownloadAction ?? defaultEnqueueDownloadAction;
             PlaceInQueueResponseResolver = placeInQueueResponseResolver ?? defaultPlaceInQueueResponse;
+            ConfigureServerSocketAction = configureServerSocketAction ?? defaultConfigureServerSocketAction;
         }
 
         /// <summary>
@@ -191,6 +202,11 @@ namespace Soulseek
         ///     or directories).
         /// </summary>
         public Func<string, IPEndPoint, Task<BrowseResponse>> BrowseResponseResolver { get; }
+
+        /// <summary>
+        ///     Gets the delegate invoked during instantiation to configure the server Socket instance.
+        /// </summary>
+        public Action<Socket> ConfigureServerSocketAction { get; }
 
         /// <summary>
         ///     Gets a value indicating whether duplicated distributed search requests should be discarded. (Default = discard duplicates).
@@ -263,6 +279,11 @@ namespace Soulseek
         public Func<string, IPEndPoint, string, Task<int?>> PlaceInQueueResponseResolver { get; }
 
         /// <summary>
+        ///     Gets the search response cache to use when a response is not able to be delivered immediately.
+        /// </summary>
+        public ISearchResponseCache SearchResponseCache { get; }
+
+        /// <summary>
         ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
         /// </summary>
         public Func<string, int, SearchQuery, Task<SearchResponse>> SearchResponseResolver { get; }
@@ -281,11 +302,6 @@ namespace Soulseek
         ///     Gets the options for peer transfer connections.
         /// </summary>
         public ConnectionOptions TransferConnectionOptions { get; }
-
-        /// <summary>
-        ///     Gets the search response cache to use when a response is not able to be delivered immediately.
-        /// </summary>
-        public ISearchResponseCache SearchResponseCache { get; }
 
         /// <summary>
         ///     Gets the user endpoint cache to use when resolving user endpoints.
@@ -311,28 +327,29 @@ namespace Soulseek
             }
 
             return With(
-                patch.EnableListener,
-                patch.ListenPort,
-                patch.EnableDistributedNetwork,
-                patch.AcceptDistributedChildren,
-                patch.DistributedChildLimit,
-                patch.DeduplicateSearchRequests,
-                patch.AutoAcknowledgePrivateMessages,
-                patch.AutoAcknowledgePrivilegeNotifications,
-                patch.AcceptPrivateRoomInvitations,
-                patch.ServerConnectionOptions,
-                patch.PeerConnectionOptions,
-                patch.TransferConnectionOptions,
-                patch.IncomingConnectionOptions,
-                patch.DistributedConnectionOptions,
-                patch.UserEndPointCache,
-                patch.SearchResponseResolver,
-                patch.SearchResponseCache,
-                patch.BrowseResponseResolver,
-                patch.DirectoryContentsResponseResolver,
-                patch.UserInfoResponseResolver,
-                patch.EnqueueDownloadAction,
-                patch.PlaceInQueueResponseResolver);
+                enableListener: patch.EnableListener,
+                listenPort: patch.ListenPort,
+                enableDistributedNetwork: patch.EnableDistributedNetwork,
+                acceptDistributedChildren: patch.AcceptDistributedChildren,
+                distributedChildLimit: patch.DistributedChildLimit,
+                deduplicateSearchRequests: patch.DeduplicateSearchRequests,
+                autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
+                acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
+                serverConnectionOptions: patch.ServerConnectionOptions,
+                peerConnectionOptions: patch.PeerConnectionOptions,
+                transferConnectionOptions: patch.TransferConnectionOptions,
+                incomingConnectionOptions: patch.IncomingConnectionOptions,
+                distributedConnectionOptions: patch.DistributedConnectionOptions,
+                userEndPointCache: patch.UserEndPointCache,
+                searchResponseResolver: patch.SearchResponseResolver,
+                searchResponseCache: patch.SearchResponseCache,
+                browseResponseResolver: patch.BrowseResponseResolver,
+                directoryContentsResponseResolver: patch.DirectoryContentsResponseResolver,
+                userInfoResponseResolver: patch.UserInfoResponseResolver,
+                enqueueDownloadAction: patch.EnqueueDownloadAction,
+                placeInQueueResponseResolver: patch.PlaceInQueueResponseResolver,
+                configureServerSocketAction: patch.ConfigureServerSocketAction);
         }
 
         /// <summary>
@@ -362,7 +379,9 @@ namespace Soulseek
         /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
-        /// <param name="searchResponseCache">The search response cache to use when a response is not able to be delivered immediately.</param>
+        /// <param name="searchResponseCache">
+        ///     The search response cache to use when a response is not able to be delivered immediately.
+        /// </param>
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
@@ -375,6 +394,9 @@ namespace Soulseek
         /// <param name="enqueueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
         /// <param name="placeInQueueResponseResolver">
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
+        /// </param>
+        /// <param name="configureServerSocketAction">
+        ///     The delegate invoked during instantiation to configure the server Socket instance.
         /// </param>
         /// <returns>The cloned instance.</returns>
         internal SoulseekClientOptions With(
@@ -399,34 +421,36 @@ namespace Soulseek
             Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
-            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null,
+            Action<Socket> configureServerSocketAction = null)
         {
             return new SoulseekClientOptions(
-                enableListener ?? EnableListener,
-                listenPort ?? ListenPort,
-                enableDistributedNetwork ?? EnableDistributedNetwork,
-                acceptDistributedChildren ?? AcceptDistributedChildren,
-                distributedChildLimit ?? DistributedChildLimit,
-                deduplicateSearchRequests ?? DeduplicateSearchRequests,
-                MessageTimeout,
-                autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,
-                autoAcknowledgePrivilegeNotifications ?? AutoAcknowledgePrivilegeNotifications,
-                acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
-                MinimumDiagnosticLevel,
-                StartingToken,
-                (serverConnectionOptions ?? ServerConnectionOptions).WithoutInactivityTimeout(),
-                peerConnectionOptions ?? PeerConnectionOptions,
-                (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
-                incomingConnectionOptions ?? IncomingConnectionOptions,
-                distributedConnectionOptions ?? DistributedConnectionOptions,
-                userEndPointCache ?? UserEndPointCache,
-                searchResponseResolver ?? SearchResponseResolver,
-                searchResponseCache ?? SearchResponseCache,
-                browseResponseResolver ?? BrowseResponseResolver,
-                directoryContentsResponseResolver ?? DirectoryContentsResponseResolver,
-                userInfoResponseResolver ?? UserInfoResponseResolver,
-                enqueueDownloadAction ?? EnqueueDownloadAction,
-                placeInQueueResponseResolver ?? PlaceInQueueResponseResolver);
+                enableListener: enableListener ?? EnableListener,
+                listenPort: listenPort ?? ListenPort,
+                enableDistributedNetwork: enableDistributedNetwork ?? EnableDistributedNetwork,
+                acceptDistributedChildren: acceptDistributedChildren ?? AcceptDistributedChildren,
+                distributedChildLimit: distributedChildLimit ?? DistributedChildLimit,
+                deduplicateSearchRequests: deduplicateSearchRequests ?? DeduplicateSearchRequests,
+                messageTimeout: MessageTimeout,
+                autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,
+                autoAcknowledgePrivilegeNotifications: autoAcknowledgePrivilegeNotifications ?? AutoAcknowledgePrivilegeNotifications,
+                acceptPrivateRoomInvitations: acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
+                minimumDiagnosticLevel: MinimumDiagnosticLevel,
+                startingToken: StartingToken,
+                serverConnectionOptions: (serverConnectionOptions ?? ServerConnectionOptions).WithoutInactivityTimeout(),
+                peerConnectionOptions: peerConnectionOptions ?? PeerConnectionOptions,
+                transferConnectionOptions: (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
+                incomingConnectionOptions: incomingConnectionOptions ?? IncomingConnectionOptions,
+                distributedConnectionOptions: distributedConnectionOptions ?? DistributedConnectionOptions,
+                userEndPointCache: userEndPointCache ?? UserEndPointCache,
+                searchResponseResolver: searchResponseResolver ?? SearchResponseResolver,
+                searchResponseCache: searchResponseCache ?? SearchResponseCache,
+                browseResponseResolver: browseResponseResolver ?? BrowseResponseResolver,
+                directoryContentsResponseResolver: directoryContentsResponseResolver ?? DirectoryContentsResponseResolver,
+                userInfoResponseResolver: userInfoResponseResolver ?? UserInfoResponseResolver,
+                enqueueDownloadAction: enqueueDownloadAction ?? EnqueueDownloadAction,
+                placeInQueueResponseResolver: placeInQueueResponseResolver ?? PlaceInQueueResponseResolver,
+                configureServerSocketAction: configureServerSocketAction ?? ConfigureServerSocketAction);
         }
     }
 }
