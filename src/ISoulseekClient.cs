@@ -459,6 +459,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task ConnectToUserAsync(string username, bool invalidateCache = false, CancellationToken? cancellationToken = null);
 
