@@ -72,6 +72,9 @@ namespace Soulseek.Tests.Unit.Client
         {
             var (client, mocks) = GetFixture();
 
+            mocks.Waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
             using (client)
             {
                 await client.ConnectToUserAsync(username);
@@ -86,6 +89,9 @@ namespace Soulseek.Tests.Unit.Client
         {
             var (client, mocks) = GetFixture();
 
+            mocks.Waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
             using (client)
             {
                 await client.ConnectToUserAsync(username, invalidateCache: true);
@@ -95,31 +101,39 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ConnectToUserAsync")]
-        [Theory(DisplayName = "Creates a diagnostic message if the cache was invalidated"), AutoData]
-        public async Task Creates_A_Diagnostic_Message_If_The_Cache_Was_Invalidated(string username)
+        [Theory(DisplayName = "Does not invalidate cache if invalidateCache is false"), AutoData]
+        public async Task Does_Not_Invalidate_Cache_If_InvlidateCache_Is_False(string username)
         {
-            var (_, mocks) = GetFixture();
-
-            mocks.PeerConnectionManager.Setup(m => m.TryInvalidateMessageConnectionCache(It.IsAny<string>()))
-                .Returns(true);
+            var (client, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
 
-            string diagnostic = null;
-
-            using (var client = new SoulseekClient(
-                peerConnectionManager: mocks.PeerConnectionManager.Object,
-                waiter: mocks.Waiter.Object,
-                options: new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug)))
+            using (client)
             {
-                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                client.DiagnosticGenerated += (_, e) => diagnostic = e.Message;
-
-                await client.ConnectToUserAsync(username, invalidateCache: true);
-
-                Assert.Equal($"Invalidated message connection cache for {username}", diagnostic);
+                await client.ConnectToUserAsync(username, invalidateCache: false);
             }
+
+            mocks.PeerConnectionManager.Verify(m => m.TryInvalidateMessageConnectionCache(username), Times.Never);
+        }
+
+        [Trait("Category", "ConnectToUserAsync")]
+        [Theory(DisplayName = "Creates a diagnostic message if the cache was invalidated"), AutoData]
+        public async Task Creates_A_Diagnostic_Message_If_The_Cache_Was_Invalidated(string username)
+        {
+            var (client, mocks) = GetFixture();
+
+            mocks.PeerConnectionManager.Setup(m => m.TryInvalidateMessageConnectionCache(username)).Returns(true);
+
+            mocks.Waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            using (client)
+            {
+                await client.ConnectToUserAsync(username, invalidateCache: true);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug($"Invalidated message connection cache for {username}"));
         }
 
         [Trait("Category", "ConnectToUserAsync")]
@@ -128,7 +142,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var (client, mocks) = GetFixture();
 
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mocks.Waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new UserOfflineException());
 
             using (client)
@@ -146,7 +160,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var (client, mocks) = GetFixture();
 
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (client)
@@ -164,7 +178,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var (client, mocks) = GetFixture();
 
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (client)
@@ -182,7 +196,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var (client, mocks) = GetFixture();
 
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception("foo"));
 
             using (client)
@@ -191,8 +205,9 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
-                Assert.IsType<Exception>(ex.InnerException);
-                Assert.Equal("foo", ex.InnerException.Message);
+                Assert.IsType<UserEndPointException>(ex.InnerException);
+                Assert.IsType<Exception>(ex.InnerException.InnerException);
+                Assert.Equal("foo", ex.InnerException.InnerException.Message);
             }
         }
 
@@ -204,19 +219,28 @@ namespace Soulseek.Tests.Unit.Client
 
             var (client, mocks) = GetFixture();
 
+            mocks.Waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(user, IPAddress.Parse("127.0.0.1"), 1)));
+
             using (client)
             {
                 await client.ConnectToUserAsync(user, cancellationToken: cancellationToken);
             }
 
-            mocks.Client.Verify(m => m.GetUserEndPointAsync(user, cancellationToken), Times.AtLeastOnce);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.AtLeastOnce);
         }
 
-        private (SoulseekClient client, Mocks Mocks) GetFixture()
+        private (SoulseekClient client, Mocks Mocks) GetFixture(SoulseekClientOptions options = null)
         {
             var mocks = new Mocks();
-            var client = mocks.Client.Object;
+            var client = new SoulseekClient(
+                serverConnection: mocks.ServerConnection.Object,
+                peerConnectionManager: mocks.PeerConnectionManager.Object,
+                waiter: mocks.Waiter.Object,
+                diagnosticFactory: mocks.Diagnostic.Object,
+                options: options ?? new SoulseekClientOptions());
 
+            client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
             return (client, mocks);
         }
 
@@ -224,26 +248,19 @@ namespace Soulseek.Tests.Unit.Client
         {
             public Mocks()
             {
-                Client = new Mock<SoulseekClient>()
-                {
-                    CallBase = true,
-                };
-
-                Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                Client.Setup(m => m.GetUserEndPointAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5555)));
-                Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
-                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
-
                 PeerConnectionManager.Setup(m => m.TryInvalidateMessageConnectionCache(It.IsAny<string>()))
                     .Returns(false);
                 PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<string>(), It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.FromResult(new Mock<IMessageConnection>().Object));
+
+                ServerConnection.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
             }
 
-            public Mock<SoulseekClient> Client { get; }
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
+            public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
+            public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
         }
     }
 }
