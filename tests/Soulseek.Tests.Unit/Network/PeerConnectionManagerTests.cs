@@ -2885,6 +2885,58 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct or indirect transfer connection"))));
         }
 
+        [Trait("Category", "TryInvalidateMessageConnectionCache")]
+        [Theory(DisplayName = "TryInvalidateMessageConnectionCache removes corresponding entry from MessageConnectionDictionary"), AutoData]
+        internal void TryInvalidateMessageConnectionCache_Removes_Corresponding_Entry_From_MessageConnectionDictionary(string username)
+        {
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                var dict = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+                dict.GetOrAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(new Mock<IMessageConnection>().Object)));
+
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                manager.TryInvalidateMessageConnectionCache(username);
+
+                Assert.Empty(dict);
+            }
+        }
+
+        [Trait("Category", "TryInvalidateMessageConnectionCache")]
+        [Theory(DisplayName = "TryInvalidateMessageConnectionCache returns true if cache is invalidated"), AutoData]
+        internal void TryInvalidateMessageConnectionCache_Returns_True_If_Cache_Is_Invalidated(string username)
+        {
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                var dict = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+                dict.GetOrAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(new Mock<IMessageConnection>().Object)));
+
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                var result = manager.TryInvalidateMessageConnectionCache(username);
+
+                Assert.True(result);
+            }
+        }
+
+        [Trait("Category", "TryInvalidateMessageConnectionCache")]
+        [Theory(DisplayName = "TryInvalidateMessageConnectionCache returns false if cache is missed"), AutoData]
+        internal void TryInvalidateMessageConnectionCache_Returns_False_If_Cache_Is_Missed(string username)
+        {
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                var result = manager.TryInvalidateMessageConnectionCache(username);
+
+                Assert.False(result);
+            }
+        }
+
         [Trait("Category", "Diagnostic")]
         [Fact(DisplayName = "Diagnostic raises DiagnosticGenerated")]
         internal void Diagnostic_Raises_DiagnosticGenerated()

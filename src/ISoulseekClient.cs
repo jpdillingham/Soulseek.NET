@@ -444,6 +444,26 @@ namespace Soulseek
         Task ConnectAsync(string address, int port, string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously establishes and caches a connection to the specified <paramref name="username"/>. If a connection
+        ///     is already cached, it is returned unless the <paramref name="invalidateCache"/> option is specified.
+        /// </summary>
+        /// <param name="username">The user to which to connect.</param>
+        /// <param name="invalidateCache">
+        ///     A value indicating whether to establish a new connection, regardless of whether one is cached.
+        /// </param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task ConnectToUserAsync(string username, bool invalidateCache = false, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Disconnects the client from the server.
         /// </summary>
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>

@@ -385,10 +385,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
         /// </summary>
-        /// <remarks>
-        ///     If a connection doesn't exist, new direct and indirect connections are attempted simultaneously, and the first to
-        ///     connect is returned.
-        /// </remarks>
+        /// <remarks>If a connection doesn't exist, a new connection is attempted using direct and indirect methods concurrently.</remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -397,11 +394,10 @@ namespace Soulseek.Network
             => GetOrAddMessageConnectionAsync(username, ipEndPoint, SoulseekClient.GetNextToken(), cancellationToken);
 
         /// <summary>
-        ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
+        ///     Gets a new or existing message connection to the specified <paramref name="username"/> using the specified <paramref name="solicitationToken"/>.
         /// </summary>
         /// <remarks>
-        ///     If a connection doesn't exist, new direct and indirect connections are attempted simultaneously, and the first to
-        ///     connect is returned.
+        ///     If a connection doesn't exist, a new connection is attempted using direct and indirect methods concurrently.
         /// </remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
@@ -660,6 +656,16 @@ namespace Soulseek.Network
                     (await connection.Value.ConfigureAwait(false))?.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        ///     Invalidates the cached message connection to the specified <paramref name="username"/>, if one exists.
+        /// </summary>
+        /// <param name="username">The username of the user for which the connection should be removed.</param>
+        /// <returns>A value indicating whether a connection record was invalidated.</returns>
+        public bool TryInvalidateMessageConnectionCache(string username)
+        {
+            return MessageConnectionDictionary.TryRemove(username, out _);
         }
 
         private void Dispose(bool disposing)
