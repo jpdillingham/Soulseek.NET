@@ -95,8 +95,15 @@ namespace Soulseek
         /// <param name="timer">The timer to reset.</param>
         public static void Reset(this Timer timer)
         {
-            timer.Stop();
-            timer.Start();
+            try
+            {
+                timer.Stop();
+                timer.Start();
+            }
+            catch (ObjectDisposedException)
+            {
+                // noop
+            }
         }
 
         /// <summary>
