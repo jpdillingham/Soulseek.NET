@@ -49,5 +49,17 @@ namespace Soulseek.Tests.Unit
                 Assert.IsType<ObjectDisposedException>(ex2);
             }
         }
+
+        [Trait("Category", "Extension")]
+        [Fact(DisplayName = "Timer reset does not throw given a disposed timer")]
+        public void Timer_Reset_Does_Not_Throw_On_Disposed_Timer()
+        {
+            var timer = new Timer();
+            timer.Dispose();
+
+            var ex = Record.Exception(() => timer.Reset());
+
+            Assert.Null(ex);
+        }
     }
 }
