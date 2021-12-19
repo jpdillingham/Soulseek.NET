@@ -35,6 +35,8 @@ namespace Soulseek.Tests.Unit.Options
             bool enableDistributedNetwork,
             bool acceptDistributedChildren,
             int distributedChildLimit,
+            bool enableUploadQueue,
+            int uploadSlots,
             bool deduplicateSearchRequests,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages,
@@ -68,6 +70,8 @@ namespace Soulseek.Tests.Unit.Options
                 enableDistributedNetwork: enableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren,
                 distributedChildLimit: distributedChildLimit,
+                enableUploadQueue: enableUploadQueue,
+                uploadSlots: uploadSlots,
                 deduplicateSearchRequests: deduplicateSearchRequests,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
@@ -94,6 +98,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
             Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
             Assert.Equal(distributedChildLimit, o.DistributedChildLimit);
+            Assert.Equal(enableUploadQueue, o.EnableDistributedNetwork);
+            Assert.Equal(uploadSlots, o.UploadSlots);
             Assert.Equal(deduplicateSearchRequests, o.DeduplicateSearchRequests);
             Assert.Equal(messageTimeout, o.MessageTimeout);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
@@ -195,6 +201,28 @@ namespace Soulseek.Tests.Unit.Options
         {
             SoulseekClientOptions x;
             var ex = Record.Exception(() => x = new SoulseekClientOptions(distributedChildLimit: -1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if upload slots are zero")]
+        public void Throws_If_Upload_Slots_Are_Zero()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(uploadSlots: 0));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if upload slots are negative")]
+        public void Throws_If_Upload_Slots_Are_Negative()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(uploadSlots: -1));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
