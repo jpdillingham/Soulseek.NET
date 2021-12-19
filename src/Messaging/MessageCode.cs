@@ -82,8 +82,17 @@ namespace Soulseek.Messaging
         /// <summary>
         ///     Peer message codes.
         /// </summary>
+        /// <remarks>
+        ///     Codes from 0-5500 were sent to Soulseek Qt 2020.3.12 and all but the ones
+        ///     documented here were reported as 'unknown'.
+        /// </remarks>
         public enum Peer
         {
+            /// <summary>
+            ///     1 (Deprecated)
+            /// </summary>
+            PrivateMessage = 1,
+
             /// <summary>
             ///     4
             /// </summary>
@@ -95,7 +104,7 @@ namespace Soulseek.Messaging
             BrowseResponse = 5,
 
             /// <summary>
-            ///     8
+            ///     8 (Deprecated)
             /// </summary>
             SearchRequest = 8,
 
@@ -103,6 +112,16 @@ namespace Soulseek.Messaging
             ///     9
             /// </summary>
             SearchResponse = 9,
+
+            /// <summary>
+            ///     10 (Deprecated)
+            /// </summary>
+            PrivateRoomInvitation = 10,
+
+            /// <summary>
+            ///     14 (Deprecated)
+            /// </summary>
+            CancelledQueuedTransfer = 14,
 
             /// <summary>
             ///     15
@@ -113,6 +132,16 @@ namespace Soulseek.Messaging
             ///     16
             /// </summary>
             InfoResponse = 16,
+
+            /// <summary>
+            ///     33 (Deprecated)
+            /// </summary>
+            SendConnectToken = 33,
+
+            /// <summary>
+            ///     34 (Deprecated)
+            /// </summary>
+            MoveDownloadToTop = 34,
 
             /// <summary>
             ///     36
@@ -155,6 +184,21 @@ namespace Soulseek.Messaging
             UploadFailed = 46,
 
             /// <summary>
+            ///     47 (Deprecated)
+            /// </summary>
+            ExactFileSearchRequest = 47,
+
+            /// <summary>
+            ///     48 (Deprecated)
+            /// </summary>
+            QueuedDownloads = 48,
+
+            /// <summary>
+            ///     49 (Deprecated)
+            /// </summary>
+            IndirectFileSearchRequest = 49,
+
+            /// <summary>
             ///     50
             /// </summary>
             UploadDenied = 50,
@@ -163,6 +207,11 @@ namespace Soulseek.Messaging
             ///     51
             /// </summary>
             PlaceInQueueRequest = 51,
+
+            /// <summary>
+            ///     52 (Deprecated)
+            /// </summary>
+            UploadQueueNotification = 52,
         }
 
         /// <summary>
