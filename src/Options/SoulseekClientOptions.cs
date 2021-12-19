@@ -20,7 +20,6 @@ namespace Soulseek
     using System;
     using System.Linq;
     using System.Net;
-    using System.Net.Sockets;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
@@ -50,6 +49,8 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="enableUploadQueue">A value indicating whether to use the internal queue for upload transfers.</param>
+        /// <param name="uploadSlots">The number of allowed concurrent uploads.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
         /// </param>
@@ -102,6 +103,8 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
+            bool enableUploadQueue = true,
+            int uploadSlots = 5,
             bool deduplicateSearchRequests = true,
             int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
@@ -138,6 +141,14 @@ namespace Soulseek
             if (DistributedChildLimit < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(distributedChildLimit), "Must be greater than or equal to zero");
+            }
+
+            EnableUploadQueue = enableUploadQueue;
+            UploadSlots = uploadSlots;
+
+            if (UploadSlots < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(uploadSlots), "Must be greater than or equal to one");
             }
 
             DeduplicateSearchRequests = deduplicateSearchRequests;
@@ -227,6 +238,11 @@ namespace Soulseek
         public bool EnableListener { get; }
 
         /// <summary>
+        ///     Gets a value indicating whether to use the internal queue for upload transfers. (Default = enable).
+        /// </summary>
+        public bool EnableUploadQueue { get; }
+
+        /// <summary>
         ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).
         /// </summary>
         /// <remarks>
@@ -289,6 +305,11 @@ namespace Soulseek
         ///     Gets the options for peer transfer connections.
         /// </summary>
         public ConnectionOptions TransferConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the number of allowed concurrent uploads. (Default = 5).
+        /// </summary>
+        public int UploadSlots { get; }
 
         /// <summary>
         ///     Gets the user endpoint cache to use when resolving user endpoints.
