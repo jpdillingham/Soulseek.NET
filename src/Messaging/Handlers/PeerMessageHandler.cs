@@ -332,8 +332,9 @@ namespace Soulseek.Messaging.Handlers
         /// <param name="args">The message event args.</param>
         public void HandleMessageWritten(object sender, MessageEventArgs args)
         {
+            var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Peer>(args.Message).ReadCode();
-            Diagnostic.Debug($"Peer message sent: {code}");
+            Diagnostic.Debug($"Peer message sent: {code} ({connection.IPEndPoint}) (id: {connection.Id})");
         }
 
         private async Task<(bool Rejected, string RejectionMessage)> TryEnqueueDownloadAsync(string username, IPEndPoint ipEndPoint, string filename)

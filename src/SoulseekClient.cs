@@ -96,6 +96,8 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
+            UploadSlotSemaphore = new SemaphoreSlim(initialCount: Options.UploadSlots, maxCount: Options.UploadSlots);
+
             ServerConnection = serverConnection;
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
@@ -445,6 +447,7 @@ namespace Soulseek
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private SemaphoreSlim UploadSlotSemaphore { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
@@ -3631,31 +3634,33 @@ namespace Soulseek
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
-            // fetch (or create) the semaphore for this user. the official client can't handle concurrent downloads, so we need to
-            // enforce this regardless of what downstream implementations do.
-            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
+            // fetch (or create) the semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
+            // so we need to enforce this regardless of what downstream implementations do.
+            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: 1, maxCount: 1));
 
             IPEndPoint endpoint = null;
             bool semaphoreAcquired = false;
+            bool slotAcquired = false;
 
             try
             {
                 UpdateState(TransferStates.Queued);
 
-                try
-                {
-                    await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                }
-                catch (TaskCanceledException ex)
-                {
-                    throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
-                }
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 Diagnostic.Debug($"Upload semaphore for {username} acquired");
                 semaphoreAcquired = true;
 
                 // in case the upload record was removed via cleanup while we were waiting, add it back.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
+                if (Options.EnableUploadQueue)
+                {
+                    await UploadSlotSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    
+                    Diagnostic.Debug($"Upload slot acquired");
+                    slotAcquired = true;
+                }
 
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
@@ -3790,7 +3795,11 @@ namespace Soulseek
                 upload.Connection?.Disconnect("Transfer cancelled", ex);
 
                 Diagnostic.Debug(ex.ToString());
-                throw;
+
+                // cancelled async operations can throw TaskCanceledException, which is a 
+                // subclass of OperationCanceledException, but we want to be deterministic,
+                // so wrap and re-throw them.
+                throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
             }
             catch (TimeoutException ex)
             {
@@ -3828,7 +3837,13 @@ namespace Soulseek
                 if (semaphoreAcquired)
                 {
                     Diagnostic.Debug($"Upload semaphore for {username} released");
-                    semaphore.Release();
+                    semaphore.Release(releaseCount: 1);
+                }
+
+                if (slotAcquired)
+                {
+                    Diagnostic.Info($"Upload slot released");
+                    UploadSlotSemaphore.Release(releaseCount: 1);
                 }
 
                 upload.Connection?.Dispose();

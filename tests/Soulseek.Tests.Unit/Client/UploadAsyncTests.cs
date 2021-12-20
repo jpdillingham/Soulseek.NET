@@ -817,7 +817,8 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
-                Assert.Equal("canceled", ex.Message);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.Equal("canceled", ex.InnerException.Message);
             }
         }
 
@@ -911,6 +912,92 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Null(ex);
             }
+        }
+
+        [Trait("Category", "UploadFromByteArrayAsync")]
+        [Theory(DisplayName = "UploadFromByteArrayAsync does not acquire UploadSlotSemaphore when upload queue is disabled"), AutoData]
+        public async Task UploadFromByteArrayAsync_Does_Not_Acquire_UploadSlotSemaphore_When_Upload_Queue_Is_Disabled(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5, enableUploadQueue: false);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, diagnosticFactory: diagnostic.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+
+                Assert.Null(ex);
+            }
+
+            diagnostic.Verify(m => m.Debug("Upload slot acquired"), Times.Never);
+        }
+
+        [Trait("Category", "UploadFromByteArrayAsync")]
+        [Theory(DisplayName = "UploadFromByteArrayAsync does not acquire UploadSlotSemaphore when upload queue is disabled"), AutoData]
+        public async Task UploadFromByteArrayAsync_Acquires_UploadSlotSemaphore_When_Upload_Queue_Is_Enabled(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5, enableUploadQueue: true);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, diagnosticFactory: diagnostic.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+
+                Assert.Null(ex);
+            }
+
+            diagnostic.Verify(m => m.Debug("Upload slot acquired"), Times.Once);
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]
