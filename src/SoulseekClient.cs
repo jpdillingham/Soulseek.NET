@@ -3646,14 +3646,7 @@ namespace Soulseek
             {
                 UpdateState(TransferStates.Queued);
 
-                try
-                {
-                    await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                }
-                catch (TaskCanceledException ex)
-                {
-                    throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
-                }
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 Diagnostic.Debug($"Upload semaphore for {username} acquired");
                 semaphoreAcquired = true;
@@ -3663,15 +3656,8 @@ namespace Soulseek
 
                 if (Options.EnableUploadQueue)
                 {
-                    try
-                    {
-                        await UploadSlotSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    }
-                    catch (TaskCanceledException ex)
-                    {
-                        throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
-                    }
-
+                    await UploadSlotSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    
                     Diagnostic.Debug($"Upload slot acquired");
                     slotAcquired = true;
                 }
@@ -3809,7 +3795,11 @@ namespace Soulseek
                 upload.Connection?.Disconnect("Transfer cancelled", ex);
 
                 Diagnostic.Debug(ex.ToString());
-                throw;
+
+                // cancelled async operations can throw TaskCanceledException, which is a 
+                // subclass of OperationCanceledException, but we want to be deterministic,
+                // so wrap and re-throw them.
+                throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
             }
             catch (TimeoutException ex)
             {
