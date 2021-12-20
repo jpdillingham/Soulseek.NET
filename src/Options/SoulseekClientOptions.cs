@@ -103,7 +103,7 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
-            bool enableUploadQueue = true,
+            bool enableUploadQueue = false,
             int uploadSlots = 5,
             bool deduplicateSearchRequests = true,
             int messageTimeout = 5000,
@@ -238,7 +238,7 @@ namespace Soulseek
         public bool EnableListener { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to use the internal queue for upload transfers. (Default = enable).
+        ///     Gets a value indicating whether to use the internal queue for upload transfers. (Default = disable).
         /// </summary>
         public bool EnableUploadQueue { get; }
 
