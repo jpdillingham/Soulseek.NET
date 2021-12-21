@@ -703,14 +703,13 @@ namespace Soulseek.Network
             {
                 var branchLevel = BranchLevel;
                 var branchRoot = BranchRoot;
-                var childDepth = ChildDictionary.Count;
                 var canAcceptChildren = CanAcceptChildren;
                 var haveNoParents = Enabled && !HasParent;
 
                 var status = new StringBuilder()
                     .Append($"Requesting parent: {haveNoParents}, ")
                     .Append($"Branch level: {branchLevel}, Branch root: {branchRoot}, ")
-                    .Append($"Number of children: {childDepth}/{ChildLimit}, Accepting children: {canAcceptChildren}");
+                    .Append($"Number of children: {ChildDictionary.Count}/{ChildLimit}, Accepting children: {canAcceptChildren}");
 
                 if (!status.ToString().Equals(LastStatus, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -722,7 +721,6 @@ namespace Soulseek.Network
 
                         payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
                         payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
-                        payload.AddRange(new ChildDepthCommand(childDepth).ToByteArray());
                         payload.AddRange(new AcceptChildrenCommand(canAcceptChildren).ToByteArray());
                         payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
 

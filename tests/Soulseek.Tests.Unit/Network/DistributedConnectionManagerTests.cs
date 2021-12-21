@@ -1763,7 +1763,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "UpdateStatusAsync writes expected payload to server")]
         internal async Task UpdateStatusAsync_Writes_Expected_Payload_To_Server()
         {
-            var expectedPayload = Convert.FromBase64String("CAAAAH4AAAABAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
+            var expectedPayload = Convert.FromBase64String("CAAAAH4AAAABAAAACAAAAH8AAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
 
             var (manager, mocks) = GetFixture();
 
@@ -1791,7 +1791,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "UpdateStatusAsync writes HaveNoParents = false if disabled")]
         internal async Task UpdateStatusAsync_Writes_HaveNoParents_False_If_Disabled()
         {
-            var expectedPayload = Convert.FromBase64String("CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAAABQAAAEcAAAAA");
+            var expectedPayload = Convert.FromBase64String("CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAABQAAAGQAAAAABQAAAEcAAAAA");
 
             var (manager, mocks) = GetFixture();
 

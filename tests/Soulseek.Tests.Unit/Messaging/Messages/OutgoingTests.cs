@@ -83,6 +83,32 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
+        [Trait("Request", "ChildDepthCommand")]
+        [Theory(DisplayName = "ChildDepthCommand instantiates properly"), AutoData]
+        public void ChildDepthCommand_Instantiates_Properly(int depth)
+        {
+            var msg = new ChildDepthCommand(depth);
+
+            Assert.Equal(depth, msg.Depth);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "ChildDepthCommand")]
+        [Theory(DisplayName = "ChildDepthCommand constructs the correct message"), AutoData]
+        public void ChildDepthCommand_Constructs_The_Correct_Message(int depth)
+        {
+            var msg = new ChildDepthCommand(depth).ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.ChildDepth, code);
+
+            Assert.Equal(4 + 4 + 4, msg.Length);
+            Assert.Equal(depth, reader.ReadInteger());
+        }
+
+        [Trait("Category", "Instantiation")]
         [Trait("Request", "AcknowledgePrivateMessage")]
         [Fact(DisplayName = "AcknowledgePrivateMessage instantiates properly")]
         public void AcknowledgePrivateMessage_Instantiates_Properly()
