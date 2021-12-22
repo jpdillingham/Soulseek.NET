@@ -312,6 +312,15 @@ namespace Soulseek
         public int UploadSlots { get; }
 
         /// <summary>
+        ///     Gets the number of upload slots per user.
+        /// </summary>
+        /// <remarks>
+        ///     This can be set with reflection for experimentation.  It needs to remain 1 in production
+        ///     to avoid causing problems with Soulseek NS.
+        /// </remarks>
+        public int UploadSlotsPerUser { get; private set; } = 1;
+
+        /// <summary>
         ///     Gets the user endpoint cache to use when resolving user endpoints.
         /// </summary>
         public IUserEndPointCache UserEndPointCache { get; }
