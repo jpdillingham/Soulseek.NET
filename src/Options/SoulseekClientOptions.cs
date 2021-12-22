@@ -442,6 +442,8 @@ namespace Soulseek
                 enableDistributedNetwork: enableDistributedNetwork ?? EnableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren ?? AcceptDistributedChildren,
                 distributedChildLimit: distributedChildLimit ?? DistributedChildLimit,
+                enableUploadQueue: EnableUploadQueue,
+                uploadSlots: UploadSlots,
                 deduplicateSearchRequests: deduplicateSearchRequests ?? DeduplicateSearchRequests,
                 messageTimeout: MessageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,
