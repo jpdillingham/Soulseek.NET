@@ -129,6 +129,17 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(userInfoResponseResolver, o.UserInfoResponseResolver);
             Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
             Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
+
+            Assert.Equal(1, o.UploadSlotsPerUser);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with UploadSlotsPerUser set to 1")]
+        public void Instantiates_With_UploadSlotsPerUser_1()
+        {
+            var o = new SoulseekClientOptions();
+
+            Assert.Equal(1, o.UploadSlotsPerUser);
         }
 
         [Trait("Category", "Instantiation")]

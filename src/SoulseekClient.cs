@@ -3636,7 +3636,7 @@ namespace Soulseek
 
             // fetch (or create) the semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
             // so we need to enforce this regardless of what downstream implementations do.
-            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: 1, maxCount: 1));
+            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.UploadSlotsPerUser, maxCount: Options.UploadSlotsPerUser));
 
             IPEndPoint endpoint = null;
             bool semaphoreAcquired = false;
@@ -3657,7 +3657,7 @@ namespace Soulseek
                 if (Options.EnableUploadQueue)
                 {
                     await UploadSlotSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                    
+
                     Diagnostic.Debug($"Upload slot acquired");
                     slotAcquired = true;
                 }
