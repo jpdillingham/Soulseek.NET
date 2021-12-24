@@ -3676,11 +3676,7 @@ namespace Soulseek
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
-            options = new TransferOptions(
-                options.Governor,
-                options.StateChanged,
-                options.ProgressUpdated,
-                options.MaximumLingerTime,
+            options = options.WithDisposalOptions(
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
@@ -3697,11 +3693,7 @@ namespace Soulseek
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
-            options = new TransferOptions(
-                options.Governor,
-                options.StateChanged,
-                options.ProgressUpdated,
-                options.MaximumLingerTime,
+            options = options.WithDisposalOptions(
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
