@@ -33,12 +33,16 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, CancellationToken, Task> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated)
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> startPermissive,
+            Func<Transfer, Task> startPermissiveRelease)
         {
             var o = new TransferOptions(
                 governor,
                 stateChanged,
                 progressUpdated,
+                startPermissive,
+                startPermissiveRelease,
                 maximumLingerTime,
                 disposeInput,
                 disposeOutput);
@@ -49,6 +53,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(startPermissive, o.StartPermissive);
+            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
         }
 
         [Trait("Category", "Instantiation")]
@@ -75,15 +81,19 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, CancellationToken, Task> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated)
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> startPermissive,
+            Func<Transfer, Task> startPermissiveRelease)
         {
             var n = new TransferOptions(
-                governor,
-                stateChanged,
-                progressUpdated,
-                maximumLingerTime,
-                disposeInput,
-                disposeOutput);
+                governor: governor,
+                stateChanged: stateChanged,
+                progressUpdated: progressUpdated,
+                startPermissive: startPermissive,
+                startPermissiveRelease: startPermissiveRelease,
+                maximumLingerTime: maximumLingerTime,
+                disposeInputStreamOnCompletion: disposeInput,
+                disposeOutputStreamOnCompletion: disposeOutput);
 
             var o = n.WithAdditionalStateChanged(null);
 
@@ -92,6 +102,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(startPermissive, o.StartPermissive);
+            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
 
             Assert.NotEqual(stateChanged, o.StateChanged);
         }
