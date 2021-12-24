@@ -36,7 +36,7 @@ namespace Soulseek.Tests.Unit.Options
             bool acceptDistributedChildren,
             int distributedChildLimit,
             bool enableUploadQueue,
-            int uploadSlots,
+            int maximumConcurrentUploads,
             bool deduplicateSearchRequests,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages,
@@ -70,8 +70,7 @@ namespace Soulseek.Tests.Unit.Options
                 enableDistributedNetwork: enableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren,
                 distributedChildLimit: distributedChildLimit,
-                enableUploadQueue: enableUploadQueue,
-                uploadSlots: uploadSlots,
+                maximumConcurrentUploads: maximumConcurrentUploads,
                 deduplicateSearchRequests: deduplicateSearchRequests,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
@@ -99,7 +98,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
             Assert.Equal(distributedChildLimit, o.DistributedChildLimit);
             Assert.Equal(enableUploadQueue, o.EnableDistributedNetwork);
-            Assert.Equal(uploadSlots, o.UploadSlots);
+            Assert.Equal(maximumConcurrentUploads, o.MaximumConcurrentUploads);
             Assert.Equal(deduplicateSearchRequests, o.DeduplicateSearchRequests);
             Assert.Equal(messageTimeout, o.MessageTimeout);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
@@ -130,7 +129,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
             Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
 
-            Assert.Equal(1, o.UploadSlotsPerUser);
+            Assert.Equal(1, o.MaximumConcurrentUploadsPerUser);
         }
 
         [Trait("Category", "Instantiation")]
@@ -139,7 +138,7 @@ namespace Soulseek.Tests.Unit.Options
         {
             var o = new SoulseekClientOptions();
 
-            Assert.Equal(1, o.UploadSlotsPerUser);
+            Assert.Equal(1, o.MaximumConcurrentUploadsPerUser);
         }
 
         [Trait("Category", "Instantiation")]
@@ -222,7 +221,7 @@ namespace Soulseek.Tests.Unit.Options
         public void Throws_If_Upload_Slots_Are_Zero()
         {
             SoulseekClientOptions x;
-            var ex = Record.Exception(() => x = new SoulseekClientOptions(uploadSlots: 0));
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentUploads: 0));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -233,7 +232,7 @@ namespace Soulseek.Tests.Unit.Options
         public void Throws_If_Upload_Slots_Are_Negative()
         {
             SoulseekClientOptions x;
-            var ex = Record.Exception(() => x = new SoulseekClientOptions(uploadSlots: -1));
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentUploads: -1));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
