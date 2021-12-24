@@ -137,5 +137,75 @@ namespace Soulseek.Tests.Unit.Options
 
             Assert.Null(ex);
         }
+
+        [Trait("Category", "WithDisposalOptions")]
+        [Theory(DisplayName = "WithDisposalOptions returns unchanged copy if both options are null"), AutoData]
+        public void WithAdditionalStateChanged_Returns_Unchanged_Copy_If_Both_Options_Are_Null(
+            bool disposeInput,
+            bool disposeOutput,
+            Func<Transfer, CancellationToken, Task> governor,
+            Action<TransferStateChangedEventArgs> stateChanged,
+            int maximumLingerTime,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> startPermissive,
+            Func<Transfer, Task> startPermissiveRelease)
+        {
+            var n = new TransferOptions(
+                governor: governor,
+                stateChanged: stateChanged,
+                progressUpdated: progressUpdated,
+                startPermissive: startPermissive,
+                startPermissiveRelease: startPermissiveRelease,
+                maximumLingerTime: maximumLingerTime,
+                disposeInputStreamOnCompletion: disposeInput,
+                disposeOutputStreamOnCompletion: disposeOutput);
+
+            var o = n.WithDisposalOptions();
+
+            Assert.Equal(governor, o.Governor);
+            Assert.Equal(stateChanged, o.StateChanged);
+            Assert.Equal(progressUpdated, o.ProgressUpdated);
+            Assert.Equal(startPermissive, o.StartPermissive);
+            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
+            Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
+            Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
+        }
+
+        [Trait("Category", "WithDisposalOptions")]
+        [Theory(DisplayName = "WithDisposalOptions returns changed copy if both options are specified"), AutoData]
+        public void WithAdditionalStateChanged_Returns_Changed_Copy_If_Both_Options_Are_Specified(
+            bool disposeInput,
+            bool disposeOutput,
+            Func<Transfer, CancellationToken, Task> governor,
+            Action<TransferStateChangedEventArgs> stateChanged,
+            int maximumLingerTime,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> startPermissive,
+            Func<Transfer, Task> startPermissiveRelease)
+        {
+            var n = new TransferOptions(
+                governor: governor,
+                stateChanged: stateChanged,
+                progressUpdated: progressUpdated,
+                startPermissive: startPermissive,
+                startPermissiveRelease: startPermissiveRelease,
+                maximumLingerTime: maximumLingerTime,
+                disposeInputStreamOnCompletion: !disposeInput,
+                disposeOutputStreamOnCompletion: !disposeOutput);
+
+            var o = n.WithDisposalOptions(
+                disposeInputStreamOnCompletion: disposeInput,
+                disposeOutputStreamOnCompletion: disposeOutput);
+
+            Assert.Equal(governor, o.Governor);
+            Assert.Equal(stateChanged, o.StateChanged);
+            Assert.Equal(progressUpdated, o.ProgressUpdated);
+            Assert.Equal(startPermissive, o.StartPermissive);
+            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
+            Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
+            Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
+        }
     }
 }
