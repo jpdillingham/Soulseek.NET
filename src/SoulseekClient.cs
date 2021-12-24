@@ -98,7 +98,7 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
-            UploadSlotSemaphore = new SemaphoreSlim(initialCount: Options.UploadSlots, maxCount: Options.UploadSlots);
+            GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
 
             ServerConnection = serverConnection;
 
@@ -451,7 +451,7 @@ namespace Soulseek
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        private SemaphoreSlim UploadSlotSemaphore { get; }
+        private SemaphoreSlim GlobalUploadSemaphore { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
@@ -2835,13 +2835,10 @@ namespace Soulseek
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
-            options = new TransferOptions(
-                options.Governor,
-                options.StateChanged,
-                options.ProgressUpdated,
-                options.MaximumLingerTime,
+            options = options.WithDisposalOptions(
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
+
 #if NETSTANDARD2_0
             using var memoryStream = new MemoryStream();
 #else
@@ -3737,11 +3734,12 @@ namespace Soulseek
 
             // fetch (or create) the semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
             // so we need to enforce this regardless of what downstream implementations do.
-            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.UploadSlotsPerUser, maxCount: Options.UploadSlotsPerUser));
+            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
 
             IPEndPoint endpoint = null;
             bool semaphoreAcquired = false;
-            bool slotAcquired = false;
+            bool startPermissiveAcquired = false;
+            bool globalSemaphoreAcquired = false;
 
             try
             {
@@ -3755,13 +3753,22 @@ namespace Soulseek
                 // in case the upload record was removed via cleanup while we were waiting, add it back.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
-                if (Options.EnableUploadQueue)
+                try
                 {
-                    await UploadSlotSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    await options.StartPermissive(new Transfer(upload), cancellationToken).ConfigureAwait(false);
 
-                    Diagnostic.Debug($"Upload slot acquired");
-                    slotAcquired = true;
+                    Diagnostic.Debug($"Start permissive for file {Path.GetFileName(upload.Filename)} to {username} acquired");
+                    startPermissiveAcquired = true;
                 }
+                catch (Exception ex)
+                {
+                    throw new TransferException($"Failed to acquire the transfer start permissive: {ex.Message}", ex);
+                }
+
+                await GlobalUploadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                Diagnostic.Debug($"Global upload semaphore acquired");
+                globalSemaphoreAcquired = true;
 
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
@@ -3941,10 +3948,25 @@ namespace Soulseek
                     semaphore.Release(releaseCount: 1);
                 }
 
-                if (slotAcquired)
+                // if the start permissive was acquired, release it.
+                if (startPermissiveAcquired)
                 {
-                    Diagnostic.Info($"Upload slot released");
-                    UploadSlotSemaphore.Release(releaseCount: 1);
+                    Diagnostic.Debug($"Start permissive for {Path.GetFileName(upload.Filename)} to {username} released");
+
+                    try
+                    {
+                        await options.StartPermissiveRelease(new Transfer(upload)).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostic.Warning($"Failed to release start permissive for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                    }
+                }
+
+                if (globalSemaphoreAcquired)
+                {
+                    Diagnostic.Debug($"Global upload semaphore released");
+                    GlobalUploadSemaphore.Release(releaseCount: 1);
                 }
 
                 upload.Connection?.Dispose();
