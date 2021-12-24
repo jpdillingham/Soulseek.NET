@@ -71,6 +71,23 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file throws ArgumentException given bad username")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UploadAsync_File_Throws_ArgumentException_Given_Bad_Username(string username)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, "filename", "local"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Contains("username", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync throws ArgumentException given bad filename")]
         [InlineData(null)]
         [InlineData("")]
@@ -83,7 +100,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
-                Assert.Contains("filename", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains("remoteFilename", ex.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
 
@@ -101,7 +118,58 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
-                Assert.Contains("filename", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains("remoteFilename", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file throws ArgumentException given bad remote filename")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UploadAsync_File_Throws_ArgumentException_Given_Bad_Remote_Filename(string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", filename, "local"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Contains("remoteFilename", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file throws ArgumentException given bad local filename")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task UploadAsync_File_Throws_ArgumentException_Given_Bad_Local_Filename(string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "remote", filename));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Contains("localFilename", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Fact(DisplayName = "UploadAsync file throws ArgumentException given missing local file")]
+        public async Task UploadAsync_File_Throws_ArgumentException_Given_Missing_Local_File()
+        {
+            var ioMock = new Mock<IIOAdapter>();
+            ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                .Returns(false);
+
+            using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+            {
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "remote", "local"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<FileNotFoundException>(ex);
             }
         }
 
@@ -161,6 +229,24 @@ namespace Soulseek.Tests.Unit.Client
             using (var s = new SoulseekClient())
             {
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Fact(DisplayName = "UploadAsync file throws InvalidOperationException when not connected")]
+        public async Task UploadAsync_File_Throws_InvalidOperationException_When_Not_Connected()
+        {
+            var ioMock = new Mock<IIOAdapter>();
+            ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                .Returns(true);
+
+            using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+            {
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -231,6 +317,50 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Fact(DisplayName = "UploadAsync file throws InvalidOperationException when not logged in")]
+        public async Task UploadAsync_File_Throws_InvalidOperationException_When_Not_Logged_In()
+        {
+            var ioMock = new Mock<IIOAdapter>();
+            ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                .Returns(true);
+
+            using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Fact(DisplayName = "UploadAsync file throws IOException when file cant be read")]
+        public async Task UploadAsync_File_Throws_IOException_When_File_Cant_Be_Read()
+        {
+            var ioMock = new Mock<IIOAdapter>();
+            ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                .Returns(true);
+            ioMock.Setup(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>()))
+                .Throws(new IOException("foo"));
+
+            using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<IOException>(ex);
+                Assert.Contains("could not be opened for reading", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.IsType<IOException>(ex.InnerException);
+                Assert.Equal("foo", ex.InnerException.Message);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Fact(DisplayName = "UploadAsync throws DuplicateTokenException when token used")]
         public async Task UploadAsync_Throws_DuplicateTokenException_When_Token_Used()
         {
@@ -270,6 +400,36 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTokenException>(ex);
                 Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Fact(DisplayName = "UploadAsync file throws DuplicateTokenException when token used")]
+        public async Task UploadAsync_File_Throws_DuplicateTokenException_When_Token_Used()
+        {
+            using (var testFile = new TestFile())
+            {
+                var ioMock = new Mock<IIOAdapter>();
+                ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                    .Returns(true);
+                ioMock.Setup(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>()))
+                    .Returns(new FileStream(testFile.Path, FileMode.Open, FileAccess.Read));
+
+                using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var queued = new ConcurrentDictionary<int, TransferInternal>();
+                    queued.TryAdd(1, new TransferInternal(TransferDirection.Upload, "foo", "bar", 1));
+
+                    s.SetProperty("Uploads", queued);
+
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local", 1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<DuplicateTokenException>(ex);
+                    Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                }
             }
         }
 
@@ -399,6 +559,94 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file throws DuplicateTransferException when an existing Upload matches the username and filename"), AutoData]
+        public async Task UploadAsync_File_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_The_Username_And_Filename(string username, string filename)
+        {
+            using (var testFile = new TestFile())
+            {
+                var ioMock = new Mock<IIOAdapter>();
+                ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                    .Returns(true);
+                ioMock.Setup(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>()))
+                    .Returns(new FileStream(testFile.Path, FileMode.Open, FileAccess.Read));
+
+                using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var queued = new ConcurrentDictionary<int, TransferInternal>();
+                    queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
+
+                    s.SetProperty("Uploads", queued);
+
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, "local", 1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<DuplicateTransferException>(ex);
+                    Assert.Contains($"An active or queued upload of {filename} to {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                }
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file does not throw DuplicateTransferException when an existing Upload matches only the username"), AutoData]
+        public async Task UploadAsync_File_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Username(string username, string filename)
+        {
+            using (var testFile = new TestFile())
+            {
+                var ioMock = new Mock<IIOAdapter>();
+                ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                    .Returns(true);
+                ioMock.Setup(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>()))
+                    .Returns(new FileStream(testFile.Path, FileMode.Open, FileAccess.Read));
+
+                using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var queued = new ConcurrentDictionary<int, TransferInternal>();
+                    queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
+
+                    s.SetProperty("Uploads", queued);
+
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", "local", 1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsNotType<DuplicateTransferException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file does not throw DuplicateTransferException when an existing Upload matches only the filename"), AutoData]
+        public async Task UploadAsync_File_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Filename(string username, string filename)
+        {
+            using (var testFile = new TestFile())
+            {
+                var ioMock = new Mock<IIOAdapter>();
+                ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                    .Returns(true);
+                ioMock.Setup(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>()))
+                    .Returns(new FileStream(testFile.Path, FileMode.Open, FileAccess.Read));
+
+                using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var queued = new ConcurrentDictionary<int, TransferInternal>();
+                    queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
+
+                    s.SetProperty("Uploads", queued);
+
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, "local", 1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsNotType<DuplicateTransferException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync uses given CancellationToken"), AutoData]
         public async Task UploadAsync_Uses_Given_CancellationToken(string username, string filename)
         {
@@ -434,6 +682,37 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file uses given CancellationToken"), AutoData]
+        public async Task UploadAsync_File_Uses_Given_CancellationToken(string username, string filename)
+        {
+            var cancellationToken = new CancellationToken(true);
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var testFile = new TestFile())
+            using (var fs1 = new FileStream(testFile.Path, FileMode.Open, FileAccess.Read))
+            using (var fs2 = new FileStream(testFile.Path, FileMode.Open, FileAccess.Read))
+            {
+                var ioMock = new Mock<IIOAdapter>();
+                ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                    .Returns(true);
+                ioMock.SetupSequence(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>()))
+                    .Returns(fs1)
+                    .Returns(fs2);
+
+                using (var s = new SoulseekClient(serverConnection: conn.Object, ioAdapter: ioMock.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, "local", cancellationToken: cancellationToken));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<OperationCanceledException>(ex);
+                }
             }
         }
 
