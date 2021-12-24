@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -2357,7 +2357,7 @@ namespace Soulseek
                 throw new ArgumentException("The local filename must not be a null or empty string, or one consisting only of whitespace", nameof(localFilename));
             }
 
-            if (!System.IO.File.Exists(localFilename))
+            if (!IOAdapter.Exists(localFilename))
             {
                 throw new FileNotFoundException("The local file does not exist", localFilename);
             }
@@ -2369,7 +2369,7 @@ namespace Soulseek
 
             try
             {
-                using var stream = new FileStream(localFilename, FileMode.Open, FileAccess.Read);
+                using var stream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
             }
             catch (IOException ex)
             {
@@ -3706,9 +3706,9 @@ namespace Soulseek
                 disposeOutputStreamOnCompletion: false);
 
 #if NETSTANDARD2_0
-            using var fileStream = new FileStream(localFilename, FileMode.Open, FileAccess.Read);
+            using var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
 #else
-            await using var fileStream = new FileStream(localFilename, FileMode.Open, FileAccess.Read);
+            await using var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
 #endif
 
             return await UploadFromStreamAsync(username, remoteFilename, fileStream.Length, fileStream, token, options, cancellationToken).ConfigureAwait(false);
@@ -3905,7 +3905,7 @@ namespace Soulseek
 
                 Diagnostic.Debug(ex.ToString());
 
-                // cancelled async operations can throw TaskCanceledException, which is a 
+                // cancelled async operations can throw TaskCanceledException, which is a
                 // subclass of OperationCanceledException, but we want to be deterministic,
                 // so wrap and re-throw them.
                 throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
