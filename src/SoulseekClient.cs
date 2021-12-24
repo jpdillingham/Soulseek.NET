@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -76,6 +76,7 @@ namespace Soulseek
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
+        /// <param name="ioAdapter">The IIOAdapter instance to use.</param>
 #pragma warning disable S3427 // Method overloads with default parameter values should not overlap
         internal SoulseekClient(
             SoulseekClientOptions options = null,
@@ -91,7 +92,8 @@ namespace Soulseek
             ISearchResponder searchResponder = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
-            IDiagnosticFactory diagnosticFactory = null)
+            IDiagnosticFactory diagnosticFactory = null,
+            IIOAdapter ioAdapter = null)
         {
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
@@ -103,6 +105,7 @@ namespace Soulseek
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+            IOAdapter = ioAdapter ?? new IOAdapter();
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -444,6 +447,7 @@ namespace Soulseek
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
+        private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
