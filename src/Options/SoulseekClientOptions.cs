@@ -49,8 +49,7 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
-        /// <param name="enableUploadQueue">A value indicating whether to use the internal queue for upload transfers.</param>
-        /// <param name="uploadSlots">The number of allowed concurrent uploads.</param>
+        /// <param name="maximumConcurrentUploads">The number of allowed concurrent uploads.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
         /// </param>
@@ -103,8 +102,7 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
-            bool enableUploadQueue = false,
-            int uploadSlots = 5,
+            int maximumConcurrentUploads = 10,
             bool deduplicateSearchRequests = true,
             int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
@@ -143,12 +141,11 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(distributedChildLimit), "Must be greater than or equal to zero");
             }
 
-            EnableUploadQueue = enableUploadQueue;
-            UploadSlots = uploadSlots;
+            MaximumConcurrentUploads = maximumConcurrentUploads;
 
-            if (UploadSlots < 1)
+            if (MaximumConcurrentUploads < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(uploadSlots), "Must be greater than or equal to one");
+                throw new ArgumentOutOfRangeException(nameof(maximumConcurrentUploads), "Must be greater than or equal to one");
             }
 
             DeduplicateSearchRequests = deduplicateSearchRequests;
@@ -238,11 +235,6 @@ namespace Soulseek
         public bool EnableListener { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to use the internal queue for upload transfers. (Default = disable).
-        /// </summary>
-        public bool EnableUploadQueue { get; }
-
-        /// <summary>
         ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).
         /// </summary>
         /// <remarks>
@@ -309,7 +301,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of allowed concurrent uploads. (Default = 5).
         /// </summary>
-        public int UploadSlots { get; }
+        public int MaximumConcurrentUploads { get; }
 
         /// <summary>
         ///     Gets the number of upload slots per user.
@@ -318,7 +310,7 @@ namespace Soulseek
         ///     This can be set with reflection for experimentation.  It needs to remain 1 in production
         ///     to avoid causing problems with Soulseek NS.
         /// </remarks>
-        public int UploadSlotsPerUser { get; private set; } = 1;
+        public int MaximumConcurrentUploadsPerUser { get; private set; } = 1;
 
         /// <summary>
         ///     Gets the user endpoint cache to use when resolving user endpoints.
@@ -442,8 +434,7 @@ namespace Soulseek
                 enableDistributedNetwork: enableDistributedNetwork ?? EnableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren ?? AcceptDistributedChildren,
                 distributedChildLimit: distributedChildLimit ?? DistributedChildLimit,
-                enableUploadQueue: EnableUploadQueue,
-                uploadSlots: UploadSlots,
+                maximumConcurrentUploads: MaximumConcurrentUploads,
                 deduplicateSearchRequests: deduplicateSearchRequests ?? DeduplicateSearchRequests,
                 messageTimeout: MessageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,
