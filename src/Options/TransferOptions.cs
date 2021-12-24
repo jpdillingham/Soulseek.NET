@@ -41,8 +41,8 @@ namespace Soulseek
         /// <param name="governor">The delegate used to govern transfer speed.</param>
         /// <param name="stateChanged">The Action to invoke when the transfer changes state.</param>
         /// <param name="progressUpdated">The Action to invoke when the transfer receives data.</param>
-        /// <param name="startPermissive">The delegate used to control the start of the transfer.</param>
-        /// <param name="startPermissiveRelease">The delegate used to signal release of the start permissive.</param>
+        /// <param name="startPermissive">The delegate used to control the start of the transfer (uploads only).</param>
+        /// <param name="startPermissiveRelease">The delegate used to signal release of the start permissive (uploads only).</param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
@@ -100,12 +100,12 @@ namespace Soulseek
         public Action<TransferProgressUpdatedEventArgs> ProgressUpdated { get; }
 
         /// <summary>
-        ///     Gets the delegate used to control the start of the transfer. (Default = a delegate returning Task.CompletedTask).
+        ///     Gets the delegate used to control the start of the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
         public Func<Transfer, CancellationToken, Task> StartPermissive { get; }
 
         /// <summary>
-        ///     Gets the delegate used to signal release of the start permissive. (Default = a delegate returning Task.CompletedTask).
+        ///     Gets the delegate used to signal release of the start permissive (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
         public Func<Transfer, Task> StartPermissiveRelease { get; }
 
