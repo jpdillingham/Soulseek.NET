@@ -34,15 +34,15 @@ namespace Soulseek.Tests.Unit.Options
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
-            Func<Transfer, CancellationToken, Task> startPermissive,
-            Func<Transfer, Task> startPermissiveRelease)
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
         {
             var o = new TransferOptions(
                 governor,
                 stateChanged,
                 progressUpdated,
-                startPermissive,
-                startPermissiveRelease,
+                acquireSlot,
+                slotReleased,
                 maximumLingerTime,
                 disposeInput,
                 disposeOutput);
@@ -53,8 +53,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
-            Assert.Equal(startPermissive, o.StartPermissive);
-            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
         }
 
         [Trait("Category", "Instantiation")]
@@ -82,15 +82,15 @@ namespace Soulseek.Tests.Unit.Options
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
-            Func<Transfer, CancellationToken, Task> startPermissive,
-            Func<Transfer, Task> startPermissiveRelease)
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
         {
             var n = new TransferOptions(
                 governor: governor,
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
-                startPermissive: startPermissive,
-                startPermissiveRelease: startPermissiveRelease,
+                acquireSlot: acquireSlot,
+                slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInput,
                 disposeOutputStreamOnCompletion: disposeOutput);
@@ -102,8 +102,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
-            Assert.Equal(startPermissive, o.StartPermissive);
-            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
 
             Assert.NotEqual(stateChanged, o.StateChanged);
         }
@@ -147,15 +147,15 @@ namespace Soulseek.Tests.Unit.Options
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
-            Func<Transfer, CancellationToken, Task> startPermissive,
-            Func<Transfer, Task> startPermissiveRelease)
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
         {
             var n = new TransferOptions(
                 governor: governor,
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
-                startPermissive: startPermissive,
-                startPermissiveRelease: startPermissiveRelease,
+                acquireSlot: acquireSlot,
+                slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInput,
                 disposeOutputStreamOnCompletion: disposeOutput);
@@ -165,8 +165,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
-            Assert.Equal(startPermissive, o.StartPermissive);
-            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
@@ -181,15 +181,15 @@ namespace Soulseek.Tests.Unit.Options
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
-            Func<Transfer, CancellationToken, Task> startPermissive,
-            Func<Transfer, Task> startPermissiveRelease)
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
         {
             var n = new TransferOptions(
                 governor: governor,
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
-                startPermissive: startPermissive,
-                startPermissiveRelease: startPermissiveRelease,
+                acquireSlot: acquireSlot,
+                slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: !disposeInput,
                 disposeOutputStreamOnCompletion: !disposeOutput);
@@ -201,8 +201,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
-            Assert.Equal(startPermissive, o.StartPermissive);
-            Assert.Equal(startPermissiveRelease, o.StartPermissiveRelease);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
