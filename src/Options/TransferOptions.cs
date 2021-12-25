@@ -29,20 +29,20 @@ namespace Soulseek
         private readonly Func<Transfer, CancellationToken, Task> defaultGovernor =
             (tx, token) => Task.CompletedTask;
 
-        private readonly Func<Transfer, CancellationToken, Task> defaultStartPermissive =
+        private readonly Func<Transfer, CancellationToken, Task> defaultAcquireSlot =
             (tx, token) => Task.CompletedTask;
 
-        private readonly Func<Transfer, Task> defaultStartPermissiveRelease =
-            (tx) => Task.CompletedTask;
+        private readonly Action<Transfer> defaultSlotReleased =
+            (tx) => { };
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferOptions"/> class.
         /// </summary>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
-        /// <param name="stateChanged">The Action to invoke when the transfer changes state.</param>
-        /// <param name="progressUpdated">The Action to invoke when the transfer receives data.</param>
-        /// <param name="startPermissive">The delegate used to control the start of the transfer (uploads only).</param>
-        /// <param name="startPermissiveRelease">The delegate used to signal release of the start permissive (uploads only).</param>
+        /// <param name="stateChanged">The delegate to invoke when the transfer changes state.</param>
+        /// <param name="progressUpdated">The delegate to invoke when the transfer receives data.</param>
+        /// <param name="acquireSlot">The delegate used to acquire a slot to start the transfer (uploads only).</param>
+        /// <param name="slotReleased">The delegate used to signal release of the slot (uploads only).</param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
@@ -56,8 +56,8 @@ namespace Soulseek
             Func<Transfer, CancellationToken, Task> governor = null,
             Action<TransferStateChangedEventArgs> stateChanged = null,
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
-            Func<Transfer, CancellationToken, Task> startPermissive = null,
-            Func<Transfer, Task> startPermissiveRelease = null,
+            Func<Transfer, CancellationToken, Task> acquireSlot = null,
+            Action<Transfer> slotReleased = null,
             int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
             bool disposeOutputStreamOnCompletion = false)
@@ -65,8 +65,8 @@ namespace Soulseek
             DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
-            StartPermissive = startPermissive ?? defaultStartPermissive;
-            StartPermissiveRelease = startPermissiveRelease ?? defaultStartPermissiveRelease;
+            AcquireSlot = acquireSlot ?? defaultAcquireSlot;
+            SlotReleased = slotReleased ?? defaultSlotReleased;
 
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
@@ -95,22 +95,22 @@ namespace Soulseek
         public int MaximumLingerTime { get; }
 
         /// <summary>
-        ///     Gets the Action to invoke when the transfer receives data. (Default = no action).
+        ///     Gets the delegate to invoke when the transfer receives data. (Default = no action).
         /// </summary>
         public Action<TransferProgressUpdatedEventArgs> ProgressUpdated { get; }
 
         /// <summary>
-        ///     Gets the delegate used to control the start of the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
+        ///     Gets the delegate used to acquire a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
-        public Func<Transfer, CancellationToken, Task> StartPermissive { get; }
+        public Func<Transfer, CancellationToken, Task> AcquireSlot { get; }
 
         /// <summary>
-        ///     Gets the delegate used to signal release of the start permissive (uploads only). (Default = a delegate returning Task.CompletedTask).
+        ///     Gets the delegate used to signal release of the slot (uploads only). (Default = no action).
         /// </summary>
-        public Func<Transfer, Task> StartPermissiveRelease { get; }
+        public Action<Transfer> SlotReleased { get; }
 
         /// <summary>
-        ///     Gets the Action to invoke when the transfer changes state. (Default = no action).
+        ///     Gets the delegate to invoke when the transfer changes state. (Default = no action).
         /// </summary>
         public Action<TransferStateChangedEventArgs> StateChanged { get; }
 
@@ -129,8 +129,8 @@ namespace Soulseek
                     StateChanged?.Invoke(args);
                 },
                 progressUpdated: ProgressUpdated,
-                startPermissive: StartPermissive,
-                startPermissiveRelease: StartPermissiveRelease,
+                acquireSlot: AcquireSlot,
+                slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
@@ -154,8 +154,8 @@ namespace Soulseek
                 governor: Governor,
                 stateChanged: StateChanged,
                 progressUpdated: ProgressUpdated,
-                startPermissive: StartPermissive,
-                startPermissiveRelease: StartPermissiveRelease,
+                acquireSlot: AcquireSlot,
+                slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);

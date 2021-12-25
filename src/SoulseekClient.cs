@@ -3755,7 +3755,7 @@ namespace Soulseek
 
                 try
                 {
-                    await options.StartPermissive(new Transfer(upload), cancellationToken).ConfigureAwait(false);
+                    await options.AcquireSlot(new Transfer(upload), cancellationToken).ConfigureAwait(false);
 
                     Diagnostic.Debug($"Start permissive for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                     startPermissiveAcquired = true;
@@ -3955,7 +3955,7 @@ namespace Soulseek
 
                     try
                     {
-                        await options.StartPermissiveRelease(new Transfer(upload)).ConfigureAwait(false);
+                        options.SlotReleased(new Transfer(upload));
                     }
                     catch (Exception ex)
                     {
