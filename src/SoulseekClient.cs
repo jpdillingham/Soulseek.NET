@@ -3738,38 +3738,44 @@ namespace Soulseek
 
             IPEndPoint endpoint = null;
             bool semaphoreAcquired = false;
-            bool startPermissiveAcquired = false;
+            bool uploadSlotAcquired = false;
             bool globalSemaphoreAcquired = false;
 
             try
             {
                 UpdateState(TransferStates.Queued);
 
+                // acquire the per-user semaphore to ensure we aren't trying to process more than the alotted
+                // concurrent uploads to this user
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                Diagnostic.Debug($"Upload semaphore for {username} acquired");
+                Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 semaphoreAcquired = true;
 
-                // in case the upload record was removed via cleanup while we were waiting, add it back.
+                // in case the upload record was removed via cleanup while we were waiting, add it back
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
+                // acquire an upload slot from the calling code
                 try
                 {
                     await options.AcquireSlot(new Transfer(upload), cancellationToken).ConfigureAwait(false);
-
-                    Diagnostic.Debug($"Start permissive for file {Path.GetFileName(upload.Filename)} to {username} acquired");
-                    startPermissiveAcquired = true;
+                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
+                    uploadSlotAcquired = true;
                 }
                 catch (Exception ex)
                 {
-                    throw new TransferException($"Failed to acquire the transfer start permissive: {ex.Message}", ex);
+                    throw new TransferException($"Failed to acquire an upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                 }
 
+                // acquire the global upload semaphore to ensure we aren't trying to process
+                // more than the total alotted concurrent uploads globally.  if we hit this limit,
+                // uploads will stack up behind it and will be processed in a round-robin-like fashion
+                // due to the limit on per-user concurrency.  calling code can avoid this by providing
+                // an implementation of AcquireSlot() that won't exceed the maximum concurrent upload limit
                 await GlobalUploadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                Diagnostic.Debug($"Global upload semaphore acquired");
+                Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 globalSemaphoreAcquired = true;
 
+                // all permissives have been given; fetch the user endpoint and request that the transfer begins
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
@@ -3940,18 +3946,17 @@ namespace Soulseek
                 // threads waiting on it, and it is added back after it is awaited above.
                 UploadSemaphores.TryRemove(username, out var _);
 
-                // make sure we successfully obtained the semaphore before releasing it. this will be false if the semaphore wait
-                // threw due to cancellation
+                // make sure we successfully obtained all permissives before releasing them.  some of them may not have been attempted
+                // if the code throws.
                 if (semaphoreAcquired)
                 {
-                    Diagnostic.Debug($"Upload semaphore for {username} released");
+                    Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
                     semaphore.Release(releaseCount: 1);
                 }
 
-                // if the start permissive was acquired, release it.
-                if (startPermissiveAcquired)
+                if (uploadSlotAcquired)
                 {
-                    Diagnostic.Debug($"Start permissive for {Path.GetFileName(upload.Filename)} to {username} released");
+                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
 
                     try
                     {
@@ -3959,13 +3964,13 @@ namespace Soulseek
                     }
                     catch (Exception ex)
                     {
-                        Diagnostic.Warning($"Failed to release start permissive for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                        Diagnostic.Warning($"Encountered Exception releasing upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                     }
                 }
 
                 if (globalSemaphoreAcquired)
                 {
-                    Diagnostic.Debug($"Global upload semaphore released");
+                    Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
                     GlobalUploadSemaphore.Release(releaseCount: 1);
                 }
 
