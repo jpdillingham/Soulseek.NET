@@ -431,7 +431,7 @@ namespace Soulseek
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, TransferInternal> Downloads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> DownloadDictionary { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IListener Listener { get; private set; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
@@ -440,7 +440,7 @@ namespace Soulseek
         internal virtual ISearchResponder SearchResponder { get; }
         internal virtual IMessageConnection ServerConnection { get; private set; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, TransferInternal> Uploads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> UploadDictionary { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
@@ -935,12 +935,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (DownloadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
@@ -1028,12 +1028,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (DownloadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
@@ -1322,7 +1322,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be Connected and LoggedIn to check download queue position (currently: {State})");
             }
 
-            if (!Downloads.Any(d => d.Value.Username == username && d.Value.Filename == filename))
+            if (!DownloadDictionary.Any(d => d.Value.Username == username && d.Value.Filename == filename))
             {
                 throw new TransferNotFoundException($"A download of {filename} from user {username} is not active");
             }
@@ -2294,12 +2294,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Uploads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
@@ -2378,12 +2378,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Uploads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
@@ -2459,12 +2459,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Uploads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
@@ -2857,7 +2857,7 @@ namespace Soulseek
                 Size = size,
             };
 
-            Downloads.TryAdd(download.Token, download);
+            DownloadDictionary.TryAdd(download.Token, download);
 
             var lastState = TransferStates.None;
 
@@ -3070,7 +3070,7 @@ namespace Soulseek
 
                 download.Connection?.Dispose();
 
-                Downloads.TryRemove(download.Token, out _);
+                DownloadDictionary.TryRemove(download.Token, out _);
 
                 var finalStreamPosition = outputStream.Position;
 
@@ -3710,7 +3710,7 @@ namespace Soulseek
                 Size = size,
             };
 
-            Uploads.TryAdd(upload.Token, upload);
+            UploadDictionary.TryAdd(upload.Token, upload);
 
             var lastState = TransferStates.None;
 
@@ -4021,7 +4021,7 @@ namespace Soulseek
                     }
                 }
 
-                Uploads.TryRemove(upload.Token, out _);
+                UploadDictionary.TryRemove(upload.Token, out _);
 
                 var finalStreamPosition = inputStream.Position;
 

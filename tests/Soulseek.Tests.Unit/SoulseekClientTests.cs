@@ -336,7 +336,7 @@ namespace Soulseek.Tests.Unit
                 downloads.TryAdd(0, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0));
                 downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 1));
 
-                s.SetProperty("Downloads", downloads);
+                s.SetProperty("DownloadDictionary", downloads);
 
                 var ex = Record.Exception(() => s.Disconnect());
 

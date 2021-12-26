@@ -371,7 +371,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(1, new TransferInternal(TransferDirection.Upload, "foo", "bar", 1));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", new byte[] { 0x0 }, 1));
 
@@ -393,7 +393,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(1, new TransferInternal(TransferDirection.Upload, "foo", "bar", 1));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream, 1));
 
@@ -422,7 +422,7 @@ namespace Soulseek.Tests.Unit.Client
                     var queued = new ConcurrentDictionary<int, TransferInternal>();
                     queued.TryAdd(1, new TransferInternal(TransferDirection.Upload, "foo", "bar", 1));
 
-                    s.SetProperty("Uploads", queued);
+                    s.SetProperty("UploadDictionary", queued);
 
                     var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local", 1));
 
@@ -444,7 +444,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, new byte[] { 0x0 }, 1));
 
@@ -465,7 +465,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", new byte[] { 0x0 }, 1));
 
@@ -485,7 +485,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, new byte[] { 0x0 }, 1));
 
@@ -506,7 +506,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, stream, 1));
 
@@ -528,7 +528,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", 1, stream, 1));
 
@@ -549,7 +549,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, TransferInternal>();
                 queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                s.SetProperty("Uploads", queued);
+                s.SetProperty("UploadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, 1, stream, 1));
 
@@ -577,7 +577,7 @@ namespace Soulseek.Tests.Unit.Client
                     var queued = new ConcurrentDictionary<int, TransferInternal>();
                     queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                    s.SetProperty("Uploads", queued);
+                    s.SetProperty("UploadDictionary", queued);
 
                     var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, "local", 1));
 
@@ -607,7 +607,7 @@ namespace Soulseek.Tests.Unit.Client
                     var queued = new ConcurrentDictionary<int, TransferInternal>();
                     queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                    s.SetProperty("Uploads", queued);
+                    s.SetProperty("UploadDictionary", queued);
 
                     var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", "local", 1));
 
@@ -636,7 +636,7 @@ namespace Soulseek.Tests.Unit.Client
                     var queued = new ConcurrentDictionary<int, TransferInternal>();
                     queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
-                    s.SetProperty("Uploads", queued);
+                    s.SetProperty("UploadDictionary", queued);
 
                     var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, "local", 1));
 
