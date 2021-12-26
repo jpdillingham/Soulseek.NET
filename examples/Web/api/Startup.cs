@@ -82,6 +82,9 @@
             ReadBufferSize = Configuration.GetValue<int>("READ_BUFFER_SIZE", 16384);
             WriteBufferSize = Configuration.GetValue<int>("WRITE_BUFFER_SIZE", 16384);
 
+            DiagnosticLevel = DiagnosticLevel.Info;
+            EnableDistributedNetwork = false;
+
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
 
             SharedFileCache = new SharedFileCache(SharedDirectory, SharedCacheTTL);
@@ -483,6 +486,78 @@
             return Task.FromResult(result);
         }
 
+        private string UploadQueueMode = "RoundRobin";
+        private SemaphoreSlim ConcurrentUploadSemaphore = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim ProcessQueueSyncRoot = new SemaphoreSlim(1, 1);
+        private ConcurrentDictionary<string, (string Filename, DateTime ReadyTimestamp, DateTime EnqueuedTimestamp, TaskCompletionSource TaskCompletionSource)> WaitingUploads = new ConcurrentDictionary<string, (string Filename, DateTime ReadyTimestamp, DateTime EnqueuedTimestamp, TaskCompletionSource TaskCompletionSource)>();
+
+        private async Task ProcessUploadQueue()
+        {
+            // don't run this code concurrently
+            await ProcessQueueSyncRoot.WaitAsync();
+
+            try
+            {
+                if (ConcurrentUploadSemaphore.CurrentCount == 0)
+                {
+                    return;
+                }
+
+                // snapshot the concurrent queue so values don't change while we decide what to do
+                var snapshot = WaitingUploads.ToList();
+
+                // if there's nothing waiting, no choice to make
+                if (snapshot.Count == 0)
+                {
+                    return;
+                }
+
+                if (snapshot.Count > 0)
+                {
+                    KeyValuePair<string, (string Filename, DateTime ReadyTimestamp, DateTime EnqueuedTimestamp, TaskCompletionSource TaskCompletionSource)> selected;
+
+                    if (snapshot.Count == 1)
+                    {
+                        selected = snapshot.First();
+                        Console.WriteLine($"[QUEUE] Only one upload waiting, selecting {selected.Key} with {Path.GetFileName(selected.Value.Filename)}");
+                    }
+                    else if (UploadQueueMode == "RoundRobin")
+                    {
+                        selected = snapshot.OrderBy(kvp => kvp.Value.ReadyTimestamp).First();
+                        Console.WriteLine("[QUEUE] More than one upload waiting, selecting based on Round Robin strategy:");
+
+                        foreach (var kvp in snapshot.OrderBy(kvp => kvp.Value.ReadyTimestamp))
+                        {
+                            Console.WriteLine($"\t[QUEUE] Candidate: {kvp.Key} with {Path.GetFileName(kvp.Value.Filename)}; Ready at: {kvp.Value.ReadyTimestamp}");
+                        }
+
+                        Console.WriteLine($"[QUEUE] Selected {selected.Key} with {Path.GetFileName(selected.Value.Filename)} as the earliest ready");
+                    }
+                    else
+                    {
+                        selected = snapshot.OrderBy(kvp => kvp.Value.EnqueuedTimestamp).First();
+                        Console.WriteLine("[QUEUE] More than one upload waiting, selecting based on FIFO strategy:");
+
+                        foreach (var kvp in snapshot.OrderBy(kvp => kvp.Value.EnqueuedTimestamp))
+                        {
+                            Console.WriteLine($"\t[QUEUE] Candidate: {kvp.Key} with {Path.GetFileName(kvp.Value.Filename)}; Enqueued at: {kvp.Value.EnqueuedTimestamp}");
+                        }
+
+                        Console.WriteLine($"[QUEUE] Selected {selected.Key} with {Path.GetFileName(selected.Value.Filename)} as the earliest enqueued");
+                    }
+
+                    var (key, value) = selected;
+                    WaitingUploads.TryRemove(key, out _);
+                    await ConcurrentUploadSemaphore.WaitAsync();
+                    value.TaskCompletionSource.SetResult();
+                }
+            }
+            finally
+            {
+                ProcessQueueSyncRoot.Release();
+            }
+        }
+
         /// <summary>
         ///     Invoked upon a remote request to download a file.  
         /// </summary>
@@ -498,6 +573,7 @@
             _ = endpoint;
             var localFilename = filename.ToLocalOSPath();
             var fileInfo = new FileInfo(localFilename);
+            var enqueuedTimestamp = DateTime.UtcNow;
 
             if (!fileInfo.Exists)
             {
@@ -515,7 +591,43 @@
 
             // create a new cancellation token source so that we can cancel the upload from the UI.
             var cts = new CancellationTokenSource();
-            var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts), governor: (t, c) => Task.Delay(1, c));
+
+            var topts = new TransferOptions(
+                stateChanged: (e) => tracker.AddOrUpdate(e, cts),
+                progressUpdated: (e) => tracker.AddOrUpdate(e, cts),
+                acquireSlot: async (tx, cancellationToken) =>
+                {
+                    Console.WriteLine($"[UPLOAD SLOT REQUESTED] [{username}/{filename}]");
+                    var tcs = new TaskCompletionSource();
+
+                    WaitingUploads.AddOrUpdate(
+                        key: username,
+                        addValueFactory: (_) => (filename, ReadyTimestamp: DateTime.UtcNow, enqueuedTimestamp, tcs),
+                        updateValueFactory: (_, _) => (filename, ReadyTimestamp: DateTime.UtcNow, enqueuedTimestamp, tcs));
+
+                    await ProcessUploadQueue();
+                    await tcs.Task;
+                },
+                slotAcquired: (tx) =>
+                {
+                    Console.WriteLine($"[UPLOAD SLOT ACQUIRED] [{username}/{filename}]");
+                },
+                slotReleased: (tx) =>
+                {
+                    Console.WriteLine($"[UPLOAD SLOT RELEASED] [{username}/{filename}]");
+
+                    // return the semaphore to make way for the next upload
+                    ConcurrentUploadSemaphore.Release();
+
+                    // process the queue after a short delay, to give this user's next upload time to
+                    // make it into the waiting upload dictionary
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(100);
+                        _ = ProcessUploadQueue();
+                    });
+                });
+
 
             // accept all download requests, and begin the upload immediately.
             // normally there would be an internal queue, and uploads would be handled separately.
@@ -523,6 +635,8 @@
             {
                 using var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read);
                 await Client.UploadAsync(username, filename, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
+
+                cts.Dispose();
             }).ContinueWith(t =>
             {
                 Console.WriteLine($"[UPLOAD FAILED] {t.Exception}");
