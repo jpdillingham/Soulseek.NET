@@ -605,6 +605,8 @@
                         addValueFactory: (_) => (filename, ReadyTimestamp: DateTime.UtcNow, enqueuedTimestamp, tcs),
                         updateValueFactory: (_, _) => (filename, ReadyTimestamp: DateTime.UtcNow, enqueuedTimestamp, tcs));
 
+                    // process the queue immediately; if there's no upload currently in progress
+                    // we will wind up waiting forever if we don't
                     await ProcessUploadQueue();
                     await tcs.Task;
                 },
@@ -620,7 +622,7 @@
                     ConcurrentUploadSemaphore.Release();
 
                     // process the queue after a short delay, to give this user's next upload time to
-                    // make it into the waiting upload dictionary
+                    // make it into the waiting upload dictionary (if there is one)
                     Task.Run(async () =>
                     {
                         await Task.Delay(100);
