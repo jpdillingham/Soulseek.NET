@@ -3732,7 +3732,7 @@ namespace Soulseek
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
-            // fetch (or create) the semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
+            // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
             // so we need to enforce this regardless of what downstream implementations do.
             var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
 
@@ -3745,15 +3745,19 @@ namespace Soulseek
             {
                 UpdateState(TransferStates.Queued);
 
+                // permissive stage 1:
                 // acquire the per-user semaphore to ensure we aren't trying to process more than the alotted
-                // concurrent uploads to this user
+                // concurrent uploads to this user, and ensure that we aren't trying to aquire a slot for an upload
+                // until the requesting user is ready to receive it
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 semaphoreAcquired = true;
 
-                // in case the upload record was removed via cleanup while we were waiting, add it back
+                // in case the upload record was removed via cleanup while we were waiting, add it back.  this will happen
+                // more often than not if a user enqueues more than 1 file at a time, so this is important.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
+                // permissive stage 2:
                 // acquire an upload slot from the calling code
                 try
                 {
@@ -3775,6 +3779,7 @@ namespace Soulseek
                     Diagnostic.Warning($"Encountered Exception notifying slot acquisition for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                 }
 
+                // permissive stage 3:
                 // acquire the global upload semaphore to ensure we aren't trying to process
                 // more than the total alotted concurrent uploads globally.  if we hit this limit,
                 // uploads will stack up behind it and will be processed in a round-robin-like fashion
@@ -3784,7 +3789,8 @@ namespace Soulseek
                 Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 globalSemaphoreAcquired = true;
 
-                // all permissives have been given; fetch the user endpoint and request that the transfer begins
+                // all permissives have been given
+                // fetch the user endpoint and request that the transfer begins
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
