@@ -3766,6 +3766,15 @@ namespace Soulseek
                     throw new TransferException($"Failed to acquire an upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                 }
 
+                try
+                {
+                    options.SlotAcquired?.Invoke(new Transfer(upload));
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Encountered Exception notifying slot acquisition for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                }
+
                 // acquire the global upload semaphore to ensure we aren't trying to process
                 // more than the total alotted concurrent uploads globally.  if we hit this limit,
                 // uploads will stack up behind it and will be processed in a round-robin-like fashion
@@ -3960,7 +3969,7 @@ namespace Soulseek
 
                     try
                     {
-                        options.SlotReleased(new Transfer(upload));
+                        options.SlotReleased?.Invoke(new Transfer(upload));
                     }
                     catch (Exception ex)
                     {

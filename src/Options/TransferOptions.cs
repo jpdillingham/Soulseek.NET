@@ -32,9 +32,6 @@ namespace Soulseek
         private readonly Func<Transfer, CancellationToken, Task> defaultAcquireSlot =
             (tx, token) => Task.CompletedTask;
 
-        private readonly Action<Transfer> defaultSlotReleased =
-            (tx) => { };
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferOptions"/> class.
         /// </summary>
@@ -57,6 +54,7 @@ namespace Soulseek
             Action<TransferStateChangedEventArgs> stateChanged = null,
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> acquireSlot = null,
+            Action<Transfer> slotAcquired = null,
             Action<Transfer> slotReleased = null,
             int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
@@ -66,7 +64,8 @@ namespace Soulseek
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
             AcquireSlot = acquireSlot ?? defaultAcquireSlot;
-            SlotReleased = slotReleased ?? defaultSlotReleased;
+            SlotAcquired = slotAcquired;
+            SlotReleased = slotReleased;
 
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
@@ -105,6 +104,11 @@ namespace Soulseek
         public Func<Transfer, CancellationToken, Task> AcquireSlot { get; }
 
         /// <summary>
+        ///     Gets the delegate used to signal that the slot was acquired (uploads only). (Default = no action).
+        /// </summary>
+        public Action<Transfer> SlotAcquired { get; }
+
+        /// <summary>
         ///     Gets the delegate used to signal release of the slot (uploads only). (Default = no action).
         /// </summary>
         public Action<Transfer> SlotReleased { get; }
@@ -130,6 +134,7 @@ namespace Soulseek
                 },
                 progressUpdated: ProgressUpdated,
                 acquireSlot: AcquireSlot,
+                slotAcquired: SlotAcquired,
                 slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
@@ -155,6 +160,7 @@ namespace Soulseek
                 stateChanged: StateChanged,
                 progressUpdated: ProgressUpdated,
                 acquireSlot: AcquireSlot,
+                slotAcquired: SlotAcquired,
                 slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
