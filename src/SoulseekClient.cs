@@ -3746,8 +3746,8 @@ namespace Soulseek
                 UpdateState(TransferStates.Queued);
 
                 // permissive stage 1:
-                // acquire the per-user semaphore to ensure we aren't trying to process more than the alotted
-                // concurrent uploads to this user, and ensure that we aren't trying to aquire a slot for an upload
+                // acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
+                // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload
                 // until the requesting user is ready to receive it
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
@@ -3781,7 +3781,7 @@ namespace Soulseek
 
                 // permissive stage 3:
                 // acquire the global upload semaphore to ensure we aren't trying to process
-                // more than the total alotted concurrent uploads globally.  if we hit this limit,
+                // more than the total allotted concurrent uploads globally.  if we hit this limit,
                 // uploads will stack up behind it and will be processed in a round-robin-like fashion
                 // due to the limit on per-user concurrency.  calling code can avoid this by providing
                 // an implementation of AcquireSlot() that won't exceed the maximum concurrent upload limit
