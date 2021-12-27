@@ -3971,6 +3971,12 @@ namespace Soulseek
 
                 if (uploadSlotAcquired)
                 {
+                    // give the next thread time to acquire the semaphore.  this is extremely sub-optimal,
+                    // but if there's a waiting upload we want the code within AcquireSlot() to be aware of it
+                    // before we release the slot.  10ms should be plenty of time, as this release and the subsequent
+                    // thread acquiring it should happen within nanoseconds.
+                    await Task.Delay(10, CancellationToken.None).ConfigureAwait(false);
+
                     Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
 
                     try
