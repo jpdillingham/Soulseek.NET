@@ -486,7 +486,7 @@
             return Task.FromResult(result);
         }
 
-        private string UploadQueueMode = "RoundRobin";
+        private string UploadQueueMode = "FIFO";
         private SemaphoreSlim ConcurrentUploadSemaphore = new SemaphoreSlim(1, 1);
         private SemaphoreSlim ProcessQueueSyncRoot = new SemaphoreSlim(1, 1);
         private ConcurrentDictionary<string, (string Filename, DateTime ReadyTimestamp, DateTime EnqueuedTimestamp, TaskCompletionSource TaskCompletionSource)> WaitingUploads = new ConcurrentDictionary<string, (string Filename, DateTime ReadyTimestamp, DateTime EnqueuedTimestamp, TaskCompletionSource TaskCompletionSource)>();
@@ -620,14 +620,7 @@
 
                     // return the semaphore to make way for the next upload
                     ConcurrentUploadSemaphore.Release();
-
-                    // process the queue after a short delay, to give this user's next upload time to
-                    // make it into the waiting upload dictionary (if there is one)
-                    Task.Run(async () =>
-                    {
-                        await Task.Delay(100);
-                        _ = ProcessUploadQueue();
-                    });
+                    _ = ProcessUploadQueue();
                 });
 
 
