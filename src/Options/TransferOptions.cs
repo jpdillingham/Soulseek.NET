@@ -39,6 +39,7 @@ namespace Soulseek
         /// <param name="stateChanged">The delegate to invoke when the transfer changes state.</param>
         /// <param name="progressUpdated">The delegate to invoke when the transfer receives data.</param>
         /// <param name="acquireSlot">The delegate used to acquire a slot to start the transfer (uploads only).</param>
+        /// <param name="slotAcquired">The delegate used to signal that the slot was aquired (uploads only).</param>
         /// <param name="slotReleased">The delegate used to signal release of the slot (uploads only).</param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
