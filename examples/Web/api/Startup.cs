@@ -168,11 +168,11 @@
         }
 
         public void Configure(
-            IApplicationBuilder app, 
-            IWebHostEnvironment env, 
-            IApiVersionDescriptionProvider provider, 
-            ITransferTracker tracker, 
-            IBrowseTracker browseTracker, 
+            IApplicationBuilder app,
+            IWebHostEnvironment env,
+            IApiVersionDescriptionProvider provider,
+            ITransferTracker tracker,
+            IBrowseTracker browseTracker,
             IConversationTracker conversationTracker,
             IRoomTracker roomTracker)
         {
@@ -190,7 +190,7 @@
 
             // remove any errant double forward slashes which may have been introduced
             // by a reverse proxy or having the base path removed
-            app.Use(async (context, next) => 
+            app.Use(async (context, next) =>
             {
                 var path = context.Request.Path.ToString();
 
@@ -461,7 +461,7 @@
             var directories = System.IO.Directory
                 .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
                 .Select(dir => new Soulseek.Directory(
-                    dir.Replace("/", @"\"), 
+                    dir.Replace("/", @"\"),
                     System.IO.Directory.GetFiles(dir)
                         .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f)))));
 
@@ -479,7 +479,7 @@
         private Task<Soulseek.Directory> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
         {
             var result = new Soulseek.Directory(
-                directory.Replace("/", @"\"), 
+                directory.Replace("/", @"\"),
                 System.IO.Directory.GetFiles(directory)
                     .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f))));
 
@@ -609,10 +609,6 @@
                     // we will wind up waiting forever if we don't
                     await ProcessUploadQueue();
                     await tcs.Task;
-                },
-                slotAcquired: (tx) =>
-                {
-                    Console.WriteLine($"[UPLOAD SLOT ACQUIRED] [{username}/{filename}]");
                 },
                 slotReleased: (tx) =>
                 {
