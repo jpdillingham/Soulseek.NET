@@ -39,7 +39,6 @@ namespace Soulseek
         /// <param name="stateChanged">The delegate to invoke when the transfer changes state.</param>
         /// <param name="progressUpdated">The delegate to invoke when the transfer receives data.</param>
         /// <param name="acquireSlot">The delegate used to acquire a slot to start the transfer (uploads only).</param>
-        /// <param name="slotAcquired">The delegate used to signal that the slot was aquired (uploads only).</param>
         /// <param name="slotReleased">The delegate used to signal release of the slot (uploads only).</param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
@@ -55,7 +54,6 @@ namespace Soulseek
             Action<TransferStateChangedEventArgs> stateChanged = null,
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> acquireSlot = null,
-            Action<Transfer> slotAcquired = null,
             Action<Transfer> slotReleased = null,
             int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
@@ -65,7 +63,6 @@ namespace Soulseek
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
             AcquireSlot = acquireSlot ?? defaultAcquireSlot;
-            SlotAcquired = slotAcquired;
             SlotReleased = slotReleased;
 
             StateChanged = stateChanged;
@@ -105,11 +102,6 @@ namespace Soulseek
         public Func<Transfer, CancellationToken, Task> AcquireSlot { get; }
 
         /// <summary>
-        ///     Gets the delegate used to signal that the slot was acquired (uploads only). (Default = no action).
-        /// </summary>
-        public Action<Transfer> SlotAcquired { get; }
-
-        /// <summary>
         ///     Gets the delegate used to signal release of the slot (uploads only). (Default = no action).
         /// </summary>
         public Action<Transfer> SlotReleased { get; }
@@ -135,7 +127,6 @@ namespace Soulseek
                 },
                 progressUpdated: ProgressUpdated,
                 acquireSlot: AcquireSlot,
-                slotAcquired: SlotAcquired,
                 slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
@@ -161,7 +152,6 @@ namespace Soulseek
                 stateChanged: StateChanged,
                 progressUpdated: ProgressUpdated,
                 acquireSlot: AcquireSlot,
-                slotAcquired: SlotAcquired,
                 slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,

@@ -35,7 +35,6 @@ namespace Soulseek.Tests.Unit.Options
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
-            Action<Transfer> slotAcquired,
             Action<Transfer> slotReleased)
         {
             var o = new TransferOptions(
@@ -43,7 +42,6 @@ namespace Soulseek.Tests.Unit.Options
                 stateChanged,
                 progressUpdated,
                 acquireSlot,
-                slotAcquired,
                 slotReleased,
                 maximumLingerTime,
                 disposeInput,
@@ -56,7 +54,6 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(acquireSlot, o.AcquireSlot);
-            Assert.Equal(slotAcquired, o.SlotAcquired);
             Assert.Equal(slotReleased, o.SlotReleased);
         }
 
@@ -77,7 +74,6 @@ namespace Soulseek.Tests.Unit.Options
 
             Assert.Null(o.StateChanged);
             Assert.Null(o.ProgressUpdated);
-            Assert.Null(o.SlotAcquired);
             Assert.Null(o.SlotReleased);
         }
 
@@ -91,7 +87,6 @@ namespace Soulseek.Tests.Unit.Options
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
-            Action<Transfer> slotAcquired,
             Action<Transfer> slotReleased)
         {
             var n = new TransferOptions(
@@ -99,7 +94,6 @@ namespace Soulseek.Tests.Unit.Options
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
                 acquireSlot: acquireSlot,
-                slotAcquired: slotAcquired,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInput,
@@ -113,7 +107,6 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(acquireSlot, o.AcquireSlot);
-            Assert.Equal(slotAcquired, o.SlotAcquired);
             Assert.Equal(slotReleased, o.SlotReleased);
 
             Assert.NotEqual(stateChanged, o.StateChanged);
@@ -159,7 +152,6 @@ namespace Soulseek.Tests.Unit.Options
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
-            Action<Transfer> slotAcquired,
             Action<Transfer> slotReleased)
         {
             var n = new TransferOptions(
@@ -167,7 +159,6 @@ namespace Soulseek.Tests.Unit.Options
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
                 acquireSlot: acquireSlot,
-                slotAcquired: slotAcquired,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInput,
@@ -179,7 +170,6 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(acquireSlot, o.AcquireSlot);
-            Assert.Equal(slotAcquired, o.SlotAcquired);
             Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
@@ -196,7 +186,6 @@ namespace Soulseek.Tests.Unit.Options
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
-            Action<Transfer> slotAcquired,
             Action<Transfer> slotReleased)
         {
             var n = new TransferOptions(
@@ -204,7 +193,6 @@ namespace Soulseek.Tests.Unit.Options
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
                 acquireSlot: acquireSlot,
-                slotAcquired: slotAcquired,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: !disposeInput,
@@ -218,7 +206,6 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(acquireSlot, o.AcquireSlot);
-            Assert.Equal(slotAcquired, o.SlotAcquired);
             Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
