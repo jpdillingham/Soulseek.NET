@@ -580,13 +580,15 @@ namespace Soulseek.Network.Tcp
         private async Task<byte[]> ReadInternalAsync(long length, CancellationToken cancellationToken)
         {
 #if NETSTANDARD2_0
-            using var stream = new MemoryStream();
+            using (var stream = new MemoryStream())
 #else
-            await using var stream = new MemoryStream();
+            var stream = new MemoryStream();
+            await using (stream.ConfigureAwait(false))
 #endif
-
-            await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
-            return stream.ToArray();
+            {
+                await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
+                return stream.ToArray();
+            }
         }
 
         private async Task ReadInternalAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
@@ -665,12 +667,14 @@ namespace Soulseek.Network.Tcp
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
 #if NETSTANDARD2_0
-            using var stream = new MemoryStream(bytes);
+            using (var stream = new MemoryStream(bytes))
 #else
-            await using var stream = new MemoryStream(bytes);
+            var stream = new MemoryStream(bytes);
+            await using (stream.ConfigureAwait(false))
 #endif
-
-            await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
+            {
+                await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         private async Task WriteInternalAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
@@ -685,7 +689,7 @@ namespace Soulseek.Network.Tcp
                 throw new ConnectionWriteDroppedException($"Dropped buffered message to {IPEndPoint}; the write buffer is full");
             }
 
-            await WriteQueueSemaphore.WaitAsync().ConfigureAwait(false);
+            await WriteQueueSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
 #if NETSTANDARD2_0
             var buffer = new byte[Options.WriteBufferSize];

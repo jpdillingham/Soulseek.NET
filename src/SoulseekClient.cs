@@ -2840,13 +2840,15 @@ namespace Soulseek
                 disposeOutputStreamOnCompletion: false);
 
 #if NETSTANDARD2_0
-            using var memoryStream = new MemoryStream();
+            using (var memoryStream = new MemoryStream())
 #else
-            await using var memoryStream = new MemoryStream();
+            var memoryStream = new MemoryStream();
+            await using (memoryStream.ConfigureAwait(false))
 #endif
-
-            var transfer = await DownloadToStreamAsync(username, remoteFilename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
-            return (transfer, memoryStream.ToArray());
+            {
+                var transfer = await DownloadToStreamAsync(username, remoteFilename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
+                return (transfer, memoryStream.ToArray());
+            }
         }
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -3078,7 +3080,7 @@ namespace Soulseek
                 {
                     try
                     {
-                        await outputStream.FlushAsync().ConfigureAwait(false);
+                        await outputStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
                     }
                     finally
                     {
@@ -3678,12 +3680,14 @@ namespace Soulseek
                 disposeOutputStreamOnCompletion: false);
 
 #if NETSTANDARD2_0
-            using var memoryStream = new MemoryStream(data);
+            using (var memoryStream = new MemoryStream(data))
 #else
-            await using var memoryStream = new MemoryStream(data);
+            var memoryStream = new MemoryStream(data);
+            await using (memoryStream.ConfigureAwait(false))
 #endif
-
-            return await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+            {
+                return await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         private async Task<Transfer> UploadFromFileAsync(string username, string remoteFilename, string localFilename, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -3695,12 +3699,14 @@ namespace Soulseek
                 disposeOutputStreamOnCompletion: false);
 
 #if NETSTANDARD2_0
-            using var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
+            using (var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read))
 #else
-            await using var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
+            var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
+            await using (fileStream.ConfigureAwait(false))
 #endif
-
-            return await UploadFromStreamAsync(username, remoteFilename, fileStream.Length, fileStream, token, options, cancellationToken).ConfigureAwait(false);
+            {
+                return await UploadFromStreamAsync(username, remoteFilename, fileStream.Length, fileStream, token, options, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
