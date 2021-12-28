@@ -54,7 +54,6 @@ namespace Soulseek.Tests.Unit.Options
             var userInfoResponseResolver = new Func<string, IPEndPoint, Task<UserInfo>>((s, i) => Task.FromResult<UserInfo>(null));
             var enqueueDownloadAction = new Func<string, IPEndPoint, string, Task>((s, i, ss) => Task.CompletedTask);
             var placeInQueueResponseResolver = new Func<string, IPEndPoint, string, Task<int?>>((s, i, ss) => Task.FromResult<int?>(0));
-            var configureServerSocketAction = new Action<Socket>(s => { });
 
             var rnd = new Random();
             var listenPort = rnd.Next(1024, 65535);

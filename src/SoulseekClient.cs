@@ -98,7 +98,7 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
-            UploadSlotSemaphore = new SemaphoreSlim(initialCount: Options.UploadSlots, maxCount: Options.UploadSlots);
+            GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
 
             ServerConnection = serverConnection;
 
@@ -431,7 +431,7 @@ namespace Soulseek
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, TransferInternal> Downloads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> DownloadDictionary { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IListener Listener { get; private set; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
@@ -440,7 +440,7 @@ namespace Soulseek
         internal virtual ISearchResponder SearchResponder { get; }
         internal virtual IMessageConnection ServerConnection { get; private set; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, TransferInternal> Uploads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> UploadDictionary { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
@@ -451,7 +451,7 @@ namespace Soulseek
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        private SemaphoreSlim UploadSlotSemaphore { get; }
+        private SemaphoreSlim GlobalUploadSemaphore { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
@@ -935,12 +935,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (DownloadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
@@ -1028,12 +1028,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Downloads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (DownloadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
@@ -1322,7 +1322,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be Connected and LoggedIn to check download queue position (currently: {State})");
             }
 
-            if (!Downloads.Any(d => d.Value.Username == username && d.Value.Filename == filename))
+            if (!DownloadDictionary.Any(d => d.Value.Username == username && d.Value.Filename == filename))
             {
                 throw new TransferNotFoundException($"A download of {filename} from user {username} is not active");
             }
@@ -2294,12 +2294,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Uploads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
@@ -2378,12 +2378,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Uploads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
@@ -2459,12 +2459,12 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
-            if (Uploads.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
@@ -2835,21 +2835,20 @@ namespace Soulseek
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
-            options = new TransferOptions(
-                options.Governor,
-                options.StateChanged,
-                options.ProgressUpdated,
-                options.MaximumLingerTime,
+            options = options.WithDisposalOptions(
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
-#if NETSTANDARD2_0
-            using var memoryStream = new MemoryStream();
-#else
-            await using var memoryStream = new MemoryStream();
-#endif
 
-            var transfer = await DownloadToStreamAsync(username, remoteFilename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
-            return (transfer, memoryStream.ToArray());
+#if NETSTANDARD2_0
+            using (var memoryStream = new MemoryStream())
+#else
+            var memoryStream = new MemoryStream();
+            await using (memoryStream.ConfigureAwait(false))
+#endif
+            {
+                var transfer = await DownloadToStreamAsync(username, remoteFilename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
+                return (transfer, memoryStream.ToArray());
+            }
         }
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -2860,7 +2859,7 @@ namespace Soulseek
                 Size = size,
             };
 
-            Downloads.TryAdd(download.Token, download);
+            DownloadDictionary.TryAdd(download.Token, download);
 
             var lastState = TransferStates.None;
 
@@ -3073,7 +3072,7 @@ namespace Soulseek
 
                 download.Connection?.Dispose();
 
-                Downloads.TryRemove(download.Token, out _);
+                DownloadDictionary.TryRemove(download.Token, out _);
 
                 var finalStreamPosition = outputStream.Position;
 
@@ -3081,7 +3080,7 @@ namespace Soulseek
                 {
                     try
                     {
-                        await outputStream.FlushAsync().ConfigureAwait(false);
+                        await outputStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
                     }
                     finally
                     {
@@ -3676,42 +3675,38 @@ namespace Soulseek
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
-            options = new TransferOptions(
-                options.Governor,
-                options.StateChanged,
-                options.ProgressUpdated,
-                options.MaximumLingerTime,
+            options = options.WithDisposalOptions(
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
 #if NETSTANDARD2_0
-            using var memoryStream = new MemoryStream(data);
+            using (var memoryStream = new MemoryStream(data))
 #else
-            await using var memoryStream = new MemoryStream(data);
+            var memoryStream = new MemoryStream(data);
+            await using (memoryStream.ConfigureAwait(false))
 #endif
-
-            return await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+            {
+                return await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         private async Task<Transfer> UploadFromFileAsync(string username, string remoteFilename, string localFilename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
-            options = new TransferOptions(
-                options.Governor,
-                options.StateChanged,
-                options.ProgressUpdated,
-                options.MaximumLingerTime,
+            options = options.WithDisposalOptions(
                 disposeInputStreamOnCompletion: false,
                 disposeOutputStreamOnCompletion: false);
 
 #if NETSTANDARD2_0
-            using var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
+            using (var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read))
 #else
-            await using var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
+            var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
+            await using (fileStream.ConfigureAwait(false))
 #endif
-
-            return await UploadFromStreamAsync(username, remoteFilename, fileStream.Length, fileStream, token, options, cancellationToken).ConfigureAwait(false);
+            {
+                return await UploadFromStreamAsync(username, remoteFilename, fileStream.Length, fileStream, token, options, cancellationToken).ConfigureAwait(false);
+            }
         }
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -3721,7 +3716,7 @@ namespace Soulseek
                 Size = size,
             };
 
-            Uploads.TryAdd(upload.Token, upload);
+            UploadDictionary.TryAdd(upload.Token, upload);
 
             var lastState = TransferStates.None;
 
@@ -3743,34 +3738,56 @@ namespace Soulseek
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
-            // fetch (or create) the semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
+            // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
             // so we need to enforce this regardless of what downstream implementations do.
-            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.UploadSlotsPerUser, maxCount: Options.UploadSlotsPerUser));
+            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
 
             IPEndPoint endpoint = null;
             bool semaphoreAcquired = false;
-            bool slotAcquired = false;
+            bool uploadSlotAcquired = false;
+            bool globalSemaphoreAcquired = false;
 
             try
             {
                 UpdateState(TransferStates.Queued);
 
+                // permissive stage 1:
+                // acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
+                // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload
+                // until the requesting user is ready to receive it
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                Diagnostic.Debug($"Upload semaphore for {username} acquired");
+                Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 semaphoreAcquired = true;
 
-                // in case the upload record was removed via cleanup while we were waiting, add it back.
+                // in case the upload record was removed via cleanup while we were waiting, add it back.  this will happen
+                // more often than not if a user enqueues more than 1 file at a time, so this is important.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
-                if (Options.EnableUploadQueue)
+                // permissive stage 2:
+                // acquire an upload slot from the calling code
+                try
                 {
-                    await UploadSlotSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-                    Diagnostic.Debug($"Upload slot acquired");
-                    slotAcquired = true;
+                    await options.AcquireSlot(new Transfer(upload), cancellationToken).ConfigureAwait(false);
+                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
+                    uploadSlotAcquired = true;
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    throw new TransferException($"Failed to acquire an upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                 }
 
+                // permissive stage 3:
+                // acquire the global upload semaphore to ensure we aren't trying to process
+                // more than the total allotted concurrent uploads globally.  if we hit this limit,
+                // uploads will stack up behind it and will be processed in a round-robin-like fashion
+                // due to the limit on per-user concurrency.  calling code can avoid this by providing
+                // an implementation of AcquireSlot() that won't exceed the maximum concurrent upload limit
+                await GlobalUploadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
+                globalSemaphoreAcquired = true;
+
+                // all permissives have been given
+                // fetch the user endpoint and request that the transfer begins
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
@@ -3941,18 +3958,38 @@ namespace Soulseek
                 // threads waiting on it, and it is added back after it is awaited above.
                 UploadSemaphores.TryRemove(username, out var _);
 
-                // make sure we successfully obtained the semaphore before releasing it. this will be false if the semaphore wait
-                // threw due to cancellation
+                // make sure we successfully obtained all permissives before releasing them.  some of them may not have been attempted
+                // if the code throws.
                 if (semaphoreAcquired)
                 {
-                    Diagnostic.Debug($"Upload semaphore for {username} released");
+                    Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
                     semaphore.Release(releaseCount: 1);
                 }
 
-                if (slotAcquired)
+                if (uploadSlotAcquired)
                 {
-                    Diagnostic.Info($"Upload slot released");
-                    UploadSlotSemaphore.Release(releaseCount: 1);
+                    // give the next thread time to acquire the semaphore.  this is extremely sub-optimal,
+                    // but if there's a waiting upload we want the code within AcquireSlot() to be aware of it
+                    // before we release the slot.  10ms should be plenty of time, as this release and the subsequent
+                    // thread acquiring it should happen within nanoseconds.
+                    await Task.Delay(10, CancellationToken.None).ConfigureAwait(false);
+
+                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
+
+                    try
+                    {
+                        options.SlotReleased?.Invoke(new Transfer(upload));
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostic.Warning($"Encountered Exception releasing upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                    }
+                }
+
+                if (globalSemaphoreAcquired)
+                {
+                    Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
+                    GlobalUploadSemaphore.Release(releaseCount: 1);
                 }
 
                 upload.Connection?.Dispose();
@@ -3987,7 +4024,7 @@ namespace Soulseek
                     }
                 }
 
-                Uploads.TryRemove(upload.Token, out _);
+                UploadDictionary.TryRemove(upload.Token, out _);
 
                 var finalStreamPosition = inputStream.Position;
 

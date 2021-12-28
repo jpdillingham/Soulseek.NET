@@ -611,7 +611,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified <paramref name="username"/>
         ///     is already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>

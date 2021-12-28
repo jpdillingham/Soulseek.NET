@@ -227,7 +227,7 @@ namespace Soulseek.Messaging.Handlers
 
                         if (transferRequest.Direction == TransferDirection.Upload)
                         {
-                            if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connection.Username && d.Filename == transferRequest.Filename))
+                            if (!SoulseekClient.DownloadDictionary.IsEmpty && SoulseekClient.DownloadDictionary.Values.Any(d => d.Username == connection.Username && d.Filename == transferRequest.Filename))
                             {
                                 SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, transferRequest.Filename), transferRequest);
                             }
@@ -276,7 +276,7 @@ namespace Soulseek.Messaging.Handlers
                         var uploadFailedResponse = UploadFailed.FromByteArray(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}";
 
-                        var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
+                        var download = SoulseekClient.DownloadDictionary.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
                         if (download != null)
                         {
                             SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename), new TransferException(msg));

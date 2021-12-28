@@ -133,7 +133,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var dict = new ConcurrentDictionary<int, TransferInternal>();
             dict.TryAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
-            mocks.Client.Setup(m => m.Downloads)
+            mocks.Client.Setup(m => m.DownloadDictionary)
                 .Returns(dict);
 
             mocks.PeerConnection.Setup(m => m.Username)
@@ -157,7 +157,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var dict = new ConcurrentDictionary<int, TransferInternal>();
 
-            mocks.Client.Setup(m => m.Downloads)
+            mocks.Client.Setup(m => m.DownloadDictionary)
                 .Returns(dict);
 
             mocks.PeerConnection.Setup(m => m.Username)
@@ -182,7 +182,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var dict = new ConcurrentDictionary<int, TransferInternal>();
             dict.TryAdd(0, new TransferInternal(TransferDirection.Download, "not-username", filename, 0));
 
-            mocks.Client.Setup(m => m.Downloads)
+            mocks.Client.Setup(m => m.DownloadDictionary)
                 .Returns(dict);
 
             mocks.PeerConnection.Setup(m => m.Username)
@@ -887,7 +887,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var downloads = new ConcurrentDictionary<int, TransferInternal>();
             downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, username, filename, token));
 
-            mocks.Client.Setup(m => m.Downloads)
+            mocks.Client.Setup(m => m.DownloadDictionary)
                 .Returns(downloads);
 
             var request = new TransferRequest(TransferDirection.Upload, token, filename);
@@ -921,7 +921,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var downloads = new ConcurrentDictionary<int, TransferInternal>();
             downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, "not-username", filename, token));
 
-            mocks.Client.Setup(m => m.Downloads)
+            mocks.Client.Setup(m => m.DownloadDictionary)
                 .Returns(downloads);
 
             var request = new TransferRequest(TransferDirection.Upload, token, filename);
@@ -1044,7 +1044,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 };
 
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
-                Client.Setup(m => m.Downloads).Returns(Downloads);
+                Client.Setup(m => m.DownloadDictionary).Returns(Downloads);
                 Client.Setup(m => m.Searches).Returns(Searches);
                 Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
             }

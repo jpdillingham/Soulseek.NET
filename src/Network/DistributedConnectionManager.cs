@@ -419,12 +419,11 @@ namespace Soulseek.Network
 
                     Diagnostic.Debug($"Connected parent candidates not selected: {(ParentCandidateList.Count > 0 ? string.Join(", ", ParentCandidateList.Select(p => p.Username)) : "<none>")}");
 
-                    foreach (var connection in successfulConnections)
+                    foreach (var connection in successfulConnections.Select(c => c.Connection))
                     {
-                        var c = connection.Connection;
-                        Diagnostic.Debug($"Disconnecting parent candidate connection to {c.Username} ({c.IPEndPoint})");
-                        c.Disconnect("Not selected.");
-                        c.Dispose();
+                        Diagnostic.Debug($"Disconnecting parent candidate connection to {connection.Username} ({connection.IPEndPoint})");
+                        connection.Disconnect("Not selected.");
+                        connection.Dispose();
                     }
                 }
                 else
@@ -449,7 +448,7 @@ namespace Soulseek.Network
         {
             cancellationToken ??= CancellationToken.None;
 
-            async Task Write (KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
+            async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
             {
                 try
                 {

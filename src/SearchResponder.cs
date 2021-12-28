@@ -194,7 +194,7 @@ namespace Soulseek
         {
             if (SoulseekClient.Options.SearchResponseCache != default)
             {
-                var cached = false;
+                bool cached;
                 (string Username, int Token, string Query, SearchResponse SearchResponse) record;
 
                 try

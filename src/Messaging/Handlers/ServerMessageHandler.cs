@@ -345,10 +345,10 @@ namespace Soulseek.Messaging.Handlers
 
                                 // ensure that we are expecting at least one file from this user before we connect. the response
                                 // doesn't contain any other identifying information about the file.
-                                if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
+                                if (!SoulseekClient.DownloadDictionary.IsEmpty && SoulseekClient.DownloadDictionary.Values.Any(d => d.Username == connectToPeerResponse.Username))
                                 {
                                     var (connection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
-                                    var download = SoulseekClient.Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
+                                    var download = SoulseekClient.DownloadDictionary.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
 
                                     if (download != default(TransferInternal))
                                     {

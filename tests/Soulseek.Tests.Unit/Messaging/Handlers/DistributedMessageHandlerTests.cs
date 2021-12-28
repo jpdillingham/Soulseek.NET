@@ -696,7 +696,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
                 Client.Setup(m => m.DistributedConnectionManager).Returns(DistributedConnectionManager.Object);
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
-                Client.Setup(m => m.Downloads).Returns(Downloads);
+                Client.Setup(m => m.DownloadDictionary).Returns(Downloads);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
                 Client.Setup(m => m.SearchResponder).Returns(SearchResponder.Object);

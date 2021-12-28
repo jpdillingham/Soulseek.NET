@@ -100,7 +100,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 dict.TryAdd(1, transfer);
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 
@@ -122,7 +122,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 dict.TryAdd(1, transfer);
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 
@@ -162,7 +162,7 @@ namespace Soulseek.Tests.Unit.Client
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var place = await s.GetDownloadPlaceInQueueAsync(username, filename);
 
@@ -201,7 +201,7 @@ namespace Soulseek.Tests.Unit.Client
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var place = await s.GetDownloadPlaceInQueueAsync(username, filename, cancellationToken: cancellationToken);
 
@@ -229,7 +229,7 @@ namespace Soulseek.Tests.Unit.Client
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 
@@ -267,7 +267,7 @@ namespace Soulseek.Tests.Unit.Client
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 
@@ -305,7 +305,7 @@ namespace Soulseek.Tests.Unit.Client
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 
@@ -343,7 +343,7 @@ namespace Soulseek.Tests.Unit.Client
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
-                s.SetProperty("Downloads", dict);
+                s.SetProperty("DownloadDictionary", dict);
 
                 var ex = await Record.ExceptionAsync(() => s.GetDownloadPlaceInQueueAsync(username, filename));
 

@@ -33,12 +33,16 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, CancellationToken, Task> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated)
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
         {
             var o = new TransferOptions(
                 governor,
                 stateChanged,
                 progressUpdated,
+                acquireSlot,
+                slotReleased,
                 maximumLingerTime,
                 disposeInput,
                 disposeOutput);
@@ -49,10 +53,12 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with given data")]
+        [Fact(DisplayName = "Instantiates with defaults")]
         public async Task Instantiates_With_Defaults()
         {
             var o = new TransferOptions();
@@ -63,8 +69,12 @@ namespace Soulseek.Tests.Unit.Options
             var ex = await Record.ExceptionAsync(() => o.Governor(null, CancellationToken.None));
             Assert.Null(ex);
 
+            var ex2 = await Record.ExceptionAsync(() => o.AcquireSlot(null, CancellationToken.None));
+            Assert.Null(ex2);
+
             Assert.Null(o.StateChanged);
             Assert.Null(o.ProgressUpdated);
+            Assert.Null(o.SlotReleased);
         }
 
         [Trait("Category", "WithAdditionalStateChanged")]
@@ -75,15 +85,19 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, CancellationToken, Task> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated)
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
         {
             var n = new TransferOptions(
-                governor,
-                stateChanged,
-                progressUpdated,
-                maximumLingerTime,
-                disposeInput,
-                disposeOutput);
+                governor: governor,
+                stateChanged: stateChanged,
+                progressUpdated: progressUpdated,
+                acquireSlot: acquireSlot,
+                slotReleased: slotReleased,
+                maximumLingerTime: maximumLingerTime,
+                disposeInputStreamOnCompletion: disposeInput,
+                disposeOutputStreamOnCompletion: disposeOutput);
 
             var o = n.WithAdditionalStateChanged(null);
 
@@ -92,6 +106,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
 
             Assert.NotEqual(stateChanged, o.StateChanged);
         }
@@ -124,6 +140,76 @@ namespace Soulseek.Tests.Unit.Options
             var ex = Record.Exception(() => o.StateChanged(null));
 
             Assert.Null(ex);
+        }
+
+        [Trait("Category", "WithDisposalOptions")]
+        [Theory(DisplayName = "WithDisposalOptions returns unchanged copy if both options are null"), AutoData]
+        public void WithAdditionalStateChanged_Returns_Unchanged_Copy_If_Both_Options_Are_Null(
+            bool disposeInput,
+            bool disposeOutput,
+            Func<Transfer, CancellationToken, Task> governor,
+            Action<TransferStateChangedEventArgs> stateChanged,
+            int maximumLingerTime,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
+        {
+            var n = new TransferOptions(
+                governor: governor,
+                stateChanged: stateChanged,
+                progressUpdated: progressUpdated,
+                acquireSlot: acquireSlot,
+                slotReleased: slotReleased,
+                maximumLingerTime: maximumLingerTime,
+                disposeInputStreamOnCompletion: disposeInput,
+                disposeOutputStreamOnCompletion: disposeOutput);
+
+            var o = n.WithDisposalOptions();
+
+            Assert.Equal(governor, o.Governor);
+            Assert.Equal(stateChanged, o.StateChanged);
+            Assert.Equal(progressUpdated, o.ProgressUpdated);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
+            Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
+            Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
+        }
+
+        [Trait("Category", "WithDisposalOptions")]
+        [Theory(DisplayName = "WithDisposalOptions returns changed copy if both options are specified"), AutoData]
+        public void WithAdditionalStateChanged_Returns_Changed_Copy_If_Both_Options_Are_Specified(
+            bool disposeInput,
+            bool disposeOutput,
+            Func<Transfer, CancellationToken, Task> governor,
+            Action<TransferStateChangedEventArgs> stateChanged,
+            int maximumLingerTime,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<Transfer> slotReleased)
+        {
+            var n = new TransferOptions(
+                governor: governor,
+                stateChanged: stateChanged,
+                progressUpdated: progressUpdated,
+                acquireSlot: acquireSlot,
+                slotReleased: slotReleased,
+                maximumLingerTime: maximumLingerTime,
+                disposeInputStreamOnCompletion: !disposeInput,
+                disposeOutputStreamOnCompletion: !disposeOutput);
+
+            var o = n.WithDisposalOptions(
+                disposeInputStreamOnCompletion: disposeInput,
+                disposeOutputStreamOnCompletion: disposeOutput);
+
+            Assert.Equal(governor, o.Governor);
+            Assert.Equal(stateChanged, o.StateChanged);
+            Assert.Equal(progressUpdated, o.ProgressUpdated);
+            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(slotReleased, o.SlotReleased);
+            Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
+            Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
         }
     }
 }
