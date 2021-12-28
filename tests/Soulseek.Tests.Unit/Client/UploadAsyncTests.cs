@@ -2371,7 +2371,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync updates remote user on failure"), AutoData]
-        public void UploadFromByteArrayAsync_Updates_Remote_User_On_Failure(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Updates_Remote_User_On_Failure(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2414,7 +2414,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
             }
