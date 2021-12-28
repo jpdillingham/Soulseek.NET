@@ -24,11 +24,11 @@ namespace Soulseek.Tests.Unit.Options
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates properly"), AutoData]
-        public void Instantiates_Properly(int read, int write, int depth, int timeout, int inactivity, int writeTimeout, bool keepAlive)
+        public void Instantiates_Properly(int read, int write, int depth, int timeout, int inactivity)
         {
             ConnectionOptions o = null;
 
-            var ex = Record.Exception(() => o = new ConnectionOptions(read, write, depth, timeout, writeTimeout, inactivity, keepAlive));
+            var ex = Record.Exception(() => o = new ConnectionOptions(read, write, depth, timeout, inactivity));
 
             Assert.Null(ex);
             Assert.NotNull(o);
@@ -37,9 +37,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(write, o.WriteBufferSize);
             Assert.Equal(depth, o.WriteQueueSize);
             Assert.Equal(timeout, o.ConnectTimeout);
-            Assert.Equal(writeTimeout, o.WriteTimeout);
             Assert.Equal(inactivity, o.InactivityTimeout);
-            Assert.Equal(keepAlive, o.KeepAlive);
         }
 
         [Trait("Category", "WithoutInactivityTimeout")]
@@ -51,17 +49,6 @@ namespace Soulseek.Tests.Unit.Options
             var o2 = o.WithoutInactivityTimeout();
 
             Assert.Equal(-1, o2.InactivityTimeout);
-        }
-
-        [Trait("Category", "WithKeepAlive")]
-        [Fact(DisplayName = "WithKeepAlive forces KeepAlive to true")]
-        public void WithKeepAlive()
-        {
-            var o = new ConnectionOptions(keepAlive: false);
-
-            var o2 = o.WithKeepAlive();
-
-            Assert.True(o2.KeepAlive);
         }
     }
 }
