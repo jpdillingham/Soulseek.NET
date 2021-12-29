@@ -225,7 +225,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver is null"), AutoData]
         public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Is_Null(string username, int token, string query)
         {
-            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: null));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: null));
 
             var responded = await responder.TryRespondAsync(username, token, query);
 
@@ -236,7 +236,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver throws"), AutoData]
         public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Throws(string username, int token, string query)
         {
-            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => throw new Exception()));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => throw new Exception()));
 
             var responded = await responder.TryRespondAsync(username, token, query);
 
@@ -249,7 +249,7 @@ namespace Soulseek.Tests.Unit
         {
             var ex = new Exception();
 
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => throw ex));
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => throw ex));
 
             var responded = await responder.TryRespondAsync(username, token, query);
 
@@ -262,7 +262,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver returns null"), AutoData]
         public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Returns_Null(string username, int token, string query)
         {
-            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null)));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult<SearchResponse>(null)));
 
             var responded = await responder.TryRespondAsync(username, token, query);
 
@@ -274,7 +274,7 @@ namespace Soulseek.Tests.Unit
         public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Returns_Zero_Files(string username, int token, string query)
         {
             var response = new SearchResponse(username, token, 0, 0, 0, new List<File>());
-            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response)));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(response)));
 
             var responded = await responder.TryRespondAsync(username, token, query);
 
@@ -303,7 +303,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync sends response and returns true"), AutoData]
         public async Task TryRespondAsync_Sends_Response_And_Returns_True(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
         {
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));
@@ -326,7 +326,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync raises ResponseDelivered when sending response"), AutoData]
         public async Task TryRespondAsync_Raises_ResponseDelivered_When_Sending_Response(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
         {
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));
@@ -356,7 +356,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync generates debug when resolving response"), AutoData]
         public async Task TryRespondAsync_Generates_Debug_When_Resolving_Response(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
         {
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));
@@ -379,7 +379,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync generates debug when sending response"), AutoData]
         public async Task TryRespondAsync_Generates_Debug_When_Sending_Response(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
         {
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));
@@ -402,7 +402,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync returns false on failure"), AutoData]
         public async Task TryRespondAsync_Returns_False_On_Failure(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
         {
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));
@@ -427,7 +427,7 @@ namespace Soulseek.Tests.Unit
 
             var (responder, mocks) = GetFixture(new SoulseekClientOptions(
                 searchResponseCache: cache.Object,
-                searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+                resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));
@@ -460,7 +460,7 @@ namespace Soulseek.Tests.Unit
 
             var (responder, mocks) = GetFixture(new SoulseekClientOptions(
                 searchResponseCache: cache.Object,
-                searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+                resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));
@@ -483,7 +483,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync generates debug on failure"), AutoData]
         public async Task TryRespondAsync_Generates_Debug_On_Failure(string username, int token, string query, SearchResponse searchResponse, IPEndPoint endpoint, int responseToken)
         {
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(searchResponse)));
+            var (responder, mocks) = GetFixture(new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(searchResponse)));
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(endpoint));

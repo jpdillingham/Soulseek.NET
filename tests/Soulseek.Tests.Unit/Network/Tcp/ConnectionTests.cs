@@ -149,7 +149,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             Socket socket = null;
 
-            using (var c = new Connection(endpoint, options: new ConnectionOptions(configureSocketAction: (s) => socket = s)))
+            using (var c = new Connection(endpoint, options: new ConnectionOptions(configureSocket: (s) => socket = s)))
             {
                 var tcpClient = c.GetProperty<TcpClientAdapter>("TcpClient");
                 Assert.Equal(tcpClient.Client, socket);

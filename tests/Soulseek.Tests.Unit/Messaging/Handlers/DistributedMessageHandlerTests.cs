@@ -356,7 +356,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Doesn't respond to SearchRequest if result is null"), AutoData]
         public void Doesnt_Respond_To_SearchRequest_If_Result_Is_Null(string username, int token, string query)
         {
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
+            var options = new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult<SearchResponse>(null));
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
@@ -389,7 +389,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Func<string, int, SearchQuery, Task<SearchResponse>> resolver = (u, t, q) => Task.FromResult(response);
 #pragma warning restore IDE0039 // Use local function
 
-            var options = new SoulseekClientOptions(searchResponseResolver: resolver);
+            var options = new SoulseekClientOptions(resolveSearchResponse: resolver);
             var (handler, mocks) = GetFixture(options);
 
             var endpoint = new IPEndPoint(IPAddress.None, 0);
@@ -418,7 +418,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_Negative_Files(string username, int token, string query)
         {
             var response = new SearchResponse("foo", token, -1, 0, 0, new List<File>());
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
             var endpoint = new IPEndPoint(IPAddress.None, 0);

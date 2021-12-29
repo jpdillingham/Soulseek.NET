@@ -401,13 +401,13 @@ namespace Soulseek.Tests.Unit.Client
                 incomingConnectionOptions: new ConnectionOptions(),
                 distributedConnectionOptions: new ConnectionOptions(),
                 userEndPointCache: userEndPointCache.Object,
-                searchResponseResolver: searchResponseResolver,
+                resolveSearchResponse: searchResponseResolver,
                 searchResponseCache: searchResponseCache.Object,
-                browseResponseResolver: browseResponseResolver,
-                directoryContentsResponseResolver: directoryContentsResponseResolver,
-                userInfoResponseResolver: userInfoResponseResolver,
-                enqueueDownloadAction: enqueueDownloadAction,
-                placeInQueueResponseResolver: placeInQueueResponseResolver);
+                resolveBrowseResponse: browseResponseResolver,
+                resolveDirectoryContents: directoryContentsResponseResolver,
+                resolveUserInfo: userInfoResponseResolver,
+                enqueueDownload: enqueueDownloadAction,
+                resolvePlaceInQueue: placeInQueueResponseResolver);
 
             using (client)
             {
@@ -433,12 +433,12 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(patch.UserEndPointCache, client.Options.UserEndPointCache);
                 Assert.Equal(patch.SearchResponseCache, client.Options.SearchResponseCache);
-                Assert.Equal(patch.SearchResponseResolver, client.Options.SearchResponseResolver);
-                Assert.Equal(patch.BrowseResponseResolver, client.Options.BrowseResponseResolver);
-                Assert.Equal(patch.DirectoryContentsResponseResolver, client.Options.DirectoryContentsResponseResolver);
-                Assert.Equal(patch.UserInfoResponseResolver, client.Options.UserInfoResponseResolver);
-                Assert.Equal(patch.EnqueueDownloadAction, client.Options.EnqueueDownloadAction);
-                Assert.Equal(patch.PlaceInQueueResponseResolver, client.Options.PlaceInQueueResponseResolver);
+                Assert.Equal(patch.ResolveSearchResponse, client.Options.ResolveSearchResponse);
+                Assert.Equal(patch.ResolveBrowseResponse, client.Options.ResolveBrowseResponse);
+                Assert.Equal(patch.ResolveDirectoryContents, client.Options.ResolveDirectoryContents);
+                Assert.Equal(patch.ResolveUserInfo, client.Options.ResolveUserInfo);
+                Assert.Equal(patch.EnqueueDownload, client.Options.EnqueueDownload);
+                Assert.Equal(patch.ResolvePlaceInQueue, client.Options.ResolvePlaceInQueue);
             }
         }
 

@@ -107,7 +107,7 @@ namespace Soulseek
         {
             RequestReceived?.Invoke(this, new SearchRequestEventArgs(username, token, query));
 
-            if (SoulseekClient.Options.SearchResponseResolver == default)
+            if (SoulseekClient.Options.ResolveSearchResponse == default)
             {
                 return false;
             }
@@ -116,7 +116,7 @@ namespace Soulseek
 
             try
             {
-                searchResponse = await SoulseekClient.Options.SearchResponseResolver(username, token, SearchQuery.FromText(query)).ConfigureAwait(false);
+                searchResponse = await SoulseekClient.Options.ResolveSearchResponse(username, token, SearchQuery.FromText(query)).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
