@@ -3467,13 +3467,13 @@ namespace Soulseek
                     incomingConnectionOptions: patch.IncomingConnectionOptions,
                     distributedConnectionOptions: patch.DistributedConnectionOptions,
                     userEndPointCache: patch.UserEndPointCache,
-                    resolveSearchResponse: patch.ResolveSearchResponse,
+                    searchResponseResolver: patch.SearchResponseResolver,
                     searchResponseCache: patch.SearchResponseCache,
-                    resolveBrowseResponse: patch.ResolveBrowseResponse,
-                    resolveDirectoryContents: patch.ResolveDirectoryContents,
-                    resolveUserInfo: patch.ResolveUserInfo,
+                    browseResponseResolver: patch.BrowseResponseResolver,
+                    directoryContentsResolver: patch.DirectoryContentsResolver,
+                    userInfoResolver: patch.UserInfoResolver,
                     enqueueDownload: patch.EnqueueDownload,
-                    resolvePlaceInQueue: patch.ResolvePlaceInQueue);
+                    placeInQueueResolver: patch.PlaceInQueueResolver);
 
                 Diagnostic.Info("Options reconfigured successfully");
 

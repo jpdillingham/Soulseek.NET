@@ -413,10 +413,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Fact(DisplayName = "Sends default UserInfoResponse if resolver throws")]
         public async Task Sends_Default_UserInfoResponse_If_Resolver_Throws()
         {
-            var options = new SoulseekClientOptions(resolveUserInfo: (u, i) => { throw new Exception(); });
+            var options = new SoulseekClientOptions(userInfoResolver: (u, i) => { throw new Exception(); });
 
             var defaultResponse = await new SoulseekClientOptions()
-                .ResolveUserInfo(null, null).ConfigureAwait(false);
+                .UserInfoResolver(null, null).ConfigureAwait(false);
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -432,7 +432,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Sends_Resolved_UserInfoResponse(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
         {
             var response = new UserInfo(description, uploadSlots, queueLength, hasFreeUploadSlot, picture);
-            var options = new SoulseekClientOptions(resolveUserInfo: (u, i) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(userInfoResolver: (u, i) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -448,7 +448,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Creates diagnostic on failed UserInfoResponse resolution"), AutoData]
         public void Creates_Diagnostic_On_Failed_UserInfoResponse_Resolution(string username, IPEndPoint endpoint)
         {
-            var options = new SoulseekClientOptions(resolveUserInfo: (u, i) => { throw new Exception(); });
+            var options = new SoulseekClientOptions(userInfoResolver: (u, i) => { throw new Exception(); });
             List<string> messages = new List<string>();
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
@@ -474,7 +474,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             };
 
             var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
-            var options = new SoulseekClientOptions(resolveSearchResponse: (u, i, q) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, i, q) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -501,7 +501,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             };
 
             var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
-            var options = new SoulseekClientOptions(resolveSearchResponse: null);
+            var options = new SoulseekClientOptions(searchResponseResolver: null);
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -526,7 +526,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var files = new List<File>();
 
             var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
-            var options = new SoulseekClientOptions(resolveSearchResponse: null);
+            var options = new SoulseekClientOptions(searchResponseResolver: null);
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -552,7 +552,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
             var expectedEx = new Exception("error");
-            var options = new SoulseekClientOptions(resolveSearchResponse: (u, i, q) => Task.FromException<SearchResponse>(expectedEx));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, i, q) => Task.FromException<SearchResponse>(expectedEx));
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -589,7 +589,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             };
 
             var response = new BrowseResponse(dirs);
-            var options = new SoulseekClientOptions(resolveBrowseResponse: (u, i) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(browseResponseResolver: (u, i) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -605,7 +605,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Creates diagnostic on failed BrowseResponse resolution"), AutoData]
         public void Creates_Diagnostic_On_Failed_BrowseResponse_Resolution(string username, IPEndPoint endpoint)
         {
-            var options = new SoulseekClientOptions(resolveBrowseResponse: (u, i) => { throw new Exception(); });
+            var options = new SoulseekClientOptions(browseResponseResolver: (u, i) => { throw new Exception(); });
             List<string> messages = new List<string>();
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
@@ -633,7 +633,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var dir = new Directory(dirname, files);
 
             var response = new FolderContentsResponse(token, dir);
-            var options = new SoulseekClientOptions(resolveDirectoryContents: (u, i, t, d) => Task.FromResult(dir));
+            var options = new SoulseekClientOptions(directoryContentsResolver: (u, i, t, d) => Task.FromResult(dir));
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -649,7 +649,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Creates diagnostic on failed FolderContentsResponse resolution"), AutoData]
         public void Creates_Diagnostic_On_Failed_FolderContentsResponse_Resolution(string username, IPEndPoint endpoint, int token, string dirname)
         {
-            var options = new SoulseekClientOptions(resolveDirectoryContents: (u, i, t, d) => { throw new Exception(); });
+            var options = new SoulseekClientOptions(directoryContentsResolver: (u, i, t, d) => { throw new Exception(); });
             List<string> messages = new List<string>();
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
@@ -689,7 +689,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
-                resolvePlaceInQueue: (u, f, i) => Task.FromResult<int?>(placeInQueue));
+                placeInQueueResolver: (u, f, i) => Task.FromResult<int?>(placeInQueue));
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
@@ -707,7 +707,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
-                resolvePlaceInQueue: (u, f, i) => Task.FromResult<int?>(null));
+                placeInQueueResolver: (u, f, i) => Task.FromResult<int?>(null));
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
@@ -759,7 +759,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
-                resolvePlaceInQueue: (u, f, i) => Task.FromResult<int?>(placeInQueue));
+                placeInQueueResolver: (u, f, i) => Task.FromResult<int?>(placeInQueue));
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
@@ -777,7 +777,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
-                resolvePlaceInQueue: (u, f, i) => Task.FromResult<int?>(placeInQueue));
+                placeInQueueResolver: (u, f, i) => Task.FromResult<int?>(placeInQueue));
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
@@ -795,7 +795,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
-                resolvePlaceInQueue: (u, f, i) => Task.FromResult<int?>(null));
+                placeInQueueResolver: (u, f, i) => Task.FromResult<int?>(null));
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
@@ -813,7 +813,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
-                resolvePlaceInQueue: (u, f, i) => Task.FromResult<int?>(null));
+                placeInQueueResolver: (u, f, i) => Task.FromResult<int?>(null));
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
@@ -833,7 +833,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var options = new SoulseekClientOptions(
                 enqueueDownload: (u, f, i) => Task.CompletedTask,
-                resolvePlaceInQueue: (u, f, i) => Task.FromException<int?>(ex));
+                placeInQueueResolver: (u, f, i) => Task.FromException<int?>(ex));
 
             var (handler, mocks) = GetFixture(username, endpoint, options);
 

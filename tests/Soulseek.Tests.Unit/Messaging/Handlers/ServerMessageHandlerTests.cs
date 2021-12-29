@@ -1921,7 +1921,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Doesn't respond to SearchRequest if result is null"), AutoData]
         public void Doesnt_Respond_To_SearchRequest_If_Result_Is_Null(string username, int token, string query)
         {
-            var options = new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult<SearchResponse>(null));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
@@ -1951,7 +1951,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
         {
             var response = new SearchResponse("foo", token, 0, 1, 1, new List<File>());
-            var options = new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
             var endpoint = new IPEndPoint(IPAddress.None, 0);
@@ -1981,7 +1981,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Doesnt_Respond_To_SearchRequest_If_It_Came_From_The_Local_User(string username, int token, string query)
         {
             var response = new SearchResponse("foo", token, 0, 1, 1, new List<File>());
-            var options = new SoulseekClientOptions(resolveSearchResponse: (u, t, q) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
             var conn = new Mock<IMessageConnection>();
@@ -2002,7 +2002,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw when handling SearchRequest if SearchResponseResolver is null"), AutoData]
         public void Does_Not_Throw_When_Handling_SearchRequest_If_SearchResponseResolver_Is_Null(string username, int token, string query)
         {
-            var options = new SoulseekClientOptions(resolveSearchResponse: null);
+            var options = new SoulseekClientOptions(searchResponseResolver: null);
             var (handler, mocks) = GetFixture(options);
 
             var conn = new Mock<IMessageConnection>();

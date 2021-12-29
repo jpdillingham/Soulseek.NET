@@ -19,7 +19,6 @@ namespace Soulseek.Tests.Unit.Options
 {
     using System;
     using System.Net;
-    using System.Net.Sockets;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -74,13 +73,13 @@ namespace Soulseek.Tests.Unit.Options
                 incomingConnectionOptions: incomingConnectionOptions,
                 distributedConnectionOptions: distributedConnectionOptions,
                 userEndPointCache: userEndPointCache.Object,
-                resolveSearchResponse: searchResponseResolver,
+                searchResponseResolver: searchResponseResolver,
                 searchResponseCache: searchResponseCache.Object,
-                resolveBrowseResponse: browseResponseResolver,
-                resolveDirectoryContents: directoryContentsResponseResolver,
-                resolveUserInfo: userInfoResponseResolver,
+                browseResponseResolver: browseResponseResolver,
+                directoryContentsResolver: directoryContentsResponseResolver,
+                userInfoResolver: userInfoResponseResolver,
                 enqueueDownload: enqueueDownloadAction,
-                resolvePlaceInQueue: placeInQueueResponseResolver);
+                placeInQueueResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
@@ -106,13 +105,13 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
 
             Assert.Equal(userEndPointCache.Object, o.UserEndPointCache);
-            Assert.Equal(searchResponseResolver, o.ResolveSearchResponse);
+            Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
             Assert.Equal(searchResponseCache.Object, o.SearchResponseCache);
-            Assert.Equal(browseResponseResolver, o.ResolveBrowseResponse);
-            Assert.Equal(directoryContentsResponseResolver, o.ResolveDirectoryContents);
-            Assert.Equal(userInfoResponseResolver, o.ResolveUserInfo);
+            Assert.Equal(browseResponseResolver, o.BrowseResponseResolver);
+            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResolver);
+            Assert.Equal(userInfoResponseResolver, o.UserInfoResolver);
             Assert.Equal(enqueueDownloadAction, o.EnqueueDownload);
-            Assert.Equal(placeInQueueResponseResolver, o.ResolvePlaceInQueue);
+            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResolver);
         }
 
         [Trait("Category", "Instantiation")]

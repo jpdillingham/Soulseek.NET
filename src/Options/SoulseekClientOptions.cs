@@ -349,13 +349,13 @@ namespace Soulseek
                 incomingConnectionOptions: patch.IncomingConnectionOptions,
                 distributedConnectionOptions: patch.DistributedConnectionOptions,
                 userEndPointCache: patch.UserEndPointCache,
-                resolveSearchResponse: patch.ResolveSearchResponse,
+                searchResponseResolver: patch.SearchResponseResolver,
                 searchResponseCache: patch.SearchResponseCache,
-                resolveBrowseResponse: patch.ResolveBrowseResponse,
-                resolveDirectoryContents: patch.ResolveDirectoryContents,
-                resolveUserInfo: patch.ResolveUserInfo,
+                browseResponseResolver: patch.BrowseResponseResolver,
+                directoryContentsResolver: patch.DirectoryContentsResolver,
+                userInfoResolver: patch.UserInfoResolver,
                 enqueueDownload: patch.EnqueueDownload,
-                resolvePlaceInQueue: patch.ResolvePlaceInQueue);
+                placeInQueueResolver: patch.PlaceInQueueResolver);
         }
 
         /// <summary>
@@ -382,21 +382,21 @@ namespace Soulseek
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
-        /// <param name="resolveSearchResponse">
+        /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
         /// <param name="searchResponseCache">
         ///     The search response cache to use when a response is not able to be delivered immediately.
         /// </param>
-        /// <param name="resolveBrowseResponse">
+        /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
-        /// <param name="resolveDirectoryContents">
+        /// <param name="directoryContentsResolver">
         ///     The delegate used to resolve the <see cref="Directory"/> for an incoming <see cref="FolderContentsRequest"/>.
         /// </param>
-        /// <param name="resolveUserInfo">The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.</param>
+        /// <param name="userInfoResolver">The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.</param>
         /// <param name="enqueueDownload">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
-        /// <param name="resolvePlaceInQueue">
+        /// <param name="placeInQueueResolver">
         ///     The delegate used to resolve the <see cref="int"/> response for an incoming request.
         /// </param>
         /// <returns>The cloned instance.</returns>
@@ -416,13 +416,13 @@ namespace Soulseek
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
             IUserEndPointCache userEndPointCache = null,
-            Func<string, int, SearchQuery, Task<SearchResponse>> resolveSearchResponse = null,
+            Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
             ISearchResponseCache searchResponseCache = null,
-            Func<string, IPEndPoint, Task<BrowseResponse>> resolveBrowseResponse = null,
-            Func<string, IPEndPoint, int, string, Task<Directory>> resolveDirectoryContents = null,
-            Func<string, IPEndPoint, Task<UserInfo>> resolveUserInfo = null,
+            Func<string, IPEndPoint, Task<BrowseResponse>> browseResponseResolver = null,
+            Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResolver = null,
+            Func<string, IPEndPoint, Task<UserInfo>> userInfoResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownload = null,
-            Func<string, IPEndPoint, string, Task<int?>> resolvePlaceInQueue = null)
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null)
         {
             return new SoulseekClientOptions(
                 enableListener: enableListener ?? EnableListener,
@@ -444,13 +444,13 @@ namespace Soulseek
                 incomingConnectionOptions: incomingConnectionOptions ?? IncomingConnectionOptions,
                 distributedConnectionOptions: distributedConnectionOptions ?? DistributedConnectionOptions,
                 userEndPointCache: userEndPointCache ?? UserEndPointCache,
-                resolveSearchResponse: resolveSearchResponse ?? ResolveSearchResponse,
+                searchResponseResolver: searchResponseResolver ?? SearchResponseResolver,
                 searchResponseCache: searchResponseCache ?? SearchResponseCache,
-                resolveBrowseResponse: resolveBrowseResponse ?? ResolveBrowseResponse,
-                resolveDirectoryContents: resolveDirectoryContents ?? ResolveDirectoryContents,
-                resolveUserInfo: resolveUserInfo ?? ResolveUserInfo,
+                browseResponseResolver: browseResponseResolver ?? BrowseResponseResolver,
+                directoryContentsResolver: directoryContentsResolver ?? DirectoryContentsResolver,
+                userInfoResolver: userInfoResolver ?? UserInfoResolver,
                 enqueueDownload: enqueueDownload ?? EnqueueDownload,
-                resolvePlaceInQueue: resolvePlaceInQueue ?? ResolvePlaceInQueue);
+                placeInQueueResolver: placeInQueueResolver ?? PlaceInQueueResolver);
         }
     }
 }

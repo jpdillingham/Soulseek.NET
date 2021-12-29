@@ -263,11 +263,11 @@
                 transferConnectionOptions: connectionOptions,
                 distributedConnectionOptions: connectionOptions,
                 userEndPointCache: new UserEndPointCache(),
-                resolveUserInfo: UserInfoResponseResolver,
-                resolveBrowseResponse: BrowseResponseResolver,
-                resolveDirectoryContents: DirectoryContentsResponseResolver,
+                userInfoResolver: UserInfoResponseResolver,
+                browseResponseResolver: BrowseResponseResolver,
+                directoryContentsResolver: DirectoryContentsResponseResolver,
                 enqueueDownload: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
-                resolveSearchResponse: SearchResponseResolver,
+                searchResponseResolver: SearchResponseResolver,
                 searchResponseCache: searchResponseCache);
 
             Client = new SoulseekClient(options: clientOptions);
