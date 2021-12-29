@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
-            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
         }
 
@@ -69,7 +69,7 @@ namespace Soulseek.Tests.Unit.Options
             var ex = await Record.ExceptionAsync(() => o.Governor(null, CancellationToken.None));
             Assert.Null(ex);
 
-            var ex2 = await Record.ExceptionAsync(() => o.AcquireSlot(null, CancellationToken.None));
+            var ex2 = await Record.ExceptionAsync(() => o.SlotAwaiter(null, CancellationToken.None));
             Assert.Null(ex2);
 
             Assert.Null(o.StateChanged);
@@ -93,7 +93,7 @@ namespace Soulseek.Tests.Unit.Options
                 governor: governor,
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
-                acquireSlot: acquireSlot,
+                slotAwaiter: acquireSlot,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInput,
@@ -106,7 +106,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
-            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
 
             Assert.NotEqual(stateChanged, o.StateChanged);
@@ -158,7 +158,7 @@ namespace Soulseek.Tests.Unit.Options
                 governor: governor,
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
-                acquireSlot: acquireSlot,
+                slotAwaiter: acquireSlot,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInput,
@@ -169,7 +169,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
-            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
@@ -192,7 +192,7 @@ namespace Soulseek.Tests.Unit.Options
                 governor: governor,
                 stateChanged: stateChanged,
                 progressUpdated: progressUpdated,
-                acquireSlot: acquireSlot,
+                slotAwaiter: acquireSlot,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
                 disposeInputStreamOnCompletion: !disposeInput,
@@ -205,7 +205,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(governor, o.Governor);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);
-            Assert.Equal(acquireSlot, o.AcquireSlot);
+            Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);

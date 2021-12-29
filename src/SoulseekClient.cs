@@ -3470,10 +3470,10 @@ namespace Soulseek
                     searchResponseResolver: patch.SearchResponseResolver,
                     searchResponseCache: patch.SearchResponseCache,
                     browseResponseResolver: patch.BrowseResponseResolver,
-                    directoryContentsResponseResolver: patch.DirectoryContentsResponseResolver,
-                    userInfoResponseResolver: patch.UserInfoResponseResolver,
-                    enqueueDownloadAction: patch.EnqueueDownloadAction,
-                    placeInQueueResponseResolver: patch.PlaceInQueueResponseResolver);
+                    directoryContentsResolver: patch.DirectoryContentsResolver,
+                    userInfoResolver: patch.UserInfoResolver,
+                    enqueueDownload: patch.EnqueueDownload,
+                    placeInQueueResolver: patch.PlaceInQueueResolver);
 
                 Diagnostic.Info("Options reconfigured successfully");
 
@@ -3767,7 +3767,7 @@ namespace Soulseek
                 // acquire an upload slot from the calling code
                 try
                 {
-                    await options.AcquireSlot(new Transfer(upload), cancellationToken).ConfigureAwait(false);
+                    await options.SlotAwaiter(new Transfer(upload), cancellationToken).ConfigureAwait(false);
                     Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                     uploadSlotAcquired = true;
                 }

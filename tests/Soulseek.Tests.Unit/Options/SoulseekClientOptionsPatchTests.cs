@@ -19,7 +19,6 @@ namespace Soulseek.Tests.Unit.Options
 {
     using System;
     using System.Net;
-    using System.Net.Sockets;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -77,10 +76,10 @@ namespace Soulseek.Tests.Unit.Options
                 searchResponseResolver: searchResponseResolver,
                 searchResponseCache: searchResponseCache.Object,
                 browseResponseResolver: browseResponseResolver,
-                directoryContentsResponseResolver: directoryContentsResponseResolver,
-                userInfoResponseResolver: userInfoResponseResolver,
-                enqueueDownloadAction: enqueueDownloadAction,
-                placeInQueueResponseResolver: placeInQueueResponseResolver);
+                directoryContentsResolver: directoryContentsResponseResolver,
+                userInfoResolver: userInfoResponseResolver,
+                enqueueDownload: enqueueDownloadAction,
+                placeInQueueResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
@@ -109,10 +108,10 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
             Assert.Equal(searchResponseCache.Object, o.SearchResponseCache);
             Assert.Equal(browseResponseResolver, o.BrowseResponseResolver);
-            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResponseResolver);
-            Assert.Equal(userInfoResponseResolver, o.UserInfoResponseResolver);
-            Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
-            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
+            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResolver);
+            Assert.Equal(userInfoResponseResolver, o.UserInfoResolver);
+            Assert.Equal(enqueueDownloadAction, o.EnqueueDownload);
+            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResolver);
         }
 
         [Trait("Category", "Instantiation")]

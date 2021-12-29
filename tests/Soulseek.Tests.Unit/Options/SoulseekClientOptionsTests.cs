@@ -87,10 +87,10 @@ namespace Soulseek.Tests.Unit.Options
                 searchResponseResolver: searchResponseResolver,
                 searchResponseCache: searchResponseCache.Object,
                 browseResponseResolver: browseResponseResolver,
-                directoryContentsResponseResolver: directoryContentsResponseResolver,
-                userInfoResponseResolver: userInfoResponseResolver,
-                enqueueDownloadAction: enqueueDownloadAction,
-                placeInQueueResponseResolver: placeInQueueResponseResolver);
+                directoryContentsResolver: directoryContentsResponseResolver,
+                userInfoResolver: userInfoResponseResolver,
+                enqueueDownload: enqueueDownloadAction,
+                placeInQueueResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
@@ -124,10 +124,10 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
             Assert.Equal(searchResponseCache.Object, o.SearchResponseCache);
             Assert.Equal(browseResponseResolver, o.BrowseResponseResolver);
-            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResponseResolver);
-            Assert.Equal(userInfoResponseResolver, o.UserInfoResponseResolver);
-            Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
-            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
+            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResolver);
+            Assert.Equal(userInfoResponseResolver, o.UserInfoResolver);
+            Assert.Equal(enqueueDownloadAction, o.EnqueueDownload);
+            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResolver);
 
             Assert.Equal(1, o.MaximumConcurrentUploadsPerUser);
         }
@@ -180,16 +180,16 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(Enumerable.Empty<Directory>(), (await o.BrowseResponseResolver(string.Empty, ip)).Directories);
             Assert.Equal(Enumerable.Empty<Directory>(), (await o.BrowseResponseResolver(string.Empty, ip)).LockedDirectories);
 
-            var ex = await Record.ExceptionAsync(() => o.EnqueueDownloadAction(string.Empty, ip, string.Empty));
+            var ex = await Record.ExceptionAsync(() => o.EnqueueDownload(string.Empty, ip, string.Empty));
             Assert.Null(ex);
 
-            var placeInQueue = await o.PlaceInQueueResponseResolver(string.Empty, ip, string.Empty);
+            var placeInQueue = await o.PlaceInQueueResolver(string.Empty, ip, string.Empty);
             Assert.Null(placeInQueue);
 
-            Assert.IsType<UserInfo>(await o.UserInfoResponseResolver(string.Empty, ip));
+            Assert.IsType<UserInfo>(await o.UserInfoResolver(string.Empty, ip));
 
             Assert.Null(o.SearchResponseResolver);
-            Assert.Null(o.DirectoryContentsResponseResolver);
+            Assert.Null(o.DirectoryContentsResolver);
         }
 
         [Trait("Category", "Instantiation")]
@@ -320,10 +320,10 @@ namespace Soulseek.Tests.Unit.Options
                 searchResponseResolver: searchResponseResolver,
                 searchResponseCache: searchResponseCache.Object,
                 browseResponseResolver: browseResponseResolver,
-                directoryContentsResponseResolver: directoryContentsResponseResolver,
-                userInfoResponseResolver: userInfoResponseResolver,
-                enqueueDownloadAction: enqueueDownloadAction,
-                placeInQueueResponseResolver: placeInQueueResponseResolver);
+                directoryContentsResolver: directoryContentsResponseResolver,
+                userInfoResolver: userInfoResponseResolver,
+                enqueueDownload: enqueueDownloadAction,
+                placeInQueueResolver: placeInQueueResponseResolver);
 
             var o = new SoulseekClientOptions().With(patch);
 
@@ -354,10 +354,10 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
             Assert.Equal(searchResponseCache.Object, o.SearchResponseCache);
             Assert.Equal(browseResponseResolver, o.BrowseResponseResolver);
-            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResponseResolver);
-            Assert.Equal(userInfoResponseResolver, o.UserInfoResponseResolver);
-            Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
-            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
+            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResolver);
+            Assert.Equal(userInfoResponseResolver, o.UserInfoResolver);
+            Assert.Equal(enqueueDownloadAction, o.EnqueueDownload);
+            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResolver);
         }
 
         [Trait("Category", "With")]
@@ -410,10 +410,10 @@ namespace Soulseek.Tests.Unit.Options
                 searchResponseResolver: searchResponseResolver,
                 searchResponseCache: searchResponseCache.Object,
                 browseResponseResolver: browseResponseResolver,
-                directoryContentsResponseResolver: directoryContentsResponseResolver,
-                userInfoResponseResolver: userInfoResponseResolver,
-                enqueueDownloadAction: enqueueDownloadAction,
-                placeInQueueResponseResolver: placeInQueueResponseResolver);
+                directoryContentsResolver: directoryContentsResponseResolver,
+                userInfoResolver: userInfoResponseResolver,
+                enqueueDownload: enqueueDownloadAction,
+                placeInQueueResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
@@ -442,10 +442,10 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
             Assert.Equal(searchResponseCache.Object, o.SearchResponseCache);
             Assert.Equal(browseResponseResolver, o.BrowseResponseResolver);
-            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResponseResolver);
-            Assert.Equal(userInfoResponseResolver, o.UserInfoResponseResolver);
-            Assert.Equal(enqueueDownloadAction, o.EnqueueDownloadAction);
-            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResponseResolver);
+            Assert.Equal(directoryContentsResponseResolver, o.DirectoryContentsResolver);
+            Assert.Equal(userInfoResponseResolver, o.UserInfoResolver);
+            Assert.Equal(enqueueDownloadAction, o.EnqueueDownload);
+            Assert.Equal(placeInQueueResponseResolver, o.PlaceInQueueResolver);
         }
 
         [Trait("Category", "With")]

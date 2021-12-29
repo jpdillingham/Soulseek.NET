@@ -263,10 +263,10 @@
                 transferConnectionOptions: connectionOptions,
                 distributedConnectionOptions: connectionOptions,
                 userEndPointCache: new UserEndPointCache(),
-                userInfoResponseResolver: UserInfoResponseResolver,
+                userInfoResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
-                directoryContentsResponseResolver: DirectoryContentsResponseResolver,
-                enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
+                directoryContentsResolver: DirectoryContentsResponseResolver,
+                enqueueDownload: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
                 searchResponseResolver: SearchResponseResolver,
                 searchResponseCache: searchResponseCache);
 
@@ -595,7 +595,7 @@
             var topts = new TransferOptions(
                 stateChanged: (e) => tracker.AddOrUpdate(e, cts),
                 progressUpdated: (e) => tracker.AddOrUpdate(e, cts),
-                acquireSlot: async (tx, cancellationToken) =>
+                slotAwaiter: async (tx, cancellationToken) =>
                 {
                     Console.WriteLine($"[UPLOAD SLOT REQUESTED] [{username}/{filename}]");
                     var tcs = new TaskCompletionSource();

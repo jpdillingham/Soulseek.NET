@@ -109,12 +109,12 @@ namespace Soulseek.Messaging.Handlers
                         try
                         {
                             outgoingInfo = await SoulseekClient.Options
-                                .UserInfoResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
+                                .UserInfoResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
                             outgoingInfo = await new SoulseekClientOptions()
-                                .UserInfoResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
+                                .UserInfoResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
 
                             Diagnostic.Warning($"Failed to resolve user info response: {ex.Message}", ex);
                         }
@@ -170,7 +170,7 @@ namespace Soulseek.Messaging.Handlers
 
                         try
                         {
-                            outgoingFolderContents = await SoulseekClient.Options.DirectoryContentsResponseResolver(
+                            outgoingFolderContents = await SoulseekClient.Options.DirectoryContentsResolver(
                                 connection.Username,
                                 connection.IPEndPoint,
                                 folderContentsRequest.Token,
@@ -345,7 +345,7 @@ namespace Soulseek.Messaging.Handlers
             try
             {
                 await SoulseekClient.Options
-                    .EnqueueDownloadAction(username, ipEndPoint, filename).ConfigureAwait(false);
+                    .EnqueueDownload(username, ipEndPoint, filename).ConfigureAwait(false);
             }
             catch (DownloadEnqueueException ex)
             {
@@ -372,7 +372,7 @@ namespace Soulseek.Messaging.Handlers
 
             try
             {
-                placeInQueue = await SoulseekClient.Options.PlaceInQueueResponseResolver(connection.Username, connection.IPEndPoint, filename).ConfigureAwait(false);
+                placeInQueue = await SoulseekClient.Options.PlaceInQueueResolver(connection.Username, connection.IPEndPoint, filename).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

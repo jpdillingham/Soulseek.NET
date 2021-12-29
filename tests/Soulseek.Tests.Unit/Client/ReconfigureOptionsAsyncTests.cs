@@ -404,10 +404,10 @@ namespace Soulseek.Tests.Unit.Client
                 searchResponseResolver: searchResponseResolver,
                 searchResponseCache: searchResponseCache.Object,
                 browseResponseResolver: browseResponseResolver,
-                directoryContentsResponseResolver: directoryContentsResponseResolver,
-                userInfoResponseResolver: userInfoResponseResolver,
-                enqueueDownloadAction: enqueueDownloadAction,
-                placeInQueueResponseResolver: placeInQueueResponseResolver);
+                directoryContentsResolver: directoryContentsResponseResolver,
+                userInfoResolver: userInfoResponseResolver,
+                enqueueDownload: enqueueDownloadAction,
+                placeInQueueResolver: placeInQueueResponseResolver);
 
             using (client)
             {
@@ -435,10 +435,10 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(patch.SearchResponseCache, client.Options.SearchResponseCache);
                 Assert.Equal(patch.SearchResponseResolver, client.Options.SearchResponseResolver);
                 Assert.Equal(patch.BrowseResponseResolver, client.Options.BrowseResponseResolver);
-                Assert.Equal(patch.DirectoryContentsResponseResolver, client.Options.DirectoryContentsResponseResolver);
-                Assert.Equal(patch.UserInfoResponseResolver, client.Options.UserInfoResponseResolver);
-                Assert.Equal(patch.EnqueueDownloadAction, client.Options.EnqueueDownloadAction);
-                Assert.Equal(patch.PlaceInQueueResponseResolver, client.Options.PlaceInQueueResponseResolver);
+                Assert.Equal(patch.DirectoryContentsResolver, client.Options.DirectoryContentsResolver);
+                Assert.Equal(patch.UserInfoResolver, client.Options.UserInfoResolver);
+                Assert.Equal(patch.EnqueueDownload, client.Options.EnqueueDownload);
+                Assert.Equal(patch.PlaceInQueueResolver, client.Options.PlaceInQueueResolver);
             }
         }
 

@@ -2500,7 +2500,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var txoptions = new TransferOptions(acquireSlot: (tx, ct) => throw new Exception("foo"));
+                var txoptions = new TransferOptions(slotAwaiter: (tx, ct) => throw new Exception("foo"));
 
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, stream, token, txoptions, null));
 
@@ -2547,7 +2547,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var txoptions = new TransferOptions(acquireSlot: (t, c) => Task.FromCanceled(new CancellationToken(canceled: true)));
+                var txoptions = new TransferOptions(slotAwaiter: (t, c) => Task.FromCanceled(new CancellationToken(canceled: true)));
 
                 var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, stream, token, txoptions, null));
 

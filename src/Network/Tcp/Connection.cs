@@ -49,7 +49,7 @@ namespace Soulseek.Network.Tcp
             // the socket.  .NET standard has a limited feature set with respect to SetSocketOptions()
             // and there's a vast number of possible tweaks here, so delegating to implementing code
             // is pretty much the only option.
-            Options.ConfigureSocketAction(TcpClient.Client);
+            Options.ConfigureSocket(TcpClient.Client);
 
             WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
 

@@ -25,7 +25,7 @@ namespace Soulseek
     /// </summary>
     public class ConnectionOptions
     {
-        private readonly Action<Socket> defaultConfigureSocketAction =
+        private readonly Action<Socket> defaultConfigureSocket =
             (s) => { };
 
         /// <summary>
@@ -37,9 +37,7 @@ namespace Soulseek
         /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
         /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
         /// <param name="proxyOptions">Optional SOCKS 5 proxy configuration options.</param>
-        /// <param name="configureSocketAction">
-        ///     The delegate invoked during instantiation to configure the server Socket instance.
-        /// </param>
+        /// <param name="configureSocket">The delegate invoked during instantiation to configure the server Socket instance.</param>
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
@@ -47,7 +45,7 @@ namespace Soulseek
             int connectTimeout = 10000,
             int inactivityTimeout = 15000,
             ProxyOptions proxyOptions = null,
-            Action<Socket> configureSocketAction = null)
+            Action<Socket> configureSocket = null)
         {
             ReadBufferSize = readBufferSize;
             WriteBufferSize = writeBufferSize;
@@ -58,13 +56,13 @@ namespace Soulseek
 
             ProxyOptions = proxyOptions;
 
-            ConfigureSocketAction = configureSocketAction ?? defaultConfigureSocketAction;
+            ConfigureSocket = configureSocket ?? defaultConfigureSocket;
         }
 
         /// <summary>
         ///     Gets the delegate invoked during instantiation to configure the server Socket instance.
         /// </summary>
-        public Action<Socket> ConfigureSocketAction { get; }
+        public Action<Socket> ConfigureSocket { get; }
 
         /// <summary>
         ///     Gets the connection timeout, in milliseconds, for client and peer TCP connections. (Default = 10000).
@@ -96,7 +94,7 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Gets the size of the write queue for double buffered writes.  (Default = 250).
+        ///     Gets the size of the write queue for double buffered writes. (Default = 250).
         /// </summary>
         public int WriteQueueSize { get; }
 
@@ -113,7 +111,7 @@ namespace Soulseek
                 connectTimeout: ConnectTimeout,
                 inactivityTimeout: -1,
                 proxyOptions: ProxyOptions,
-                configureSocketAction: ConfigureSocketAction);
+                configureSocket: ConfigureSocket);
         }
     }
 }
