@@ -3410,9 +3410,13 @@ namespace Soulseek
                 bool reconnectRequired = false;
 
                 var enableDistributedNetworkChanged = patch.EnableDistributedNetwork.HasValue && patch.EnableDistributedNetwork.Value != Options.EnableDistributedNetwork;
+                var acceptDistributedChildrenChanged = patch.AcceptDistributedChildren.HasValue && patch.AcceptDistributedChildren.Value != Options.AcceptDistributedChildren;
                 var distributedConnectionOptionsChanged = patch.DistributedConnectionOptions != null && patch.DistributedConnectionOptions != Options.DistributedConnectionOptions;
 
-                if (connected && ((enableDistributedNetworkChanged && !patch.EnableDistributedNetwork.Value) || distributedConnectionOptionsChanged))
+                var distribledNetworkWasDisabled = enableDistributedNetworkChanged && !patch.EnableDistributedNetwork.Value;
+                var distributedChildrenWereDisabled = acceptDistributedChildrenChanged && !patch.AcceptDistributedChildren.Value;
+
+                if (connected && (distribledNetworkWasDisabled || distributedChildrenWereDisabled || distributedConnectionOptionsChanged))
                 {
                     // reconnect to avoid state issues that might be caused by disabling this on the fly. if we are disabling the
                     // big concerns are in half-open parent or child connections; we can stop the server from sending
