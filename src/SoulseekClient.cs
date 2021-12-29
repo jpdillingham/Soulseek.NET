@@ -3767,7 +3767,7 @@ namespace Soulseek
                 // acquire an upload slot from the calling code
                 try
                 {
-                    await options.AcquireSlot(new Transfer(upload), cancellationToken).ConfigureAwait(false);
+                    await options.SlotAwaiter(new Transfer(upload), cancellationToken).ConfigureAwait(false);
                     Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                     uploadSlotAcquired = true;
                 }

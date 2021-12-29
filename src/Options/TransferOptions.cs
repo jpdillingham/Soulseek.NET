@@ -29,7 +29,7 @@ namespace Soulseek
         private readonly Func<Transfer, CancellationToken, Task> defaultGovernor =
             (tx, token) => Task.CompletedTask;
 
-        private readonly Func<Transfer, CancellationToken, Task> defaultAcquireSlot =
+        private readonly Func<Transfer, CancellationToken, Task> defaultSlotAwaiter =
             (tx, token) => Task.CompletedTask;
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Soulseek
         /// <param name="governor">The delegate used to govern transfer speed.</param>
         /// <param name="stateChanged">The delegate to invoke when the transfer changes state.</param>
         /// <param name="progressUpdated">The delegate to invoke when the transfer receives data.</param>
-        /// <param name="acquireSlot">The delegate used to acquire a slot to start the transfer (uploads only).</param>
+        /// <param name="slotAwaiter">The delegate used to await a slot to start the transfer (uploads only).</param>
         /// <param name="slotReleased">The delegate used to signal release of the slot (uploads only).</param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
@@ -53,7 +53,7 @@ namespace Soulseek
             Func<Transfer, CancellationToken, Task> governor = null,
             Action<TransferStateChangedEventArgs> stateChanged = null,
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
-            Func<Transfer, CancellationToken, Task> acquireSlot = null,
+            Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
             int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
@@ -62,7 +62,7 @@ namespace Soulseek
             DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
-            AcquireSlot = acquireSlot ?? defaultAcquireSlot;
+            SlotAwaiter = slotAwaiter ?? defaultSlotAwaiter;
             SlotReleased = slotReleased;
 
             StateChanged = stateChanged;
@@ -97,9 +97,9 @@ namespace Soulseek
         public Action<TransferProgressUpdatedEventArgs> ProgressUpdated { get; }
 
         /// <summary>
-        ///     Gets the delegate used to acquire a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
+        ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
-        public Func<Transfer, CancellationToken, Task> AcquireSlot { get; }
+        public Func<Transfer, CancellationToken, Task> SlotAwaiter { get; }
 
         /// <summary>
         ///     Gets the delegate used to signal release of the slot (uploads only). (Default = no action).
@@ -126,7 +126,7 @@ namespace Soulseek
                     StateChanged?.Invoke(args);
                 },
                 progressUpdated: ProgressUpdated,
-                acquireSlot: AcquireSlot,
+                slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
@@ -151,7 +151,7 @@ namespace Soulseek
                 governor: Governor,
                 stateChanged: StateChanged,
                 progressUpdated: ProgressUpdated,
-                acquireSlot: AcquireSlot,
+                slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
