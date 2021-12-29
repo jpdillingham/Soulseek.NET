@@ -37,9 +37,7 @@ namespace Soulseek
         /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
         /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
         /// <param name="proxyOptions">Optional SOCKS 5 proxy configuration options.</param>
-        /// <param name="configureSocket">
-        ///     The delegate invoked during instantiation to configure the server Socket instance.
-        /// </param>
+        /// <param name="configureSocket">The delegate invoked during instantiation to configure the server Socket instance.</param>
         public ConnectionOptions(
             int readBufferSize = 16384,
             int writeBufferSize = 16384,
@@ -96,7 +94,7 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Gets the size of the write queue for double buffered writes.  (Default = 250).
+        ///     Gets the size of the write queue for double buffered writes. (Default = 250).
         /// </summary>
         public int WriteQueueSize { get; }
 

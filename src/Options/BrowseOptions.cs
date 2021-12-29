@@ -38,13 +38,13 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the timeout for the response, in milliseconds. (Default = 60000).
-        /// </summary>
-        public int ResponseTimeout { get; }
-
-        /// <summary>
         ///     Gets the Action to invoke when the browse response receives data.
         /// </summary>
         public Action<BrowseProgressUpdatedEventArgs> ProgressUpdated { get; }
+
+        /// <summary>
+        ///     Gets the timeout for the response, in milliseconds. (Default = 60000).
+        /// </summary>
+        public int ResponseTimeout { get; }
     }
 }

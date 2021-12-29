@@ -29,11 +29,11 @@ namespace Soulseek
     /// </summary>
     public class SoulseekClientOptions
     {
-        private readonly Func<string, IPEndPoint, string, Task> defaultEnqueueDownload =
-            (u, i, f) => Task.CompletedTask;
-
         private readonly Func<string, IPEndPoint, Task<BrowseResponse>> defaultBrowseResponseResolver =
             (u, i) => Task.FromResult(new BrowseResponse(Enumerable.Empty<Directory>()));
+
+        private readonly Func<string, IPEndPoint, string, Task> defaultEnqueueDownload =
+            (u, i, f) => Task.CompletedTask;
 
         private readonly Func<string, IPEndPoint, string, Task<int?>> defaultPlaceInQueueResolver =
             (u, i, f) => Task.FromResult<int?>(null);
@@ -196,9 +196,21 @@ namespace Soulseek
         public bool AutoAcknowledgePrivilegeNotifications { get; }
 
         /// <summary>
+        ///     Gets the delegate used to resolve the response for an incoming browse request. (Default = a response with no files
+        ///     or directories).
+        /// </summary>
+        public Func<string, IPEndPoint, Task<BrowseResponse>> BrowseResponseResolver { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether duplicated distributed search requests should be discarded. (Default = discard duplicates).
         /// </summary>
         public bool DeduplicateSearchRequests { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the response for an incoming directory contents request. (Default = a response
+        ///     with an empty directory).
+        /// </summary>
+        public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed distributed children. (Default = 100).
@@ -269,36 +281,19 @@ namespace Soulseek
         public ConnectionOptions PeerConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the response for an incoming browse request. (Default = a response with no files
-        ///     or directories).
-        /// </summary>
-        public Func<string, IPEndPoint, Task<BrowseResponse>> BrowseResponseResolver { get; }
-
-        /// <summary>
-        ///     Gets the delegate used to resolve the response for an incoming directory contents request. (Default = a response
-        ///     with an empty directory).
-        /// </summary>
-        public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResolver { get; }
-
-        /// <summary>
         ///     Gets the delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </summary>
         public Func<string, IPEndPoint, string, Task<int?>> PlaceInQueueResolver { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
-        /// </summary>
-        public Func<string, int, SearchQuery, Task<SearchResponse>> SearchResponseResolver { get; }
-
-        /// <summary>
-        ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a blank/zeroed response).
-        /// </summary>
-        public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResolver { get; }
-
-        /// <summary>
         ///     Gets the search response cache to use when a response is not able to be delivered immediately.
         /// </summary>
         public ISearchResponseCache SearchResponseCache { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
+        /// </summary>
+        public Func<string, int, SearchQuery, Task<SearchResponse>> SearchResponseResolver { get; }
 
         /// <summary>
         ///     Gets the options for the server message connection.
@@ -319,6 +314,11 @@ namespace Soulseek
         ///     Gets the user endpoint cache to use when resolving user endpoints.
         /// </summary>
         public IUserEndPointCache UserEndPointCache { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a blank/zeroed response).
+        /// </summary>
+        public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResolver { get; }
 
         /// <summary>
         ///     Creates a clone of this instance with the substitutions in the specified <paramref name="patch"/> applied.
