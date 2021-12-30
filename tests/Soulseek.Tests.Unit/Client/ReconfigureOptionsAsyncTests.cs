@@ -19,7 +19,6 @@ namespace Soulseek.Tests.Unit.Client
 {
     using System;
     using System.Net;
-    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
     using Moq;
@@ -113,12 +112,48 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Returns true if client connected and AcceptDistributedChildren changed to false")]
+        public async Task Returns_True_If_Client_Connected_And_AcceptDistributedChildren_Changed_To_False()
+        {
+            var (client, _) = GetFixture(new SoulseekClientOptions(acceptDistributedChildren: true));
+
+            var patch = new SoulseekClientOptionsPatch(acceptDistributedChildren: false);
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var reconnectRequired = await client.ReconfigureOptionsAsync(patch);
+
+                Assert.True(reconnectRequired);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
         [Fact(DisplayName = "Returns false if client connected and EnableDistributedNetwork changed to true")]
         public async Task Returns_False_If_Client_Connected_And_EnableDistributedNetwork_Changed_To_True()
         {
             var (client, _) = GetFixture(new SoulseekClientOptions(enableDistributedNetwork: false));
 
             var patch = new SoulseekClientOptionsPatch(enableDistributedNetwork: true);
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var reconnectRequired = await client.ReconfigureOptionsAsync(patch);
+
+                Assert.False(reconnectRequired);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Returns false if client connected and AcceptDistributedChildren changed to true")]
+        public async Task Returns_False_If_Client_Connected_And_AcceptDistributedChildren_Changed_To_True()
+        {
+            var (client, _) = GetFixture(new SoulseekClientOptions(acceptDistributedChildren: false));
+
+            var patch = new SoulseekClientOptionsPatch(acceptDistributedChildren: true);
 
             using (client)
             {
