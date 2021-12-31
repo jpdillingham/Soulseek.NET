@@ -2369,7 +2369,7 @@ namespace Soulseek
 
             try
             {
-                using var stream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
+                using var stream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read);
             }
             catch (IOException ex)
             {
@@ -3078,9 +3078,9 @@ namespace Soulseek
 
                 DownloadDictionary.TryRemove(download.Token, out _);
 
-                var finalStreamPosition = outputStream.Position;
+                var finalStreamPosition = outputStream?.Position ?? 0;
 
-                if (options.DisposeOutputStreamOnCompletion)
+                if (options.DisposeOutputStreamOnCompletion && outputStream != null)
                 {
                     try
                     {
@@ -3089,7 +3089,7 @@ namespace Soulseek
                     finally
                     {
 #if NETSTANDARD2_0
-                        outputStream.Dispose();
+                        outputStream?.Dispose();
 #else
                         await outputStream.DisposeAsync().ConfigureAwait(false);
 #endif
@@ -3701,9 +3701,9 @@ namespace Soulseek
         private async Task<Transfer> UploadFromFileAsync(string username, string remoteFilename, string localFilename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options = options.WithDisposalOptions(disposeInputStreamOnCompletion: true);
-            var length = new FileInfo(localFilename).Length;
+            var length = IOAdapter.GetFileInfo(localFilename).Length;
 
-            return await UploadFromStreamAsync(username, remoteFilename, length, () => IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read), token, options, cancellationToken).ConfigureAwait(false);
+            return await UploadFromStreamAsync(username, remoteFilename, length, () => IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read), token, options, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -4027,9 +4027,9 @@ namespace Soulseek
 
                 UploadDictionary.TryRemove(upload.Token, out _);
 
-                var finalStreamPosition = inputStream.Position;
+                var finalStreamPosition = inputStream?.Position ?? 0;
 
-                if (options.DisposeInputStreamOnCompletion)
+                if (options.DisposeInputStreamOnCompletion && inputStream != null)
                 {
 #if NETSTANDARD2_0
                     inputStream.Dispose();
