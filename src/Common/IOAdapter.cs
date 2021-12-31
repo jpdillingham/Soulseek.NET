@@ -39,8 +39,17 @@ namespace Soulseek
         /// <param name="path">The path to open.</param>
         /// <param name="mode">The file mode.</param>
         /// <param name="access">The file access level.</param>
+        /// <param name="share">The file sharing access.</param>
         /// <returns>The created FileStream.</returns>
-        public FileStream GetFileStream(string path, FileMode mode, FileAccess access)
-            => new FileStream(path, mode, access);
+        public FileStream GetFileStream(string path, FileMode mode, FileAccess access, FileShare share)
+            => new FileStream(path, mode, access, share);
+
+        /// <summary>
+        ///     Returns a new FileInfo object from the given <paramref name="path"/>.
+        /// </summary>
+        /// <param name="path">The path for which to retrieve info.</param>
+        /// <returns>The created FileInfo.</returns>
+        public FileInfo GetFileInfo(string path)
+            => new FileInfo(path);
     }
 }

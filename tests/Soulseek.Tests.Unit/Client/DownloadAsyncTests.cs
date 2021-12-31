@@ -1243,7 +1243,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var txoptions = new TransferOptions(disposeOutputStreamOnCompletion: true);
-                await s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, txoptions, null);
+                await s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, txoptions, null);
 
                 var ex = Record.Exception(() =>
                 {
@@ -1308,7 +1308,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task<Transfer>>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task<Transfer>>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, new TransferOptions(), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("done"));
 
@@ -1373,7 +1373,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, new TransferOptions(), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("timed out", new TimeoutException("timed out")));
 
@@ -1437,7 +1437,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, new TransferOptions(), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("cancelled", new OperationCanceledException("cancelled")));
 
@@ -1501,7 +1501,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, new TransferOptions(), null);
 
                 var thrownEx = new Exception("some exception");
 
@@ -1566,7 +1566,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var txoptions = new TransferOptions(disposeOutputStreamOnCompletion: false);
-                await s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, stream, 0L, 0, token, txoptions, null);
+                await s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, txoptions, null);
 
                 var ex = Record.Exception(() =>
                 {
