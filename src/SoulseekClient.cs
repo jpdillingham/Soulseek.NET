@@ -1040,7 +1040,7 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return DownloadToStreamAsync(username, remoteFilename, outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToStreamAsync(username, remoteFilename, outputStreamFactory: () => outputStream, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2471,7 +2471,7 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return UploadFromStreamAsync(username, remoteFilename, size, inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return UploadFromStreamAsync(username, remoteFilename, size, inputStreamFactory: () => inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -2846,12 +2846,12 @@ namespace Soulseek
             await using (memoryStream.ConfigureAwait(false))
 #endif
             {
-                var transfer = await DownloadToStreamAsync(username, remoteFilename, memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
+                var transfer = await DownloadToStreamAsync(username, remoteFilename, () => memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
                 return (transfer, memoryStream.ToArray());
             }
         }
 
-        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Stream outputStream, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new TransferInternal(TransferDirection.Download, username, remoteFilename, token, options)
             {
@@ -2882,6 +2882,8 @@ namespace Soulseek
             }
 
             var transferStartRequestedWaitKey = new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename);
+
+            Stream outputStream = null;
 
             try
             {
@@ -2997,6 +2999,8 @@ namespace Soulseek
 
                 try
                 {
+                    outputStream = outputStreamFactory();
+
                     Diagnostic.Debug($"Seeking download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {startOffset} bytes");
                     var startOffsetBytes = BitConverter.GetBytes(startOffset);
                     await download.Connection.WriteAsync(startOffsetBytes, cancellationToken).ConfigureAwait(false);
@@ -3690,30 +3694,19 @@ namespace Soulseek
             await using (memoryStream.ConfigureAwait(false))
 #endif
             {
-                return await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+                return await UploadFromStreamAsync(username, filename, data.Length, () => memoryStream, token, options, cancellationToken).ConfigureAwait(false);
             }
         }
 
         private async Task<Transfer> UploadFromFileAsync(string username, string remoteFilename, string localFilename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
-            // stream from capturing the output.
-            options = options.WithDisposalOptions(
-                disposeInputStreamOnCompletion: false,
-                disposeOutputStreamOnCompletion: false);
+            options = options.WithDisposalOptions(disposeInputStreamOnCompletion: true);
+            var length = new FileInfo(localFilename).Length;
 
-#if NETSTANDARD2_0
-            using (var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read))
-#else
-            var fileStream = IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read);
-            await using (fileStream.ConfigureAwait(false))
-#endif
-            {
-                return await UploadFromStreamAsync(username, remoteFilename, fileStream.Length, fileStream, token, options, cancellationToken).ConfigureAwait(false);
-            }
+            return await UploadFromStreamAsync(username, remoteFilename, length, () => IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read), token, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
@@ -3750,6 +3743,8 @@ namespace Soulseek
             bool semaphoreAcquired = false;
             bool uploadSlotAcquired = false;
             bool globalSemaphoreAcquired = false;
+
+            Stream inputStream = null;
 
             try
             {
@@ -3848,6 +3843,8 @@ namespace Soulseek
 
                 try
                 {
+                    inputStream = inputStreamFactory();
+
                     var startOffsetBytes = await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
                     var startOffset = BitConverter.ToInt64(startOffsetBytes, 0);
 
