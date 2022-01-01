@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, "filename"));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, "filename", "local"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, 0L, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", 0L, 0, token);
 
                 Assert.NotNull(downloadTask);
 
@@ -129,10 +129,10 @@ namespace Soulseek.Tests.Unit.Client
 
                 var transfer = await downloadTask;
 
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, transfer.Transfer.State);
-                Assert.Equal(username, transfer.Transfer.Username);
-                Assert.Equal(token, transfer.Transfer.Token);
-                Assert.Equal(filename, transfer.Transfer.Filename);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, transfer.State);
+                Assert.Equal(username, transfer.Username);
+                Assert.Equal(token, transfer.Token);
+                Assert.Equal(filename, transfer.Filename);
             }
         }
 
@@ -329,7 +329,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, 0L, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", 0L, 0, token);
 
                 Assert.NotNull(downloadTask);
 
@@ -463,7 +463,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, filename, 0L, 0, token));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, filename, "local", 0L, 0, token));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);

@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, "filename", "local"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -101,15 +101,31 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Theory(DisplayName = "DownloadAsync throws ArgumentException given bad filename")]
+        [Theory(DisplayName = "DownloadAsync throws ArgumentException given bad remote filename")]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public async Task DownloadAsync_Throws_ArgumentException_Given_Bad_Filename(string filename)
+        public async Task DownloadAsync_Throws_ArgumentException_Given_Bad_Remote_Filename(string filename)
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", filename));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", filename, "local"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync throws ArgumentException given bad local filename")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task DownloadAsync_Throws_ArgumentException_Given_Bad_Local_Filename(string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "remote", filename));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -169,7 +185,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "foo", size: -1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "remote", "local", size: -1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -183,7 +199,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "foo", startOffset: -1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "remote", "local", startOffset: -1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -197,7 +213,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", "local"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -228,7 +244,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", "local"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -266,7 +282,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("DownloadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", token: 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", "local", token: 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTokenException>(ex);
@@ -287,7 +303,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", token: 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", "local", token: 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTokenException>(ex);
@@ -352,7 +368,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("DownloadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, token: 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, "local", token: 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
@@ -373,7 +389,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("DownloadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, token: 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, "local", token: 1));
 
                 Assert.NotNull(ex);
                 Assert.IsNotType<DuplicateTransferException>(ex);
@@ -393,7 +409,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("DownloadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, token: 1));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, "local", token: 1));
 
                 Assert.NotNull(ex);
                 Assert.IsNotType<DuplicateTransferException>(ex);
@@ -509,7 +525,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename));
+                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, "local"));
             }
 
             conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), CancellationToken.None), Times.Once);
@@ -526,7 +542,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, cancellationToken: cancellationToken));
+                await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, "local", cancellationToken: cancellationToken));
             }
 
             conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.Once);
@@ -552,7 +568,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", "local"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<UserOfflineException>(ex);
@@ -581,7 +597,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "filename", "local"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -618,9 +634,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferException when WriteAsync throws"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferException_When_WriteAsync_Throws(string username, IPEndPoint endpoint, string filename, int token)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferException when WriteAsync throws"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferException_When_WriteAsync_Throws(string username, IPEndPoint endpoint, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 1);
 
@@ -646,7 +662,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -654,9 +670,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferException on TransferResponse timeout"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferException_On_TransferResponse_Timeout(string username, IPEndPoint endpoint, string filename, int token)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferException on TransferResponse timeout"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferException_On_TransferResponse_Timeout(string username, IPEndPoint endpoint, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 1);
 
@@ -678,16 +694,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferException on TransferResponse cancellation"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferException_On_TransferResponse_Cancellation(string username, IPEndPoint endpoint, string filename, int token)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferException on TransferResponse cancellation"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferException_On_TransferResponse_Cancellation(string username, IPEndPoint endpoint, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -711,16 +727,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferException on TransferRequest cancellation"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferException_On_TransferRequest_Cancellation(string username, IPEndPoint endpoint, string filename, int token)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferException on TransferRequest cancellation"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferException_On_TransferRequest_Cancellation(string username, IPEndPoint endpoint, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -745,16 +761,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferException on download cancellation"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferException_On_Download_Cancellation(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferException on download cancellation"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferException_On_Download_Cancellation(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -793,16 +809,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TimeoutException on transfer response timeout"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TimeoutException_On_Transfer_Response_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TimeoutException on transfer response timeout"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TimeoutException_On_Transfer_Response_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -834,16 +850,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TimeoutException on read timeout"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TimeoutException_On_Read_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TimeoutException on read timeout"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TimeoutException_On_Read_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -884,17 +900,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] downloadedData = null;
-                var ex = await Record.ExceptionAsync(async () => (_, downloadedData) = await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -937,17 +952,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] downloadedData = null;
-                var ex = await Record.ExceptionAsync(async () => (_, downloadedData) = await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferRejectedException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync raises expected events on success when skipping queue"), AutoData]
-        public async Task DownloadToByteArrayAsync_Raises_Expected_Events_On_Success_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync raises expected events on success when skipping queue"), AutoData]
+        public async Task DownloadToFileAsync_Raises_Expected_Events_On_Success_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -997,7 +1011,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null);
 
                 Assert.Equal(5, events.Count);
 
@@ -1018,9 +1032,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync uses size from TransferResponse given null size when skipping queue"), AutoData]
-        public async Task DownloadToByteArrayAsync_Uses_Size_From_TransferResponse_Given_Null_Size_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync uses size from TransferResponse given null size when skipping queue"), AutoData]
+        public async Task DownloadToFileAsync_Uses_Size_From_TransferResponse_Given_Null_Size_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1070,7 +1084,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, null, 0, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", null, 0, token, new TransferOptions(), null);
             }
 
             transferConn.Verify(
@@ -1082,9 +1096,9 @@ namespace Soulseek.Tests.Unit.Client
                 Times.Once);
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync uses given size when skipping queue"), AutoData]
-        public async Task DownloadToByteArrayAsync_Uses_Size_Given_Size_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size, long givenSize)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync uses given size when skipping queue"), AutoData]
+        public async Task DownloadToFileAsync_Uses_Size_Given_Size_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size, long givenSize)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1134,7 +1148,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, givenSize, 0, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", givenSize, 0, token, new TransferOptions(), null);
             }
 
             transferConn.Verify(
@@ -1146,9 +1160,9 @@ namespace Soulseek.Tests.Unit.Client
                 Times.Once);
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync writes offset to connection"), AutoData]
-        public async Task DownloadToByteArrayAsync_Writes_Offset_To_Connection(string username, IPEndPoint endpoint, string filename, long offset, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync writes offset to connection"), AutoData]
+        public async Task DownloadToFileAsync_Writes_Offset_To_Connection(string username, IPEndPoint endpoint, string filename, long offset, int token, int size)
         {
             var response = new TransferResponse(token, size); // allowed, will start download immediately
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -1189,13 +1203,13 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, offset, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, offset, token, new TransferOptions(), null);
             }
 
             transferConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => BitConverter.ToInt64(b, 0) == offset), It.IsAny<CancellationToken>()));
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
+        [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync disposes output stream given option flag"), AutoData]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task DownloadToStreamAsync_Disposes_Output_Stream_Given_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
@@ -1255,7 +1269,7 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
+        [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync completes following normal transfer connection disconnect"), AutoData]
         public async Task DownloadToStreamAsync_Completes_Following_Normal_Transfer_Connection_Disconnect(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
@@ -1321,7 +1335,7 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
+        [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync throws TimeoutException on unexpected transfer connection timeout"), AutoData]
         public async Task DownloadToStreamAsync_Throws_TimeoutException_On_Unexpected_Transfer_Connection_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
@@ -1385,7 +1399,7 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
+        [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync throws OperationCanceledException on unexpected transfer connection cancellation"), AutoData]
         public async Task DownloadToStreamAsync_Throws_OperationCanceledException_On_Unexpected_Transfer_Connection_Cancellation(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
@@ -1449,7 +1463,7 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
+        [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync throws wrapped Exception on unexpected transfer connection Exception"), AutoData]
         public async Task DownloadToStreamAsync_Throws_Wrapped_Exception_On_Unexpected_Transfer_Connection_Exception(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
@@ -1518,7 +1532,7 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
+        [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync does not dispose output stream given no option flag"), AutoData]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task DownloadToStreamAsync_Does_Not_Dispose_Output_Stream_Given_No_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
@@ -1577,9 +1591,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync uses size from TransferResponse given null size when queued"), AutoData]
-        public async Task DownloadToByteArrayAsync_Uses_Size_From_TransferResponse_When_Queued(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync uses size from TransferResponse given null size when queued"), AutoData]
+        public async Task DownloadToFileAsync_Uses_Size_From_TransferResponse_When_Queued(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1629,7 +1643,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, null, 0, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", null, 0, token, new TransferOptions(), null);
             }
 
             transferConn.Verify(
@@ -1641,9 +1655,9 @@ namespace Soulseek.Tests.Unit.Client
                 Times.Once);
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync uses given size when queued"), AutoData]
-        public async Task DownloadToByteArrayAsync_Uses_Given_Size_When_Queued(string username, IPEndPoint endpoint, string filename, int token, int size, long givenSize)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync uses given size when queued"), AutoData]
+        public async Task DownloadToFileAsync_Uses_Given_Size_When_Queued(string username, IPEndPoint endpoint, string filename, int token, int size, long givenSize)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1693,7 +1707,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, givenSize, 0, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", givenSize, 0, token, new TransferOptions(), null);
             }
 
             transferConn.Verify(
@@ -1705,9 +1719,9 @@ namespace Soulseek.Tests.Unit.Client
                 Times.Once);
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync initiates a transfer if remote client does not initiate after a disallowed response"), AutoData]
-        public async Task DownloadToByteArrayAsync_Initiates_A_Transfer_If_Remote_Client_Does_Not_Initiate(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync initiates a transfer if remote client does not initiate after a disallowed response"), AutoData]
+        public async Task DownloadToFileAsync_Initiates_A_Transfer_If_Remote_Client_Does_Not_Initiate(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1754,7 +1768,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var fired = false;
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(stateChanged: (e) => fired = true), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(stateChanged: (e) => fired = true), null);
 
                 Assert.True(fired);
             }
@@ -1762,9 +1776,9 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Verify(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync invokes StateChanged delegate on state change"), AutoData]
-        public async Task DownloadToByteArrayAsync_Invokes_StateChanged_Delegate_On_State_Change(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync invokes StateChanged delegate on state change"), AutoData]
+        public async Task DownloadToFileAsync_Invokes_StateChanged_Delegate_On_State_Change(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1809,15 +1823,15 @@ namespace Soulseek.Tests.Unit.Client
 
                 var fired = false;
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(stateChanged: (e) => fired = true), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(stateChanged: (e) => fired = true), null);
 
                 Assert.True(fired);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync raises DownloadProgressUpdated event on data read"), AutoData]
-        public async Task DownloadToByteArrayAsync_Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync raises DownloadProgressUpdated event on data read"), AutoData]
+        public async Task DownloadToFileAsync_Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1869,7 +1883,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.TransferProgressUpdated += (d, e) => events.Add(e);
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null);
 
                 Assert.Equal(3, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
@@ -1878,9 +1892,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync invokes ProgressUpdated delegate on data read"), AutoData]
-        public async Task DownloadToByteArrayAsync_Invokes_ProgressUpdated_Delegate_On_Data_Read(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync invokes ProgressUpdated delegate on data read"), AutoData]
+        public async Task DownloadToFileAsync_Invokes_ProgressUpdated_Delegate_On_Data_Read(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1930,15 +1944,15 @@ namespace Soulseek.Tests.Unit.Client
 
                 var fired = false;
 
-                await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(progressUpdated: (e) => fired = true), null);
+                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(progressUpdated: (e) => fired = true), null);
 
                 Assert.True(fired);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync raises Download events on failure"), AutoData]
-        public async Task DownloadToByteArrayAsync_Raises_Download_Events_On_Failure(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync raises Download events on failure"), AutoData]
+        public async Task DownloadToFileAsync_Raises_Download_Events_On_Failure(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1988,7 +2002,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -1999,9 +2013,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync raises Download events on timeout"), AutoData]
-        public async Task DownloadToByteArrayAsync_Raises_Expected_Final_Event_On_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync raises Download events on timeout"), AutoData]
+        public async Task DownloadToFileAsync_Raises_Expected_Final_Event_On_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2051,7 +2065,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -2061,9 +2075,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync raises Download events on cancellation"), AutoData]
-        public async Task DownloadToByteArrayAsync_Raises_Expected_Final_Event_On_Cancellation(string username, string filename, int token)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync raises Download events on cancellation"), AutoData]
+        public async Task DownloadToFileAsync_Raises_Expected_Final_Event_On_Cancellation(string username, string filename, int token)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -2084,7 +2098,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -2093,9 +2107,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferException and ConnectionException on transfer exception"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferException_And_ConnectionException_On_Transfer_Exception(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferException and ConnectionException on transfer exception"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferException_And_ConnectionException_On_Transfer_Exception(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2140,7 +2154,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -2149,9 +2163,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TimeoutException on transfer timeout"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TimeoutException_On_Transfer_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TimeoutException on transfer timeout"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TimeoutException_On_Transfer_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2196,16 +2210,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws OperationCanceledException on cancellation"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task DownloadToFileAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2250,16 +2264,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws TransferRejectedException on transfer rejection"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_TransferRejectedException_On_Transfer_Rejection(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferRejectedException on transfer rejection"), AutoData]
+        public async Task DownloadToFileAsync_Throws_TransferRejectedException_On_Transfer_Rejection(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2302,17 +2316,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] downloadedData = null;
-                var ex = await Record.ExceptionAsync(async () => (_, downloadedData) = await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferRejectedException>(ex);
             }
         }
 
-        [Trait("Category", "DownloadToByteArrayAsync")]
-        [Theory(DisplayName = "DownloadToByteArrayAsync throws ConnectionException when transfer connection fails"), AutoData]
-        public async Task DownloadToByteArrayAsync_Throws_ConnectionException_When_Transfer_Connection_Fails(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync throws ConnectionException when transfer connection fails"), AutoData]
+        public async Task DownloadToFileAsync_Throws_ConnectionException_When_Transfer_Connection_Fails(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2355,8 +2368,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] downloadedData = null;
-                var ex = await Record.ExceptionAsync(async () => (_, downloadedData) = await s.InvokeMethod<Task<(Transfer Transfer, byte[] Data)>>("DownloadToByteArrayAsync", username, filename, 0L, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
