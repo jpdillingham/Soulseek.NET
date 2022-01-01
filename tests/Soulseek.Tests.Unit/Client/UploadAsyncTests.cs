@@ -1039,7 +1039,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromFileAsync")]
         [Theory(DisplayName = "UploadFromFileAsync completes without Exception after MaximumLingerTime when trailing read does not throw ConnectionReadException"), AutoData]
-        public async Task UploadFromFileAsync_Completes_Without_Exception_After_MaximumLingerTime_When_Trailing_Read_Does_Not_Throw_ConnectionReadException(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        public async Task UploadFromFileAsync_Completes_Without_Exception_After_MaximumLingerTime_When_Trailing_Read_Does_Not_Throw_ConnectionReadException(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             using (var testFile = new TestFile())
             {
