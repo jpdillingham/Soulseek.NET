@@ -127,7 +127,10 @@
             {
                 try
                 {
-                    var (transfer, bytes) = await client.DownloadAsync(username, file, startOffset: 0, token: index++, options: new TransferOptions(stateChanged: (e) =>
+                    var path = $"{OutputDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "")}";
+                    var filename = Path.Combine(path, Path.GetFileName(file));
+
+                    var transfer = await client.DownloadAsync(username, file, filename, startOffset: 0, token: index++, options: new TransferOptions(stateChanged: (e) =>
                     {
                         var key = (e.Transfer.Username, e.Transfer.Filename, e.Transfer.Token);
                         var progress = Downloads.GetOrAdd(key, (e.Transfer.State, null, new ProgressBar(10)));
@@ -170,16 +173,11 @@
                     // normalize for both Windows and Linux by replacing / and \ with Path.DirectorySeparatorChar.
                     file = file.ToLocalOSPath();
 
-                    var path = $"{OutputDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "")}";
 
                     if (!System.IO.Directory.Exists(path))
                     {
                         System.IO.Directory.CreateDirectory(path);
                     }
-
-                    var filename = Path.Combine(path, Path.GetFileName(file));
-
-                    System.IO.File.WriteAllBytes(filename, bytes);
                 }
                 catch (Exception ex)
                 {

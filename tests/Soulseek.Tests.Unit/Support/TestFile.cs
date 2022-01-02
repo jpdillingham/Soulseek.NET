@@ -21,9 +21,14 @@ namespace Soulseek.Tests.Unit
 
     internal class TestFile : IDisposable
     {
-        public TestFile()
+        public TestFile(byte[] data = null)
         {
             Path = System.IO.Path.GetTempFileName();
+
+            if (data != null)
+            {
+                System.IO.File.WriteAllBytes(Path, data);
+            }
         }
 
         public string Path { get; private set; }

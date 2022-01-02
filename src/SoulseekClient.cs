@@ -447,11 +447,11 @@ namespace Soulseek
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
+        private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        private SemaphoreSlim GlobalUploadSemaphore { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
@@ -871,8 +871,15 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously downloads the specified <paramref name="remoteFilename"/> from the specified <paramref name="username"/>
-        ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///     <para>
+        ///         Asynchronously downloads the specified <paramref name="remoteFilename"/> from the specified
+        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
+        ///         <paramref name="cancellationToken"/> to the specified <paramref name="localFilename"/>.
+        ///     </para>
+        ///     <para>
+        ///         If the destination file exists and <paramref name="startOffset"/> is greater than zero, the existing file is
+        ///         appended. Otherwise, it is overwritten.
+        ///     </para>
         /// </summary>
         /// <remarks>
         ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
@@ -880,6 +887,7 @@ namespace Soulseek
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
+        /// <param name="localFilename">The fully qualified filename of the destination file.</param>
         /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
@@ -890,7 +898,8 @@ namespace Soulseek
         ///     file contents.
         /// </returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/>, <paramref name="remoteFilename"/>, or
+        ///     <paramref name="localFilename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
@@ -898,15 +907,15 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified <paramref name="username"/>
-        ///     is already in progress.
+        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified
+        ///     <paramref name="username"/> is already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<(Transfer Transfer, byte[] Data)> DownloadAsync(string username, string remoteFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -916,6 +925,11 @@ namespace Soulseek
             if (string.IsNullOrWhiteSpace(remoteFilename))
             {
                 throw new ArgumentException("The remote filename must not be a null or empty string, or one consisting only of whitespace", nameof(remoteFilename));
+            }
+
+            if (string.IsNullOrWhiteSpace(localFilename))
+            {
+                throw new ArgumentException("The local filename must not be a null or empty string, or one consisting only of whitespace", nameof(localFilename));
             }
 
             if (size.HasValue && size.Value < 0)
@@ -947,13 +961,13 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return DownloadToByteArrayAsync(username, remoteFilename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToFileAsync(username, remoteFilename, localFilename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
-        ///     Asynchronously downloads the specified <paramref name="remoteFilename"/> from the specified <paramref name="username"/>
-        ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>
-        ///     to the specified <paramref name="outputStream"/>.
+        ///     Asynchronously downloads the specified <paramref name="remoteFilename"/> from the specified
+        ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
+        ///     <paramref name="cancellationToken"/> to the specified <paramref name="outputStream"/>.
         /// </summary>
         /// <remarks>
         ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
@@ -969,7 +983,8 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the transfer context.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only
+        ///     of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
@@ -981,8 +996,8 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified <paramref name="username"/>
-        ///     is already in progress.
+        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified
+        ///     <paramref name="username"/> is already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -1102,12 +1117,17 @@ namespace Soulseek
         /// <summary>
         ///     <para>
         ///         Asynchronously enqueues a download for the specified <paramref name="remoteFilename"/> from the specified
-        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
+        ///         <paramref name="cancellationToken"/>. to the specified <paramref name="localFilename"/>.
+        ///     </para>
+        ///     <para>
+        ///         If the destination file exists and <paramref name="startOffset"/> is greater than zero, the existing file is
+        ///         appended. Otherwise, it is overwritten.
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, long?, long, int?, TransferOptions, CancellationToken?)"/>, but
-        ///         returns the download Task as soon as the download has been remotely enqueued.
+        ///         <see cref="DownloadAsync(string, string, Stream, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
         /// <remarks>
@@ -1116,14 +1136,19 @@ namespace Soulseek
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
+        /// <param name="localFilename">The fully qualified filename of the destination file.</param>
         /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous download operation.</returns>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the transfer context and a byte array containing the
+        ///     file contents.
+        /// </returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/>, <paramref name="remoteFilename"/>, or
+        ///     <paramref name="localFilename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
@@ -1131,15 +1156,15 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified <paramref name="username"/>
-        ///     is already in progress.
+        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified
+        ///     <paramref name="username"/> is already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<(Transfer Transfer, byte[] Data)>> EnqueueDownloadAsync(string username, string remoteFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1159,7 +1184,7 @@ namespace Soulseek
             });
 
             // this may throw immediately, if there are issues with the input
-            var downloadTask = DownloadAsync(username, remoteFilename, size, startOffset, token, options, cancellationToken);
+            var downloadTask = DownloadAsync(username, remoteFilename, localFilename, size, startOffset, token, options, cancellationToken);
 
             var success = await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
 
@@ -1197,7 +1222,8 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous download operation.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only
+        ///     of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
@@ -1209,8 +1235,8 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified <paramref name="username"/>
-        ///     is already in progress.
+        ///     Thrown when a download of the specified <paramref name="remoteFilename"/> from the specified
+        ///     <paramref name="username"/> is already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -2243,97 +2269,29 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> containing <paramref name="data"/> to the the
-        ///     specified <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified
+        ///     <paramref name="localFilename"/> to the the specified <paramref name="username"/> using the specified unique
+        ///     <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="remoteFilename">The filename of the file to upload, as requested by the remote user.</param>
-        /// <param name="data">The file contents.</param>
+        /// <param name="localFilename">The fully qualified filename of the file to upload.</param>
         /// <param name="token">The unique upload token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the transfer context.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only of whitespace.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the specified <paramref name="data"/> is null or of zero length.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
-        /// <exception cref="DuplicateTransferException">
-        ///     Thrown when an upload of the specified <paramref name="remoteFilename"/> to the specified <paramref name="username"/> is
-        ///     already in progress.
-        /// </exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
-        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> UploadAsync(string username, string remoteFilename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                throw new ArgumentException("The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
-            }
-
-            if (string.IsNullOrWhiteSpace(remoteFilename))
-            {
-                throw new ArgumentException("The remote filename must not be a null or empty string, or one consisting only of whitespace", nameof(remoteFilename));
-            }
-
-            if (data == null || data.Length == 0)
-            {
-                throw new ArgumentException("The data must not be a null or zero length array", nameof(data));
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to upload files (currently: {State})");
-            }
-
-            token ??= GetNextToken();
-
-            if (UploadDictionary.ContainsKey(token.Value) || DownloadDictionary.ContainsKey(token.Value))
-            {
-                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
-            }
-
-            if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
-            {
-                throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
-            }
-
-            options ??= new TransferOptions();
-
-            return UploadFromByteArrayAsync(username, remoteFilename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
-        }
-
-        /// <summary>
-        ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified <paramref name="localFilename"/> to the the
-        ///     specified <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
-        /// </summary>
-        /// <param name="username">The user to which to upload the file.</param>
-        /// <param name="remoteFilename">The filename of the file to upload, as requested by the remote user.</param>
-        /// <param name="localFilename">The file contents.</param>
-        /// <param name="token">The unique upload token.</param>
-        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the transfer context.</returns>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/>, <paramref name="remoteFilename"/>, or
+        ///     <paramref name="localFilename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="FileNotFoundException">
         ///     Thrown when the specified <paramref name="localFilename"/> can not be found.
         /// </exception>
-        /// <exception cref="IOException">
-        ///     Thrown when the specified <paramref name="localFilename"/> can not be opened for reading.
-        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when an upload of the specified <paramref name="remoteFilename"/> to the specified <paramref name="username"/> is
-        ///     already in progress.
+        ///     Thrown when an upload of the specified <paramref name="remoteFilename"/> to the specified
+        ///     <paramref name="username"/> is already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -2394,9 +2352,9 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified <paramref name="inputStream"/>
-        ///     to the the specified <paramref name="username"/> using the specified unique <paramref name="token"/> and
-        ///     optionally specified <paramref name="cancellationToken"/>.
+        ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified
+        ///     <paramref name="inputStream"/> to the the specified <paramref name="username"/> using the specified unique
+        ///     <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="remoteFilename">The filename of the file to upload, as requested by the remote user.</param>
@@ -2407,7 +2365,8 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the transfer context.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only
+        ///     of whitespace.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="size"/> is less than 1.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
@@ -2417,8 +2376,8 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when an upload of the specified <paramref name="remoteFilename"/> to the specified <paramref name="username"/> is
-        ///     already in progress.
+        ///     Thrown when an upload of the specified <paramref name="remoteFilename"/> to the specified
+        ///     <paramref name="username"/> is already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -2831,24 +2790,18 @@ namespace Soulseek
             }
         }
 
-        private async Task<(Transfer Transfer, byte[] Data)> DownloadToByteArrayAsync(string username, string remoteFilename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToFileAsync(string username, string remoteFilename, string localFilename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
-            // stream from capturing the output.
-            options = options.WithDisposalOptions(
-                disposeInputStreamOnCompletion: false,
-                disposeOutputStreamOnCompletion: false);
+            options = options.WithDisposalOptions(disposeOutputStreamOnCompletion: true);
 
-#if NETSTANDARD2_0
-            using (var memoryStream = new MemoryStream())
-#else
-            var memoryStream = new MemoryStream();
-            await using (memoryStream.ConfigureAwait(false))
-#endif
+            var fileMode = FileMode.Create;
+
+            if (startOffset > 0)
             {
-                var transfer = await DownloadToStreamAsync(username, remoteFilename, () => memoryStream, size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
-                return (transfer, memoryStream.ToArray());
+                fileMode = FileMode.Append;
             }
+
+            return await DownloadToStreamAsync(username, remoteFilename, () => IOAdapter.GetFileStream(localFilename, fileMode, FileAccess.Write, FileShare.None), size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -3679,25 +3632,6 @@ namespace Soulseek
             ServerMessageHandler.HandleMessageWritten(sender, e);
         }
 
-        private async Task<Transfer> UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
-        {
-            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
-            // stream from capturing the output.
-            options = options.WithDisposalOptions(
-                disposeInputStreamOnCompletion: false,
-                disposeOutputStreamOnCompletion: false);
-
-#if NETSTANDARD2_0
-            using (var memoryStream = new MemoryStream(data))
-#else
-            var memoryStream = new MemoryStream(data);
-            await using (memoryStream.ConfigureAwait(false))
-#endif
-            {
-                return await UploadFromStreamAsync(username, filename, data.Length, () => memoryStream, token, options, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
         private async Task<Transfer> UploadFromFileAsync(string username, string remoteFilename, string localFilename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options = options.WithDisposalOptions(disposeInputStreamOnCompletion: true);
@@ -3735,8 +3669,8 @@ namespace Soulseek
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
-            // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same source,
-            // so we need to enforce this regardless of what downstream implementations do.
+            // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same
+            // source, so we need to enforce this regardless of what downstream implementations do.
             var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
 
             IPEndPoint endpoint = null;
@@ -3750,20 +3684,18 @@ namespace Soulseek
             {
                 UpdateState(TransferStates.Queued);
 
-                // permissive stage 1:
-                // acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
-                // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload
-                // until the requesting user is ready to receive it
+                // permissive stage 1: acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
+                // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload until the
+                // requesting user is ready to receive it
                 await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 semaphoreAcquired = true;
 
-                // in case the upload record was removed via cleanup while we were waiting, add it back.  this will happen
-                // more often than not if a user enqueues more than 1 file at a time, so this is important.
+                // in case the upload record was removed via cleanup while we were waiting, add it back. this will happen more
+                // often than not if a user enqueues more than 1 file at a time, so this is important.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
-                // permissive stage 2:
-                // acquire an upload slot from the calling code
+                // permissive stage 2: acquire an upload slot from the calling code
                 try
                 {
                     await options.SlotAwaiter(new Transfer(upload), cancellationToken).ConfigureAwait(false);
@@ -3775,18 +3707,15 @@ namespace Soulseek
                     throw new TransferException($"Failed to acquire an upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                 }
 
-                // permissive stage 3:
-                // acquire the global upload semaphore to ensure we aren't trying to process
-                // more than the total allotted concurrent uploads globally.  if we hit this limit,
-                // uploads will stack up behind it and will be processed in a round-robin-like fashion
-                // due to the limit on per-user concurrency.  calling code can avoid this by providing
-                // an implementation of AcquireSlot() that won't exceed the maximum concurrent upload limit
+                // permissive stage 3: acquire the global upload semaphore to ensure we aren't trying to process more than the
+                // total allotted concurrent uploads globally. if we hit this limit, uploads will stack up behind it and will be
+                // processed in a round-robin-like fashion due to the limit on per-user concurrency. calling code can avoid this
+                // by providing an implementation of AcquireSlot() that won't exceed the maximum concurrent upload limit
                 await GlobalUploadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 globalSemaphoreAcquired = true;
 
-                // all permissives have been given
-                // fetch the user endpoint and request that the transfer begins
+                // all permissives have been given fetch the user endpoint and request that the transfer begins
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
@@ -3923,9 +3852,8 @@ namespace Soulseek
 
                 Diagnostic.Debug(ex.ToString());
 
-                // cancelled async operations can throw TaskCanceledException, which is a
-                // subclass of OperationCanceledException, but we want to be deterministic,
-                // so wrap and re-throw them.
+                // cancelled async operations can throw TaskCanceledException, which is a subclass of OperationCanceledException,
+                // but we want to be deterministic, so wrap and re-throw them.
                 throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
             }
             catch (TimeoutException ex)
@@ -3959,8 +3887,8 @@ namespace Soulseek
                 // threads waiting on it, and it is added back after it is awaited above.
                 UploadSemaphores.TryRemove(username, out var _);
 
-                // make sure we successfully obtained all permissives before releasing them.  some of them may not have been attempted
-                // if the code throws.
+                // make sure we successfully obtained all permissives before releasing them. some of them may not have been
+                // attempted if the code throws.
                 if (semaphoreAcquired)
                 {
                     Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
@@ -3969,10 +3897,9 @@ namespace Soulseek
 
                 if (uploadSlotAcquired)
                 {
-                    // give the next thread time to acquire the semaphore.  this is extremely sub-optimal,
-                    // but if there's a waiting upload we want the code within AcquireSlot() to be aware of it
-                    // before we release the slot.  10ms should be plenty of time, as this release and the subsequent
-                    // thread acquiring it should happen within nanoseconds.
+                    // give the next thread time to acquire the semaphore. this is extremely sub-optimal, but if there's a waiting
+                    // upload we want the code within AcquireSlot() to be aware of it before we release the slot. 10ms should be
+                    // plenty of time, as this release and the subsequent thread acquiring it should happen within nanoseconds.
                     await Task.Delay(10, CancellationToken.None).ConfigureAwait(false);
 
                     Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
