@@ -1,18 +1,13 @@
 ﻿// <copyright file="ISoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//     GNU General Public License for more details.
+//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 //
-//     You should have received a copy of the GNU General Public License
-//     along with this program.  If not, see https://www.gnu.org/licenses/.
+//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
 namespace Soulseek
@@ -520,7 +515,7 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="remoteFilename"/> from the specified
         ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
-        ///     <paramref name="cancellationToken"/> to the specified <paramref name="outputStream"/>.
+        ///     <paramref name="cancellationToken"/> to the <see cref="Stream"/> created by the specified <paramref name="outputStreamFactory"/>.
         /// </summary>
         /// <remarks>
         ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
@@ -528,7 +523,7 @@ namespace Soulseek
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
-        /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="outputStreamFactory">A delegate used to create the stream to which to write the file contents.</param>
         /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
@@ -542,9 +537,8 @@ namespace Soulseek
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
         /// </exception>
-        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the specified <paramref name="outputStreamFactory"/> is null.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -557,7 +551,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> DownloadAsync(string username, string remoteFilename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously removes the currently logged in user from the list of members in the specified private <paramref name="roomName"/>.
@@ -601,7 +595,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Stream, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Stream}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -645,11 +639,11 @@ namespace Soulseek
         ///     <para>
         ///         Asynchronously enqueues a download for the specified <paramref name="remoteFilename"/> from the specified
         ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
-        ///         <paramref name="cancellationToken"/> to the specified <paramref name="outputStream"/>.
+        ///         <paramref name="cancellationToken"/> to the <see cref="Stream"/> created by the specified <paramref name="outputStreamFactory"/>.
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Stream, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Stream}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -659,7 +653,7 @@ namespace Soulseek
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
-        /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="outputStreamFactory">A delegate used to create the stream to which to write the file contents.</param>
         /// <param name="size">The size of the file, in bytes.</param>
         /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
@@ -673,9 +667,8 @@ namespace Soulseek
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
         /// </exception>
-        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the specified <paramref name="outputStreamFactory"/> is null.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -688,7 +681,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Stream outputStream, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.
@@ -1192,14 +1185,14 @@ namespace Soulseek
         Task<Transfer> UploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified
-        ///     <paramref name="inputStream"/> to the the specified <paramref name="username"/> using the specified unique
-        ///     <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the <see cref="Stream"/> created by
+        ///     the specified <paramref name="inputStreamFactory"/> to the the specified <paramref name="username"/> using the
+        ///     specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="remoteFilename">The filename of the file to upload, as requested by the remote user.</param>
         /// <param name="size">The size of the file to upload, in bytes.</param>
-        /// <param name="inputStream">The stream from which to retrieve the file contents.</param>
+        /// <param name="inputStreamFactory">A delegate used to create the stream from which to retrieve the file contents.</param>
         /// <param name="token">The unique upload token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -1209,9 +1202,8 @@ namespace Soulseek
         ///     of whitespace.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="size"/> is less than 1.</exception>
-        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the specified <paramref name="inputStream"/> is not readable.
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the specified <paramref name="inputStreamFactory"/> is null.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -1224,6 +1216,6 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
     }
 }
