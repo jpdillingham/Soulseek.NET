@@ -99,7 +99,7 @@
 
                 var cts = new CancellationTokenSource();
 
-                var downloadTask = Client.DownloadAsync(username, request.Filename, stream, request.Size, 0, request.Token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
+                var downloadTask = Client.DownloadAsync(username, request.Filename, () => stream, request.Size, 0, request.Token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
                 {
                     Tracker.AddOrUpdate(e, cts);
 

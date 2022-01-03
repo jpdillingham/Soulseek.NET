@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, "filename", 1, stream));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, "filename", 1, () => stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -80,7 +80,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", filename, 1, stream));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", filename, 1, () => stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -149,7 +149,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", size, stream));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", size, () => stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -164,7 +164,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -191,31 +191,16 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
-        [Fact(DisplayName = "UploadAsync stream throws ArgumentNullException given null stream")]
-        public async Task UploadAsync_Stream_Throws_ArgumentNullException_Given_Null_Stream()
+        [Fact(DisplayName = "UploadAsync stream throws ArgumentNullException given null stream factory")]
+        public async Task UploadAsync_Stream_Throws_ArgumentNullException_Given_Null_Stream_Factory()
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, null));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, inputStreamFactory: null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentNullException>(ex);
-                Assert.Contains("stream is null", ex.Message, StringComparison.InvariantCultureIgnoreCase);
-            }
-        }
-
-        [Trait("Category", "UploadAsync")]
-        [Fact(DisplayName = "UploadAsync stream throws InvalidOperationException given unreadable stream")]
-        public async Task UploadAsync_Stream_Throws_InvalidOperationException_Given_Unreadable_Stream()
-        {
-            using (var stream = new UnReadableWriteableStream())
-            using (var s = new SoulseekClient())
-            {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream));
-
-                Assert.NotNull(ex);
-                Assert.IsType<InvalidOperationException>(ex);
-                Assert.Contains("not readable", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains("stream factory is null", ex.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
 
@@ -228,7 +213,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -294,7 +279,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream, 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => stream, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTokenException>(ex);
@@ -346,7 +331,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, stream, 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, () => stream, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
@@ -368,7 +353,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", 1, stream, 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", 1, () => stream, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsNotType<DuplicateTransferException>(ex);
@@ -389,7 +374,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, 1, stream, 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, 1, () => stream, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsNotType<DuplicateTransferException>(ex);
@@ -497,7 +482,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, stream, cancellationToken: cancellationToken));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, () => stream, cancellationToken: cancellationToken));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -560,7 +545,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, stream));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
