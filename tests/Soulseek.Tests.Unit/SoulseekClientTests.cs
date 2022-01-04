@@ -127,6 +127,56 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "Uploads")]
+        [Theory(DisplayName = "Uploads returns UploadDictionary snapshot"), AutoData]
+        internal void Uploads_Returns_UploadDictionary_Snapshot(string one, string two)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.TryAdd(1, new TransferInternal(TransferDirection.Upload, one, one, 1));
+                dict.TryAdd(2, new TransferInternal(TransferDirection.Upload, two, two, 2));
+
+                s.SetProperty("UploadDictionary", dict);
+
+                Assert.Equal(2, s.Uploads.Count);
+
+                var list = s.Uploads.ToList();
+                Assert.Equal(one, list[0].Filename);
+                Assert.Equal(one, list[0].Username);
+                Assert.Equal(1, list[0].Token);
+
+                Assert.Equal(two, list[1].Filename);
+                Assert.Equal(two, list[1].Username);
+                Assert.Equal(2, list[1].Token);
+            }
+        }
+
+        [Trait("Category", "Downloads")]
+        [Theory(DisplayName = "Downloads returns DownloadsDictionary snapshot"), AutoData]
+        internal void Downloads_Returns_DownloadsDictionary_Snapshot(string one, string two)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.TryAdd(1, new TransferInternal(TransferDirection.Download, one, one, 1));
+                dict.TryAdd(2, new TransferInternal(TransferDirection.Download, two, two, 2));
+
+                s.SetProperty("DownloadDictionary", dict);
+
+                Assert.Equal(2, s.Downloads.Count);
+
+                var list = s.Downloads.ToList();
+                Assert.Equal(one, list[0].Filename);
+                Assert.Equal(one, list[0].Username);
+                Assert.Equal(1, list[0].Token);
+
+                Assert.Equal(two, list[1].Filename);
+                Assert.Equal(two, list[1].Username);
+                Assert.Equal(2, list[1].Token);
+            }
+        }
+
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect handler disconnects")]
         public void Disconnect_Handler_Disconnects()
