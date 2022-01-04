@@ -243,6 +243,11 @@ namespace Soulseek
         string Address { get; }
 
         /// <summary>
+        ///     Gets a snapshot of current downloads.
+        /// </summary>
+        IReadOnlyCollection<Transfer> Downloads { get; }
+
+        /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
         IPAddress IPAddress { get; }
@@ -271,6 +276,11 @@ namespace Soulseek
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
         SoulseekClientStates State { get; }
+
+        /// <summary>
+        ///     Gets a snapshot of current uploads.
+        /// </summary>
+        IReadOnlyCollection<Transfer> Uploads { get; }
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
@@ -600,7 +610,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Func{Stream}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, string, long?, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>

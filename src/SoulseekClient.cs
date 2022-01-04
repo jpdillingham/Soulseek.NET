@@ -394,6 +394,11 @@ namespace Soulseek
         public string Address { get; private set; }
 
         /// <summary>
+        ///     Gets a snapshot of current downloads.
+        /// </summary>
+        public IReadOnlyCollection<Transfer> Downloads => DownloadDictionary.Values.Select(t => new Transfer(t)).ToList().AsReadOnly();
+
+        /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
         public IPAddress IPAddress => IPEndPoint?.Address;
@@ -422,6 +427,11 @@ namespace Soulseek
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
         public virtual SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
+
+        /// <summary>
+        ///     Gets a snapshot of current uploads.
+        /// </summary>
+        public IReadOnlyCollection<Transfer> Uploads => UploadDictionary.Values.Select(t => new Transfer(t)).ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
@@ -1120,7 +1130,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Stream, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, string, long?, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
