@@ -1992,5 +1992,27 @@ namespace Soulseek.Tests.Unit
                 }
             }
         }
+
+        [Trait("Category", "DistributedNetworkInfo")]
+        [Fact(DisplayName = "DistributedNetworkInfo returns info from DistributedConnectionManager")]
+        public void DistributedNetworkInfo_Does_Not_Throw_If_Some_Info_Is_Null()
+        {
+            var dcm = new Mock<IDistributedConnectionManager>();
+
+            dcm.Setup(m => m.BranchLevel).Returns(null);
+            dcm.Setup(m => m.IsBranchRoot).Returns(null);
+            dcm.Setup(m => m.ChildLimit).Returns(null);
+            dcm.Setup(m => m.CanAcceptChildren).Returns(null);
+            dcm.Setup(m => m.Parent).Returns(null);
+            dcm.Setup(m => m.HasParent).Returns(null);
+            dcm.Setup(m => m.Children).Returns<IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)>>(null);
+
+            using (var s = new SoulseekClient(distributedConnectionManager: dcm.Object))
+            {
+                var ex = Record.Exception(() => s.DistributedNetworkInfo);
+
+                Assert.Null(ex);
+            }
+        }
     }
 }
