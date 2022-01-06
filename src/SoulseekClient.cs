@@ -78,6 +78,7 @@ namespace Soulseek
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         /// <param name="ioAdapter">The IIOAdapter instance to use.</param>
 #pragma warning disable S3427 // Method overloads with default parameter values should not overlap
+
         internal SoulseekClient(
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
@@ -1285,8 +1286,9 @@ namespace Soulseek
         ///         <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         ///     </para>
         ///     <para>
-        ///         Functionally the same as <see cref="UploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)"/>,
-        ///         but returns the upload Task as soon as the upload has been locally enqueued.
+        ///         Functionally the same as
+        ///         <see cref="UploadAsync(string, string, string, int?, TransferOptions, CancellationToken?)"/>, but returns the
+        ///         upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
@@ -1348,13 +1350,14 @@ namespace Soulseek
 
         /// <summary>
         ///     <para>
-        ///         Asynchronously enqueues an upload for the specified <paramref name="remoteFilename"/> from the <see cref="Stream"/> created by
-        ///         the specified <paramref name="inputStreamFactory"/> to the the specified <paramref name="username"/> using the
-        ///         specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///         Asynchronously enqueues an upload for the specified <paramref name="remoteFilename"/> from the
+        ///         <see cref="Stream"/> created by the specified <paramref name="inputStreamFactory"/> to the the specified
+        ///         <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         ///     </para>
         ///     <para>
-        ///         Functionally the same as <see cref="UploadAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)"/>,
-        ///         but returns the upload Task as soon as the upload has been locally enqueued.
+        ///         Functionally the same as
+        ///         <see cref="UploadAsync(string, string, long, Func{Stream}, int?, TransferOptions, CancellationToken?)"/>, but
+        ///         returns the upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
@@ -1404,7 +1407,7 @@ namespace Soulseek
             });
 
             // this may throw immediately, if there are issues with the input
-            var uploadTask = UploadAsync(username, remoteFilename, inputStreamFactory, token, options, cancellationToken);
+            var uploadTask = UploadAsync(username, remoteFilename, size, inputStreamFactory, token, options, cancellationToken);
 
             var success = await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
 
