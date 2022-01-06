@@ -1817,7 +1817,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadToFileAsync raises DownloadProgressUpdated event on data read"), AutoData]
         public async Task DownloadToFileAsync_Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 500);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
