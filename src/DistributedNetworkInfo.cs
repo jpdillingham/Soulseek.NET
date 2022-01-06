@@ -18,6 +18,7 @@
 namespace Soulseek
 {
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using Soulseek.Network;
 
@@ -51,7 +52,7 @@ namespace Soulseek
             BranchRoot = branchRoot;
             CanAcceptChildren = canAcceptChildren;
             ChildLimit = childLimit;
-            Children = children;
+            Children = children?.ToList().AsReadOnly();
             HasParent = hasParent;
             IsBranchRoot = isBranchRoot;
             Parent = parent;

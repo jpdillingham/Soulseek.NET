@@ -1986,6 +1986,10 @@ namespace Soulseek.Tests.Unit
                 Assert.Equal(parentIP, info.Parent.IPEndPoint);
                 Assert.Equal(hasParent, info.HasParent);
 
+                foreach (var child in children)
+                {
+                    Assert.Contains(child, info.Children);
+                }
             }
         }
     }
