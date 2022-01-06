@@ -17,14 +17,10 @@
 
 namespace Soulseek.Tests.Unit.Client
 {
-    using AutoFixture.Xunit2;
-    using Moq;
-    using Soulseek.Messaging;
-    using Soulseek.Messaging.Messages;
     using System;
     using System.IO;
-    using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Xunit;
 
     public class EnqueueUploadAsyncTests
