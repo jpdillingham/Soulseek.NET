@@ -1323,28 +1323,16 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                var state = args.Transfer.State;
-
-                if (state == TransferStates.Queued)
+                if (args.Transfer.State == TransferStates.Queued)
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
-                }
-                else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
-                {
-                    enqueuedTaskCompletionSource.TrySetResult(false);
                 }
             });
 
             // this may throw immediately, if there are issues with the input
             var uploadTask = UploadAsync(username, remoteFilename, localFilename, token, options, cancellationToken);
 
-            var success = await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
-
-            if (!success)
-            {
-                await uploadTask.ConfigureAwait(false);
-            }
-
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
             return uploadTask;
         }
 
@@ -1394,28 +1382,16 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                var state = args.Transfer.State;
-
-                if (state == TransferStates.Queued)
+                if (args.Transfer.State == TransferStates.Queued)
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
-                }
-                else if (state.HasFlag(TransferStates.Completed) && !state.HasFlag(TransferStates.Succeeded))
-                {
-                    enqueuedTaskCompletionSource.TrySetResult(false);
                 }
             });
 
             // this may throw immediately, if there are issues with the input
             var uploadTask = UploadAsync(username, remoteFilename, size, inputStreamFactory, token, options, cancellationToken);
 
-            var success = await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
-
-            if (!success)
-            {
-                await uploadTask.ConfigureAwait(false);
-            }
-
+            await enqueuedTaskCompletionSource.Task.ConfigureAwait(false);
             return uploadTask;
         }
 
