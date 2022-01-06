@@ -78,7 +78,6 @@ namespace Soulseek
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         /// <param name="ioAdapter">The IIOAdapter instance to use.</param>
 #pragma warning disable S3427 // Method overloads with default parameter values should not overlap
-
         internal SoulseekClient(
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
