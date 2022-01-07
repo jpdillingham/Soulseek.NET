@@ -243,6 +243,11 @@ namespace Soulseek
         string Address { get; }
 
         /// <summary>
+        ///     Gets information about the distributed network.
+        /// </summary>
+        DistributedNetworkInfo DistributedNetwork { get; }
+
+        /// <summary>
         ///     Gets a snapshot of current downloads.
         /// </summary>
         IReadOnlyCollection<Transfer> Downloads { get; }
@@ -270,7 +275,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets information sent by the server upon login.
         /// </summary>
-        public ServerInfo ServerInfo { get; }
+        ServerInfo ServerInfo { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

@@ -177,7 +177,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 var t = new Mock<ITcpClient>();
                 t.Setup(m => m.Client).Returns(socket);
 
-                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(inactivityTimeout: 1)))
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(inactivityTimeout: 100)))
                 {
                     await c.ConnectAsync();
 

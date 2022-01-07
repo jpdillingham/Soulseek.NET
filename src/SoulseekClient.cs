@@ -394,6 +394,11 @@ namespace Soulseek
         public string Address { get; private set; }
 
         /// <summary>
+        ///     Gets information about the distributed network.
+        /// </summary>
+        public DistributedNetworkInfo DistributedNetwork => DistributedNetworkInfo.FromDistributedConnectionManager(DistributedConnectionManager);
+
+        /// <summary>
         ///     Gets a snapshot of current downloads.
         /// </summary>
         public IReadOnlyCollection<Transfer> Downloads => DownloadDictionary.Values.Select(t => new Transfer(t)).ToList().AsReadOnly();
