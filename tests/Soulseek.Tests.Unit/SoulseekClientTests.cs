@@ -1949,9 +1949,9 @@ namespace Soulseek.Tests.Unit
             }
         }
 
-        [Trait("Category", "DistributedNetworkInfo")]
-        [Theory(DisplayName = "DistributedNetworkInfo returns info from DistributedConnectionManager"), AutoData]
-        public void DistributedNetworkInfo_Returns_Info_From_DistributedConnectionManager(
+        [Trait("Category", "DistributedNetwork")]
+        [Theory(DisplayName = "DistributedNetwork returns info from DistributedConnectionManager"), AutoData]
+        public void DistributedNetwork_Returns_Info_From_DistributedConnectionManager(
             int branchLevel,
             string branchRoot,
             bool isBranchRoot,
@@ -1975,7 +1975,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(distributedConnectionManager: dcm.Object))
             {
-                var info = s.DistributedNetworkInfo;
+                var info = s.DistributedNetwork;
 
                 Assert.Equal(branchLevel, info.BranchLevel);
                 Assert.Equal(branchRoot, info.BranchRoot);
@@ -1993,9 +1993,9 @@ namespace Soulseek.Tests.Unit
             }
         }
 
-        [Trait("Category", "DistributedNetworkInfo")]
-        [Fact(DisplayName = "DistributedNetworkInfo returns info from DistributedConnectionManager")]
-        public void DistributedNetworkInfo_Does_Not_Throw_If_Some_Info_Is_Null()
+        [Trait("Category", "DistributedNetwork")]
+        [Fact(DisplayName = "DistributedNetwork returns info from DistributedConnectionManager")]
+        public void DistributedNetwork_Does_Not_Throw_If_Some_Info_Is_Null()
         {
             var dcm = new Mock<IDistributedConnectionManager>();
 
@@ -2009,7 +2009,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(distributedConnectionManager: dcm.Object))
             {
-                var ex = Record.Exception(() => s.DistributedNetworkInfo);
+                var ex = Record.Exception(() => s.DistributedNetwork);
 
                 Assert.Null(ex);
             }

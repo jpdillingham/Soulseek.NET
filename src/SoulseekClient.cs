@@ -396,7 +396,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets information about the distributed network.
         /// </summary>
-        public DistributedNetworkInfo DistributedNetworkInfo => DistributedNetworkInfo.FromDistributedConnectionManager(DistributedConnectionManager);
+        public DistributedNetworkInfo DistributedNetwork => DistributedNetworkInfo.FromDistributedConnectionManager(DistributedConnectionManager);
 
         /// <summary>
         ///     Gets a snapshot of current downloads.

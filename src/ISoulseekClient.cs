@@ -245,7 +245,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets information about the distributed network.
         /// </summary>
-        DistributedNetworkInfo DistributedNetworkInfo { get; }
+        DistributedNetworkInfo DistributedNetwork { get; }
 
         /// <summary>
         ///     Gets a snapshot of current downloads.
