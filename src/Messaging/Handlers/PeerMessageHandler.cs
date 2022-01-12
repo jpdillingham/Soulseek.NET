@@ -258,6 +258,8 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.UploadDenied:
                         var uploadDeniedResponse = UploadDenied.FromByteArray(message);
+
+                        Diagnostic.Debug($"Download of {uploadDeniedResponse.Filename} from {connection.Username} was denied: {uploadDeniedResponse.Message}");
                         SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, uploadDeniedResponse.Filename), new TransferRejectedException(uploadDeniedResponse.Message));
                         break;
 
