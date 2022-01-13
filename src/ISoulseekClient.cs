@@ -77,6 +77,16 @@ namespace Soulseek
         event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
 
         /// <summary>
+        ///     Occurs when a user reports that a download has been denied.
+        /// </summary>
+        event EventHandler<DownloadDeniedEventArgs> DownloadDenied;
+
+        /// <summary>
+        ///     Occurs when a user reports that a download has failed.
+        /// </summary>
+        event EventHandler<DownloadFailedEventArgs> DownloadFailed;
+
+        /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
         event EventHandler<string> GlobalMessageReceived;

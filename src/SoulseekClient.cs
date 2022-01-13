@@ -120,6 +120,8 @@ namespace Soulseek
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            PeerMessageHandler.DownloadFailed += (sender, e) => DownloadFailed?.Invoke(this, e);
+            PeerMessageHandler.DownloadDenied += (sender, e) => DownloadDenied?.Invoke(this, e);
 
             DistributedMessageHandler = distributedMessageHandler ?? new DistributedMessageHandler(this);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -220,6 +222,16 @@ namespace Soulseek
         ///     Occurs when the parent is disconnected.
         /// </summary>
         public event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
+
+        /// <summary>
+        ///     Occurs when a user reports that a download has been denied.
+        /// </summary>
+        public event EventHandler<DownloadDeniedEventArgs> DownloadDenied;
+
+        /// <summary>
+        ///     Occurs when a user reports that a download has failed.
+        /// </summary>
+        public event EventHandler<DownloadFailedEventArgs> DownloadFailed;
 
         /// <summary>
         ///     Occurs when a global message is received.
