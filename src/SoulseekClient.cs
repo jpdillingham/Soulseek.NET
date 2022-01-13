@@ -120,6 +120,8 @@ namespace Soulseek
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            PeerMessageHandler.DownloadFailed += (sender, e) => DownloadFailed?.Invoke(this, e);
+            PeerMessageHandler.DownloadDenied += (sender, e) => DownloadDenied?.Invoke(this, e);
 
             DistributedMessageHandler = distributedMessageHandler ?? new DistributedMessageHandler(this);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -220,6 +222,16 @@ namespace Soulseek
         ///     Occurs when the parent is disconnected.
         /// </summary>
         public event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
+
+        /// <summary>
+        ///     Occurs when a user reports that a download has been denied.
+        /// </summary>
+        public event EventHandler<DownloadDeniedEventArgs> DownloadDenied;
+
+        /// <summary>
+        ///     Occurs when a user reports that a download has failed.
+        /// </summary>
+        public event EventHandler<DownloadFailedEventArgs> DownloadFailed;
 
         /// <summary>
         ///     Occurs when a global message is received.
@@ -2967,7 +2979,7 @@ namespace Soulseek
                 // the eventual transfer request sent when the peer is ready to send the file. the response message should be
                 // returned immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), null, cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), Options.PeerConnectionOptions.InactivityTimeout, cancellationToken);
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(transferStartRequestedWaitKey, cancellationToken);
 
                 // request the file
@@ -3037,6 +3049,8 @@ namespace Soulseek
                     {
                         // if the remote user doesn't initiate a transfer connection, try to initiate one from this end. the
                         // remote client in this scenario is most likely Nicotine+.
+                        Diagnostic.Debug($"Attempting to initiate a second-chance transfer connection to {username} for download of {download.Filename}");
+
                         download.Connection = await PeerConnectionManager
                             .GetTransferConnectionAsync(username, endpoint, download.RemoteToken.Value, cancellationToken)
                             .ConfigureAwait(false);

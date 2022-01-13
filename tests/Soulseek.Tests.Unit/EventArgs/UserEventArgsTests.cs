@@ -32,5 +32,26 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(username, e.Username);
             Assert.Equal(token, e.Token);
         }
+
+        [Trait("Category", "DownloadDeniedEventArgs Instantiation")]
+        [Theory(DisplayName = "DownloadDeniedEventArgs Instantiates with the given data"), AutoData]
+        public void DownloadDeniedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, string message)
+        {
+            var e = new DownloadDeniedEventArgs(username, filename, message);
+
+            Assert.Equal(username, e.Username);
+            Assert.Equal(filename, e.Filename);
+            Assert.Equal(message, e.Message);
+        }
+
+        [Trait("Category", "DownloadFailedEventArgs Instantiation")]
+        [Theory(DisplayName = "DownloadFailedEventArgs Instantiates with the given data"), AutoData]
+        public void DownloadFailedEventArgs_Instantiates_With_The_Given_Data(string username, string filename)
+        {
+            var e = new DownloadFailedEventArgs(username, filename);
+
+            Assert.Equal(username, e.Username);
+            Assert.Equal(filename, e.Filename);
+        }
     }
 }

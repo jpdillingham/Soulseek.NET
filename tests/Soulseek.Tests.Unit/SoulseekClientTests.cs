@@ -596,6 +596,72 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "DownloadFailed")]
+        [Fact(DisplayName = "Raises DownloadFailed when user sends UploadFailed")]
+        public void Raises_DownloadFailed_When_User_Sends_UploadFailed()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                DownloadFailedEventArgs args = null;
+                s.DownloadFailed += (sender, e) => args = e;
+
+                var expected = new DownloadFailedEventArgs("user", "file");
+                handlerMock.Raise(m => m.DownloadFailed += null, expected);
+
+                Assert.NotNull(args);
+                Assert.Equal(expected, args);
+            }
+        }
+
+        [Trait("Category", "DownloadFailed")]
+        [Fact(DisplayName = "Does not throw if DownloadFailed is unbound when user sends UploadFailed")]
+        public void Does_Not_Throw_If_DownloadFailed_Is_Unbound_When_User_Sends_UploadFailed()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadFailed += null, new DownloadFailedEventArgs("user", "file")));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadDenied")]
+        [Fact(DisplayName = "Raises DownloadDenied when user sends UploadDenied")]
+        public void Raises_DownloadDenied_When_User_Sends_UploadDenied()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                DownloadDeniedEventArgs args = null;
+                s.DownloadDenied += (sender, e) => args = e;
+
+                var expected = new DownloadDeniedEventArgs("user", "file", "message");
+                handlerMock.Raise(m => m.DownloadDenied += null, expected);
+
+                Assert.NotNull(args);
+                Assert.Equal(expected, args);
+            }
+        }
+
+        [Trait("Category", "DownloadDenied")]
+        [Fact(DisplayName = "Does not throw if DownloadDownload is unbound when user sends Uploaddenied")]
+        public void Does_Not_Throw_If_DownloadDenied_Is_Unbound_When_User_Sends_Uploaddenied()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadDenied += null, new DownloadDeniedEventArgs("user", "file", "msg")));
+
+                Assert.Null(ex);
+            }
+        }
+
         [Trait("Category", "KickedFromServer")]
         [Fact(DisplayName = "Disconnects when kicked from server")]
         public void Disconnects_When_Kicked_From_Server()

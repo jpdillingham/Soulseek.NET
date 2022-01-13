@@ -86,6 +86,49 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             }
         }
 
+        [Trait("Category", "DownloadDenied")]
+        [Theory(DisplayName = "Raises DownloadDenied on UploadDenied"), AutoData]
+        public void Raises_DownloadDenied_On_UploadDenied(string username, string filename, string message)
+        {
+            var (handler, mocks) = GetFixture(username);
+
+            using (var client = new SoulseekClient(options: null))
+            {
+                DownloadDeniedEventArgs args = default;
+
+                PeerMessageHandler l = new PeerMessageHandler(client);
+                l.DownloadDenied += (sender, e) => args = e;
+
+                l.HandleMessageRead(mocks.PeerConnection.Object, new UploadDenied(filename, message).ToByteArray());
+
+                Assert.NotNull(args);
+                Assert.Equal(username, args.Username);
+                Assert.Equal(filename, args.Filename);
+                Assert.Equal(message, args.Message);
+            }
+        }
+
+        [Trait("Category", "DownloadFailed")]
+        [Theory(DisplayName = "Raises DownloadFailed on UploadFailed"), AutoData]
+        public void Raises_DownloadFailed_On_UploadFailed(string username, string filename)
+        {
+            var (handler, mocks) = GetFixture(username);
+
+            using (var client = new SoulseekClient(options: null))
+            {
+                DownloadFailedEventArgs args = default;
+
+                PeerMessageHandler l = new PeerMessageHandler(client);
+                l.DownloadFailed += (sender, e) => args = e;
+
+                l.HandleMessageRead(mocks.PeerConnection.Object, new UploadFailed(filename).ToByteArray());
+
+                Assert.NotNull(args);
+                Assert.Equal(username, args.Username);
+                Assert.Equal(filename, args.Filename);
+            }
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
         public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)

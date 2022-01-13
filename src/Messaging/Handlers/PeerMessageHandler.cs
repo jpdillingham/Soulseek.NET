@@ -49,6 +49,16 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
+        /// <summary>
+        ///     Occurs when a user reports that a download has been denied.
+        /// </summary>
+        public event EventHandler<DownloadDeniedEventArgs> DownloadDenied;
+
+        /// <summary>
+        ///     Occurs when a user reports that a download has failed.
+        /// </summary>
+        public event EventHandler<DownloadFailedEventArgs> DownloadFailed;
+
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
@@ -258,7 +268,11 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.UploadDenied:
                         var uploadDeniedResponse = UploadDenied.FromByteArray(message);
+
+                        Diagnostic.Debug($"Download of {uploadDeniedResponse.Filename} from {connection.Username} was denied: {uploadDeniedResponse.Message}");
                         SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, uploadDeniedResponse.Filename), new TransferRejectedException(uploadDeniedResponse.Message));
+                        
+                        DownloadDenied?.Invoke(this, new DownloadDeniedEventArgs(connection.Username, uploadDeniedResponse.Filename, uploadDeniedResponse.Message));
                         break;
 
                     case MessageCode.Peer.PlaceInQueueResponse:
@@ -283,6 +297,8 @@ namespace Soulseek.Messaging.Handlers
                         }
 
                         Diagnostic.Debug(msg);
+
+                        DownloadFailed?.Invoke(this, new DownloadFailedEventArgs(connection.Username, uploadFailedResponse.Filename));
                         break;
 
                     default:
