@@ -658,12 +658,12 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadToFileAsync throws TransferException on TransferResponse timeout"), AutoData]
         public async Task DownloadToFileAsync_Throws_TransferException_On_TransferResponse_Timeout(string username, IPEndPoint endpoint, string filename, int token)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 1);
+            var options = new SoulseekClientOptions(messageTimeout: 1, peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 1));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
-            waiter.Setup(m => m.Wait<TransferResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<TransferResponse>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             var conn = new Mock<IMessageConnection>();
