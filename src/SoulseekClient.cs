@@ -2979,7 +2979,7 @@ namespace Soulseek
                 // the eventual transfer request sent when the peer is ready to send the file. the response message should be
                 // returned immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), null, cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), Options.PeerConnectionOptions.InactivityTimeout, cancellationToken);
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(transferStartRequestedWaitKey, cancellationToken);
 
                 // request the file
