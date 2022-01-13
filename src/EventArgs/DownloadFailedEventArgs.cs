@@ -23,7 +23,7 @@ namespace Soulseek
     public class DownloadFailedEventArgs : UserEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="BrowseEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="DownloadFailedEventArgs"/> class.
         /// </summary>
         /// <param name="username">The username associated with the event.</param>
         /// <param name="filename">The filename associated with the event.</param>
