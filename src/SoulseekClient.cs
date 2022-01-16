@@ -100,6 +100,14 @@ namespace Soulseek
 
             GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
 
+            UserEndPointSemaphoreCleanupTimer = new System.Timers.Timer(300000); // 5 minutes
+            UserEndPointSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUserEndPointSemaphoresAsync();
+            UserEndPointSemaphoreCleanupTimer.Start();
+
+            UploadSemaphoreCleanupTimer = new System.Timers.Timer(900000); // 15 minutes
+            UploadSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUploadSemaphoresAsync();
+            UploadSemaphoreCleanupTimer.Start();
+
             ServerConnection = serverConnection;
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
@@ -478,7 +486,11 @@ namespace Soulseek
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
+        private SemaphoreSlim UploadSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
+        private System.Timers.Timer UploadSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private SemaphoreSlim UserEndPointSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
+        private System.Timers.Timer UserEndPointSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
@@ -2585,6 +2597,9 @@ namespace Soulseek
                     Waiter.Dispose();
 
                     ServerConnection?.Dispose();
+
+                    UserEndPointSemaphoreCleanupTimer.Dispose();
+                    UploadSemaphoreCleanupTimer.Dispose();
                 }
 
                 Disposed = true;
@@ -2797,6 +2812,50 @@ namespace Soulseek
             else if (State == SoulseekClientStates.Disconnected)
             {
                 Disconnected?.Invoke(this, new SoulseekClientDisconnectedEventArgs(message, exception));
+            }
+        }
+
+        private async Task CleanupUploadSemaphoresAsync()
+        {
+            if (await UploadSemaphoreSyncRoot.WaitAsync(0).ConfigureAwait(false))
+            {
+                try
+                {
+                    foreach (var kvp in UploadSemaphores)
+                    {
+                        if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
+                        {
+                            UploadSemaphores.TryRemove(kvp.Key, out _);
+                            Diagnostic.Debug($"Cleaned up upload semaphore for {Username}");
+                        }
+                    }
+                }
+                finally
+                {
+                    UploadSemaphoreSyncRoot.Release();
+                }
+            }
+        }
+
+        private async Task CleanupUserEndPointSemaphoresAsync()
+        {
+            if (await UserEndPointSemaphoreSyncRoot.WaitAsync(0).ConfigureAwait(false))
+            {
+                try
+                {
+                    foreach (var kvp in UploadSemaphores)
+                    {
+                        if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
+                        {
+                            UploadSemaphores.TryRemove(kvp.Key, out _);
+                            Diagnostic.Debug($"Cleaned up upload semaphore for {Username}");
+                        }
+                    }
+                }
+                finally
+                {
+                    UserEndPointSemaphoreSyncRoot.Release();
+                }
             }
         }
 
@@ -3296,8 +3355,22 @@ namespace Soulseek
                     return endPoint;
                 }
 
-                var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
-                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                SemaphoreSlim semaphore;
+                Task semaphoreWaitTask;
+
+                await UserEndPointSemaphoreSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                try
+                {
+                    semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
+                    semaphoreWaitTask = semaphore.WaitAsync(cancellationToken);
+                }
+                finally
+                {
+                    UserEndPointSemaphoreSyncRoot.Release();
+                }
+
+                await semaphoreWaitTask.ConfigureAwait(false);
 
                 try
                 {
@@ -3322,29 +3395,6 @@ namespace Soulseek
                 finally
                 {
                     semaphore.Release();
-
-                    _ = Task.Run(async () =>
-                    {
-                        await Task.Delay(10);
-
-                        if (UserEndPointSemaphores.TryGetValue(username, out var toRemove) && toRemove == semaphore && await semaphore.WaitAsync(0))
-                        {
-                            if (UserEndPointSemaphores.TryRemove(username, out var removed))
-                            {
-                                Diagnostic.Debug($"Endpoint semaphore for {username} removed");
-
-                                if (removed != semaphore)
-                                {
-                                    UserEndPointSemaphores.TryAdd(username, removed);
-                                    Diagnostic.Warning($"Endpoint semaphore for {username} incorrectly removed. It has been replaced, but there may be side effects.");
-                                }
-                                else
-                                {
-                                    semaphore.Release();
-                                }
-                            }
-                        }
-                    });
                 }
             }
 
@@ -3823,10 +3873,6 @@ namespace Soulseek
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
-            // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same
-            // source, so we need to enforce this regardless of what downstream implementations do.
-            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
-
             IPEndPoint endpoint = null;
             bool semaphoreAcquired = false;
             bool uploadSlotAcquired = false;
@@ -3834,14 +3880,31 @@ namespace Soulseek
 
             Stream inputStream = null;
 
+            SemaphoreSlim semaphore = null;
+            Task semaphoreWaitTask;
+
             try
             {
+                await UploadSemaphoreSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                try
+                {
+                    // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same
+                    // source, so we need to enforce this regardless of what downstream implementations do.
+                    semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
+                    semaphoreWaitTask = semaphore.WaitAsync(cancellationToken);
+                }
+                finally
+                {
+                    UploadSemaphoreSyncRoot.Release();
+                }
+
                 UpdateState(TransferStates.Queued);
 
                 // permissive stage 1: acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
                 // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload until the
                 // requesting user is ready to receive it
-                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await semaphoreWaitTask.ConfigureAwait(false);
                 Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 semaphoreAcquired = true;
 
@@ -4043,29 +4106,6 @@ namespace Soulseek
                 {
                     Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
                     semaphore.Release(releaseCount: 1);
-
-                    _ = Task.Run(async () =>
-                    {
-                        await Task.Delay(10);
-
-                        if (UploadSemaphores.TryGetValue(username, out var toRemove) && toRemove == semaphore && await semaphore.WaitAsync(0))
-                        {
-                            if (UploadSemaphores.TryRemove(username, out var removed))
-                            {
-                                Diagnostic.Debug($"Upload semaphore for user {username} removed");
-
-                                if (removed != semaphore)
-                                {
-                                    UploadSemaphores.TryAdd(username, removed);
-                                    Diagnostic.Warning($"Upload semaphore for {username} incorrectly removed. It has been replaced, but there may be side effects.");
-                                }
-                                else
-                                {
-                                    semaphore.Release();
-                                }
-                            }
-                        }
-                    });
                 }
 
                 if (uploadSlotAcquired)
