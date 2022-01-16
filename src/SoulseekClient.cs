@@ -3301,7 +3301,7 @@ namespace Soulseek
 
                 try
                 {
-                    UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+                    UserEndPointSemaphores.TryAdd(username, semaphore);
 
                     TryCacheOperation(() => cached = cache.TryGet(username, out endPoint));
 
@@ -3321,8 +3321,30 @@ namespace Soulseek
                 }
                 finally
                 {
-                    UserEndPointSemaphores.TryRemove(username, out var _);
                     semaphore.Release();
+
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(10);
+
+                        if (UserEndPointSemaphores.TryGetValue(username, out var toRemove) && toRemove == semaphore && await semaphore.WaitAsync(0))
+                        {
+                            if (UserEndPointSemaphores.TryRemove(username, out var removed))
+                            {
+                                Diagnostic.Debug($"Endpoint semaphore for {username} removed");
+
+                                if (removed != semaphore)
+                                {
+                                    UserEndPointSemaphores.TryAdd(username, removed);
+                                    Diagnostic.Warning($"Endpoint semaphore for {username} incorrectly removed. It has been replaced, but there may be side effects.");
+                                }
+                                else
+                                {
+                                    semaphore.Release();
+                                }
+                            }
+                        }
+                    });
                 }
             }
 
@@ -4015,16 +4037,35 @@ namespace Soulseek
                 // clean up the wait in case the code threw before it was awaited.
                 Waiter.Complete(upload.WaitKey);
 
-                // remove the semaphore record to prevent dangling records. the semaphore object is retained if there are other
-                // threads waiting on it, and it is added back after it is awaited above.
-                UploadSemaphores.TryRemove(username, out var _);
-
                 // make sure we successfully obtained all permissives before releasing them. some of them may not have been
                 // attempted if the code throws.
                 if (semaphoreAcquired)
                 {
                     Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
                     semaphore.Release(releaseCount: 1);
+
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(10);
+
+                        if (UploadSemaphores.TryGetValue(username, out var toRemove) && toRemove == semaphore && await semaphore.WaitAsync(0))
+                        {
+                            if (UploadSemaphores.TryRemove(username, out var removed))
+                            {
+                                Diagnostic.Debug($"Upload semaphore for user {username} removed");
+
+                                if (removed != semaphore)
+                                {
+                                    UploadSemaphores.TryAdd(username, removed);
+                                    Diagnostic.Warning($"Upload semaphore for {username} incorrectly removed. It has been replaced, but there may be side effects.");
+                                }
+                                else
+                                {
+                                    semaphore.Release();
+                                }
+                            }
+                        }
+                    });
                 }
 
                 if (uploadSlotAcquired)
