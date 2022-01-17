@@ -3374,8 +3374,6 @@ namespace Soulseek
 
                 try
                 {
-                    UserEndPointSemaphores.TryAdd(username, semaphore);
-
                     TryCacheOperation(() => cached = cache.TryGet(username, out endPoint));
 
                     if (cached)
