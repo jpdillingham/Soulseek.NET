@@ -3906,10 +3906,6 @@ namespace Soulseek
                 Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 semaphoreAcquired = true;
 
-                // in case the upload record was removed via cleanup while we were waiting, add it back. this will happen more
-                // often than not if a user enqueues more than 1 file at a time, so this is important.
-                semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
-
                 // permissive stage 2: acquire an upload slot from the calling code
                 try
                 {
