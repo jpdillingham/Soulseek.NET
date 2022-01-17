@@ -200,16 +200,15 @@ namespace Soulseek.Tests.Unit.Client
 
             using (var sem = new SemaphoreSlim(1, 1))
             {
-                var semaphores = new ConcurrentDictionary<string, SemaphoreSlim>();
-                semaphores.TryAdd(username, sem);
-
-                // wait the sempahore to make the test code wait
-                var wait = sem.WaitAsync();
-
                 using (var s = new SoulseekClient(new SoulseekClientOptions(userEndPointCache: cache.Object)))
                 {
+                    var semaphores = s.GetProperty<ConcurrentDictionary<string, SemaphoreSlim>>("UserEndPointSemaphores");
+                    semaphores.TryAdd(username, sem);
+
+                    // wait the sempahore to make the test code wait
+                    var wait = sem.WaitAsync();
+
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                    s.SetProperty("UserEndPointSemaphores", semaphores);
 
                     // invoke, but dont await.  this will wait the semaphore
                     var addrWait = s.GetUserEndPointAsync(username);
