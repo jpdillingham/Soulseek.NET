@@ -491,7 +491,7 @@ namespace Soulseek
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
         private SemaphoreSlim UserEndPointSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private System.Timers.Timer UserEndPointSemaphoreCleanupTimer { get; }
-        private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -2826,7 +2826,7 @@ namespace Soulseek
                         if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
                         {
                             UploadSemaphores.TryRemove(kvp.Key, out _);
-                            Diagnostic.Debug($"Cleaned up upload semaphore for {Username}");
+                            Diagnostic.Debug($"Cleaned up upload semaphore for {kvp.Key}");
                         }
                     }
                 }
@@ -2843,12 +2843,12 @@ namespace Soulseek
             {
                 try
                 {
-                    foreach (var kvp in UploadSemaphores)
+                    foreach (var kvp in UserEndPointSemaphores)
                     {
                         if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
                         {
-                            UploadSemaphores.TryRemove(kvp.Key, out _);
-                            Diagnostic.Debug($"Cleaned up upload semaphore for {Username}");
+                            UserEndPointSemaphores.TryRemove(kvp.Key, out _);
+                            Diagnostic.Debug($"Cleaned up user endpoint semaphore for {kvp.Key}");
                         }
                     }
                 }
