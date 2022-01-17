@@ -108,6 +108,12 @@ namespace Soulseek
             UploadSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUploadSemaphoresAsync();
             UploadSemaphoreCleanupTimer.Start();
 
+            var uploadTokens = (int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize));
+            UploadTokenBucket = new TokenBucket(uploadTokens, 1000);
+
+            var downloadTokens = (int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize));
+            DownloadTokenBucket = new TokenBucket(downloadTokens, 1000);
+
             ServerConnection = serverConnection;
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
@@ -482,16 +488,18 @@ namespace Soulseek
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
+        private TokenBucket DownloadTokenBucket { get; }
         private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
-        private SemaphoreSlim UploadSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private System.Timers.Timer UploadSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        private SemaphoreSlim UserEndPointSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim UploadSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
+        private TokenBucket UploadTokenBucket { get; }
         private System.Timers.Timer UserEndPointSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private SemaphoreSlim UserEndPointSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -2995,6 +3003,8 @@ namespace Soulseek
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options = options.WithAdditionalGovernor((_, cancellationToken) => DownloadTokenBucket.WaitAsync(cancellationToken));
+
             var download = new TransferInternal(TransferDirection.Download, username, remoteFilename, token, options)
             {
                 StartOffset = startOffset,
@@ -3616,10 +3626,15 @@ namespace Soulseek
                     }
                 }
 
+                var maximumUploadSpeedChanged = patch.MaximumUploadSpeed.HasValue && patch.MaximumUploadSpeed.Value != Options.MaximumUploadSpeed;
+                var maximumDownloadSpeedChanged = patch.MaximumDownloadSpeed.HasValue && patch.MaximumDownloadSpeed.Value != Options.MaximumDownloadSpeed;
+
                 Options = Options.With(
                     enableDistributedNetwork: patch.EnableDistributedNetwork,
                     acceptDistributedChildren: patch.AcceptDistributedChildren,
                     distributedChildLimit: patch.DistributedChildLimit,
+                    maximumUploadSpeed: patch.MaximumUploadSpeed,
+                    maximumDownloadSpeed: patch.MaximumDownloadSpeed,
                     acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
                     deduplicateSearchRequests: patch.DeduplicateSearchRequests,
                     autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
@@ -3637,6 +3652,16 @@ namespace Soulseek
                     userInfoResolver: patch.UserInfoResolver,
                     enqueueDownload: patch.EnqueueDownload,
                     placeInQueueResolver: patch.PlaceInQueueResolver);
+
+                if (maximumUploadSpeedChanged)
+                {
+                    UploadTokenBucket.SetCount((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)));
+                }
+
+                if (maximumDownloadSpeedChanged)
+                {
+                    DownloadTokenBucket.SetCount((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)));
+                }
 
                 Diagnostic.Info("Options reconfigured successfully");
 
@@ -3844,6 +3869,8 @@ namespace Soulseek
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options = options.WithAdditionalGovernor((_, cancellationToken) => UploadTokenBucket.WaitAsync(cancellationToken));
+
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
                 Size = size,
@@ -3887,8 +3914,8 @@ namespace Soulseek
 
                 try
                 {
-                    // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same
-                    // source, so we need to enforce this regardless of what downstream implementations do.
+                    // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the
+                    // same source, so we need to enforce this regardless of what downstream implementations do.
                     semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
                     semaphoreWaitTask = semaphore.WaitAsync(cancellationToken);
                 }
