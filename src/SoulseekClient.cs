@@ -108,10 +108,10 @@ namespace Soulseek
             UploadSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUploadSemaphoresAsync();
             UploadSemaphoreCleanupTimer.Start();
 
-            var uploadTokens = (int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize));
+            var uploadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1);
             UploadTokenBucket = new TokenBucket(uploadTokens, 1000);
 
-            var downloadTokens = (int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize));
+            var downloadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1);
             DownloadTokenBucket = new TokenBucket(downloadTokens, 1000);
 
             ServerConnection = serverConnection;
@@ -3657,12 +3657,12 @@ namespace Soulseek
 
                 if (maximumUploadSpeedChanged)
                 {
-                    UploadTokenBucket.SetCount((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)));
+                    UploadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1));
                 }
 
                 if (maximumDownloadSpeedChanged)
                 {
-                    DownloadTokenBucket.SetCount((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)));
+                    DownloadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1));
                 }
 
                 Diagnostic.Info("Options reconfigured successfully");
