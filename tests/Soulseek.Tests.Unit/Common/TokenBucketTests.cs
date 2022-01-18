@@ -72,95 +72,103 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Sets properties"), AutoData]
         public void Sets_Properties(int count, int interval)
         {
-            var t = new TokenBucket(count, interval);
-
-            Assert.Equal(count, t.GetProperty<int>("Count"));
-            Assert.Equal(interval, t.GetProperty<System.Timers.Timer>("Clock").Interval);
-            Assert.Equal(count, t.GetProperty<int>("CurrentCount"));
+            using (var t = new TokenBucket(count, interval))
+            {
+                Assert.Equal(count, t.GetProperty<int>("Count"));
+                Assert.Equal(interval, t.GetProperty<System.Timers.Timer>("Clock").Interval);
+                Assert.Equal(count, t.GetProperty<int>("CurrentCount"));
+            }
         }
 
         [Trait("Category", "SetCount")]
         [Fact(DisplayName = "SetCount throws ArgumentOutOfRangeException given 0 count")]
         public void SetCount_Throws_ArgumentOutOfRangeException_Given_0_Count()
         {
-            var t = new TokenBucket(10, 1000);
+            using (var t = new TokenBucket(10, 1000))
+            {
+                var ex = Record.Exception(() => t.SetCount(0));
 
-            var ex = Record.Exception(() => t.SetCount(0));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentOutOfRangeException>(ex);
-            Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+                Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+            }
         }
 
         [Trait("Category", "SetCount")]
         [Fact(DisplayName = "SetCount throws ArgumentOutOfRangeException given negative count")]
         public void SetCount_Throws_ArgumentOutOfRangeException_Given_Negative_Count()
         {
-            var t = new TokenBucket(10, 1000);
+            using (var t = new TokenBucket(10, 1000))
+            {
+                var ex = Record.Exception(() => t.SetCount(-1));
 
-            var ex = Record.Exception(() => t.SetCount(-1));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentOutOfRangeException>(ex);
-            Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+                Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+            }
         }
 
         [Trait("Category", "SetCount")]
         [Theory(DisplayName = "SetCount sets count"), AutoData]
         public void SetCount_Sets_Count(int count)
         {
-            var t = new TokenBucket(10, 1000);
+            using (var t = new TokenBucket(10, 1000))
+            {
+                t.SetCount(count);
 
-            t.SetCount(count);
-
-            Assert.Equal(count, t.GetProperty<int>("Count"));
+                Assert.Equal(count, t.GetProperty<int>("Count"));
+            }
         }
 
         [Trait("Category", "WaitAsync")]
         [Fact(DisplayName = "WaitAsync decrements count by 1")]
         public async Task WaitAsync_Decrements_Count_By_1()
         {
-            var t = new TokenBucket(10, 10000);
+            using (var t = new TokenBucket(10, 10000))
+            {
+                await t.WaitAsync();
 
-            await t.WaitAsync();
-
-            Assert.Equal(9, t.GetProperty<int>("CurrentCount"));
+                Assert.Equal(9, t.GetProperty<int>("CurrentCount"));
+            }
         }
 
         [Trait("Category", "WaitAsync")]
         [Fact(DisplayName = "WaitAsync decrements count by requested count")]
         public async Task WaitAsync_Decrements_Count_By_Requested_Count()
         {
-            var t = new TokenBucket(10, 10000);
+            using (var t = new TokenBucket(10, 10000))
+            {
+                await t.WaitAsync(5);
 
-            await t.WaitAsync(5);
-
-            Assert.Equal(5, t.GetProperty<int>("CurrentCount"));
+                Assert.Equal(5, t.GetProperty<int>("CurrentCount"));
+            }
         }
 
         [Trait("Category", "WaitAsync")]
         [Fact(DisplayName = "WaitAsync throws ArgumentOutOfRangeException if requested count exceeds capacity")]
         public async Task WaitAsync_Throws_ArgumentOutOfRangeException_If_Requested_Count_Exceeds_Capacity()
         {
-            var t = new TokenBucket(10, 10000);
+            using (var t = new TokenBucket(10, 10000))
+            {
+                var ex = await Record.ExceptionAsync(() => t.WaitAsync(11));
 
-            var ex = await Record.ExceptionAsync(() => t.WaitAsync(11));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentOutOfRangeException>(ex);
-            Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+                Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+            }
         }
 
         [Trait("Category", "WaitAsync")]
         [Fact(DisplayName = "WaitAsync waits for reset if bucket is depleted")]
         public async Task WaitAsync_Waits_For_Reset_If_Bucket_Is_Depleted()
         {
-            var t = new TokenBucket(1, 100);
+            using (var t = new TokenBucket(1, 10))
+            {
+                await t.WaitAsync();
+                await t.WaitAsync();
 
-            await t.WaitAsync();
-            await t.WaitAsync();
-
-            Assert.Equal(t.GetProperty<int>("Count"), t.GetProperty<int>("CurrentCount"));
+                Assert.Equal(0, t.GetProperty<int>("CurrentCount"));
+            }
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Soulseek
     /// <summary>
     ///     Implements the 'token bucket' or 'leaky bucket' rate limiting algorithm.
     /// </summary>
-    internal sealed class TokenBucket
+    internal sealed class TokenBucket : IDisposable
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TokenBucket"/> class.
@@ -54,8 +54,18 @@ namespace Soulseek
         private System.Timers.Timer Clock { get; set; }
         private int Count { get; set; }
         private int CurrentCount { get; set; }
+        private bool Disposed { get; set; }
         private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
         private TaskCompletionSource<bool> WaitForReset { get; set; } = new TaskCompletionSource<bool>();
+
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
 
         /// <summary>
         ///     Sets the token count to the supplied <paramref name="count"/>.
@@ -99,6 +109,20 @@ namespace Soulseek
             return WaitInternalAsync(count, cancellationToken);
         }
 
+        private void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    Clock.Dispose();
+                    SyncRoot.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
+
         private async Task Reset()
         {
             await SyncRoot.WaitAsync().ConfigureAwait(false);
@@ -138,6 +162,7 @@ namespace Soulseek
             }
 
             await waitTask.ConfigureAwait(false);
+            await WaitAsync(count);
         }
     }
 }
