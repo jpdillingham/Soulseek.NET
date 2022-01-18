@@ -52,13 +52,9 @@ namespace Soulseek
         }
 
         private System.Timers.Timer Clock { get; set; }
-
         private int Count { get; set; }
-
         private int CurrentCount { get; set; }
-
         private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
-
         private TaskCompletionSource<bool> WaitForReset { get; set; } = new TaskCompletionSource<bool>();
 
         /// <summary>
