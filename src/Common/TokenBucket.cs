@@ -24,7 +24,7 @@ namespace Soulseek
     /// <summary>
     ///     Implements the 'token bucket' or 'leaky bucket' rate limiting algorithm.
     /// </summary>
-    internal sealed class TokenBucket : IDisposable
+    internal sealed class TokenBucket : ITokenBucket, IDisposable
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TokenBucket"/> class.

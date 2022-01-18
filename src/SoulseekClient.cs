@@ -77,6 +77,8 @@ namespace Soulseek
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         /// <param name="ioAdapter">The IIOAdapter instance to use.</param>
+        /// <param name="uploadTokenBucket">The ITokenBucket instance to use for uploads.</param>
+        /// <param name="downloadTokenBucket">The ITokenBucket instance to use for downloads.</param>
 #pragma warning disable S3427 // Method overloads with default parameter values should not overlap
         internal SoulseekClient(
             SoulseekClientOptions options = null,
@@ -93,7 +95,9 @@ namespace Soulseek
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null,
-            IIOAdapter ioAdapter = null)
+            IIOAdapter ioAdapter = null,
+            ITokenBucket uploadTokenBucket = null,
+            ITokenBucket downloadTokenBucket = null)
         {
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
@@ -108,11 +112,19 @@ namespace Soulseek
             UploadSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUploadSemaphoresAsync();
             UploadSemaphoreCleanupTimer.Start();
 
-            var uploadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1);
-            UploadTokenBucket = new TokenBucket(uploadTokens, 1000);
+            UploadTokenBucket = uploadTokenBucket;
+            if (uploadTokenBucket == null)
+            {
+                var uploadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1);
+                UploadTokenBucket = new TokenBucket(uploadTokens, 1000);
+            }
 
-            var downloadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1);
-            DownloadTokenBucket = new TokenBucket(downloadTokens, 1000);
+            DownloadTokenBucket = downloadTokenBucket;
+            if (downloadTokenBucket == null)
+            {
+                var downloadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1);
+                DownloadTokenBucket = new TokenBucket(downloadTokens, 1000);
+            }
 
             ServerConnection = serverConnection;
 
@@ -488,7 +500,7 @@ namespace Soulseek
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private TokenBucket DownloadTokenBucket { get; }
+        private ITokenBucket DownloadTokenBucket { get; }
         private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
@@ -496,7 +508,7 @@ namespace Soulseek
         private System.Timers.Timer UploadSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
         private SemaphoreSlim UploadSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
-        private TokenBucket UploadTokenBucket { get; }
+        private ITokenBucket UploadTokenBucket { get; }
         private System.Timers.Timer UserEndPointSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
         private SemaphoreSlim UserEndPointSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
