@@ -404,9 +404,25 @@ namespace Soulseek.Tests.Unit.Client
             using (client)
             {
                 await client.ReconfigureOptionsAsync(patch);
-
-                Assert.Equal(expected, client.GetProperty<TokenBucket>("UploadTokenBucket").GetProperty<int>("Count"));
             }
+
+            mocks.UploadTokenBucket.Verify(m => m.SetCount(expected), Times.Once);
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Does not Set count on UploadTokenBucket if upload speed did not change"), AutoData]
+        public async Task Does_Not_Set_Count_On_UploadTokenBucket_If_Upload_Speed_Did_Not_Change(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumUploadSpeed: speed));
+
+            var patch = new SoulseekClientOptionsPatch(maximumUploadSpeed: speed);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+            }
+
+            mocks.UploadTokenBucket.Verify(m => m.SetCount(It.IsAny<int>()), Times.Never);
         }
 
         [Trait("Category", "ReconfigureOptions")]
@@ -422,9 +438,25 @@ namespace Soulseek.Tests.Unit.Client
             using (client)
             {
                 await client.ReconfigureOptionsAsync(patch);
-
-                Assert.Equal(expected, client.GetProperty<TokenBucket>("DownloadTokenBucket").GetProperty<int>("Count"));
             }
+
+            mocks.DownloadTokenBucket.Verify(m => m.SetCount(expected), Times.Once);
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Does not Set count on DownloadTokenBucket if download speed did not change"), AutoData]
+        public async Task Does_Not_Set_Count_On_DownloadTokenBucket_If_Download_Speed_Did_Not_Change(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumDownloadSpeed: speed));
+
+            var patch = new SoulseekClientOptionsPatch(maximumDownloadSpeed: speed);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+            }
+
+            mocks.DownloadTokenBucket.Verify(m => m.SetCount(It.IsAny<int>()), Times.Never);
         }
 
         [Trait("Category", "ReconfigureOptions")]
@@ -591,6 +623,8 @@ namespace Soulseek.Tests.Unit.Client
                 connectionFactory: mocks.ConnectionFactory.Object,
                 serverConnection: mocks.ServerConnection.Object,
                 listener: mocks.Listener.Object,
+                uploadTokenBucket: mocks.UploadTokenBucket.Object,
+                downloadTokenBucket: mocks.DownloadTokenBucket.Object,
                 options: clientOptions ?? new SoulseekClientOptions(enableListener: false));
 
             return (client, mocks);
@@ -623,6 +657,8 @@ namespace Soulseek.Tests.Unit.Client
             public Mock<IConnectionFactory> ConnectionFactory { get; }
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
             public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; }
+            public Mock<ITokenBucket> UploadTokenBucket { get; } = new Mock<ITokenBucket>();
+            public Mock<ITokenBucket> DownloadTokenBucket { get; } = new Mock<ITokenBucket>();
         }
     }
 }
