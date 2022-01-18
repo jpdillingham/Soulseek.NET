@@ -21,6 +21,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -391,6 +392,74 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Sets count on UploadTokenBucket if upload speed changed"), AutoData]
+        public async Task Sets_Count_On_UploadTokenBucket_If_Upload_Speed_Changed(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumUploadSpeed: 5));
+
+            var patch = new SoulseekClientOptionsPatch(maximumUploadSpeed: speed);
+
+            var expected = Math.Max((int)Math.Ceiling((double)(speed * 1024L / client.Options.TransferConnectionOptions.WriteBufferSize)), 1);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+            }
+
+            mocks.UploadTokenBucket.Verify(m => m.SetCount(expected), Times.Once);
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Does not Set count on UploadTokenBucket if upload speed did not change"), AutoData]
+        public async Task Does_Not_Set_Count_On_UploadTokenBucket_If_Upload_Speed_Did_Not_Change(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumUploadSpeed: speed));
+
+            var patch = new SoulseekClientOptionsPatch(maximumUploadSpeed: speed);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+            }
+
+            mocks.UploadTokenBucket.Verify(m => m.SetCount(It.IsAny<int>()), Times.Never);
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Sets count on DownloadTokenBucket if download speed changed"), AutoData]
+        public async Task Sets_Count_On_DownloadTokenBucket_If_Download_Speed_Changed(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumDownloadSpeed: 5));
+
+            var patch = new SoulseekClientOptionsPatch(maximumDownloadSpeed: speed);
+
+            var expected = Math.Max((int)Math.Ceiling((double)(speed * 1024L / client.Options.TransferConnectionOptions.ReadBufferSize)), 1);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+            }
+
+            mocks.DownloadTokenBucket.Verify(m => m.SetCount(expected), Times.Once);
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Does not Set count on DownloadTokenBucket if download speed did not change"), AutoData]
+        public async Task Does_Not_Set_Count_On_DownloadTokenBucket_If_Download_Speed_Did_Not_Change(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumDownloadSpeed: speed));
+
+            var patch = new SoulseekClientOptionsPatch(maximumDownloadSpeed: speed);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+            }
+
+            mocks.DownloadTokenBucket.Verify(m => m.SetCount(It.IsAny<int>()), Times.Never);
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
         [Fact(DisplayName = "Updates options")]
         public async Task Updates_Options()
         {
@@ -554,6 +623,8 @@ namespace Soulseek.Tests.Unit.Client
                 connectionFactory: mocks.ConnectionFactory.Object,
                 serverConnection: mocks.ServerConnection.Object,
                 listener: mocks.Listener.Object,
+                uploadTokenBucket: mocks.UploadTokenBucket.Object,
+                downloadTokenBucket: mocks.DownloadTokenBucket.Object,
                 options: clientOptions ?? new SoulseekClientOptions(enableListener: false));
 
             return (client, mocks);
@@ -586,6 +657,8 @@ namespace Soulseek.Tests.Unit.Client
             public Mock<IConnectionFactory> ConnectionFactory { get; }
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
             public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; }
+            public Mock<ITokenBucket> UploadTokenBucket { get; } = new Mock<ITokenBucket>();
+            public Mock<ITokenBucket> DownloadTokenBucket { get; } = new Mock<ITokenBucket>();
         }
     }
 }

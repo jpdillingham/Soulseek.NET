@@ -77,6 +77,8 @@ namespace Soulseek
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         /// <param name="ioAdapter">The IIOAdapter instance to use.</param>
+        /// <param name="uploadTokenBucket">The ITokenBucket instance to use for uploads.</param>
+        /// <param name="downloadTokenBucket">The ITokenBucket instance to use for downloads.</param>
 #pragma warning disable S3427 // Method overloads with default parameter values should not overlap
         internal SoulseekClient(
             SoulseekClientOptions options = null,
@@ -93,7 +95,9 @@ namespace Soulseek
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null,
-            IIOAdapter ioAdapter = null)
+            IIOAdapter ioAdapter = null,
+            ITokenBucket uploadTokenBucket = null,
+            ITokenBucket downloadTokenBucket = null)
         {
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
@@ -107,6 +111,20 @@ namespace Soulseek
             UploadSemaphoreCleanupTimer = new System.Timers.Timer(900000); // 15 minutes
             UploadSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUploadSemaphoresAsync();
             UploadSemaphoreCleanupTimer.Start();
+
+            UploadTokenBucket = uploadTokenBucket;
+            if (uploadTokenBucket == null)
+            {
+                var uploadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1);
+                UploadTokenBucket = new TokenBucket(uploadTokens, 1000);
+            }
+
+            DownloadTokenBucket = downloadTokenBucket;
+            if (downloadTokenBucket == null)
+            {
+                var downloadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1);
+                DownloadTokenBucket = new TokenBucket(downloadTokens, 1000);
+            }
 
             ServerConnection = serverConnection;
 
@@ -482,16 +500,18 @@ namespace Soulseek
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
+        private ITokenBucket DownloadTokenBucket { get; }
         private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private ITokenFactory TokenFactory { get; }
-        private SemaphoreSlim UploadSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
         private System.Timers.Timer UploadSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        private SemaphoreSlim UserEndPointSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim UploadSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
+        private ITokenBucket UploadTokenBucket { get; }
         private System.Timers.Timer UserEndPointSemaphoreCleanupTimer { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private SemaphoreSlim UserEndPointSemaphoreSyncRoot { get; } = new SemaphoreSlim(1, 1);
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -2825,7 +2845,8 @@ namespace Soulseek
                     {
                         if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
                         {
-                            UploadSemaphores.TryRemove(kvp.Key, out _);
+                            UploadSemaphores.TryRemove(kvp.Key, out var removed);
+                            removed.Dispose();
                             Diagnostic.Debug($"Cleaned up upload semaphore for {kvp.Key}");
                         }
                     }
@@ -2847,7 +2868,8 @@ namespace Soulseek
                     {
                         if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
                         {
-                            UserEndPointSemaphores.TryRemove(kvp.Key, out _);
+                            UserEndPointSemaphores.TryRemove(kvp.Key, out var removed);
+                            removed.Dispose();
                             Diagnostic.Debug($"Cleaned up user endpoint semaphore for {kvp.Key}");
                         }
                     }
@@ -2995,6 +3017,8 @@ namespace Soulseek
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options = options.WithAdditionalGovernor((_, cancellationToken) => DownloadTokenBucket.WaitAsync(cancellationToken));
+
             var download = new TransferInternal(TransferDirection.Download, username, remoteFilename, token, options)
             {
                 StartOffset = startOffset,
@@ -3616,10 +3640,15 @@ namespace Soulseek
                     }
                 }
 
+                var maximumUploadSpeedChanged = patch.MaximumUploadSpeed.HasValue && patch.MaximumUploadSpeed.Value != Options.MaximumUploadSpeed;
+                var maximumDownloadSpeedChanged = patch.MaximumDownloadSpeed.HasValue && patch.MaximumDownloadSpeed.Value != Options.MaximumDownloadSpeed;
+
                 Options = Options.With(
                     enableDistributedNetwork: patch.EnableDistributedNetwork,
                     acceptDistributedChildren: patch.AcceptDistributedChildren,
                     distributedChildLimit: patch.DistributedChildLimit,
+                    maximumUploadSpeed: patch.MaximumUploadSpeed,
+                    maximumDownloadSpeed: patch.MaximumDownloadSpeed,
                     acceptPrivateRoomInvitations: patch.AcceptPrivateRoomInvitations,
                     deduplicateSearchRequests: patch.DeduplicateSearchRequests,
                     autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
@@ -3637,6 +3666,16 @@ namespace Soulseek
                     userInfoResolver: patch.UserInfoResolver,
                     enqueueDownload: patch.EnqueueDownload,
                     placeInQueueResolver: patch.PlaceInQueueResolver);
+
+                if (maximumUploadSpeedChanged)
+                {
+                    UploadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1));
+                }
+
+                if (maximumDownloadSpeedChanged)
+                {
+                    DownloadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1));
+                }
 
                 Diagnostic.Info("Options reconfigured successfully");
 
@@ -3844,6 +3883,8 @@ namespace Soulseek
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options = options.WithAdditionalGovernor((_, cancellationToken) => UploadTokenBucket.WaitAsync(cancellationToken));
+
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
                 Size = size,
@@ -3887,8 +3928,8 @@ namespace Soulseek
 
                 try
                 {
-                    // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the same
-                    // source, so we need to enforce this regardless of what downstream implementations do.
+                    // fetch (or create) an upload semaphore for this user. Soulseek NS can't handle concurrent downloads from the
+                    // same source, so we need to enforce this regardless of what downstream implementations do.
                     semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploadsPerUser, maxCount: Options.MaximumConcurrentUploadsPerUser));
                     semaphoreWaitTask = semaphore.WaitAsync(cancellationToken);
                 }

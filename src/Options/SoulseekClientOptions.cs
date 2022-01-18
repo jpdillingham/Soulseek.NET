@@ -50,6 +50,8 @@ namespace Soulseek
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
         /// <param name="maximumConcurrentUploads">The number of allowed concurrent uploads.</param>
+        /// <param name="maximumUploadSpeed">The total maximum allowable upload speed, in kibibytes per second.</param>
+        /// <param name="maximumDownloadSpeed">The total maximum allowable download speed, in kibibytes per second.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
         /// </param>
@@ -101,6 +103,8 @@ namespace Soulseek
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
             int maximumConcurrentUploads = 10,
+            int maximumUploadSpeed = int.MaxValue,
+            int maximumDownloadSpeed = int.MaxValue,
             bool deduplicateSearchRequests = true,
             int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
@@ -145,6 +149,9 @@ namespace Soulseek
             {
                 throw new ArgumentOutOfRangeException(nameof(maximumConcurrentUploads), "Must be greater than or equal to one");
             }
+
+            MaximumUploadSpeed = maximumUploadSpeed;
+            MaximumDownloadSpeed = maximumDownloadSpeed;
 
             DeduplicateSearchRequests = deduplicateSearchRequests;
 
@@ -266,6 +273,16 @@ namespace Soulseek
         public int MaximumConcurrentUploadsPerUser { get; private set; } = 1;
 
         /// <summary>
+        ///     Gets the total maximum allowable download speed, in kibibytes per second.
+        /// </summary>
+        public int MaximumDownloadSpeed { get; }
+
+        /// <summary>
+        ///     Gets the total maximum allowable upload speed, in kibibytes per second.
+        /// </summary>
+        public int MaximumUploadSpeed { get; }
+
+        /// <summary>
         ///     Gets the message timeout, in milliseconds, used when waiting for a response from the server or peer. (Default = 5000).
         /// </summary>
         public int MessageTimeout { get; }
@@ -339,6 +356,8 @@ namespace Soulseek
                 enableDistributedNetwork: patch.EnableDistributedNetwork,
                 acceptDistributedChildren: patch.AcceptDistributedChildren,
                 distributedChildLimit: patch.DistributedChildLimit,
+                maximumUploadSpeed: patch.MaximumUploadSpeed,
+                maximumDownloadSpeed: patch.MaximumDownloadSpeed,
                 deduplicateSearchRequests: patch.DeduplicateSearchRequests,
                 autoAcknowledgePrivateMessages: patch.AutoAcknowledgePrivateMessages,
                 autoAcknowledgePrivilegeNotifications: patch.AutoAcknowledgePrivilegeNotifications,
@@ -366,6 +385,8 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="maximumUploadSpeed">The total maximum allowable upload speed, in kibibytes per second.</param>
+        /// <param name="maximumDownloadSpeed">The total maximum allowable download speed, in kibibytes per second.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
         /// </param>
@@ -406,6 +427,8 @@ namespace Soulseek
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
             int? distributedChildLimit = null,
+            int? maximumUploadSpeed = null,
+            int? maximumDownloadSpeed = null,
             bool? deduplicateSearchRequests = null,
             bool? autoAcknowledgePrivateMessages = null,
             bool? autoAcknowledgePrivilegeNotifications = null,
@@ -431,6 +454,8 @@ namespace Soulseek
                 acceptDistributedChildren: acceptDistributedChildren ?? AcceptDistributedChildren,
                 distributedChildLimit: distributedChildLimit ?? DistributedChildLimit,
                 maximumConcurrentUploads: MaximumConcurrentUploads,
+                maximumUploadSpeed: maximumUploadSpeed ?? MaximumUploadSpeed,
+                maximumDownloadSpeed: maximumDownloadSpeed ?? MaximumDownloadSpeed,
                 deduplicateSearchRequests: deduplicateSearchRequests ?? DeduplicateSearchRequests,
                 messageTimeout: MessageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages ?? AutoAcknowledgePrivateMessages,

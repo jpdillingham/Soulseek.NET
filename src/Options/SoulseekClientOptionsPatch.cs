@@ -35,6 +35,8 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="maximumUploadSpeed">The total maximum allowable upload speed, in kibibytes per second.</param>
+        /// <param name="maximumDownloadSpeed">The total maximum allowable download speed, in kibibytes per second.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
         /// </param>
@@ -80,6 +82,8 @@ namespace Soulseek
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
             int? distributedChildLimit = null,
+            int? maximumUploadSpeed = null,
+            int? maximumDownloadSpeed = null,
             bool? deduplicateSearchRequests = null,
             bool? autoAcknowledgePrivateMessages = null,
             bool? autoAcknowledgePrivilegeNotifications = null,
@@ -114,6 +118,9 @@ namespace Soulseek
             {
                 throw new ArgumentOutOfRangeException(nameof(distributedChildLimit), "Must be greater than or equal to zero");
             }
+
+            MaximumUploadSpeed = maximumUploadSpeed;
+            MaximumDownloadSpeed = maximumDownloadSpeed;
 
             DeduplicateSearchRequests = deduplicateSearchRequests;
 
@@ -213,6 +220,16 @@ namespace Soulseek
         ///     Gets the port on which to listen for incoming connections.
         /// </summary>
         public int? ListenPort { get; }
+
+        /// <summary>
+        ///     Gets the total maximum allowable download speed, in kibibytes per second.
+        /// </summary>
+        public int? MaximumDownloadSpeed { get; }
+
+        /// <summary>
+        ///     Gets the total maximum allowable upload speed, in kibibytes per second.
+        /// </summary>
+        public int? MaximumUploadSpeed { get; }
 
         /// <summary>
         ///     Gets the options for peer message connections.
