@@ -2833,7 +2833,8 @@ namespace Soulseek
                     {
                         if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
                         {
-                            UploadSemaphores.TryRemove(kvp.Key, out _);
+                            UploadSemaphores.TryRemove(kvp.Key, out var removed);
+                            removed.Dispose();
                             Diagnostic.Debug($"Cleaned up upload semaphore for {kvp.Key}");
                         }
                     }
@@ -2855,7 +2856,8 @@ namespace Soulseek
                     {
                         if (await kvp.Value.WaitAsync(0).ConfigureAwait(false))
                         {
-                            UserEndPointSemaphores.TryRemove(kvp.Key, out _);
+                            UserEndPointSemaphores.TryRemove(kvp.Key, out var removed);
+                            removed.Dispose();
                             Diagnostic.Debug($"Cleaned up user endpoint semaphore for {kvp.Key}");
                         }
                     }
