@@ -33,34 +33,32 @@ namespace Soulseek
         /// <param name="interval">The interval at which tokens are replenished.</param>
         public TokenBucket(int count, int interval)
         {
+            if (count < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than or equal to 1");
+            }
+
+            if (interval < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be greater than or equal to 1");
+            }
+
             Count = count;
             CurrentCount = Count;
 
             Clock = new System.Timers.Timer(interval);
-            Clock.Elapsed += async (sender, e) =>
-            {
-                await SyncRoot.WaitAsync().ConfigureAwait(false);
-
-                try
-                {
-                    CurrentCount = Count;
-
-                    WaitForReset.SetResult(true);
-                    WaitForReset = new TaskCompletionSource<bool>();
-                }
-                finally
-                {
-                    SyncRoot.Release();
-                }
-            };
-
+            Clock.Elapsed += (sender, e) => _ = Reset();
             Clock.Start();
         }
 
         private System.Timers.Timer Clock { get; set; }
+
         private int Count { get; set; }
+
         private int CurrentCount { get; set; }
-        private SemaphoreSlim SyncRoot { get; set; } = new SemaphoreSlim(1, 1);
+
+        private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
+
         private TaskCompletionSource<bool> WaitForReset { get; set; } = new TaskCompletionSource<bool>();
 
         /// <summary>
@@ -68,7 +66,15 @@ namespace Soulseek
         /// </summary>
         /// <remarks>Change takes effect on the next reset.</remarks>
         /// <param name="count">The new number of tokens.</param>
-        public void SetCount(int count) => Count = count;
+        public void SetCount(int count)
+        {
+            if (count < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than or equal to 1");
+            }
+
+            Count = count;
+        }
 
         /// <summary>
         ///     Asynchronously waits for a single token from the bucket.
@@ -95,6 +101,23 @@ namespace Soulseek
             }
 
             return WaitInternalAsync(count, cancellationToken);
+        }
+
+        private async Task Reset()
+        {
+            await SyncRoot.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                CurrentCount = Count;
+
+                WaitForReset.SetResult(true);
+                WaitForReset = new TaskCompletionSource<bool>();
+            }
+            finally
+            {
+                SyncRoot.Release();
+            }
         }
 
         private async Task WaitInternalAsync(int count, CancellationToken cancellationToken = default)
