@@ -33,6 +33,8 @@ namespace Soulseek.Tests.Unit.Options
             bool? enableDistributedNetwork,
             bool? acceptDistributedChildren,
             int? distributedChildLimit,
+            int? maximumUploadSpeed,
+            int? maximumDownloadSpeed,
             bool? deduplicateSearchRequests,
             bool? autoAcknowledgePrivateMessages,
             bool? autoAcknowledgePrivilegeNotifications,
@@ -63,6 +65,8 @@ namespace Soulseek.Tests.Unit.Options
                 enableDistributedNetwork: enableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren,
                 distributedChildLimit: distributedChildLimit,
+                maximumUploadSpeed: maximumUploadSpeed,
+                maximumDownloadSpeed: maximumDownloadSpeed,
                 deduplicateSearchRequests: deduplicateSearchRequests,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
                 autoAcknowledgePrivilegeNotifications: autoAcknowledgePrivilegeNotifications,
@@ -86,6 +90,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
             Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
             Assert.Equal(distributedChildLimit, o.DistributedChildLimit);
+            Assert.Equal(maximumUploadSpeed, o.MaximumUploadSpeed);
+            Assert.Equal(maximumDownloadSpeed, o.MaximumDownloadSpeed);
             Assert.Equal(deduplicateSearchRequests, o.DeduplicateSearchRequests);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
             Assert.Equal(autoAcknowledgePrivilegeNotifications, o.AutoAcknowledgePrivilegeNotifications);
