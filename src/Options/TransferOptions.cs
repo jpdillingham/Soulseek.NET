@@ -125,6 +125,7 @@ namespace Soulseek
                     await Governor(transfer, cancellationToken).ConfigureAwait(false);
                     await governor(transfer, cancellationToken).ConfigureAwait(false);
                 },
+                stateChanged: StateChanged,
                 progressUpdated: ProgressUpdated,
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
