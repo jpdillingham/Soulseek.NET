@@ -21,6 +21,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -388,6 +389,42 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<PrivateRoomToggle>(), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Sets count on UploadTokenBucket if upload speed changed"), AutoData]
+        public async Task Sets_Count_On_UploadTokenBucket_If_Upload_Speed_Changed(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumUploadSpeed: 5));
+
+            var patch = new SoulseekClientOptionsPatch(maximumUploadSpeed: speed);
+
+            var expected = Math.Max((int)Math.Ceiling((double)(speed * 1024L / client.Options.TransferConnectionOptions.WriteBufferSize)), 1);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.Equal(expected, client.GetProperty<TokenBucket>("UploadTokenBucket").GetProperty<int>("Count"));
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Theory(DisplayName = "Sets count on DownloadTokenBucket if download speed changed"), AutoData]
+        public async Task Sets_Count_On_DownloadTokenBucket_If_Download_Speed_Changed(int speed)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(maximumDownloadSpeed: 5));
+
+            var patch = new SoulseekClientOptionsPatch(maximumDownloadSpeed: speed);
+
+            var expected = Math.Max((int)Math.Ceiling((double)(speed * 1024L / client.Options.TransferConnectionOptions.ReadBufferSize)), 1);
+
+            using (client)
+            {
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.Equal(expected, client.GetProperty<TokenBucket>("DownloadTokenBucket").GetProperty<int>("Count"));
+            }
         }
 
         [Trait("Category", "ReconfigureOptions")]
