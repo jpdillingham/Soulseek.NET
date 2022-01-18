@@ -74,7 +74,7 @@ namespace Soulseek.Tests.Unit.Options
                 distributedChildLimit: distributedChildLimit,
                 maximumConcurrentUploads: maximumConcurrentUploads,
                 maximumUploadSpeed: maximumUploadSpeed,
-                maximumDownloadSpeed: maximumUploadSpeed,
+                maximumDownloadSpeed: maximumDownloadSpeed,
                 deduplicateSearchRequests: deduplicateSearchRequests,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
