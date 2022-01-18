@@ -162,7 +162,7 @@ namespace Soulseek
             }
 
             await waitTask.ConfigureAwait(false);
-            await WaitAsync(count);
+            await WaitAsync(count, cancellationToken).ConfigureAwait(false);
         }
     }
 }
