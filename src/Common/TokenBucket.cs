@@ -31,7 +31,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="count">The initial number of tokens.</param>
         /// <param name="interval">The interval at which tokens are replenished.</param>
-        public TokenBucket(int count, int interval)
+        public TokenBucket(long count, int interval)
         {
             if (count < 1)
             {
@@ -52,8 +52,8 @@ namespace Soulseek
         }
 
         private System.Timers.Timer Clock { get; set; }
-        private int Count { get; set; }
-        private int CurrentCount { get; set; }
+        private long Count { get; set; }
+        private long CurrentCount { get; set; }
         private bool Disposed { get; set; }
         private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
         private TaskCompletionSource<bool> WaitForReset { get; set; } = new TaskCompletionSource<bool>();
@@ -68,11 +68,23 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Returns the specified number of tokens to the bucket.
+        /// </summary>
+        /// <param name="count">The number of tokens to return.</param>
+        public void Return(long count)
+        {
+            if (count > 0)
+            {
+                CurrentCount += count;
+            }
+        }
+
+        /// <summary>
         ///     Sets the token count to the supplied <paramref name="count"/>.
         /// </summary>
         /// <remarks>Change takes effect on the next reset.</remarks>
         /// <param name="count">The new number of tokens.</param>
-        public void SetCount(int count)
+        public void SetCount(long count)
         {
             if (count < 1)
             {
@@ -99,7 +111,7 @@ namespace Soulseek
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the requested number of tokens exceeds the bucket capacity.
         /// </exception>
-        public Task WaitAsync(int count, CancellationToken cancellationToken = default)
+        public Task WaitAsync(long count, CancellationToken cancellationToken = default)
         {
             if (count > Count)
             {
@@ -140,7 +152,7 @@ namespace Soulseek
             }
         }
 
-        private async Task WaitInternalAsync(int count, CancellationToken cancellationToken = default)
+        private async Task WaitInternalAsync(long count, CancellationToken cancellationToken = default)
         {
             Task waitTask = Task.CompletedTask;
 

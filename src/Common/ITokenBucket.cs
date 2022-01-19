@@ -27,11 +27,17 @@ namespace Soulseek
     internal interface ITokenBucket
     {
         /// <summary>
+        ///     Returns the specified number of tokens to the bucket.
+        /// </summary>
+        /// <param name="count">The number of tokens to return.</param>
+        void Return(long count);
+
+        /// <summary>
         ///     Sets the token count to the supplied <paramref name="count"/>.
         /// </summary>
         /// <remarks>Change takes effect on the next reset.</remarks>
         /// <param name="count">The new number of tokens.</param>
-        void SetCount(int count);
+        void SetCount(long count);
 
         /// <summary>
         ///     Asynchronously waits for a single token from the bucket.
@@ -49,6 +55,6 @@ namespace Soulseek
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the requested number of tokens exceeds the bucket capacity.
         /// </exception>
-        Task WaitAsync(int count, CancellationToken cancellationToken = default);
+        Task WaitAsync(long count, CancellationToken cancellationToken = default);
     }
 }
