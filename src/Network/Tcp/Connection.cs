@@ -381,6 +381,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="length">The number of bytes to read.</param>
         /// <param name="outputStream">The stream to which the read data is to be written.</param>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
+        /// <param name="reporter">The delegate used to report bytes read each iteration.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
@@ -393,7 +394,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
-        public Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null)
+        public Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, Action<int> reporter, CancellationToken? cancellationToken = null)
         {
             if (length < 0)
             {
@@ -420,7 +421,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return ReadInternalAsync(length, outputStream, governor ?? ((t) => Task.CompletedTask), cancellationToken ?? CancellationToken.None);
+            return ReadInternalAsync(length, outputStream, governor ?? ((t) => Task.CompletedTask), reporter, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -477,6 +478,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="length">The number of bytes to write.</param>
         /// <param name="inputStream">The stream from which the written data is to be read.</param>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
+        /// <param name="reporter">The delegate used to report bytes read each iteration.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
@@ -489,7 +491,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        public Task WriteAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null)
+        public Task WriteAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, Action<int> reporter, CancellationToken? cancellationToken = null)
         {
             if (length <= 0)
             {
@@ -516,7 +518,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return WriteInternalAsync(length, inputStream, governor ?? ((t) => Task.CompletedTask), cancellationToken ?? CancellationToken.None);
+            return WriteInternalAsync(length, inputStream, governor ?? ((t) => Task.CompletedTask), reporter, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -586,12 +588,12 @@ namespace Soulseek.Network.Tcp
             await using (stream.ConfigureAwait(false))
 #endif
             {
-                await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
+                await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, null, cancellationToken).ConfigureAwait(false);
                 return stream.ToArray();
             }
         }
 
-        private async Task ReadInternalAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
+        private async Task ReadInternalAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, Action<int> reporter, CancellationToken cancellationToken)
         {
             ResetInactivityTime();
 
@@ -630,6 +632,7 @@ namespace Soulseek.Network.Tcp
 #endif
 
                     totalBytesRead += bytesRead;
+                    reporter?.Invoke(bytesRead);
 
                     Interlocked.CompareExchange(ref DataRead, null, null)?
                         .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
@@ -673,11 +676,11 @@ namespace Soulseek.Network.Tcp
             await using (stream.ConfigureAwait(false))
 #endif
             {
-                await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
+                await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, null, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        private async Task WriteInternalAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
+        private async Task WriteInternalAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, Action<int> reporter, CancellationToken cancellationToken)
         {
             // in the case of a bad (or failing) connection, it is possible for us to continue to write data, particularly
             // distributed search requests, to the connection for quite a while before the underlying socket figures out that it
@@ -719,6 +722,7 @@ namespace Soulseek.Network.Tcp
 #endif
 
                     totalBytesWritten += bytesRead;
+                    reporter?.Invoke(bytesRead);
 
                     Interlocked.CompareExchange(ref DataWritten, null, null)?
                         .Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));

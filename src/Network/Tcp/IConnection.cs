@@ -20,7 +20,6 @@ namespace Soulseek.Network.Tcp
     using System;
     using System.IO;
     using System.Net;
-    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -147,6 +146,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="length">The number of bytes to read.</param>
         /// <param name="outputStream">The stream to which the read data is to be written.</param>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
+        /// <param name="reporter">The delegate used to report bytes read each iteration.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
@@ -159,7 +159,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
-        Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
+        Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, Action<int> reporter, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Waits for the connection to disconnect, returning the message or throwing the Exception which caused the disconnect.
@@ -191,6 +191,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="length">The number of bytes to write.</param>
         /// <param name="inputStream">The stream from which the written data is to be read.</param>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
+        /// <param name="reporter">The delegate used to report bytes read each iteration.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
@@ -203,6 +204,6 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        Task WriteAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
+        Task WriteAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, Action<int> reporter, CancellationToken? cancellationToken = null);
     }
 }
