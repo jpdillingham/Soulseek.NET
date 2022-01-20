@@ -3173,11 +3173,11 @@ namespace Soulseek
                         },
                         reporter: (bytesRead) =>
                         {
-                            var tokensToReturn = Options.TransferConnectionOptions.ReadBufferSize - bytesRead;
+                            var toReturn = Options.TransferConnectionOptions.ReadBufferSize - bytesRead;
 
-                            if (tokensToReturn > 0)
+                            if (toReturn > 0)
                             {
-                                DownloadTokenBucket.Return(tokensToReturn);
+                                DownloadTokenBucket.Return(toReturn);
                             }
                         },
                         cancellationToken: cancellationToken).ConfigureAwait(false);
