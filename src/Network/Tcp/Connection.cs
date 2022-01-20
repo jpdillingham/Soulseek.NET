@@ -704,7 +704,7 @@ namespace Soulseek.Network.Tcp
             {
                 ResetInactivityTime();
 
-                var totalBytesWritten = 0;
+                long totalBytesWritten = 0;
 
                 while (totalBytesWritten < length)
                 {
