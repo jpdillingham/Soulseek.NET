@@ -27,34 +27,33 @@ namespace Soulseek
     internal interface ITokenBucket
     {
         /// <summary>
-        ///     Returns the specified number of tokens to the bucket.
+        ///     Gets the bucket capacity.
         /// </summary>
-        /// <param name="count">The number of tokens to return.</param>
-        void Return(long count);
+        public long Capacity { get; }
 
         /// <summary>
-        ///     Sets the token count to the supplied <paramref name="count"/>.
+        ///     Asynchronously retrieves the specified token <paramref name="count"/> from the bucket.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         If the requested <paramref name="count"/> exceeds the bucket <see cref="Capacity"/>, the request is lowered to
+        ///         the capacity of the bucket.
+        ///     </para>
+        ///     <para>If the bucket has tokens available, but fewer than the requested amount, the available tokens are returned.</para>
+        ///     <para>
+        ///         If the bucket has no tokens available, execution waits for the bucket to be replenished before servicing the request.
+        ///     </para>
+        /// </remarks>
+        /// <param name="count">The number of tokens to retrieve.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task that completes when tokens have been provided.</returns>
+        Task<int> GetAsync(int count, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///     Sets the bucket capacity to the supplied <paramref name="capacity"/>.
         /// </summary>
         /// <remarks>Change takes effect on the next reset.</remarks>
-        /// <param name="count">The new number of tokens.</param>
-        void SetCount(long count);
-
-        /// <summary>
-        ///     Asynchronously waits for a single token from the bucket.
-        /// </summary>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A Task that completes when the token has been provided.</returns>
-        Task WaitAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        ///     Asynchronously waits for the requested token <paramref name="count"/> from the bucket.
-        /// </summary>
-        /// <param name="count">The number of tokens for which to wait.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A Task that completes when the requested number of tokens have been provided.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the requested number of tokens exceeds the bucket capacity.
-        /// </exception>
-        Task WaitAsync(long count, CancellationToken cancellationToken = default);
+        /// <param name="capacity">The bucket capacity.</param>
+        void SetCapacity(long capacity);
     }
 }

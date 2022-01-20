@@ -29,13 +29,13 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="TokenBucket"/> class.
         /// </summary>
-        /// <param name="count">The initial number of tokens.</param>
+        /// <param name="capacity">The bucket capacity.</param>
         /// <param name="interval">The interval at which tokens are replenished.</param>
-        public TokenBucket(long count, int interval)
+        public TokenBucket(long capacity, int interval)
         {
-            if (count < 1)
+            if (capacity < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than or equal to 1");
+                throw new ArgumentOutOfRangeException(nameof(capacity), "Bucket capacity must be greater than or equal to 1");
             }
 
             if (interval < 1)
@@ -43,16 +43,20 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be greater than or equal to 1");
             }
 
-            Count = count;
-            CurrentCount = Count;
+            Capacity = capacity;
+            CurrentCount = Capacity;
 
             Clock = new System.Timers.Timer(interval);
             Clock.Elapsed += (sender, e) => _ = Reset();
             Clock.Start();
         }
 
+        /// <summary>
+        ///     Gets the bucket capacity.
+        /// </summary>
+        public long Capacity { get; private set; }
+
         private System.Timers.Timer Clock { get; set; }
-        private long Count { get; set; }
         private long CurrentCount { get; set; }
         private bool Disposed { get; set; }
         private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
@@ -68,57 +72,39 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Returns the specified number of tokens to the bucket.
-        /// </summary>
-        /// <param name="count">The number of tokens to return.</param>
-        public void Return(long count)
-        {
-            if (count > 0)
-            {
-                CurrentCount += count;
-            }
-        }
-
-        /// <summary>
-        ///     Sets the token count to the supplied <paramref name="count"/>.
+        ///     Sets the bucket capacity to the supplied <paramref name="capacity"/>.
         /// </summary>
         /// <remarks>Change takes effect on the next reset.</remarks>
-        /// <param name="count">The new number of tokens.</param>
-        public void SetCount(long count)
+        /// <param name="capacity">The bucket capacity.</param>
+        public void SetCapacity(long capacity)
         {
-            if (count < 1)
+            if (capacity < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than or equal to 1");
+                throw new ArgumentOutOfRangeException(nameof(capacity), "Bucket capacity must be greater than or equal to 1");
             }
 
-            Count = count;
+            Capacity = capacity;
         }
 
         /// <summary>
-        ///     Asynchronously waits for a single token from the bucket.
+        ///     Asynchronously retrieves the specified token <paramref name="count"/> from the bucket.
         /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         If the requested <paramref name="count"/> exceeds the bucket <see cref="Capacity"/>, the request is lowered to
+        ///         the capacity of the bucket.
+        ///     </para>
+        ///     <para>If the bucket has tokens available, but fewer than the requested amount, the available tokens are returned.</para>
+        ///     <para>
+        ///         If the bucket has no tokens available, execution waits for the bucket to be replenished before servicing the request.
+        ///     </para>
+        /// </remarks>
+        /// <param name="count">The number of tokens to retrieve.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A Task that completes when the token has been provided.</returns>
-        public Task WaitAsync(CancellationToken cancellationToken = default)
-            => WaitAsync(1, cancellationToken);
-
-        /// <summary>
-        ///     Asynchronously waits for the requested token <paramref name="count"/> from the bucket.
-        /// </summary>
-        /// <param name="count">The number of tokens for which to wait.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A Task that completes when the requested number of tokens have been provided.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the requested number of tokens exceeds the bucket capacity.
-        /// </exception>
-        public Task WaitAsync(long count, CancellationToken cancellationToken = default)
+        /// <returns>A Task that completes when tokens have been provided.</returns>
+        public Task<int> GetAsync(int count, CancellationToken cancellationToken = default)
         {
-            if (count > Count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(count), count, $"Requested count exceeds token count of {Count}");
-            }
-
-            return WaitInternalAsync(count, cancellationToken);
+            return GetInternalAsync(Math.Min(count, (int)Math.Min(int.MaxValue, Capacity)), cancellationToken);
         }
 
         private void Dispose(bool disposing)
@@ -141,7 +127,7 @@ namespace Soulseek
 
             try
             {
-                CurrentCount = Count;
+                CurrentCount = Capacity;
 
                 WaitForReset.SetResult(true);
                 WaitForReset = new TaskCompletionSource<bool>();
@@ -152,7 +138,7 @@ namespace Soulseek
             }
         }
 
-        private async Task WaitInternalAsync(long count, CancellationToken cancellationToken = default)
+        private async Task<int> GetInternalAsync(int count, CancellationToken cancellationToken = default)
         {
             Task waitTask = Task.CompletedTask;
 
@@ -160,12 +146,24 @@ namespace Soulseek
 
             try
             {
+                // if the bucket has enough tokens to fulfil the request, return them
+                // and decrement the bucket
                 if (CurrentCount >= count)
                 {
                     CurrentCount -= count;
-                    return;
+                    return count;
                 }
 
+                // if the bucket doesn't have enough tokens to fulfil the request, but
+                // has some available, return the available tokens and zero the bucket
+                if (CurrentCount > 0)
+                {
+                    var availableCount = CurrentCount;
+                    CurrentCount = 0;
+                    return (int)availableCount;
+                }
+
+                // if the bucket is empty, make the caller wait until the bucket is replenished
                 waitTask = WaitForReset.Task;
             }
             finally
@@ -174,7 +172,7 @@ namespace Soulseek
             }
 
             await waitTask.ConfigureAwait(false);
-            await WaitAsync(count, cancellationToken).ConfigureAwait(false);
+            return await GetAsync(count, cancellationToken).ConfigureAwait(false);
         }
     }
 }
