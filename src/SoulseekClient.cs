@@ -3164,21 +3164,12 @@ namespace Soulseek
                     UpdateProgress(download.StartOffset);
 
                     await download.Connection.ReadAsync(
-                        length: download.Size.Value - startOffset, 
+                        length: download.Size.Value - startOffset,
                         outputStream: outputStream,
-                        governor: async (cancelToken) =>
+                        governor: async (requestedBytes, cancelToken) =>
                         {
-                            await options.Governor(new Transfer(download), cancelToken).ConfigureAwait(false);
-                            await DownloadTokenBucket.WaitAsync(Options.TransferConnectionOptions.ReadBufferSize, cancellationToken).ConfigureAwait(false);
-                        },
-                        reporter: (bytesRead) =>
-                        {
-                            var toReturn = Options.TransferConnectionOptions.ReadBufferSize - bytesRead;
-
-                            if (toReturn > 0)
-                            {
-                                DownloadTokenBucket.Return(toReturn);
-                            }
+                            var bytesGrantedByCaller = await options.Governor(new Transfer(download), requestedBytes, cancelToken).ConfigureAwait(false);
+                            return await DownloadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
                         },
                         cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -3673,12 +3664,12 @@ namespace Soulseek
 
                 if (maximumUploadSpeedChanged)
                 {
-                    UploadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1));
+                    UploadTokenBucket.SetCapacity(Options.MaximumUploadSpeed * 1024L);
                 }
 
                 if (maximumDownloadSpeedChanged)
                 {
-                    DownloadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1));
+                    DownloadTokenBucket.SetCapacity(Options.MaximumDownloadSpeed * 1024L);
                 }
 
                 Diagnostic.Info("Options reconfigured successfully");
@@ -4049,20 +4040,10 @@ namespace Soulseek
                         await upload.Connection.WriteAsync(
                             length: size - startOffset,
                             inputStream: inputStream,
-                            governor: async (cancelToken) =>
+                            governor: async (requestedBytes, cancelToken) =>
                             {
-                                await options.Governor(new Transfer(upload), cancelToken).ConfigureAwait(false);
-                                await UploadTokenBucket.WaitAsync(Options.TransferConnectionOptions.WriteBufferSize, cancellationToken).ConfigureAwait(false);
-                            },
-                            reporter: (bytesWritten) =>
-                            {
-                                var toReturn = Options.TransferConnectionOptions.WriteBufferSize - bytesWritten;
-
-                                if (toReturn > 0)
-                                {
-                                    Console.WriteLine($"returning {toReturn}");
-                                    UploadTokenBucket.Return(Options.TransferConnectionOptions.WriteBufferSize - bytesWritten);
-                                }
+                                var bytesGrantedByCaller = await options.Governor(new Transfer(upload), requestedBytes, cancelToken).ConfigureAwait(false);
+                                return await UploadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
                             },
                             cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
