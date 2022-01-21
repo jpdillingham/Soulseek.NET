@@ -40,6 +40,7 @@ namespace Soulseek
         /// <param name="progressUpdated">The delegate to invoke when the transfer receives data.</param>
         /// <param name="slotAwaiter">The delegate used to await a slot to start the transfer (uploads only).</param>
         /// <param name="slotReleased">The delegate used to signal release of the slot (uploads only).</param>
+        /// <param name="reporter">The delegate used to report transfer statistics.</param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
@@ -55,6 +56,7 @@ namespace Soulseek
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
+            Action<int, int, int> reporter = null,
             int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
             bool disposeOutputStreamOnCompletion = false)
@@ -64,6 +66,7 @@ namespace Soulseek
             Governor = governor ?? defaultGovernor;
             SlotAwaiter = slotAwaiter ?? defaultSlotAwaiter;
             SlotReleased = slotReleased;
+            Reporter = reporter;
 
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
@@ -97,6 +100,11 @@ namespace Soulseek
         public Action<TransferProgressUpdatedEventArgs> ProgressUpdated { get; }
 
         /// <summary>
+        ///     Gets the delegate used to report transfer statistics.
+        /// </summary>
+        public Action<int, int, int> Reporter { get; }
+
+        /// <summary>
         ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
         public Func<Transfer, CancellationToken, Task> SlotAwaiter { get; }
@@ -128,6 +136,7 @@ namespace Soulseek
                 progressUpdated: ProgressUpdated,
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
+                reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
@@ -153,6 +162,7 @@ namespace Soulseek
                 progressUpdated: ProgressUpdated,
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
+                reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);
