@@ -26,8 +26,8 @@ namespace Soulseek
     /// </summary>
     public class TransferOptions
     {
-        private readonly Func<Transfer, CancellationToken, Task> defaultGovernor =
-            (tx, token) => Task.CompletedTask;
+        private readonly Func<Transfer, int, CancellationToken, Task<int>> defaultGovernor =
+            (tx, s, token) => Task.FromResult(int.MaxValue);
 
         private readonly Func<Transfer, CancellationToken, Task> defaultSlotAwaiter =
             (tx, token) => Task.CompletedTask;
@@ -50,7 +50,7 @@ namespace Soulseek
         ///     A value indicating whether the output stream should be closed upon transfer completion.
         /// </param>
         public TransferOptions(
-            Func<Transfer, CancellationToken, Task> governor = null,
+            Func<Transfer, int, CancellationToken, Task<int>> governor = null,
             Action<TransferStateChangedEventArgs> stateChanged = null,
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
@@ -81,9 +81,9 @@ namespace Soulseek
         public bool DisposeOutputStreamOnCompletion { get; }
 
         /// <summary>
-        ///     Gets the delegate used to govern transfer speed. (Default = a delegate returning Task.CompletedTask).
+        ///     Gets the delegate used to govern transfer speed. (Default = a delegate returning int.MaxValue).
         /// </summary>
-        public Func<Transfer, CancellationToken, Task> Governor { get; }
+        public Func<Transfer, int, CancellationToken, Task<int>> Governor { get; }
 
         /// <summary>
         ///     Gets the maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a
@@ -110,29 +110,6 @@ namespace Soulseek
         ///     Gets the delegate to invoke when the transfer changes state. (Default = no action).
         /// </summary>
         public Action<TransferStateChangedEventArgs> StateChanged { get; }
-
-        /// <summary>
-        ///     Returns a clone of this instance with <see cref="Governor"/> wrapped in a new delegate that invokes
-        ///     <paramref name="governor"/> after first invoking the existing delegate.
-        /// </summary>
-        /// <param name="governor">A new delegate to execute after the existing delegate.</param>
-        /// <returns>A clone of this instance with the combined Governor delegates.</returns>
-        public TransferOptions WithAdditionalGovernor(Func<Transfer, CancellationToken, Task> governor)
-        {
-            return new TransferOptions(
-                governor: async (transfer, cancellationToken) =>
-                {
-                    await Governor(transfer, cancellationToken).ConfigureAwait(false);
-                    await governor(transfer, cancellationToken).ConfigureAwait(false);
-                },
-                stateChanged: StateChanged,
-                progressUpdated: ProgressUpdated,
-                slotAwaiter: SlotAwaiter,
-                slotReleased: SlotReleased,
-                maximumLingerTime: MaximumLingerTime,
-                disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
-                disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
-        }
 
         /// <summary>
         ///     Returns a clone of this instance with <see cref="StateChanged"/> wrapped in a new delegate that first invokes <paramref name="stateChanged"/>.

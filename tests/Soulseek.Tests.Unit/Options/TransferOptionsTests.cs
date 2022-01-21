@@ -30,7 +30,7 @@ namespace Soulseek.Tests.Unit.Options
         public void Instantiates_Given_Data(
             bool disposeInput,
             bool disposeOutput,
-            Func<Transfer, CancellationToken, Task> governor,
+            Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
@@ -66,7 +66,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.False(o.DisposeInputStreamOnCompletion);
             Assert.False(o.DisposeOutputStreamOnCompletion);
 
-            var ex = await Record.ExceptionAsync(() => o.Governor(null, CancellationToken.None));
+            var ex = await Record.ExceptionAsync(() => o.Governor(null, 1, CancellationToken.None));
             Assert.Null(ex);
 
             var ex2 = await Record.ExceptionAsync(() => o.SlotAwaiter(null, CancellationToken.None));
@@ -82,7 +82,7 @@ namespace Soulseek.Tests.Unit.Options
         public void WithAdditionalStateChanged_Returns_Copy_Other_Than_StateChanged(
             bool disposeInput,
             bool disposeOutput,
-            Func<Transfer, CancellationToken, Task> governor,
+            Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
@@ -147,7 +147,7 @@ namespace Soulseek.Tests.Unit.Options
         public void WithAdditionalStateChanged_Returns_Unchanged_Copy_If_Both_Options_Are_Null(
             bool disposeInput,
             bool disposeOutput,
-            Func<Transfer, CancellationToken, Task> governor,
+            Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
@@ -181,7 +181,7 @@ namespace Soulseek.Tests.Unit.Options
         public void WithAdditionalStateChanged_Returns_Changed_Copy_If_Both_Options_Are_Specified(
             bool disposeInput,
             bool disposeOutput,
-            Func<Transfer, CancellationToken, Task> governor,
+            Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
@@ -210,66 +210,6 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
-        }
-
-        [Trait("Category", "WithAdditionalGovernor")]
-        [Theory(DisplayName = "WithAdditionalGovernor returns copy other than Governor"), AutoData]
-        public void WithAdditionalGovernor_Returns_Copy_Other_Than_Governor(
-            bool disposeInput,
-            bool disposeOutput,
-            Func<Transfer, CancellationToken, Task> governor,
-            Action<TransferStateChangedEventArgs> stateChanged,
-            int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated,
-            Func<Transfer, CancellationToken, Task> acquireSlot,
-            Action<Transfer> slotReleased)
-        {
-            var n = new TransferOptions(
-                governor: governor,
-                stateChanged: stateChanged,
-                progressUpdated: progressUpdated,
-                slotAwaiter: acquireSlot,
-                slotReleased: slotReleased,
-                maximumLingerTime: maximumLingerTime,
-                disposeInputStreamOnCompletion: disposeInput,
-                disposeOutputStreamOnCompletion: disposeOutput);
-
-            var o = n.WithAdditionalGovernor((x, t) => Task.CompletedTask);
-
-            Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
-            Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
-            Assert.Equal(stateChanged, o.StateChanged);
-            Assert.Equal(progressUpdated, o.ProgressUpdated);
-            Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
-            Assert.Equal(acquireSlot, o.SlotAwaiter);
-            Assert.Equal(slotReleased, o.SlotReleased);
-
-            Assert.NotEqual(governor, o.Governor);
-        }
-
-        [Trait("Category", "WithAdditionalGovernor")]
-        [Fact(DisplayName = "WithAdditionalGovernor returns copy that executes both Governors")]
-        public async Task WithAdditionalGovernor_Returns_Copy_That_Executes_Both_Governors()
-        {
-            var one = false;
-            var two = false;
-
-            var n = new TransferOptions(governor: (x, c) =>
-            {
-                one = true;
-                return Task.CompletedTask;
-            });
-
-            var o = n.WithAdditionalGovernor((x, c) =>
-            {
-                two = true;
-                return Task.CompletedTask;
-            });
-
-            await o.Governor(null, CancellationToken.None);
-
-            Assert.True(one);
-            Assert.True(two);
         }
     }
 }

@@ -20,7 +20,6 @@ namespace Soulseek.Network.Tcp
     using System;
     using System.IO;
     using System.Net;
-    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -159,7 +158,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
-        Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
+        Task ReadAsync(long length, Stream outputStream, Func<int, CancellationToken, Task<int>> governor, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Waits for the connection to disconnect, returning the message or throwing the Exception which caused the disconnect.
@@ -203,6 +202,6 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        Task WriteAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
+        Task WriteAsync(long length, Stream inputStream, Func<int, CancellationToken, Task<int>> governor, CancellationToken? cancellationToken = null);
     }
 }

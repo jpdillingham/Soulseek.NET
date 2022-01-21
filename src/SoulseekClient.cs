@@ -112,19 +112,8 @@ namespace Soulseek
             UploadSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUploadSemaphoresAsync();
             UploadSemaphoreCleanupTimer.Start();
 
-            UploadTokenBucket = uploadTokenBucket;
-            if (uploadTokenBucket == null)
-            {
-                var uploadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1);
-                UploadTokenBucket = new TokenBucket(uploadTokens, 1000);
-            }
-
-            DownloadTokenBucket = downloadTokenBucket;
-            if (downloadTokenBucket == null)
-            {
-                var downloadTokens = Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1);
-                DownloadTokenBucket = new TokenBucket(downloadTokens, 1000);
-            }
+            UploadTokenBucket = uploadTokenBucket ?? new TokenBucket(Options.MaximumUploadSpeed * 1024L, 1000);
+            DownloadTokenBucket = downloadTokenBucket ?? new TokenBucket(Options.MaximumDownloadSpeed * 1024L, 1000);
 
             ServerConnection = serverConnection;
 
@@ -3017,8 +3006,6 @@ namespace Soulseek
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            options = options.WithAdditionalGovernor((_, cancellationToken) => DownloadTokenBucket.WaitAsync(cancellationToken));
-
             var download = new TransferInternal(TransferDirection.Download, username, remoteFilename, token, options)
             {
                 StartOffset = startOffset,
@@ -3176,7 +3163,15 @@ namespace Soulseek
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(download.StartOffset);
 
-                    await download.Connection.ReadAsync(download.Size.Value - startOffset, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
+                    await download.Connection.ReadAsync(
+                        length: download.Size.Value - startOffset,
+                        outputStream: outputStream,
+                        governor: async (requestedBytes, cancelToken) =>
+                        {
+                            var bytesGrantedByCaller = await options.Governor(new Transfer(download), requestedBytes, cancelToken).ConfigureAwait(false);
+                            return await DownloadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
+                        },
+                        cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     download.State = TransferStates.Succeeded;
 
@@ -3669,12 +3664,12 @@ namespace Soulseek
 
                 if (maximumUploadSpeedChanged)
                 {
-                    UploadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumUploadSpeed * 1024L / Options.TransferConnectionOptions.WriteBufferSize)), 1));
+                    UploadTokenBucket.SetCapacity(Options.MaximumUploadSpeed * 1024L);
                 }
 
                 if (maximumDownloadSpeedChanged)
                 {
-                    DownloadTokenBucket.SetCount(Math.Max((int)Math.Ceiling((double)(Options.MaximumDownloadSpeed * 1024L / Options.TransferConnectionOptions.ReadBufferSize)), 1));
+                    DownloadTokenBucket.SetCapacity(Options.MaximumDownloadSpeed * 1024L);
                 }
 
                 Diagnostic.Info("Options reconfigured successfully");
@@ -3883,8 +3878,6 @@ namespace Soulseek
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            options = options.WithAdditionalGovernor((_, cancellationToken) => UploadTokenBucket.WaitAsync(cancellationToken));
-
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
                 Size = size,
@@ -4044,7 +4037,15 @@ namespace Soulseek
 
                     if (size - startOffset > 0)
                     {
-                        await upload.Connection.WriteAsync(size - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
+                        await upload.Connection.WriteAsync(
+                            length: size - startOffset,
+                            inputStream: inputStream,
+                            governor: async (requestedBytes, cancelToken) =>
+                            {
+                                var bytesGrantedByCaller = await options.Governor(new Transfer(upload), requestedBytes, cancelToken).ConfigureAwait(false);
+                                return await UploadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
+                            },
+                            cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
 
                     upload.State = TransferStates.Succeeded;

@@ -644,7 +644,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(length, stream, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(length, stream, (s, ct) => Task.FromResult(int.MaxValue)));
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentException>(ex);
@@ -664,7 +664,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(1, null, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(1, null, (s, ct) => Task.FromResult(int.MaxValue)));
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentNullException>(ex);
@@ -685,7 +685,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(1, stream, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(1, stream, (s, ct) => Task.FromResult(int.MaxValue)));
 
                     Assert.NotNull(ex);
                     Assert.IsType<InvalidOperationException>(ex);
@@ -716,7 +716,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
         [Trait("Category", "Write")]
         [Theory(DisplayName = "Write from stream throws if TcpClient is not connected"), AutoData]
-        public async Task Write_From_Stream_Throws_If_TcpClient_Is_Not_Connected(IPEndPoint endpoint, int length, Func<CancellationToken, Task> governor)
+        public async Task Write_From_Stream_Throws_If_TcpClient_Is_Not_Connected(IPEndPoint endpoint, int length, Func<int, CancellationToken, Task<int>> governor)
         {
             var t = new Mock<ITcpClient>();
 
@@ -761,7 +761,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
         [Trait("Category", "Write")]
         [Theory(DisplayName = "Write from stream throws if connection is not connected"), AutoData]
-        public async Task Write_From_Stream_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint, int length, Func<CancellationToken, Task> governor)
+        public async Task Write_From_Stream_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint, int length, Func<int, CancellationToken, Task<int>> governor)
         {
             var t = new Mock<ITcpClient>();
 
@@ -945,7 +945,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    await c.WriteAsync(1, stream, (ct) => Task.CompletedTask, cancellationToken);
+                    await c.WriteAsync(1, stream, (size, ct) => Task.FromResult(int.MaxValue), cancellationToken);
 
                     s.Verify(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), cancellationToken), Times.Once);
                 }
@@ -1035,7 +1035,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(writeBufferSize: 16)))
                 {
-                    await c.WriteAsync(32, stream, (ct) => Task.CompletedTask);
+                    await c.WriteAsync(32, stream, (ct, size) => Task.FromResult(int.MaxValue));
 
                     s.Verify(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
                 }
@@ -1060,7 +1060,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(data.Length, stream, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(data.Length, stream, (ct, size) => Task.FromResult(int.MaxValue)));
 
                     Assert.Null(ex);
 
@@ -1125,7 +1125,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
         [Trait("Category", "Read")]
         [Theory(DisplayName = "Read to stream throws if TcpClient is not connected"), AutoData]
-        public async Task Read_To_Stream_Throws_If_TcpClient_Is_Not_Connected(IPEndPoint endpoint, Func<CancellationToken, Task> governor)
+        public async Task Read_To_Stream_Throws_If_TcpClient_Is_Not_Connected(IPEndPoint endpoint, Func<int, CancellationToken, Task<int>> governor)
         {
             var t = new Mock<ITcpClient>();
 
@@ -1171,7 +1171,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
         [Trait("Category", "Read")]
         [Theory(DisplayName = "Read to stream throws if connection is not connected"), AutoData]
-        public async Task Read_To_Stream_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint, Func<CancellationToken, Task> governor)
+        public async Task Read_To_Stream_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint, Func<int, CancellationToken, Task<int>> governor)
         {
             var t = new Mock<ITcpClient>();
 
@@ -1221,7 +1221,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
         [Trait("Category", "Read")]
         [Theory(DisplayName = "Read to stream does not throw if length is long and larger than int"), AutoData]
-        public async Task Read_To_Stream_Does_Not_Throw_If_Length_Is_Long_And_Larger_Than_Int(IPEndPoint endpoint, long length, Func<CancellationToken, Task> governor)
+        public async Task Read_To_Stream_Does_Not_Throw_If_Length_Is_Long_And_Larger_Than_Int(IPEndPoint endpoint, long length, Func<int, CancellationToken, Task<int>> governor)
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()))
@@ -1291,7 +1291,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(1, stream, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(1, stream, (size, ct) => Task.FromResult(int.MaxValue)));
 
                     Assert.Null(ex);
 
@@ -1373,7 +1373,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    await c.ReadAsync(1, stream, (ct) => Task.CompletedTask, cancellationToken);
+                    await c.ReadAsync(1, stream, (size, ct) => Task.FromResult(int.MaxValue), cancellationToken);
 
                     s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), cancellationToken), Times.Once);
                 }
@@ -1426,7 +1426,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    await c.ReadAsync(3, stream, (ct) => Task.CompletedTask);
+                    await c.ReadAsync(3, stream, (size, ct) => Task.FromResult(int.MaxValue));
 
                     s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
                 }
@@ -1452,7 +1452,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(readBufferSize: 16)))
                 {
-                    await c.ReadAsync(32, stream, (ct) => Task.CompletedTask);
+                    await c.ReadAsync(32, stream, (size, ct) => Task.FromResult(int.MaxValue));
 
                     s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
                 }
@@ -1631,7 +1631,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(length, stream, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(length, stream, (size, ct) => Task.FromResult(int.MaxValue)));
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentException>(ex);
@@ -1652,7 +1652,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(length, null, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(length, null, (size, ct) => Task.FromResult(int.MaxValue)));
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentNullException>(ex);
@@ -1674,7 +1674,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(length, stream, (ct) => Task.CompletedTask));
+                    var ex = await Record.ExceptionAsync(() => c.ReadAsync(length, stream, (size, ct) => Task.FromResult(int.MaxValue)));
 
                     Assert.NotNull(ex);
                     Assert.IsType<InvalidOperationException>(ex);
