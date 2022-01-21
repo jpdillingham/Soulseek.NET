@@ -112,8 +112,8 @@ namespace Soulseek
             UploadSemaphoreCleanupTimer.Elapsed += (sender, e) => _ = CleanupUploadSemaphoresAsync();
             UploadSemaphoreCleanupTimer.Start();
 
-            UploadTokenBucket = uploadTokenBucket ?? new TokenBucket(Options.MaximumUploadSpeed * 1024L, 1000);
-            DownloadTokenBucket = downloadTokenBucket ?? new TokenBucket(Options.MaximumDownloadSpeed * 1024L, 1000);
+            UploadTokenBucket = uploadTokenBucket ?? new TokenBucket((Options.MaximumUploadSpeed * 1024L) / 10, 100);
+            DownloadTokenBucket = downloadTokenBucket ?? new TokenBucket((Options.MaximumDownloadSpeed * 1024L) / 10, 100);
 
             ServerConnection = serverConnection;
 
@@ -3171,6 +3171,11 @@ namespace Soulseek
                             var bytesGrantedByCaller = await options.Governor(new Transfer(download), requestedBytes, cancelToken).ConfigureAwait(false);
                             return await DownloadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
                         },
+                        reporter: (attemptedBytes, grantedBytes, actualBytes) =>
+                        {
+                            options.Reporter?.Invoke(attemptedBytes, grantedBytes, actualBytes);
+                            DownloadTokenBucket.Return(grantedBytes - actualBytes);
+                        },
                         cancellationToken: cancellationToken).ConfigureAwait(false);
 
                     download.State = TransferStates.Succeeded;
@@ -3664,12 +3669,12 @@ namespace Soulseek
 
                 if (maximumUploadSpeedChanged)
                 {
-                    UploadTokenBucket.SetCapacity(Options.MaximumUploadSpeed * 1024L);
+                    UploadTokenBucket.SetCapacity((Options.MaximumUploadSpeed * 1024L) / 10);
                 }
 
                 if (maximumDownloadSpeedChanged)
                 {
-                    DownloadTokenBucket.SetCapacity(Options.MaximumDownloadSpeed * 1024L);
+                    DownloadTokenBucket.SetCapacity((Options.MaximumDownloadSpeed * 1024L) / 10);
                 }
 
                 Diagnostic.Info("Options reconfigured successfully");
@@ -4044,6 +4049,11 @@ namespace Soulseek
                             {
                                 var bytesGrantedByCaller = await options.Governor(new Transfer(upload), requestedBytes, cancelToken).ConfigureAwait(false);
                                 return await UploadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
+                            },
+                            reporter: (attemptedBytes, grantedBytes, actualBytes) =>
+                            {
+                                options.Reporter?.Invoke(attemptedBytes, grantedBytes, actualBytes);
+                                UploadTokenBucket.Return(grantedBytes - actualBytes);
                             },
                             cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
