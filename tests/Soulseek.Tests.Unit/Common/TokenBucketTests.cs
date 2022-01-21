@@ -32,7 +32,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
-            Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+            Assert.Equal("capacity", ((ArgumentOutOfRangeException)ex).ParamName);
         }
 
         [Trait("Category", "Instantiation")]
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
-            Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+            Assert.Equal("capacity", ((ArgumentOutOfRangeException)ex).ParamName);
         }
 
         [Trait("Category", "Instantiation")]
@@ -74,9 +74,9 @@ namespace Soulseek.Tests.Unit
         {
             using (var t = new TokenBucket(count, interval))
             {
-                Assert.Equal(count, t.GetProperty<int>("Count"));
+                Assert.Equal(count, t.Capacity);
                 Assert.Equal(interval, t.GetProperty<System.Timers.Timer>("Clock").Interval);
-                Assert.Equal(count, t.GetProperty<int>("CurrentCount"));
+                Assert.Equal(count, t.GetProperty<long>("CurrentCount"));
             }
         }
 
@@ -120,35 +120,48 @@ namespace Soulseek.Tests.Unit
             }
         }
 
-        [Trait("Category", "WaitAsync")]
-        [Fact(DisplayName = "WaitAsync decrements count by requested count")]
-        public async Task WaitAsync_Decrements_Count_By_Requested_Count()
+        [Trait("Category", "GetAsync")]
+        [Fact(DisplayName = "GetAsync decrements count by requested count")]
+        public async Task GetAsync_Decrements_Count_By_Requested_Count()
         {
             using (var t = new TokenBucket(10, 10000))
             {
                 await t.GetAsync(5);
 
-                Assert.Equal(5, t.GetProperty<int>("CurrentCount"));
+                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
             }
         }
 
-        [Trait("Category", "WaitAsync")]
-        [Fact(DisplayName = "WaitAsync throws ArgumentOutOfRangeException if requested count exceeds capacity")]
-        public async Task WaitAsync_Throws_ArgumentOutOfRangeException_If_Requested_Count_Exceeds_Capacity()
+        [Trait("Category", "GetAsync")]
+        [Fact(DisplayName = "GetAsync returns capacity if request exceeds capacity")]
+        public async Task GetAsync_Returns_Capacity_If_Request_Exceeds_Capacity()
         {
             using (var t = new TokenBucket(10, 10000))
             {
-                var ex = await Record.ExceptionAsync(() => t.GetAsync(11));
+                int tokens = 0;
+                var ex = await Record.ExceptionAsync(async() => tokens = await t.GetAsync(11));
 
-                Assert.NotNull(ex);
-                Assert.IsType<ArgumentOutOfRangeException>(ex);
-                Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+                Assert.Null(ex);
+                Assert.Equal(10, tokens);
             }
         }
 
-        [Trait("Category", "WaitAsync")]
-        [Fact(DisplayName = "WaitAsync waits for reset if bucket is depleted")]
-        public async Task WaitAsync_Waits_For_Reset_If_Bucket_Is_Depleted()
+        [Trait("Category", "GetAsync")]
+        [Fact(DisplayName = "GetAsync returns available tokens if request exceeds available count")]
+        public async Task GetAsync_Returns_Available_Tokens_If_Request_Exceeds_Available_Count()
+        {
+            using (var t = new TokenBucket(10, 10000))
+            {
+                await t.GetAsync(6);
+                var count = await t.GetAsync(6);
+
+                Assert.Equal(4, count);
+            }
+        }
+
+        [Trait("Category", "GetAsync")]
+        [Fact(DisplayName = "GetAsync waits for reset if bucket is depleted")]
+        public async Task GetAsync_Waits_For_Reset_If_Bucket_Is_Depleted()
         {
             using (var t = new TokenBucket(1, 10))
             {
