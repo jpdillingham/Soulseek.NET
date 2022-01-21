@@ -399,14 +399,14 @@ namespace Soulseek.Tests.Unit.Client
 
             var patch = new SoulseekClientOptionsPatch(maximumUploadSpeed: speed);
 
-            var expected = Math.Max((int)Math.Ceiling((double)(speed * 1024L / client.Options.TransferConnectionOptions.WriteBufferSize)), 1);
+            var expected = speed * 1024L;
 
             using (client)
             {
                 await client.ReconfigureOptionsAsync(patch);
             }
 
-            mocks.UploadTokenBucket.Verify(m => m.SetCount(expected), Times.Once);
+            mocks.UploadTokenBucket.Verify(m => m.SetCapacity(expected), Times.Once);
         }
 
         [Trait("Category", "ReconfigureOptions")]
@@ -422,7 +422,7 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ReconfigureOptionsAsync(patch);
             }
 
-            mocks.UploadTokenBucket.Verify(m => m.SetCount(It.IsAny<int>()), Times.Never);
+            mocks.UploadTokenBucket.Verify(m => m.SetCapacity(It.IsAny<int>()), Times.Never);
         }
 
         [Trait("Category", "ReconfigureOptions")]
@@ -433,14 +433,14 @@ namespace Soulseek.Tests.Unit.Client
 
             var patch = new SoulseekClientOptionsPatch(maximumDownloadSpeed: speed);
 
-            var expected = Math.Max((int)Math.Ceiling((double)(speed * 1024L / client.Options.TransferConnectionOptions.ReadBufferSize)), 1);
+            var expected = speed * 1024L;
 
             using (client)
             {
                 await client.ReconfigureOptionsAsync(patch);
             }
 
-            mocks.DownloadTokenBucket.Verify(m => m.SetCount(expected), Times.Once);
+            mocks.DownloadTokenBucket.Verify(m => m.SetCapacity(expected), Times.Once);
         }
 
         [Trait("Category", "ReconfigureOptions")]
@@ -456,7 +456,7 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ReconfigureOptionsAsync(patch);
             }
 
-            mocks.DownloadTokenBucket.Verify(m => m.SetCount(It.IsAny<int>()), Times.Never);
+            mocks.DownloadTokenBucket.Verify(m => m.SetCapacity(It.IsAny<int>()), Times.Never);
         }
 
         [Trait("Category", "ReconfigureOptions")]

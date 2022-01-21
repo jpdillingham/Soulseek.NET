@@ -86,11 +86,11 @@ namespace Soulseek.Tests.Unit
         {
             using (var t = new TokenBucket(10, 1000))
             {
-                var ex = Record.Exception(() => t.SetCount(0));
+                var ex = Record.Exception(() => t.SetCapacity(0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex);
-                Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+                Assert.Equal("capacity", ((ArgumentOutOfRangeException)ex).ParamName);
             }
         }
 
@@ -100,35 +100,23 @@ namespace Soulseek.Tests.Unit
         {
             using (var t = new TokenBucket(10, 1000))
             {
-                var ex = Record.Exception(() => t.SetCount(-1));
+                var ex = Record.Exception(() => t.SetCapacity(-1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex);
-                Assert.Equal("count", ((ArgumentOutOfRangeException)ex).ParamName);
+                Assert.Equal("capacity", ((ArgumentOutOfRangeException)ex).ParamName);
             }
         }
 
-        [Trait("Category", "SetCount")]
-        [Theory(DisplayName = "SetCount sets count"), AutoData]
-        public void SetCount_Sets_Count(int count)
+        [Trait("Category", "SetCapacity")]
+        [Theory(DisplayName = "SetCapacity sets capacity"), AutoData]
+        public void SetCapacity_Sets_Capacity(int count)
         {
             using (var t = new TokenBucket(10, 1000))
             {
-                t.SetCount(count);
+                t.SetCapacity(count);
 
-                Assert.Equal(count, t.GetProperty<int>("Count"));
-            }
-        }
-
-        [Trait("Category", "WaitAsync")]
-        [Fact(DisplayName = "WaitAsync decrements count by 1")]
-        public async Task WaitAsync_Decrements_Count_By_1()
-        {
-            using (var t = new TokenBucket(10, 10000))
-            {
-                await t.WaitAsync();
-
-                Assert.Equal(9, t.GetProperty<int>("CurrentCount"));
+                Assert.Equal(count, t.Capacity);
             }
         }
 
@@ -138,7 +126,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var t = new TokenBucket(10, 10000))
             {
-                await t.WaitAsync(5);
+                await t.GetAsync(5);
 
                 Assert.Equal(5, t.GetProperty<int>("CurrentCount"));
             }
@@ -150,7 +138,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var t = new TokenBucket(10, 10000))
             {
-                var ex = await Record.ExceptionAsync(() => t.WaitAsync(11));
+                var ex = await Record.ExceptionAsync(() => t.GetAsync(11));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -164,8 +152,8 @@ namespace Soulseek.Tests.Unit
         {
             using (var t = new TokenBucket(1, 10))
             {
-                await t.WaitAsync();
-                await t.WaitAsync();
+                await t.GetAsync(1);
+                await t.GetAsync(1);
 
                 Assert.True(true);
             }
