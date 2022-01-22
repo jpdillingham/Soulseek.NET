@@ -399,7 +399,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var patch = new SoulseekClientOptionsPatch(maximumUploadSpeed: speed);
 
-            var expected = speed * 1024L;
+            var expected = (speed * 1024L) / 10;
 
             using (client)
             {
@@ -433,7 +433,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var patch = new SoulseekClientOptionsPatch(maximumDownloadSpeed: speed);
 
-            var expected = speed * 1024L;
+            var expected = (speed * 1024L) / 10;
 
             using (client)
             {

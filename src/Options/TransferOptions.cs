@@ -35,11 +35,18 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferOptions"/> class.
         /// </summary>
-        /// <param name="governor">The delegate used to govern transfer speed.</param>
+        /// <param name="governor">
+        ///     The delegate, accepting the number of requested bytes and returning the number of granted bytes, used to govern
+        ///     transfer speed.
+        /// </param>
         /// <param name="stateChanged">The delegate to invoke when the transfer changes state.</param>
         /// <param name="progressUpdated">The delegate to invoke when the transfer receives data.</param>
         /// <param name="slotAwaiter">The delegate used to await a slot to start the transfer (uploads only).</param>
         /// <param name="slotReleased">The delegate used to signal release of the slot (uploads only).</param>
+        /// <param name="reporter">
+        ///     The delegate, accepting the number of bytes attempted, granted, and transferred for each chunk, used to report
+        ///     transfer statistics.
+        /// </param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
@@ -55,6 +62,7 @@ namespace Soulseek
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
+            Action<int, int, int> reporter = null,
             int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
             bool disposeOutputStreamOnCompletion = false)
@@ -64,6 +72,7 @@ namespace Soulseek
             Governor = governor ?? defaultGovernor;
             SlotAwaiter = slotAwaiter ?? defaultSlotAwaiter;
             SlotReleased = slotReleased;
+            Reporter = reporter;
 
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
@@ -81,7 +90,8 @@ namespace Soulseek
         public bool DisposeOutputStreamOnCompletion { get; }
 
         /// <summary>
-        ///     Gets the delegate used to govern transfer speed. (Default = a delegate returning int.MaxValue).
+        ///     Gets the delegate, accepting the number of requested bytes and returning the number of granted bytes, used to
+        ///     govern transfer speed. (Default = a delegate returning int.MaxValue).
         /// </summary>
         public Func<Transfer, int, CancellationToken, Task<int>> Governor { get; }
 
@@ -95,6 +105,12 @@ namespace Soulseek
         ///     Gets the delegate to invoke when the transfer receives data. (Default = no action).
         /// </summary>
         public Action<TransferProgressUpdatedEventArgs> ProgressUpdated { get; }
+
+        /// <summary>
+        ///     Gets the delegate, accepting the number of bytes attempted, granted, and transferred for each chunk, used to
+        ///     report transfer statistics. (Default = no action).
+        /// </summary>
+        public Action<int, int, int> Reporter { get; }
 
         /// <summary>
         ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
@@ -128,6 +144,7 @@ namespace Soulseek
                 progressUpdated: ProgressUpdated,
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
+                reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
@@ -153,6 +170,7 @@ namespace Soulseek
                 progressUpdated: ProgressUpdated,
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
+                reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);

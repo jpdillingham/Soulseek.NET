@@ -72,21 +72,6 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Sets the bucket capacity to the supplied <paramref name="capacity"/>.
-        /// </summary>
-        /// <remarks>Change takes effect on the next reset.</remarks>
-        /// <param name="capacity">The bucket capacity.</param>
-        public void SetCapacity(long capacity)
-        {
-            if (capacity < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(capacity), "Bucket capacity must be greater than or equal to 1");
-            }
-
-            Capacity = capacity;
-        }
-
-        /// <summary>
         ///     Asynchronously retrieves the specified token <paramref name="count"/> from the bucket.
         /// </summary>
         /// <remarks>
@@ -107,6 +92,39 @@ namespace Soulseek
             return GetInternalAsync(Math.Min(count, (int)Math.Min(int.MaxValue, Capacity)), cancellationToken);
         }
 
+        /// <summary>
+        ///     Returns the specified token <paramref name="count"/> to the bucket.
+        /// </summary>
+        /// <remarks>
+        ///     <para>This method should only be called if tokens were retrieved from the bucket, but were not used.</para>
+        ///     <para>
+        ///         If the specified count exceeds the bucket capacity, the count is lowered to the capacity. Effectively this
+        ///         allows the bucket to 'burst' up to 2x capacity to 'catch up' to the desired rate if tokens were wastefully
+        ///         retrieved.
+        ///     </para>
+        ///     <para>If the specified count is negative, no change is made to the available count.</para>
+        /// </remarks>
+        /// <param name="count">The number of tokens to return.</param>
+        public void Return(int count)
+        {
+            CurrentCount += Math.Min(Math.Max(count, 0), Capacity);
+        }
+
+        /// <summary>
+        ///     Sets the bucket capacity to the supplied <paramref name="capacity"/>.
+        /// </summary>
+        /// <remarks>Change takes effect on the next reset.</remarks>
+        /// <param name="capacity">The bucket capacity.</param>
+        public void SetCapacity(long capacity)
+        {
+            if (capacity < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(capacity), "Bucket capacity must be greater than or equal to 1");
+            }
+
+            Capacity = capacity;
+        }
+
         private void Dispose(bool disposing)
         {
             if (!Disposed)
@@ -121,23 +139,6 @@ namespace Soulseek
             }
         }
 
-        private async Task Reset()
-        {
-            await SyncRoot.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                CurrentCount = Capacity;
-
-                WaitForReset.SetResult(true);
-                WaitForReset = new TaskCompletionSource<bool>();
-            }
-            finally
-            {
-                SyncRoot.Release();
-            }
-        }
-
         private async Task<int> GetInternalAsync(int count, CancellationToken cancellationToken = default)
         {
             Task waitTask = Task.CompletedTask;
@@ -146,16 +147,15 @@ namespace Soulseek
 
             try
             {
-                // if the bucket has enough tokens to fulfil the request, return them
-                // and decrement the bucket
+                // if the bucket has enough tokens to fulfil the request, return them and decrement the bucket
                 if (CurrentCount >= count)
                 {
                     CurrentCount -= count;
                     return count;
                 }
 
-                // if the bucket doesn't have enough tokens to fulfil the request, but
-                // has some available, return the available tokens and zero the bucket
+                // if the bucket doesn't have enough tokens to fulfil the request, but has some available, return the available
+                // tokens and zero the bucket
                 if (CurrentCount > 0)
                 {
                     var availableCount = CurrentCount;
@@ -173,6 +173,23 @@ namespace Soulseek
 
             await waitTask.ConfigureAwait(false);
             return await GetAsync(count, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task Reset()
+        {
+            await SyncRoot.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                CurrentCount = Capacity;
+
+                WaitForReset.SetResult(true);
+                WaitForReset = new TaskCompletionSource<bool>();
+            }
+            finally
+            {
+                SyncRoot.Release();
+            }
         }
     }
 }

@@ -17,7 +17,6 @@
 
 namespace Soulseek
 {
-    using System;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -48,6 +47,21 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task that completes when tokens have been provided.</returns>
         Task<int> GetAsync(int count, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///     Returns the specified token <paramref name="count"/> to the bucket.
+        /// </summary>
+        /// <remarks>
+        ///     <para>This method should only be called if tokens were retrieved from the bucket, but were not used.</para>
+        ///     <para>
+        ///         If the specified count exceeds the bucket capacity, the count is lowered to the capacity. Effectively this
+        ///         allows the bucket to 'burst' up to 2x capacity to 'catch up' to the desired rate if tokens were wastefully
+        ///         retrieved.
+        ///     </para>
+        ///     <para>If the specified count is negative, no change is made to the available count.</para>
+        /// </remarks>
+        /// <param name="count">The number of tokens to return.</param>
+        void Return(int count);
 
         /// <summary>
         ///     Sets the bucket capacity to the supplied <paramref name="capacity"/>.
