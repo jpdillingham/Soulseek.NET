@@ -1322,6 +1322,322 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync invokes Reporter delegate passed in options"), AutoData]
+        public async Task DownloadToStreamAsync_Invokes_Reporter_Delegate_Passed_In_Options(string username, IPEndPoint endpoint, string filename, int token, int size, int attempted, int granted, int actual)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    reporter(attempted, granted, actual);
+                });
+
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            // make download wait for our task completion source
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task);
+
+            // complete our TCS when the disconnected event handler fires
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
+                .Callback(() => tcs.TrySetResult(data));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var att = 0;
+                var gr = 0;
+                var ack = 0;
+
+                var opts = new TransferOptions(reporter: (a, b, c) =>
+                {
+                    att = a;
+                    gr = b;
+                    ack = c;
+                });
+
+                var task = s.InvokeMethod<Task<Transfer>>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, opts, null);
+
+                transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("done"));
+
+                await task;
+
+                Assert.Equal(attempted, att);
+                Assert.Equal(granted, gr);
+                Assert.Equal(actual, ack);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync returns unused tokens to DownloadTokenBucket"), AutoData]
+        public async Task DownloadToStreamAsync_Returns_Unused_Tokens_To_DownloadTokenBucket(string username, IPEndPoint endpoint, string filename, int token, int size, int attempted, int granted, int actual)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    reporter(attempted, granted, actual);
+                });
+
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            // make download wait for our task completion source
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task);
+
+            // complete our TCS when the disconnected event handler fires
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
+                .Callback(() => tcs.TrySetResult(data));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var bucket = new Mock<ITokenBucket>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, downloadTokenBucket: bucket.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var att = 0;
+                var gr = 0;
+                var ack = 0;
+
+                var opts = new TransferOptions(reporter: (a, b, c) =>
+                {
+                    att = a;
+                    gr = b;
+                    ack = c;
+                });
+
+                var task = s.InvokeMethod<Task<Transfer>>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, opts, null);
+
+                transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("done"));
+
+                await task;
+
+                Assert.Equal(attempted, att);
+                Assert.Equal(granted, gr);
+                Assert.Equal(actual, ack);
+
+                bucket.Verify(m => m.Return(granted - actual), Times.Once);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync does not throw if Reporter delegate from options is null"), AutoData]
+        public async Task DownloadToStreamAsync_Does_Not_Throw_If_Reporter_Delegate_From_Options_Is_Null(string username, IPEndPoint endpoint, string filename, int token, int size, int attempted, int granted, int actual)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    reporter(attempted, granted, actual);
+                });
+
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            // make download wait for our task completion source
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task);
+
+            // complete our TCS when the disconnected event handler fires
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
+                .Callback(() => tcs.TrySetResult(data));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var opts = new TransferOptions(reporter: null);
+
+                var task = s.InvokeMethod<Task<Transfer>>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, opts, null);
+
+                transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("done"));
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync retrieves grant from Governor passed in options, then DownloadTokenBucket"), AutoData]
+        public async Task DownloadToStreamAsync_Retrieves_Grant_From_Governor_Passed_In_Options_Then_DownloadTokenBucket(string username, IPEndPoint endpoint, string filename, int token)
+        {
+            // fix transfer size to 42.  this is less than the default buffer, so any request to the governor will be strictly 42.
+            var size = 42;
+
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>(async (length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    await governor(size, CancellationToken.None);
+                });
+
+            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            // make download wait for our task completion source
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task);
+
+            // complete our TCS when the disconnected event handler fires
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
+                .Callback(() => tcs.TrySetResult(data));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var bucket = new Mock<ITokenBucket>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, downloadTokenBucket: bucket.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                // return a fixed 21 from the governor provided in options
+                var opts = new TransferOptions(governor: (tx, a, c) => Task.FromResult(21));
+
+                var task = s.InvokeMethod<Task<Transfer>>("DownloadToStreamAsync", username, filename, new Func<Stream>(() => stream), 0L, 0, token, opts, null);
+
+                transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("done"));
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                Assert.Null(ex);
+
+                // the lesser of the buffer (default 16k) the transfer size (42) and the user-supplied governor (21) will
+                // be used to take tokens from the bucket.
+                bucket.Verify(m => m.GetAsync(Math.Min(size, 21), It.IsAny<CancellationToken>()), Times.Once);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync throws TimeoutException on unexpected transfer connection timeout"), AutoData]
         public async Task DownloadToStreamAsync_Throws_TimeoutException_On_Unexpected_Transfer_Connection_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
