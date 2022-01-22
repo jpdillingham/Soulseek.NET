@@ -1366,7 +1366,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(offset, stream.Position);
             }
 
-            transferConn.Verify(m => m.WriteAsync(size - offset, It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<CancellationToken?>()));
+            transferConn.Verify(m => m.WriteAsync(size - offset, It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "UploadFromFileAsync")]
@@ -1477,7 +1477,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Raises(m => m.DataWritten += null, this, new ConnectionDataEventArgs(1, 1));
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))

@@ -35,6 +35,7 @@ namespace Soulseek.Tests.Unit.Options
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
+            Action<int, int, int> reporter,
             Action<Transfer> slotReleased)
         {
             var o = new TransferOptions(
@@ -43,6 +44,7 @@ namespace Soulseek.Tests.Unit.Options
                 progressUpdated,
                 acquireSlot,
                 slotReleased,
+                reporter,
                 maximumLingerTime,
                 disposeInput,
                 disposeOutput);
@@ -55,6 +57,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
+            Assert.Equal(reporter, o.Reporter);
         }
 
         [Trait("Category", "Instantiation")]

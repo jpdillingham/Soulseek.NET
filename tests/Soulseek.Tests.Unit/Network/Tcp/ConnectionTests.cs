@@ -945,7 +945,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    await c.WriteAsync(1, stream, (size, ct) => Task.FromResult(int.MaxValue), cancellationToken);
+                    await c.WriteAsync(1, stream, (size, ct) => Task.FromResult(int.MaxValue), It.IsAny<Action<int, int, int>>(), cancellationToken);
 
                     s.Verify(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), cancellationToken), Times.Once);
                 }
@@ -1373,7 +1373,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
-                    await c.ReadAsync(1, stream, (size, ct) => Task.FromResult(int.MaxValue), cancellationToken);
+                    await c.ReadAsync(1, stream, (size, ct) => Task.FromResult(int.MaxValue), It.IsAny<Action<int, int, int>>(), cancellationToken);
 
                     s.Verify(m => m.ReadAsync(It.IsAny<Memory<byte>>(), cancellationToken), Times.Once);
                 }
