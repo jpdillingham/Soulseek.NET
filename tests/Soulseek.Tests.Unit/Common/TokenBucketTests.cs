@@ -167,8 +167,57 @@ namespace Soulseek.Tests.Unit
             {
                 await t.GetAsync(1);
                 await t.GetAsync(1);
+                await t.GetAsync(1);
 
                 Assert.True(true);
+            }
+        }
+
+        [Trait("Category", "Return")]
+        [Fact(DisplayName = "Return does not change count given negative")]
+        public async Task Return_Does_Not_Change_Count_Given_Negative()
+        {
+            using (var t = new TokenBucket(10, 1000000))
+            {
+                await t.GetAsync(5);
+
+                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+
+                t.Return(-5);
+
+                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+            }
+        }
+
+        [Trait("Category", "Return")]
+        [Fact(DisplayName = "Return adds capacity given value larger than capacity")]
+        public async Task Return_Adds_Capacity_Given_Value_Larger_Than_Capacity()
+        {
+            using (var t = new TokenBucket(10, 1000000))
+            {
+                await t.GetAsync(5);
+
+                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+
+                t.Return(50);
+
+                Assert.Equal(15, t.GetProperty<long>("CurrentCount"));
+            }
+        }
+
+        [Trait("Category", "Return")]
+        [Fact(DisplayName = "Return adds given value")]
+        public async Task Return_Adds_Given_Value()
+        {
+            using (var t = new TokenBucket(10, 1000000))
+            {
+                await t.GetAsync(5);
+
+                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+
+                t.Return(5);
+
+                Assert.Equal(10, t.GetProperty<long>("CurrentCount"));
             }
         }
     }
