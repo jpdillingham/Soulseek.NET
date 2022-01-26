@@ -83,5 +83,15 @@ namespace Soulseek
         ///     Completed due to rejection by peer.
         /// </summary>
         Rejected = 512,
+
+        /// <summary>
+        ///     Queued locally, due to user-defined constraints.
+        /// </summary>
+        Locally = 1024,
+
+        /// <summary>
+        ///     Queued remotely.
+        /// </summary>
+        Remotely = 2048,
     }
 }
