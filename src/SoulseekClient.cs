@@ -1215,7 +1215,7 @@ namespace Soulseek
             {
                 var state = args.Transfer.State;
 
-                if (state == TransferStates.Queued)
+                if (state.HasFlag(TransferStates.Queued))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1293,7 +1293,7 @@ namespace Soulseek
             {
                 var state = args.Transfer.State;
 
-                if (state == TransferStates.Queued)
+                if (state.HasFlag(TransferStates.Queued))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1360,7 +1360,7 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                if (args.Transfer.State == TransferStates.Queued)
+                if (args.Transfer.State.HasFlag(TransferStates.Queued))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1419,7 +1419,7 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                if (args.Transfer.State == TransferStates.Queued)
+                if (args.Transfer.State.HasFlag(TransferStates.Queued))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -3061,7 +3061,8 @@ namespace Soulseek
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
-                    UpdateState(TransferStates.Queued);
+                    // fake a transition to queued for conststency
+                    UpdateState(TransferStates.Queued | TransferStates.Remotely);
                     UpdateState(TransferStates.Initializing);
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
@@ -3083,7 +3084,7 @@ namespace Soulseek
                 else
                 {
                     // the download is remotely queued, so put it in the local queue.
-                    UpdateState(TransferStates.Queued);
+                    UpdateState(TransferStates.Queued | TransferStates.Remotely);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
@@ -3936,7 +3937,7 @@ namespace Soulseek
                     UploadSemaphoreSyncRoot.Release();
                 }
 
-                UpdateState(TransferStates.Queued);
+                UpdateState(TransferStates.Queued | TransferStates.Locally);
 
                 // permissive stage 1: acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
                 // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload until the
