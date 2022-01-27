@@ -1003,9 +1003,9 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(TransferStates.Requested, events[0].Transfer.State);
 
                 Assert.Equal(TransferStates.Requested, events[1].PreviousState);
-                Assert.Equal(TransferStates.Queued, events[1].Transfer.State);
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[1].Transfer.State);
 
-                Assert.Equal(TransferStates.Queued, events[2].PreviousState);
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[2].PreviousState);
                 Assert.Equal(TransferStates.Initializing, events[2].Transfer.State);
 
                 Assert.Equal(TransferStates.Initializing, events[3].PreviousState);
