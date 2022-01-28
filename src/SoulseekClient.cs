@@ -102,6 +102,7 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
+            GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: 1, maxCount: 1);
             GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
 
             UserEndPointSemaphoreCleanupTimer = new System.Timers.Timer(300000); // 5 minutes
@@ -490,6 +491,7 @@ namespace Soulseek
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private ITokenBucket DownloadTokenBucket { get; }
+        private SemaphoreSlim GlobalDownloadSemaphore { get; }
         private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
@@ -3035,11 +3037,21 @@ namespace Soulseek
             }
 
             var transferStartRequestedWaitKey = new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename);
+            bool globalSemaphoreAcquired = false;
 
             Stream outputStream = null;
 
             try
             {
+                UpdateState(TransferStates.Queued | TransferStates.Locally);
+
+                // acquire the global download semaphore to ensure we aren't trying to process more than the
+                // total allotted concurrent downloads globally. if we hit this limit, downloads will stack up behind it and will be
+                // processed in a first-in-first-out manner.
+                await GlobalDownloadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
+                globalSemaphoreAcquired = true;
+
                 Task downloadCompleted;
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
@@ -3242,6 +3254,12 @@ namespace Soulseek
                 // clean up the waits in case the code threw before they were awaited.
                 Waiter.Complete(download.WaitKey);
                 Waiter.Cancel(transferStartRequestedWaitKey);
+
+                if (globalSemaphoreAcquired)
+                {
+                    Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} released");
+                    GlobalDownloadSemaphore.Release(releaseCount: 1);
+                }
 
                 download.Connection?.Dispose();
 
