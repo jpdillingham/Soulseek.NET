@@ -177,8 +177,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 var t = new Mock<ITcpClient>();
                 t.Setup(m => m.Client).Returns(socket);
 
-                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(inactivityTimeout: 100)))
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(inactivityTimeout: 1)))
                 {
+                    // swap the watchdog timer with a dummy to prevent it from interfering with the inactivity timer
+                    c.SetProperty("WatchdogTimer", new System.Timers.Timer() { });
+
                     await c.ConnectAsync();
 
                     var ex = await Record.ExceptionAsync(() => c.WaitForDisconnect());
