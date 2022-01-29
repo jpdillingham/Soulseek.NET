@@ -1217,7 +1217,7 @@ namespace Soulseek
             {
                 var state = args.Transfer.State;
 
-                if (state.HasFlag(TransferStates.Queued))
+                if (state == (TransferStates.Queued | TransferStates.Remotely))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1295,7 +1295,7 @@ namespace Soulseek
             {
                 var state = args.Transfer.State;
 
-                if (state.HasFlag(TransferStates.Queued))
+                if (state == (TransferStates.Queued | TransferStates.Remotely))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1362,7 +1362,7 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                if (args.Transfer.State.HasFlag(TransferStates.Queued))
+                if (args.Transfer.State == (TransferStates.Queued | TransferStates.Locally))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1421,7 +1421,7 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                if (args.Transfer.State.HasFlag(TransferStates.Queued))
+                if (args.Transfer.State == (TransferStates.Queued | TransferStates.Locally))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
