@@ -38,6 +38,7 @@ namespace Soulseek.Tests.Unit.Options
             bool enableUploadQueue,
             int maximumConcurrentUploads,
             int maximumUploadSpeed,
+            int maximumConcurrentDownloads,
             int maximumDownloadSpeed,
             bool deduplicateSearchRequests,
             int messageTimeout,
@@ -74,6 +75,7 @@ namespace Soulseek.Tests.Unit.Options
                 distributedChildLimit: distributedChildLimit,
                 maximumConcurrentUploads: maximumConcurrentUploads,
                 maximumUploadSpeed: maximumUploadSpeed,
+                maximumConcurrentDownloads: maximumConcurrentDownloads,
                 maximumDownloadSpeed: maximumDownloadSpeed,
                 deduplicateSearchRequests: deduplicateSearchRequests,
                 messageTimeout: messageTimeout,
@@ -104,6 +106,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(enableUploadQueue, o.EnableDistributedNetwork);
             Assert.Equal(maximumConcurrentUploads, o.MaximumConcurrentUploads);
             Assert.Equal(maximumUploadSpeed, o.MaximumUploadSpeed);
+            Assert.Equal(maximumConcurrentDownloads, o.MaximumConcurrentDownloads);
             Assert.Equal(maximumDownloadSpeed, o.MaximumDownloadSpeed);
             Assert.Equal(deduplicateSearchRequests, o.DeduplicateSearchRequests);
             Assert.Equal(messageTimeout, o.MessageTimeout);
@@ -231,6 +234,7 @@ namespace Soulseek.Tests.Unit.Options
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
+            Assert.Equal("maximumConcurrentUploads", ((ArgumentOutOfRangeException)ex).ParamName);
         }
 
         [Trait("Category", "Instantiation")]
@@ -242,6 +246,31 @@ namespace Soulseek.Tests.Unit.Options
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
+            Assert.Equal("maximumConcurrentUploads", ((ArgumentOutOfRangeException)ex).ParamName);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if download slots are zero")]
+        public void Throws_If_Download_Slots_Are_Zero()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentDownloads: 0));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+            Assert.Equal("maximumConcurrentDownloads", ((ArgumentOutOfRangeException)ex).ParamName);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if download slots are negative")]
+        public void Throws_If_Download_Slots_Are_Negative()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentDownloads: -1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+            Assert.Equal("maximumConcurrentDownloads", ((ArgumentOutOfRangeException)ex).ParamName);
         }
 
         [Trait("Category", "Instantiation")]

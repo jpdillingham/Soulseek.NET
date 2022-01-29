@@ -51,6 +51,7 @@ namespace Soulseek
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
         /// <param name="maximumConcurrentUploads">The number of allowed concurrent uploads.</param>
         /// <param name="maximumUploadSpeed">The total maximum allowable upload speed, in kibibytes per second.</param>
+        /// <param name="maximumConcurrentDownloads">The number of allowed concurrent downloads.</param>
         /// <param name="maximumDownloadSpeed">The total maximum allowable download speed, in kibibytes per second.</param>
         /// <param name="deduplicateSearchRequests">
         ///     A value indicating whether duplicated distributed search requests should be discarded.
@@ -104,6 +105,7 @@ namespace Soulseek
             int distributedChildLimit = 25,
             int maximumConcurrentUploads = 10,
             int maximumUploadSpeed = int.MaxValue,
+            int maximumConcurrentDownloads = int.MaxValue,
             int maximumDownloadSpeed = int.MaxValue,
             bool deduplicateSearchRequests = true,
             int messageTimeout = 5000,
@@ -151,6 +153,14 @@ namespace Soulseek
             }
 
             MaximumUploadSpeed = maximumUploadSpeed;
+
+            MaximumConcurrentDownloads = maximumConcurrentDownloads;
+
+            if (MaximumConcurrentDownloads < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maximumConcurrentDownloads), "Must be greater than or equal to one");
+            }
+
             MaximumDownloadSpeed = maximumDownloadSpeed;
 
             DeduplicateSearchRequests = deduplicateSearchRequests;
@@ -259,7 +269,12 @@ namespace Soulseek
         public int ListenPort { get; }
 
         /// <summary>
-        ///     Gets the number of allowed concurrent uploads. (Default = 5).
+        ///     Gets the number of allowed concurrent downloads. (Default = int.MaxValue).
+        /// </summary>
+        public int MaximumConcurrentDownloads { get; }
+
+        /// <summary>
+        ///     Gets the number of allowed concurrent uploads. (Default = 10).
         /// </summary>
         public int MaximumConcurrentUploads { get; }
 

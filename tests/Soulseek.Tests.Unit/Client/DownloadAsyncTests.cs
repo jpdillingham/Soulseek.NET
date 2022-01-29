@@ -997,22 +997,25 @@ namespace Soulseek.Tests.Unit.Client
 
                 await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(), null);
 
-                Assert.Equal(5, events.Count);
+                Assert.Equal(6, events.Count);
 
                 Assert.Equal(TransferStates.None, events[0].PreviousState);
-                Assert.Equal(TransferStates.Requested, events[0].Transfer.State);
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, events[0].Transfer.State);
 
-                Assert.Equal(TransferStates.Requested, events[1].PreviousState);
-                Assert.Equal(TransferStates.Queued, events[1].Transfer.State);
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, events[1].PreviousState);
+                Assert.Equal(TransferStates.Requested, events[1].Transfer.State);
 
-                Assert.Equal(TransferStates.Queued, events[2].PreviousState);
-                Assert.Equal(TransferStates.Initializing, events[2].Transfer.State);
+                Assert.Equal(TransferStates.Requested, events[2].PreviousState);
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[2].Transfer.State);
 
-                Assert.Equal(TransferStates.Initializing, events[3].PreviousState);
-                Assert.Equal(TransferStates.InProgress, events[3].Transfer.State);
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[3].PreviousState);
+                Assert.Equal(TransferStates.Initializing, events[3].Transfer.State);
 
-                Assert.Equal(TransferStates.InProgress, events[4].PreviousState);
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[4].Transfer.State);
+                Assert.Equal(TransferStates.Initializing, events[4].PreviousState);
+                Assert.Equal(TransferStates.InProgress, events[4].Transfer.State);
+
+                Assert.Equal(TransferStates.InProgress, events[5].PreviousState);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[5].Transfer.State);
             }
         }
 

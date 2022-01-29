@@ -102,6 +102,7 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
+            GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: 1, maxCount: 1);
             GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
 
             UserEndPointSemaphoreCleanupTimer = new System.Timers.Timer(300000); // 5 minutes
@@ -490,6 +491,7 @@ namespace Soulseek
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private ITokenBucket DownloadTokenBucket { get; }
+        private SemaphoreSlim GlobalDownloadSemaphore { get; }
         private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
         private SemaphoreSlim StateSyncRoot { get; } = new SemaphoreSlim(1, 1);
@@ -1215,7 +1217,7 @@ namespace Soulseek
             {
                 var state = args.Transfer.State;
 
-                if (state == TransferStates.Queued)
+                if (state == (TransferStates.Queued | TransferStates.Remotely))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1293,7 +1295,7 @@ namespace Soulseek
             {
                 var state = args.Transfer.State;
 
-                if (state == TransferStates.Queued)
+                if (state == (TransferStates.Queued | TransferStates.Remotely))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1360,7 +1362,7 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                if (args.Transfer.State == TransferStates.Queued)
+                if (args.Transfer.State == (TransferStates.Queued | TransferStates.Locally))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -1419,7 +1421,7 @@ namespace Soulseek
             options ??= new TransferOptions();
             options = options.WithAdditionalStateChanged(args =>
             {
-                if (args.Transfer.State == TransferStates.Queued)
+                if (args.Transfer.State == (TransferStates.Queued | TransferStates.Locally))
                 {
                     enqueuedTaskCompletionSource.TrySetResult(true);
                 }
@@ -3035,11 +3037,21 @@ namespace Soulseek
             }
 
             var transferStartRequestedWaitKey = new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename);
+            bool globalSemaphoreAcquired = false;
 
             Stream outputStream = null;
 
             try
             {
+                UpdateState(TransferStates.Queued | TransferStates.Locally);
+
+                // acquire the global download semaphore to ensure we aren't trying to process more than the
+                // total allotted concurrent downloads globally. if we hit this limit, downloads will stack up behind it and will be
+                // processed in a first-in-first-out manner.
+                await GlobalDownloadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
+                globalSemaphoreAcquired = true;
+
                 Task downloadCompleted;
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
@@ -3061,7 +3073,8 @@ namespace Soulseek
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
-                    UpdateState(TransferStates.Queued);
+                    // fake a transition to queued for conststency
+                    UpdateState(TransferStates.Queued | TransferStates.Remotely);
                     UpdateState(TransferStates.Initializing);
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
@@ -3083,7 +3096,7 @@ namespace Soulseek
                 else
                 {
                     // the download is remotely queued, so put it in the local queue.
-                    UpdateState(TransferStates.Queued);
+                    UpdateState(TransferStates.Queued | TransferStates.Remotely);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
@@ -3241,6 +3254,12 @@ namespace Soulseek
                 // clean up the waits in case the code threw before they were awaited.
                 Waiter.Complete(download.WaitKey);
                 Waiter.Cancel(transferStartRequestedWaitKey);
+
+                if (globalSemaphoreAcquired)
+                {
+                    Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} released");
+                    GlobalDownloadSemaphore.Release(releaseCount: 1);
+                }
 
                 download.Connection?.Dispose();
 
@@ -3936,7 +3955,7 @@ namespace Soulseek
                     UploadSemaphoreSyncRoot.Release();
                 }
 
-                UpdateState(TransferStates.Queued);
+                UpdateState(TransferStates.Queued | TransferStates.Locally);
 
                 // permissive stage 1: acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
                 // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload until the
