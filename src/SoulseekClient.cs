@@ -1175,8 +1175,14 @@ namespace Soulseek
         ///     </para>
         /// </summary>
         /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     <para>
+        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///         specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     </para>
+        ///     <para>
+        ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
+        ///         and will not continue until the number of active downloads has decreased below the limit.
+        ///     </para>
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
@@ -1253,8 +1259,14 @@ namespace Soulseek
         ///     </para>
         /// </summary>
         /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     <para>
+        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
+        ///         specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///     </para>
+        ///     <para>
+        ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
+        ///         and will not continue until the number of active downloads has decreased below the limit.
+        ///     </para>
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
