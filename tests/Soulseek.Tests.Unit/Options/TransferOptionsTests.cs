@@ -35,7 +35,7 @@ namespace Soulseek.Tests.Unit.Options
             int maximumLingerTime,
             Action<TransferProgressUpdatedEventArgs> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
-            Action<int, int, int> reporter,
+            Action<Transfer, int, int, int> reporter,
             Action<Transfer> slotReleased)
         {
             var o = new TransferOptions(

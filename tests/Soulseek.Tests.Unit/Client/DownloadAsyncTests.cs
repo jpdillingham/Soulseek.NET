@@ -1386,7 +1386,7 @@ namespace Soulseek.Tests.Unit.Client
                 var gr = 0;
                 var ack = 0;
 
-                var opts = new TransferOptions(reporter: (a, b, c) =>
+                var opts = new TransferOptions(reporter: (tx, a, b, c) =>
                 {
                     att = a;
                     gr = b;
@@ -1469,7 +1469,7 @@ namespace Soulseek.Tests.Unit.Client
                 var gr = 0;
                 var ack = 0;
 
-                var opts = new TransferOptions(reporter: (a, b, c) =>
+                var opts = new TransferOptions(reporter: (tx, a, b, c) =>
                 {
                     att = a;
                     gr = b;

@@ -1414,7 +1414,7 @@ namespace Soulseek.Tests.Unit.Client
                 int gr = 0;
                 int ack = 0;
 
-                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0, reporter: (a, b, c) =>
+                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0, reporter: (tx, a, b, c) =>
                 {
                     att = a;
                     gr = b;
@@ -1478,7 +1478,7 @@ namespace Soulseek.Tests.Unit.Client
                 int gr = 0;
                 int ack = 0;
 
-                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0, reporter: (a, b, c) =>
+                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0, reporter: (tx, a, b, c) =>
                 {
                     att = a;
                     gr = b;

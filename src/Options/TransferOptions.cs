@@ -62,7 +62,7 @@ namespace Soulseek
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
-            Action<int, int, int> reporter = null,
+            Action<Transfer, int, int, int> reporter = null,
             int maximumLingerTime = 3000,
             bool disposeInputStreamOnCompletion = false,
             bool disposeOutputStreamOnCompletion = false)
@@ -110,7 +110,7 @@ namespace Soulseek
         ///     Gets the delegate, accepting the number of bytes attempted, granted, and transferred for each chunk, used to
         ///     report transfer statistics. (Default = no action).
         /// </summary>
-        public Action<int, int, int> Reporter { get; }
+        public Action<Transfer, int, int, int> Reporter { get; }
 
         /// <summary>
         ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
