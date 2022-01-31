@@ -3198,7 +3198,7 @@ namespace Soulseek
                         },
                         reporter: (attemptedBytes, grantedBytes, actualBytes) =>
                         {
-                            options.Reporter?.Invoke(attemptedBytes, grantedBytes, actualBytes);
+                            options.Reporter?.Invoke(new Transfer(download), attemptedBytes, grantedBytes, actualBytes);
                             DownloadTokenBucket.Return(grantedBytes - actualBytes);
                         },
                         cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -4083,7 +4083,7 @@ namespace Soulseek
                             },
                             reporter: (attemptedBytes, grantedBytes, actualBytes) =>
                             {
-                                options.Reporter?.Invoke(attemptedBytes, grantedBytes, actualBytes);
+                                options.Reporter?.Invoke(new Transfer(upload), attemptedBytes, grantedBytes, actualBytes);
                                 UploadTokenBucket.Return(grantedBytes - actualBytes);
                             },
                             cancellationToken: cancellationToken).ConfigureAwait(false);
