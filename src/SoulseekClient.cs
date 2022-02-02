@@ -102,7 +102,7 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
-            GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: 1, maxCount: 1);
+            GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentDownloads, maxCount: Options.MaximumConcurrentDownloads);
             GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
 
             UserEndPointSemaphoreCleanupTimer = new System.Timers.Timer(300000); // 5 minutes
