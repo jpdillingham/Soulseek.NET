@@ -26,6 +26,8 @@ namespace Soulseek
     /// </summary>
     internal sealed class TokenBucket : ITokenBucket, IDisposable
     {
+        private TaskCompletionSource<bool> waitForReset = new TaskCompletionSource<bool>();
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="TokenBucket"/> class.
         /// </summary>
@@ -60,7 +62,6 @@ namespace Soulseek
         private long CurrentCount { get; set; }
         private bool Disposed { get; set; }
         private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
-        private TaskCompletionSource<bool> WaitForReset { get; set; } = new TaskCompletionSource<bool>();
 
         /// <summary>
         ///     Disposes this instance.
@@ -141,8 +142,6 @@ namespace Soulseek
 
         private async Task<int> GetInternalAsync(int count, CancellationToken cancellationToken = default)
         {
-            Task waitTask = Task.CompletedTask;
-
             await SyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
@@ -152,9 +151,7 @@ namespace Soulseek
                 // which is as close to a FIFO as .NET synchronization primitives will allow
                 if (CurrentCount == 0)
                 {
-                    await WaitForReset.Task;
-                    WaitForReset = new TaskCompletionSource<bool>();
-
+                    await waitForReset.Task.ConfigureAwait(false);
                     CurrentCount = Capacity;
                 }
 
@@ -170,6 +167,7 @@ namespace Soulseek
             }
         }
 
-        private void Reset() => WaitForReset.SetResult(true);
+        private void Reset()
+            => Interlocked.Exchange(ref waitForReset, new TaskCompletionSource<bool>()).SetResult(true);
     }
 }
