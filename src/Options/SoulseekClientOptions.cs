@@ -470,6 +470,7 @@ namespace Soulseek
                 distributedChildLimit: distributedChildLimit ?? DistributedChildLimit,
                 maximumConcurrentUploads: MaximumConcurrentUploads,
                 maximumUploadSpeed: maximumUploadSpeed ?? MaximumUploadSpeed,
+                maximumConcurrentDownloads: MaximumConcurrentDownloads,
                 maximumDownloadSpeed: maximumDownloadSpeed ?? MaximumDownloadSpeed,
                 deduplicateSearchRequests: deduplicateSearchRequests ?? DeduplicateSearchRequests,
                 messageTimeout: MessageTimeout,
