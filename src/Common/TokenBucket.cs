@@ -49,7 +49,12 @@ namespace Soulseek
             CurrentCount = Capacity;
 
             Clock = new System.Timers.Timer(interval);
-            Clock.Elapsed += (sender, e) => Reset();
+            Clock.Elapsed += (sender, e) =>
+            {
+                CurrentCount = Capacity;
+                Reset();
+            };
+
             Clock.Start();
         }
 
@@ -124,6 +129,7 @@ namespace Soulseek
             }
 
             Capacity = capacity;
+            CurrentCount = Math.Min(CurrentCount, Capacity);
         }
 
         private void Dispose(bool disposing)
@@ -152,7 +158,6 @@ namespace Soulseek
                 if (CurrentCount == 0)
                 {
                     await waitForReset.Task.ConfigureAwait(false);
-                    CurrentCount = Capacity;
                 }
 
                 // take the minimum of requested count or CurrentCount, deduct it from
