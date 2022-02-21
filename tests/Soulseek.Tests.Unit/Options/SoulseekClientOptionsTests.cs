@@ -364,7 +364,17 @@ namespace Soulseek.Tests.Unit.Options
                 enqueueDownload: enqueueDownloadAction,
                 placeInQueueResolver: placeInQueueResponseResolver);
 
-            var o = new SoulseekClientOptions().With(patch);
+            var original = new SoulseekClientOptions(
+                maximumConcurrentUploads: 42,
+                maximumConcurrentDownloads: 24,
+                minimumDiagnosticLevel: DiagnosticLevel.None);
+
+            var o = original.With(patch);
+
+            // make sure the options that can't be patched did not change
+            Assert.Equal(42, o.MaximumConcurrentUploads);
+            Assert.Equal(24, o.MaximumConcurrentDownloads);
+            Assert.Equal(DiagnosticLevel.None, o.MinimumDiagnosticLevel);
 
             Assert.Equal(enableListener, o.EnableListener);
             Assert.Equal(listenPort, o.ListenPort);
