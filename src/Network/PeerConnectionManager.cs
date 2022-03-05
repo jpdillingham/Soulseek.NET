@@ -653,7 +653,14 @@ namespace Soulseek.Network
             {
                 if (MessageConnectionDictionary.TryRemove(MessageConnectionDictionary.Keys.First(), out var connection))
                 {
-                    (await connection.Value.ConfigureAwait(false))?.Dispose();
+                    try
+                    {
+                        (await connection.Value.ConfigureAwait(false))?.Dispose();
+                    }
+                    catch
+                    {
+                        // noop
+                    }
                 }
             }
         }
