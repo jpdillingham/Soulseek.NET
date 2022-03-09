@@ -155,6 +155,7 @@ namespace Soulseek
             DistributedConnectionManager.ParentDisconnected += (sender, e) => DistributedParentDisconnected?.Invoke(this, e);
             DistributedConnectionManager.ChildAdded += (sender, e) => DistributedChildAdded?.Invoke(this, e);
             DistributedConnectionManager.ChildDisconnected += (sender, e) => DistributedChildDisconnected?.Invoke(this, e);
+            DistributedConnectionManager.StateChanged += (sender, e) => DistributedNetworkStateChanged?.Invoke(this, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserCannotConnect += (sender, e) => UserCannotConnect?.Invoke(this, e);
@@ -238,6 +239,11 @@ namespace Soulseek
         ///     Occurs when the parent is disconnected.
         /// </summary>
         public event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
+
+        /// <summary>
+        ///     Occurs when the state of the distributed network changes.
+        /// </summary>
+        public event EventHandler<DistributedNetworkInfo> DistributedNetworkStateChanged;
 
         /// <summary>
         ///     Occurs when a user reports that a download has been denied.
