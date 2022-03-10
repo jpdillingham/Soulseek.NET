@@ -1055,6 +1055,37 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "DistributedNetworkStatusChanged fires when handler raises")]
+        public void DistributedNetworkStatusChanged_Fires_When_Handler_Raises()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                bool fired = false;
+
+                s.DistributedNetworkStateChanged += (sender, args) => fired = true;
+                mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(1, "root", true, 1, true, null, default, true));
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Fact(DisplayName = "DistributedNetworkStateChanged does not throw if event not bound")]
+        public void DistributedNetworkStateChanged_Does_Not_Throw_If_Event_Not_Bound()
+        {
+            var mock = new Mock<IDistributedConnectionManager>();
+
+            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(1, "root", true, 1, true, null, default, true)));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "PrivateMessageReceived fires when handler raises"), AutoData]
         public void PrivateMessageReceived_Fires_When_Handler_Raises(int id, DateTime timestamp, string username, string message, bool isAdmin)
         {
