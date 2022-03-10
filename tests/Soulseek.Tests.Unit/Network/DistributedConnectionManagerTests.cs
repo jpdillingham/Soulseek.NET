@@ -745,6 +745,38 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR raises StateChanged on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Raises_StateChanged_On_Successful_Connection(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                bool stateChangedFired = false;
+
+                manager.StateChanged += (_, args) => stateChangedFired = true;
+
+                await manager.GetOrAddChildConnectionAsync(ctpr);
+
+                Assert.True(stateChangedFired);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync CTPR resets StatusDebounceTimer on successful connection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Resets_StatusDebounceTimer_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
@@ -1665,6 +1697,41 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.Equal(username, actualArgs.Username);
                 Assert.Equal(endpoint, actualArgs.IPEndPoint);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync raises StateChanged on success when not superseding"), AutoData]
+        internal async Task AddChildConnectionAsync_Raises_StateChanged_On_Success_When_Not_Superseding(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                bool stateChangedFired = false;
+
+                manager.StateChanged += (sender, args) => stateChangedFired = true;
+
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+
+                Assert.True(stateChangedFired);
             }
         }
 
