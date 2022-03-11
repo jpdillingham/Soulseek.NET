@@ -115,6 +115,11 @@ namespace Soulseek.Network
         public event EventHandler PromotedToBranchRoot;
 
         /// <summary>
+        ///     Occurs when the state of the distributed network changes.
+        /// </summary>
+        public event EventHandler<DistributedNetworkInfo> StateChanged;
+
+        /// <summary>
         ///     Gets the current distributed branch level.
         /// </summary>
         public int BranchLevel => HasParent ? ParentBranchLevel + 1 : 0;
@@ -314,6 +319,7 @@ namespace Soulseek.Network
                 if (!superseded)
                 {
                     ChildAdded?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint));
+                    StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
                 }
 
                 _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
@@ -408,8 +414,9 @@ namespace Soulseek.Network
                     // handle it here somewhere.
                     Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Type}, id: {ParentConnection.Id})");
                     Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
-                    ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
                     DemoteFromBranchRoot();
+                    ParentAdopted?.Invoke(this, new DistributedParentEventArgs(ParentConnection.Username, ParentConnection.IPEndPoint, ParentBranchLevel, ParentBranchRoot));
+                    StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
 
                     await UpdateStatusAsync().ConfigureAwait(false);
                     _ = BroadcastMessageAsync(GetBranchInformation()).ConfigureAwait(false);
@@ -481,6 +488,7 @@ namespace Soulseek.Network
                 IsBranchRoot = false;
                 Diagnostic.Info($"Demoted from distributed branch root.");
                 DemotedFromBranchRoot?.Invoke(this, EventArgs.Empty);
+                StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
             }
         }
 
@@ -614,6 +622,7 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
                 ChildAdded?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint));
+                StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
 
                 _ = UpdateStatusEventuallyAsync().ConfigureAwait(false);
 
@@ -631,6 +640,7 @@ namespace Soulseek.Network
                 IsBranchRoot = true;
                 Diagnostic.Info($"Promoted to distributed branch root.");
                 PromotedToBranchRoot?.Invoke(this, EventArgs.Empty);
+                StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
             }
         }
 
@@ -732,6 +742,7 @@ namespace Soulseek.Network
 
                         await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray(), cancellationToken).ConfigureAwait(false);
 
+                        StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
                         Diagnostic.Info($"Updated distributed status; {status}");
 
                         LastStatus = status.ToString();
@@ -771,6 +782,7 @@ namespace Soulseek.Network
             Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message} (type: {connection.Type}, id: {connection.Id})");
             Diagnostic.Info($"Child connection to {connection.Username} ({connection.IPEndPoint}) disconnected{(e.Message == null ? "." : $": {e.Message}")}");
             ChildDisconnected?.Invoke(this, new DistributedChildEventArgs(connection.Username, connection.IPEndPoint));
+            StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
 
             connection.Dispose();
 
@@ -959,6 +971,8 @@ namespace Soulseek.Network
             ParentConnection = null;
             ParentBranchLevel = 0;
             ParentBranchRoot = string.Empty;
+
+            StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
 
             connection.Dispose();
 

@@ -77,6 +77,11 @@ namespace Soulseek
         event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
 
         /// <summary>
+        ///     Occurs when the state of the distributed network changes.
+        /// </summary>
+        event EventHandler<DistributedNetworkInfo> DistributedNetworkStateChanged;
+
+        /// <summary>
         ///     Occurs when a user reports that a download has been denied.
         /// </summary>
         event EventHandler<DownloadDeniedEventArgs> DownloadDenied;

@@ -309,20 +309,23 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "PromoteToBranchRoot")]
-        [Fact(DisplayName = "PromoteToBranchRoot raises PromotedToBranchRoot")]
-        public void PromoteToBranchRoot_Raises_PromotedToBranchRoot()
+        [Fact(DisplayName = "PromoteToBranchRoot raises PromotedToBranchRoot and StateChanged")]
+        public void PromoteToBranchRoot_Raises_PromotedToBranchRoot_And_StateChanged()
         {
             var (manager, _) = GetFixture();
 
             using (manager)
             {
                 bool fired = false;
+                bool stateChangedFired = false;
 
                 manager.PromotedToBranchRoot += (sender, args) => fired = true;
+                manager.StateChanged += (sender, rags) => stateChangedFired = true;
 
                 manager.PromoteToBranchRoot();
 
                 Assert.True(fired);
+                Assert.True(stateChangedFired);
             }
         }
 
@@ -396,6 +399,27 @@ namespace Soulseek.Tests.Unit.Network
                 var fired = false;
 
                 manager.DemotedFromBranchRoot += (sender, args) => fired = true;
+
+                manager.DemoteFromBranchRoot();
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "DemoteFromBranchRoot")]
+        [Fact(DisplayName = "DemoteFromBranchRoot raises StateChanged")]
+        public void DemoteFromBranchRoot_Raises_StateChanged()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.PromoteToBranchRoot();
+                Assert.True(manager.IsBranchRoot);
+
+                var fired = false;
+
+                manager.StateChanged += (sender, args) => fired = true;
 
                 manager.DemoteFromBranchRoot();
 
@@ -558,8 +582,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "ParentConnection_Disconnected")]
-        [Theory(DisplayName = "ParentConnection_Disconnected raises ParentDisconnected"), AutoData]
-        public void ParentConnection_Raises_ParentDisconnected(string username, IPEndPoint endpoint, string message)
+        [Theory(DisplayName = "ParentConnection_Disconnected raises ParentDisconnected and StateChanged"), AutoData]
+        public void ParentConnection_Raises_ParentDisconnected_And_StateChanged(string username, IPEndPoint endpoint, string message)
         {
             var c = GetMessageConnectionMock(username, endpoint);
 
@@ -572,8 +596,10 @@ namespace Soulseek.Tests.Unit.Network
                 manager.SetProperty("ParentBranchRoot", "foo");
 
                 DistributedParentEventArgs actualArgs = default;
+                bool stateChangedFired = false;
 
                 manager.ParentDisconnected += (sender, args) => actualArgs = args;
+                manager.StateChanged += (sender, args) => stateChangedFired = true;
 
                 manager.InvokeMethod("ParentConnection_Disconnected", c.Object, new ConnectionDisconnectedEventArgs(message));
 
@@ -581,6 +607,8 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(endpoint, actualArgs.IPEndPoint);
                 Assert.Equal(1, actualArgs.BranchLevel);
                 Assert.Equal("foo", actualArgs.BranchRoot);
+
+                Assert.True(stateChangedFired);
             }
         }
 
@@ -741,6 +769,38 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.NotNull(actualArgs);
                 Assert.Equal(ctpr.Username, actualArgs.Username);
                 Assert.Equal(ctpr.IPEndPoint, actualArgs.IPEndPoint);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR raises StateChanged on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Raises_StateChanged_On_Successful_Connection(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                bool stateChangedFired = false;
+
+                manager.StateChanged += (_, args) => stateChangedFired = true;
+
+                await manager.GetOrAddChildConnectionAsync(ctpr);
+
+                Assert.True(stateChangedFired);
             }
         }
 
@@ -1669,6 +1729,41 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync raises StateChanged on success when not superseding"), AutoData]
+        internal async Task AddChildConnectionAsync_Raises_StateChanged_On_Success_When_Not_Superseding(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            mocks.ConnectionFactory.Setup(m => m.GetDistributedConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+
+                bool stateChangedFired = false;
+
+                manager.StateChanged += (sender, args) => stateChangedFired = true;
+
+                await manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+
+                Assert.True(stateChangedFired);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync generates expected diagnostics on throw"), AutoData]
         internal async Task AddChildConnectionAsync_Generates_Expected_Diagnostics_On_Throw(string username, IPEndPoint endpoint)
         {
@@ -1839,6 +1934,33 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync raises StateChanged on success")]
+        internal async Task UpdateStatusAsync_Raises_StateChanged_On_Success()
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", null);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+
+                bool stateChangedFired = false;
+
+                manager.StateChanged += (sender, args) => stateChangedFired = true;
+
+                await manager.UpdateStatusAsync();
+
+                Assert.True(stateChangedFired);
+            }
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
         [Fact(DisplayName = "UpdateStatusAsync produces diagnostic warning on failure when connected")]
         internal async Task UpdateStatusAsync_Produces_Diagnostic_Warning_On_Failure_When_Connected()
         {
@@ -1963,6 +2085,32 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.Equal("foo", actualArgs.Username);
                 Assert.Equal(conn.Object.IPEndPoint, actualArgs.IPEndPoint);
+            }
+        }
+
+        [Trait("Category", "ChildConnection_Disconnected")]
+        [Theory(DisplayName = "ChildConnection_Disconnected raises StateChanged"), AutoData]
+        internal void ChildConnection_Disconnected_Raises_StateChanged(string message)
+        {
+            var (manager, _) = GetFixture();
+
+            var conn = GetMessageConnectionMock("foo", null);
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("foo", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
+
+            var dict2 = manager.GetProperty<ConcurrentDictionary<string, IPEndPoint>>("ChildDictionary");
+            dict2.TryAdd("foo", conn.Object.IPEndPoint);
+
+            using (manager)
+            {
+                bool stateChangedFired = false;
+
+                manager.StateChanged += (sender, args) => stateChangedFired = true;
+
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
+
+                Assert.True(stateChangedFired);
             }
         }
 
@@ -3372,8 +3520,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
-        [Theory(DisplayName = "AddParentConnectionAsync raises ParentAdopted on connect"), AutoData]
-        internal async Task AddParentConnectionAsync_Raises_ParentAdopted_On_Connect(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Theory(DisplayName = "AddParentConnectionAsync raises ParentAdopted and StateChanged on connect"), AutoData]
+        internal async Task AddParentConnectionAsync_Raises_ParentAdopted_and_StateChanged_On_Connect(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
         {
             var (manager, mocks) = GetFixture();
 
@@ -3430,8 +3578,10 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 DistributedParentEventArgs actualArgs = default;
+                bool stateChangedFired = false;
 
                 manager.ParentAdopted += (sender, args) => actualArgs = args;
+                manager.StateChanged += (sender, args) => stateChangedFired = true;
 
                 await manager.AddParentConnectionAsync(candidates);
 
@@ -3439,6 +3589,8 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(endpoint1, actualArgs.IPEndPoint);
                 Assert.Equal(1, actualArgs.BranchLevel);
                 Assert.Equal("foo1", actualArgs.BranchRoot);
+
+                Assert.True(stateChangedFired);
             }
         }
 

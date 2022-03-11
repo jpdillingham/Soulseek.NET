@@ -62,6 +62,11 @@ namespace Soulseek.Network
         event EventHandler PromotedToBranchRoot;
 
         /// <summary>
+        ///     Occurs when the state of the distributed network changes.
+        /// </summary>
+        event EventHandler<DistributedNetworkInfo> StateChanged;
+
+        /// <summary>
         ///     Gets the current distributed branch level.
         /// </summary>
         int BranchLevel { get; }
