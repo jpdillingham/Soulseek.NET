@@ -742,6 +742,7 @@ namespace Soulseek.Network
 
                         await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray(), cancellationToken).ConfigureAwait(false);
 
+                        StateChanged?.Invoke(this, DistributedNetworkInfo.FromDistributedConnectionManager(this));
                         Diagnostic.Info($"Updated distributed status; {status}");
 
                         LastStatus = status.ToString();
