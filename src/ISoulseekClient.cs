@@ -1174,7 +1174,7 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/> or <paramref name="message"/> is null or empty.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
@@ -1190,7 +1190,7 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null or empty.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
@@ -1221,7 +1221,7 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null or empty.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
