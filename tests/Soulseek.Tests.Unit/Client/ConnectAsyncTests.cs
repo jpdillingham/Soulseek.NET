@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit.Client
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -305,7 +306,7 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connects and logs in"), AutoData]
+        [Theory(DisplayName = "Connects, logs in, and sets listen port"), AutoData]
         public async Task Connects_And_Logs_In(string username, string password)
         {
             var (client, mocks) = GetFixture();
@@ -317,8 +318,11 @@ namespace Soulseek.Tests.Unit.Client
 
             mocks.ServerConnection.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()));
 
-            var expectedBytes = new LoginRequest(username, password).ToByteArray();
-            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
+            var expectedBytes = new LoginRequest(username, password).ToByteArray()
+                .Concat(new SetListenPortCommand(client.Options.ListenPort).ToByteArray())
+                .ToArray();
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(msg => msg.Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "Connect")]
