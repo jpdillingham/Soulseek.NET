@@ -59,6 +59,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.RemoteToken);
             Assert.Equal(options, d.Options);
             Assert.Equal(0, d.StartOffset);
+            Assert.Null(d.Exception);
         }
 
         [Trait("Category", "Properties")]
@@ -185,6 +186,20 @@ namespace Soulseek.Tests.Unit
             d.SetProperty("BytesTransferred", 50);
 
             Assert.Equal(50, d.PercentComplete);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "Exception works")]
+        internal void Exception_Works()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            Assert.Null(d.Exception);
+
+            var ex = new Exception("foo");
+            d.SetProperty("Exception", ex);
+
+            Assert.Equal(ex, d.Exception);
         }
 
         [Trait("Category", "UpdateProgress")]
