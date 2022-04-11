@@ -309,7 +309,7 @@
 
                 Console.WriteLine($"[{direction}] [{user}/{file}] {oldState} => {state}{(completed ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%) @ {args.Transfer.AverageSpeed.SizeSuffix()}/s" : string.Empty)}");
 
-                if (completed)
+                if (completed && args.Transfer.State.HasFlag(TransferStates.Succeeded))
                 {
                     _ = Client.SendUploadSpeedAsync((int)(args.Transfer.AverageSpeed));
                 }

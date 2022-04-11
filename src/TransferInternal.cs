@@ -89,6 +89,11 @@ namespace Soulseek
         public DateTime? EndTime { get; private set; }
 
         /// <summary>
+        ///     Gets or sets the <see cref="Exception"/> that caused the failure of the transfer, if applicable.
+        /// </summary>
+        public Exception Exception { get; set; }
+
+        /// <summary>
         ///     Gets the filename of the file to be transferred.
         /// </summary>
         public string Filename { get; }

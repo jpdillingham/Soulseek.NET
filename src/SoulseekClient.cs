@@ -3238,12 +3238,14 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 download.State = TransferStates.Rejected;
+                download.Exception = ex;
 
                 throw new TransferRejectedException($"Download of file {remoteFilename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
                 download.State = TransferStates.Cancelled;
+                download.Exception = ex;
                 download.Connection?.Disconnect("Transfer cancelled", ex);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3253,6 +3255,7 @@ namespace Soulseek
             catch (TimeoutException ex)
             {
                 download.State = TransferStates.TimedOut;
+                download.Exception = ex;
                 download.Connection?.Disconnect("Transfer timed out", ex);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3262,6 +3265,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 download.State = TransferStates.Errored;
+                download.Exception = ex;
                 download.Connection?.Disconnect("Transfer error", ex);
 
                 Diagnostic.Debug(ex.ToString());
@@ -4148,12 +4152,14 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 upload.State = TransferStates.Rejected;
+                upload.Exception = ex;
 
                 throw new TransferRejectedException($"Upload of file {remoteFilename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
                 upload.State = TransferStates.Cancelled;
+                upload.Exception = ex;
                 upload.Connection?.Disconnect("Transfer cancelled", ex);
 
                 Diagnostic.Debug(ex.ToString());
@@ -4165,6 +4171,7 @@ namespace Soulseek
             catch (TimeoutException ex)
             {
                 upload.State = TransferStates.TimedOut;
+                upload.Exception = ex;
                 upload.Connection?.Disconnect("Transfer timed out", ex);
 
                 Diagnostic.Debug(ex.ToString());
@@ -4173,6 +4180,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 upload.State = TransferStates.Errored;
+                upload.Exception = ex;
                 upload.Connection?.Disconnect("Transfer error", ex);
 
                 Diagnostic.Debug(ex.ToString());
