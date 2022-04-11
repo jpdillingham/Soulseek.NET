@@ -45,6 +45,7 @@ namespace Soulseek
         /// </param>
         /// <param name="remoteToken">The remote unique token for the transfer.</param>
         /// <param name="ipEndPoint">The ip endpoint of the remote transfer connection, if one has been established.</param>
+        /// <param name="exception">The Exception that caused the failure of the transfer, if applicable.</param>
         public Transfer(
             TransferDirection direction,
             string username,
@@ -58,7 +59,8 @@ namespace Soulseek
             DateTime? startTime = null,
             DateTime? endTime = null,
             int? remoteToken = null,
-            IPEndPoint ipEndPoint = null)
+            IPEndPoint ipEndPoint = null,
+            Exception exception = null)
         {
             Direction = direction;
             Username = username;
@@ -73,6 +75,7 @@ namespace Soulseek
             EndTime = endTime;
             RemoteToken = remoteToken;
             IPEndPoint = ipEndPoint;
+            Exception = exception;
         }
 
         /// <summary>
@@ -93,7 +96,8 @@ namespace Soulseek
                 transferInternal.StartTime,
                 transferInternal.EndTime,
                 transferInternal.RemoteToken,
-                transferInternal.IPEndPoint)
+                transferInternal.IPEndPoint,
+                transferInternal.Exception)
         {
         }
 
@@ -126,6 +130,11 @@ namespace Soulseek
         ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
         public DateTime? EndTime { get; }
+
+        /// <summary>
+        ///     Gets the <see cref="Exception"/> that caused the failure of the transfer, if applicable.
+        /// </summary>
+        public Exception Exception { get; }
 
         /// <summary>
         ///     Gets the filename of the file to be transferred.
