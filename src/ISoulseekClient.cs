@@ -531,6 +531,9 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/>, <paramref name="remoteFilename"/>, or
         ///     <paramref name="localFilename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
+        /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
         /// </exception>
@@ -568,6 +571,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only
         ///     of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
