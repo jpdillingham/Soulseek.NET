@@ -957,6 +957,9 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/>, <paramref name="remoteFilename"/>, or
         ///     <paramref name="localFilename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
+        /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
         /// </exception>
@@ -996,6 +999,11 @@ namespace Soulseek
             if (startOffset < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
+            }
+
+            if (startOffset > 0 && !size.HasValue)
+            {
+                throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1042,6 +1050,9 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="remoteFilename"/> is null, empty, or consists only
         ///     of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
+        /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
         /// </exception>
@@ -1079,6 +1090,11 @@ namespace Soulseek
             if (startOffset < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
+            }
+
+            if (startOffset > 0 && !size.HasValue)
+            {
+                throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
             }
 
             if (outputStreamFactory == null)
@@ -3230,7 +3246,7 @@ namespace Soulseek
                 await downloadCompleted.ConfigureAwait(false);
 
                 download.State = TransferStates.Completed | download.State;
-                UpdateProgress(download.StartOffset + outputStream.Position);
+                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(download.State);
 
                 return new Transfer(download);

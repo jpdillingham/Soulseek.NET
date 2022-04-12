@@ -164,6 +164,21 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws ArgumentNullException given startOffset and no size")]
+        public async Task DownloadAsync_Stream_Throws_ArgumentNullException_Given_StartOffset_And_No_Size()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "foo", () => stream, startOffset: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentNullException>(ex);
+                Assert.Equal("size", ((ArgumentNullException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Fact(DisplayName = "DownloadAsync throws ArgumentOutOfRangeException given negative size")]
         public async Task DownloadAsync_Throws_ArgumentOutOfRangeException_Given_Negative_Size()
         {
@@ -188,6 +203,21 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentOutOfRangeException>(ex);
                 Assert.Equal("startOffset", ((ArgumentOutOfRangeException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws ArgumentNullException given startOffset and no size")]
+        public async Task DownloadAsync_Throws_ArgumentNullException_Given_StartOffset_And_No_Size()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "remote", "local", startOffset: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentNullException>(ex);
+                Assert.Equal("size", ((ArgumentNullException)ex).ParamName);
             }
         }
 
