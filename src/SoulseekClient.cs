@@ -3301,7 +3301,7 @@ namespace Soulseek
 
                 if (globalSemaphoreAcquired)
                 {
-                    Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} released");
+                    Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} from {username} released");
                     GlobalDownloadSemaphore.Release(releaseCount: 1);
                 }
 
@@ -3309,22 +3309,31 @@ namespace Soulseek
 
                 DownloadDictionary.TryRemove(download.Token, out _);
 
-                var finalStreamPosition = outputStream?.Position ?? 0;
+                long finalStreamPosition = 0;
 
-                if (options.DisposeOutputStreamOnCompletion && outputStream != null)
+                try
                 {
-                    try
+                    finalStreamPosition = outputStream?.Position ?? 0;
+
+                    if (options.DisposeOutputStreamOnCompletion && outputStream != null)
                     {
-                        await outputStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
-                    }
-                    finally
-                    {
+                        try
+                        {
+                            await outputStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+                        }
+                        finally
+                        {
 #if NETSTANDARD2_0
                         outputStream?.Dispose();
 #else
-                        await outputStream.DisposeAsync().ConfigureAwait(false);
+                            await outputStream.DisposeAsync().ConfigureAwait(false);
 #endif
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Failed to finalize output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
                 }
 
                 if (!download.State.HasFlag(TransferStates.Completed))
@@ -4280,15 +4289,24 @@ namespace Soulseek
 
                 UploadDictionary.TryRemove(upload.Token, out _);
 
-                var finalStreamPosition = inputStream?.Position ?? 0;
+                long finalStreamPosition = 0;
 
-                if (options.DisposeInputStreamOnCompletion && inputStream != null)
+                try
                 {
+                    finalStreamPosition = inputStream?.Position ?? 0;
+
+                    if (options.DisposeInputStreamOnCompletion && inputStream != null)
+                    {
 #if NETSTANDARD2_0
                     inputStream.Dispose();
 #else
-                    await inputStream.DisposeAsync().ConfigureAwait(false);
+                        await inputStream.DisposeAsync().ConfigureAwait(false);
 #endif
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Failed to finalize input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                 }
 
                 if (!upload.State.HasFlag(TransferStates.Completed))
