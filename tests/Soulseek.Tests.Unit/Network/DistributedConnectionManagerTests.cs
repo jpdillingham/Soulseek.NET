@@ -524,7 +524,12 @@ namespace Soulseek.Tests.Unit.Network
             var (manager, mocks) = GetFixture();
 
             var c1 = new Mock<IMessageConnection>();
+            c1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             var c2 = new Mock<IMessageConnection>();
+            c2.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
             var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
             dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
@@ -537,6 +542,33 @@ namespace Soulseek.Tests.Unit.Network
 
             c1.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None));
             c2.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None));
+        }
+
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync does not broadcast message to unconnected connections"), AutoData]
+        public async Task BroadcastMessageAsync_Does_Not_Broadcast_Message_To_Unconnected_Connections(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+            c1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var c2 = new Mock<IMessageConnection>();
+            c2.Setup(m => m.State)
+                .Returns(ConnectionState.Disconnected);
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
+            dict.TryAdd("c2", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c2.Object)));
+
+            using (manager)
+            {
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+            }
+
+            c1.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None), Times.Once);
+            c2.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None), Times.Never);
         }
 
         [Trait("Category", "BroadcastMessageAsync")]
