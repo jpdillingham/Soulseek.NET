@@ -460,7 +460,11 @@ namespace Soulseek.Network
                 try
                 {
                     var connection = await child.Value.Value.ConfigureAwait(false);
-                    await connection.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+
+                    if (connection.State == ConnectionState.Connected)
+                    {
+                        await connection.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+                    }
                 }
                 catch (Exception ex)
                 {
