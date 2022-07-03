@@ -3119,7 +3119,7 @@ namespace Soulseek
                     // the size of the remote file may have changed since it was sent in a search or browse response
                     if (download.Size.HasValue && download.Size.Value != transferRequestAcknowledgement.FileSize)
                     {
-                        throw new TransferSizeMismatchException($"The reported size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
+                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
                     }
 
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
@@ -3142,7 +3142,7 @@ namespace Soulseek
                 }
                 else if (!string.Equals(transferRequestAcknowledgement.Message.TrimEnd('.'), "Queued", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
+                    throw new TransferRejectedException($"Transfer rejected: {transferRequestAcknowledgement.Message}");
                 }
                 else
                 {
@@ -3155,7 +3155,7 @@ namespace Soulseek
                     // the size of the remote file may have changed since it was sent in a search or browse response
                     if (download.Size.HasValue && download.Size.Value != transferStartRequest.FileSize)
                     {
-                        throw new TransferSizeMismatchException($"The reported size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
+                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
                     }
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
@@ -3273,7 +3273,14 @@ namespace Soulseek
                 download.State = TransferStates.Rejected;
                 download.Exception = ex;
 
-                throw new TransferRejectedException($"Download of file {remoteFilename} rejected by user {username}: {ex.Message}", ex);
+                throw;
+            }
+            catch (TransferSizeMismatchException ex)
+            {
+                download.State = TransferStates.Aborted;
+                download.Exception = ex;
+
+                throw;
             }
             catch (OperationCanceledException ex)
             {
@@ -4073,7 +4080,7 @@ namespace Soulseek
 
                 if (!transferRequestAcknowledgement.IsAllowed)
                 {
-                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
+                    throw new TransferRejectedException($"Transfer rejected: {transferRequestAcknowledgement.Message}");
                 }
 
                 UpdateState(TransferStates.Initializing);
@@ -4196,7 +4203,7 @@ namespace Soulseek
                 upload.State = TransferStates.Rejected;
                 upload.Exception = ex;
 
-                throw new TransferRejectedException($"Upload of file {remoteFilename} rejected by user {username}: {ex.Message}", ex);
+                throw;
             }
             catch (OperationCanceledException ex)
             {
