@@ -3153,7 +3153,7 @@ namespace Soulseek
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
                     // the size of the remote file may have changed since it was sent in a search or browse response
-                    if (download.Size.HasValue && download.Size.Value != transferRequestAcknowledgement.FileSize)
+                    if (download.Size.HasValue && download.Size.Value != transferStartRequest.FileSize)
                     {
                         throw new TransferSizeMismatchException($"The reported size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}");
                     }
