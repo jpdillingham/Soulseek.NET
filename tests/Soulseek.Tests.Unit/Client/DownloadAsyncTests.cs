@@ -21,6 +21,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -1026,7 +1027,8 @@ namespace Soulseek.Tests.Unit.Client
                     {
                         caught = args.Transfer.Exception;
                     }
-                }), null));
+                }),
+                null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferRejectedException>(ex);
@@ -1178,12 +1180,12 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadToFileAsync")]
-        [Theory(DisplayName = "DownloadToFileAsync uses given size when skipping queue"), AutoData]
-        public async Task DownloadToFileAsync_Uses_Size_Given_Size_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size)
+        [Theory(DisplayName = "DownloadToFileAsync throws TransferSizeMismatchException on size mismatch when skipping queue"), AutoData]
+        public async Task DownloadToFileAsync_Throws_On_Size_Mismatch_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, int token, int size, int remoteSize)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var response = new TransferResponse(token, remoteSize); // allowed, will start download immediately
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var request = new TransferRequest(TransferDirection.Download, token, filename, size);
@@ -1229,17 +1231,71 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", null, 0, token, new TransferOptions(), null);
-            }
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", (long?)size, 0, token, new TransferOptions(), null));
 
-            transferConn.Verify(
-                m => m.ReadAsync(
-                    size,
-                    It.IsAny<Stream>(),
-                    It.IsAny<Func<int, CancellationToken, Task<int>>>(),
-                    It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
-                Times.Once);
+                Assert.NotNull(ex);
+                Assert.IsType<TransferSizeMismatchException>(ex);
+                Assert.Equal(size, ((TransferSizeMismatchException)ex).LocalSize);
+                Assert.Equal(remoteSize, ((TransferSizeMismatchException)ex).RemoteSize);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToFileAsync sets state to Aborted on size mismatch"), AutoData]
+        public async Task DownloadToFileAsync_Sets_State_To_Aborted_On_Size_Mismatch(string username, IPEndPoint endpoint, string filename, int token, int size, int remoteSize)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, remoteSize); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(data));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var events = new List<TransferStateChangedEventArgs>();
+
+                s.TransferStateChanged += (sender, e) =>
+                {
+                    events.Add(e);
+                };
+
+                _ = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", (long?)size, 0, token, new TransferOptions(), null));
+
+                Assert.Equal(TransferStates.Completed | TransferStates.Aborted, events.Last().Transfer.State);
+            }
         }
 
         [Trait("Category", "DownloadToFileAsync")]
