@@ -31,18 +31,26 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferSizeMismatchException"/> class.
         /// </summary>
-        public TransferSizeMismatchException()
+        /// <param name="localSize">The size requested locally.</param>
+        /// <param name="remoteSize">The size reported by the remote peer.</param>
+        public TransferSizeMismatchException(long localSize, long remoteSize)
             : base()
         {
+            LocalSize = localSize;
+            RemoteSize = remoteSize;
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferSizeMismatchException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public TransferSizeMismatchException(string message)
+        /// <param name="localSize">The size requested locally.</param>
+        /// <param name="remoteSize">The size reported by the remote peer.</param>
+        public TransferSizeMismatchException(string message, long localSize, long remoteSize)
             : base(message)
         {
+            LocalSize = localSize;
+            RemoteSize = remoteSize;
         }
 
         /// <summary>
@@ -50,23 +58,39 @@ namespace Soulseek
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
+        /// <param name="localSize">The size requested locally.</param>
+        /// <param name="remoteSize">The size reported by the remote peer.</param>
         /// <param name="innerException">
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
         ///     inner exception is specified.
         /// </param>
-        public TransferSizeMismatchException(string message, Exception innerException)
+        public TransferSizeMismatchException(string message, long localSize, long remoteSize, Exception innerException)
             : base(message, innerException)
         {
+            LocalSize = localSize;
+            RemoteSize = remoteSize;
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferSizeMismatchException"/> class with serialized data.
         /// </summary>
+        /// <param name="localSize">The size requested locally.</param>
+        /// <param name="remoteSize">The size reported by the remote peer.</param>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         protected TransferSizeMismatchException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
+
+        /// <summary>
+        ///     Gets the size reported by the remote peer.
+        /// </summary>
+        public long RemoteSize { get; }
+
+        /// <summary>
+        ///     Gets the size requested locally.
+        /// </summary>
+        public long LocalSize { get; }
     }
 }
