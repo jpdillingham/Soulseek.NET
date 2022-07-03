@@ -973,6 +973,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1069,6 +1070,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1235,6 +1237,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1319,6 +1322,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
+        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -3112,14 +3116,21 @@ namespace Soulseek
 
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
+                    // the size of the remote file may have changed since it was sent in a search or browse response
+                    if (download.Size.HasValue && download.Size.Value != transferRequestAcknowledgement.FileSize)
+                    {
+                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
+                    }
+
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
                     // fake a transition to queued for conststency
                     UpdateState(TransferStates.Queued | TransferStates.Remotely);
-                    UpdateState(TransferStates.Initializing);
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
                     // by the remote client will erroneously be reported as zero and the transfer will fail.
                     download.Size ??= transferRequestAcknowledgement.FileSize;
+
+                    UpdateState(TransferStates.Initializing);
 
                     // prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
@@ -3131,7 +3142,7 @@ namespace Soulseek
                 }
                 else if (!string.Equals(transferRequestAcknowledgement.Message.TrimEnd('.'), "Queued", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
+                    throw new TransferRejectedException($"Transfer rejected: {transferRequestAcknowledgement.Message}");
                 }
                 else
                 {
@@ -3140,6 +3151,12 @@ namespace Soulseek
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
+
+                    // the size of the remote file may have changed since it was sent in a search or browse response
+                    if (download.Size.HasValue && download.Size.Value != transferStartRequest.FileSize)
+                    {
+                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size.Value, transferStartRequest.FileSize);
+                    }
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
                     // by the remote client will erroneously be reported as zero and the transfer will fail.
@@ -3256,7 +3273,14 @@ namespace Soulseek
                 download.State = TransferStates.Rejected;
                 download.Exception = ex;
 
-                throw new TransferRejectedException($"Download of file {remoteFilename} rejected by user {username}: {ex.Message}", ex);
+                throw;
+            }
+            catch (TransferSizeMismatchException ex)
+            {
+                download.State = TransferStates.Aborted;
+                download.Exception = ex;
+
+                throw;
             }
             catch (OperationCanceledException ex)
             {
@@ -4056,7 +4080,7 @@ namespace Soulseek
 
                 if (!transferRequestAcknowledgement.IsAllowed)
                 {
-                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
+                    throw new TransferRejectedException($"Transfer rejected: {transferRequestAcknowledgement.Message}");
                 }
 
                 UpdateState(TransferStates.Initializing);
@@ -4179,7 +4203,7 @@ namespace Soulseek
                 upload.State = TransferStates.Rejected;
                 upload.Exception = ex;
 
-                throw new TransferRejectedException($"Upload of file {remoteFilename} rejected by user {username}: {ex.Message}", ex);
+                throw;
             }
             catch (OperationCanceledException ex)
             {

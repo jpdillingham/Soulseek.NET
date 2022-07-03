@@ -85,13 +85,18 @@ namespace Soulseek
         Rejected = 512,
 
         /// <summary>
+        ///     Completed due to unexpected circumstances.
+        /// </summary>
+        Aborted = 1024,
+
+        /// <summary>
         ///     Queued locally, due to user-defined constraints.
         /// </summary>
-        Locally = 1024,
+        Locally = 2048,
 
         /// <summary>
         ///     Queued remotely.
         /// </summary>
-        Remotely = 2048,
+        Remotely = 4096,
     }
 }

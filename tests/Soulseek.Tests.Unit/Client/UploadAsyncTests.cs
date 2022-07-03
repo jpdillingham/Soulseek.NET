@@ -2452,7 +2452,8 @@ namespace Soulseek.Tests.Unit.Client
                     {
                         caught = args.Transfer.Exception;
                     }
-                }), null));
+                }),
+                null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
