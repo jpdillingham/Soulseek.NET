@@ -74,8 +74,6 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferSizeMismatchException"/> class with serialized data.
         /// </summary>
-        /// <param name="localSize">The size requested locally.</param>
-        /// <param name="remoteSize">The size reported by the remote peer.</param>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         protected TransferSizeMismatchException(SerializationInfo info, StreamingContext context)
