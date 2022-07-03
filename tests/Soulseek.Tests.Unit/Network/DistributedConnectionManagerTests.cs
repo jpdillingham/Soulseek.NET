@@ -572,6 +572,30 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync disconnects connection if write throws"), AutoData]
+        public async Task BroadcastMessageAsync_Disconnects_Connection_If_Write_Throws(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+            c1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            c1.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(new Exception("foo"));
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
+
+            using (manager)
+            {
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+            }
+
+            c1.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None), Times.Once);
+            c1.Verify(m => m.Disconnect(It.Is<string>(s => s == "Broadcast failure: foo"), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Trait("Category", "BroadcastMessageAsync")]
         [Theory(DisplayName = "BroadcastMessageAsync does not throw if connection is null"), AutoData]
         public async Task BroadcastMessageAsync_Does_Not_Throw_If_Connection_Is_Null(byte[] bytes)
         {
