@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", 0L, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", (long?)size, 0, token);
 
                 Assert.NotNull(downloadTask);
 
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, () => stream, 0L, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, () => stream, (long?)size, 0, token);
 
                 Assert.NotNull(downloadTask);
 
@@ -260,7 +260,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, () => stream, 0L, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, () => stream, (long?)size, 0, token);
 
                 Assert.NotNull(downloadTask);
 
@@ -329,7 +329,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", 0L, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", (long?)size, 0, token);
 
                 Assert.NotNull(downloadTask);
 
