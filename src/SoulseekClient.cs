@@ -3155,7 +3155,7 @@ namespace Soulseek
                     // the size of the remote file may have changed since it was sent in a search or browse response
                     if (download.Size.HasValue && download.Size.Value != transferStartRequest.FileSize)
                     {
-                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
+                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size.Value, transferStartRequest.FileSize);
                     }
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
