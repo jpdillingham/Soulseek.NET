@@ -457,9 +457,11 @@ namespace Soulseek.Network
 
             async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
             {
+                IMessageConnection connection = default;
+
                 try
                 {
-                    var connection = await child.Value.Value.ConfigureAwait(false);
+                    connection = await child.Value.Value.ConfigureAwait(false);
 
                     if (connection.State == ConnectionState.Connected)
                     {
@@ -468,7 +470,7 @@ namespace Soulseek.Network
                 }
                 catch (Exception ex)
                 {
-                    Diagnostic.Debug($"Failed to broadcast message to {child.Key}: {ex.Message}", ex);
+                    connection?.Disconnect($"Broadcast failure: {ex.Message}");
                 }
             }
 
