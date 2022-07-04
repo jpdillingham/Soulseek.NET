@@ -2746,9 +2746,9 @@ namespace Soulseek
                     completionEventFired = true;
                 }
 
-                var eventArgs = new BrowseProgressUpdatedEventArgs(username, args.CurrentLength, args.TotalLength);
-                options.ProgressUpdated?.Invoke(eventArgs);
-                BrowseProgressUpdated?.Invoke(this, eventArgs);
+                var e = new BrowseProgressUpdatedEventArgs(username, args.CurrentLength, args.TotalLength);
+                options.ProgressUpdated?.Invoke((e.Username, e.BytesTransferred, e.BytesRemaining, e.PercentComplete, e.Size));
+                BrowseProgressUpdated?.Invoke(this, e);
             }
 
             try
