@@ -59,7 +59,7 @@ namespace Soulseek
             Func<SearchResponse, bool> responseFilter = null,
             Func<File, bool> fileFilter = null,
             Action<SearchStateChangedEventArgs> stateChanged = null,
-            Action<SearchResponseReceivedEventArgs> responseReceived = null)
+            Action<(Search Search, SearchResponse Response)> responseReceived = null)
         {
             SearchTimeout = searchTimeout;
             ResponseLimit = responseLimit;
@@ -130,7 +130,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the Action to invoke when a new search response is received.
         /// </summary>
-        public Action<SearchResponseReceivedEventArgs> ResponseReceived { get; }
+        public Action<(Search Search, SearchResponse Response)> ResponseReceived { get; }
 
         /// <summary>
         ///     Gets the search timeout value, in milliseconds, used to determine when the search is complete. (Default = 15000).

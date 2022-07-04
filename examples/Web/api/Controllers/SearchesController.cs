@@ -53,8 +53,8 @@
             var id = request.Id ?? Guid.NewGuid();
 
             var options = request.ToSearchOptions(
-                responseReceived: (e) => Tracker.AddOrUpdate(id, e),
-                stateChanged: (e) => Tracker.AddOrUpdate(id, e));
+                responseReceived: (e) => Tracker.AddOrUpdate(id, e.Search),
+                stateChanged: (e) => Tracker.AddOrUpdate(id, e.Search));
 
             var results = new ConcurrentBag<SearchResponse>();
 

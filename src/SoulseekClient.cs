@@ -3862,9 +3862,9 @@ namespace Soulseek
                 {
                     responseReceived(response);
 
-                    var eventArgs = new SearchResponseReceivedEventArgs(response, new Search(search));
-                    options.ResponseReceived?.Invoke(eventArgs);
-                    SearchResponseReceived?.Invoke(this, eventArgs);
+                    var e = new SearchResponseReceivedEventArgs(response, new Search(search));
+                    options.ResponseReceived?.Invoke((e.Search, e.Response));
+                    SearchResponseReceived?.Invoke(this, e);
                 };
 
                 Searches.TryAdd(search.Token, search);
