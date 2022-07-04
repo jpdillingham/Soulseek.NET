@@ -3075,9 +3075,9 @@ namespace Soulseek
             {
                 var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
-                options.ProgressUpdated?.Invoke(eventArgs);
-                TransferProgressUpdated?.Invoke(this, eventArgs);
+                var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
+                options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
+                TransferProgressUpdated?.Invoke(this, e);
             }
 
             var transferStartRequestedWaitKey = new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename);
@@ -4001,9 +4001,9 @@ namespace Soulseek
             {
                 var lastBytes = upload.BytesTransferred;
                 upload.UpdateProgress(bytesUploaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
-                options.ProgressUpdated?.Invoke(eventArgs);
-                TransferProgressUpdated?.Invoke(this, eventArgs);
+                var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
+                options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
+                TransferProgressUpdated?.Invoke(this, e);
             }
 
             IPEndPoint endpoint = null;

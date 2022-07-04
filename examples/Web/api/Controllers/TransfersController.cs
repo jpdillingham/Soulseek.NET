@@ -101,13 +101,13 @@
 
                 var downloadTask = Client.DownloadAsync(username, request.Filename, () => stream, request.Size, 0, request.Token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
                 {
-                    Tracker.AddOrUpdate(e, cts);
+                    Tracker.AddOrUpdate(e.Transfer, cts);
 
                     if (e.Transfer.State.HasFlag(TransferStates.Queued) || e.Transfer.State == TransferStates.Initializing)
                     {
                         waitUntilEnqueue.TrySetResult(true);
                     }
-                }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
+                }, progressUpdated: (e) => Tracker.AddOrUpdate(e.Transfer, cts)), cts.Token);
 
                 // wait until either the waitUntilEnqueue task completes because the download was successfully queued, or the
                 // downloadTask throws due to an error prior to successfully queueing.

@@ -59,7 +59,7 @@ namespace Soulseek
         public TransferOptions(
             Func<Transfer, int, CancellationToken, Task<int>> governor = null,
             Action<TransferStateChangedEventArgs> stateChanged = null,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
+            Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
             Action<Transfer, int, int, int> reporter = null,
@@ -104,7 +104,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate to invoke when the transfer receives data. (Default = no action).
         /// </summary>
-        public Action<TransferProgressUpdatedEventArgs> ProgressUpdated { get; }
+        public Action<(long PreviousBytesTransferred, Transfer Transfer)> ProgressUpdated { get; }
 
         /// <summary>
         ///     Gets the delegate, accepting the number of bytes attempted, granted, and transferred for each chunk, used to

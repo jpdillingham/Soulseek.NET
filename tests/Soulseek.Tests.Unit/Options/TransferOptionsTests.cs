@@ -33,7 +33,7 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
             Action<Transfer, int, int, int> reporter,
             Action<Transfer> slotReleased)
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
             Action<Transfer> slotReleased)
         {
@@ -153,7 +153,7 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
             Action<Transfer> slotReleased)
         {
@@ -187,7 +187,7 @@ namespace Soulseek.Tests.Unit.Options
             Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             int maximumLingerTime,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated,
+            Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
             Action<Transfer> slotReleased)
         {
