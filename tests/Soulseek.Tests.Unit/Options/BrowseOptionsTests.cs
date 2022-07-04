@@ -26,7 +26,7 @@ namespace Soulseek.Tests.Unit.Options
         [Theory(DisplayName = "Instantiates properly"), AutoData]
         public void Instantiates_Properly(int timeout)
         {
-            void Action(BrowseProgressUpdatedEventArgs args)
+            void Action((string Username, long BytesTransferred, long BytesRemaining, double PercentComplete, long Size) args)
             {
                 // noop
             }

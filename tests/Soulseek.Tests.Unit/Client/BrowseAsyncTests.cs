@@ -222,7 +222,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("Username", localUsername);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var events = new List<BrowseProgressUpdatedEventArgs>();
+                var events = new List<(string Username, long BytesTransferred, long BytesRemaining, double PercentComplete, long Size)>();
 
                 await s.BrowseAsync(username, new BrowseOptions(progressUpdated: (args) => events.Add(args)));
 

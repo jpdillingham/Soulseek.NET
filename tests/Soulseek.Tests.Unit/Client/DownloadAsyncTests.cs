@@ -1021,14 +1021,22 @@ namespace Soulseek.Tests.Unit.Client
 
                 Exception caught = null;
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, "local", 0L, 0, token, new TransferOptions(stateChanged: (args) =>
-                {
-                    if (args.Transfer.State.HasFlag(TransferStates.Completed) && !args.Transfer.State.HasFlag(TransferStates.Succeeded))
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>(
+                    "DownloadToFileAsync",
+                    username,
+                    filename,
+                    "local",
+                    0L,
+                    0,
+                    token,
+                    new TransferOptions(stateChanged: (args) =>
                     {
-                        caught = args.Transfer.Exception;
-                    }
-                }),
-                null));
+                        if (args.Transfer.State.HasFlag(TransferStates.Completed) && !args.Transfer.State.HasFlag(TransferStates.Succeeded))
+                        {
+                            caught = args.Transfer.Exception;
+                        }
+                    }),
+                    null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferRejectedException>(ex);
