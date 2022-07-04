@@ -58,7 +58,7 @@ namespace Soulseek
             bool removeSingleCharacterSearchTerms = true,
             Func<SearchResponse, bool> responseFilter = null,
             Func<File, bool> fileFilter = null,
-            Action<SearchStateChangedEventArgs> stateChanged = null,
+            Action<(SearchStates PreviousState, Search Search)> stateChanged = null,
             Action<(Search Search, SearchResponse Response)> responseReceived = null)
         {
             SearchTimeout = searchTimeout;
@@ -141,6 +141,6 @@ namespace Soulseek
         /// <summary>
         ///     Gets the Action to invoke when the search changes state.
         /// </summary>
-        public Action<SearchStateChangedEventArgs> StateChanged { get; }
+        public Action<(SearchStates PreviousState, Search Search)> StateChanged { get; }
     }
 }

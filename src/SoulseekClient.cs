@@ -3842,10 +3842,10 @@ namespace Soulseek
             void UpdateState(SearchStates state)
             {
                 search.State = state;
-                var args = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
+                var e = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
                 lastState = state;
-                options.StateChanged?.Invoke(args);
-                SearchStateChanged?.Invoke(this, args);
+                options.StateChanged?.Invoke((e.PreviousState, e.Search));
+                SearchStateChanged?.Invoke(this, e);
             }
 
             try

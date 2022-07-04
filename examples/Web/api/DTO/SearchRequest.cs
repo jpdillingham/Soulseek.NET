@@ -76,7 +76,7 @@ namespace WebAPI.DTO
         public SearchOptions ToSearchOptions(
             Func<SearchResponse, bool> responseFilter = null,
             Func<File, bool> fileFilter = null,
-            Action<SearchStateChangedEventArgs> stateChanged = null,
+            Action<(SearchStates PreviousState, Search Search)> stateChanged = null,
             Action<(Search Search, SearchResponse Response)> responseReceived = null)
         {
             var def = new SearchOptions();
