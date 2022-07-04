@@ -31,7 +31,7 @@ namespace Soulseek.Tests.Unit.Options
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
-            Action<TransferStateChangedEventArgs> stateChanged,
+            Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged,
             int maximumLingerTime,
             Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
@@ -86,7 +86,7 @@ namespace Soulseek.Tests.Unit.Options
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
-            Action<TransferStateChangedEventArgs> stateChanged,
+            Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged,
             int maximumLingerTime,
             Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
@@ -126,7 +126,7 @@ namespace Soulseek.Tests.Unit.Options
 
             var o = n.WithAdditionalStateChanged((_) => { two = true; });
 
-            o.StateChanged(null);
+            o.StateChanged(default);
 
             Assert.True(one);
             Assert.True(two);
@@ -140,7 +140,7 @@ namespace Soulseek.Tests.Unit.Options
 
             var o = n.WithAdditionalStateChanged(null);
 
-            var ex = Record.Exception(() => o.StateChanged(null));
+            var ex = Record.Exception(() => o.StateChanged(default));
 
             Assert.Null(ex);
         }
@@ -151,7 +151,7 @@ namespace Soulseek.Tests.Unit.Options
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
-            Action<TransferStateChangedEventArgs> stateChanged,
+            Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged,
             int maximumLingerTime,
             Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
@@ -185,7 +185,7 @@ namespace Soulseek.Tests.Unit.Options
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
-            Action<TransferStateChangedEventArgs> stateChanged,
+            Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged,
             int maximumLingerTime,
             Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,

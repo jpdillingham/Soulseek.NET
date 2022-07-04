@@ -3065,10 +3065,10 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 download.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
+                var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
                 lastState = state;
-                options.StateChanged?.Invoke(args);
-                TransferStateChanged?.Invoke(this, args);
+                options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
+                TransferStateChanged?.Invoke(this, e);
             }
 
             void UpdateProgress(long bytesDownloaded)
@@ -3991,10 +3991,10 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 upload.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
+                var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
                 lastState = state;
-                options.StateChanged?.Invoke(args);
-                TransferStateChanged?.Invoke(this, args);
+                options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
+                TransferStateChanged?.Invoke(this, e);
             }
 
             void UpdateProgress(long bytesUploaded)

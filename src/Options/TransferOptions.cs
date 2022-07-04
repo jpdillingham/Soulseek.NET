@@ -58,7 +58,7 @@ namespace Soulseek
         /// </param>
         public TransferOptions(
             Func<Transfer, int, CancellationToken, Task<int>> governor = null,
-            Action<TransferStateChangedEventArgs> stateChanged = null,
+            Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged = null,
             Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated = null,
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
@@ -125,14 +125,14 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate to invoke when the transfer changes state. (Default = no action).
         /// </summary>
-        public Action<TransferStateChangedEventArgs> StateChanged { get; }
+        public Action<(TransferStates PreviousState, Transfer Transfer)> StateChanged { get; }
 
         /// <summary>
         ///     Returns a clone of this instance with <see cref="StateChanged"/> wrapped in a new delegate that first invokes <paramref name="stateChanged"/>.
         /// </summary>
         /// <param name="stateChanged">A new delegate to execute prior to the existing delegate.</param>
         /// <returns>A clone of this instance with the combined StateChanged delegates.</returns>
-        public TransferOptions WithAdditionalStateChanged(Action<TransferStateChangedEventArgs> stateChanged)
+        public TransferOptions WithAdditionalStateChanged(Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged)
         {
             return new TransferOptions(
                 governor: Governor,
