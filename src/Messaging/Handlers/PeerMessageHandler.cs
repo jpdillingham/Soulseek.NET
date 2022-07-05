@@ -130,6 +130,8 @@ namespace Soulseek.Messaging.Handlers
                         }
 
                         await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
+                        Diagnostic.Info($"User info sent to {connection.Username}");
+
                         break;
 
                     case MessageCode.Peer.SearchRequest:
@@ -172,6 +174,8 @@ namespace Soulseek.Messaging.Handlers
                         }
 
                         await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
+                        Diagnostic.Info($"Share contents sent to {connection.Username}");
+
                         break;
 
                     case MessageCode.Peer.FolderContentsRequest:
@@ -196,6 +200,7 @@ namespace Soulseek.Messaging.Handlers
                             var folderContentsResponseMessage = new FolderContentsResponse(folderContentsRequest.Token, outgoingFolderContents);
 
                             await connection.WriteAsync(folderContentsResponseMessage).ConfigureAwait(false);
+                            Diagnostic.Info($"Folder contents for {folderContentsRequest.DirectoryName} sent to {connection.Username}");
                         }
 
                         break;
