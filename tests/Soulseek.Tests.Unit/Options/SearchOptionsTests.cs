@@ -37,8 +37,8 @@ namespace Soulseek.Tests.Unit.Options
             int fileLimit,
             bool removeSingleCharacterSearchTerms,
             Func<File, bool> fileFilter,
-            Action<SearchStateChangedEventArgs> stateChanged,
-            Action<SearchResponseReceivedEventArgs> responseReceived)
+            Action<(SearchStates PreviousState, Search Search)> stateChanged,
+            Action<(Search Search, SearchResponse Response)> responseReceived)
         {
             var o = new SearchOptions(
                 searchTimeout,

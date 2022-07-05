@@ -2746,9 +2746,9 @@ namespace Soulseek
                     completionEventFired = true;
                 }
 
-                var eventArgs = new BrowseProgressUpdatedEventArgs(username, args.CurrentLength, args.TotalLength);
-                options.ProgressUpdated?.Invoke(eventArgs);
-                BrowseProgressUpdated?.Invoke(this, eventArgs);
+                var e = new BrowseProgressUpdatedEventArgs(username, args.CurrentLength, args.TotalLength);
+                options.ProgressUpdated?.Invoke((e.Username, e.BytesTransferred, e.BytesRemaining, e.PercentComplete, e.Size));
+                BrowseProgressUpdated?.Invoke(this, e);
             }
 
             try
@@ -3065,19 +3065,19 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 download.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
+                var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
                 lastState = state;
-                options.StateChanged?.Invoke(args);
-                TransferStateChanged?.Invoke(this, args);
+                options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
+                TransferStateChanged?.Invoke(this, e);
             }
 
             void UpdateProgress(long bytesDownloaded)
             {
                 var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
-                options.ProgressUpdated?.Invoke(eventArgs);
-                TransferProgressUpdated?.Invoke(this, eventArgs);
+                var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
+                options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
+                TransferProgressUpdated?.Invoke(this, e);
             }
 
             var transferStartRequestedWaitKey = new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename);
@@ -3842,10 +3842,10 @@ namespace Soulseek
             void UpdateState(SearchStates state)
             {
                 search.State = state;
-                var args = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
+                var e = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
                 lastState = state;
-                options.StateChanged?.Invoke(args);
-                SearchStateChanged?.Invoke(this, args);
+                options.StateChanged?.Invoke((e.PreviousState, e.Search));
+                SearchStateChanged?.Invoke(this, e);
             }
 
             try
@@ -3862,9 +3862,9 @@ namespace Soulseek
                 {
                     responseReceived(response);
 
-                    var eventArgs = new SearchResponseReceivedEventArgs(response, new Search(search));
-                    options.ResponseReceived?.Invoke(eventArgs);
-                    SearchResponseReceived?.Invoke(this, eventArgs);
+                    var e = new SearchResponseReceivedEventArgs(response, new Search(search));
+                    options.ResponseReceived?.Invoke((e.Search, e.Response));
+                    SearchResponseReceived?.Invoke(this, e);
                 };
 
                 Searches.TryAdd(search.Token, search);
@@ -3991,19 +3991,19 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 upload.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
+                var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
                 lastState = state;
-                options.StateChanged?.Invoke(args);
-                TransferStateChanged?.Invoke(this, args);
+                options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
+                TransferStateChanged?.Invoke(this, e);
             }
 
             void UpdateProgress(long bytesUploaded)
             {
                 var lastBytes = upload.BytesTransferred;
                 upload.UpdateProgress(bytesUploaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
-                options.ProgressUpdated?.Invoke(eventArgs);
-                TransferProgressUpdated?.Invoke(this, eventArgs);
+                var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
+                options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
+                TransferProgressUpdated?.Invoke(this, e);
             }
 
             IPEndPoint endpoint = null;

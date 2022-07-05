@@ -593,8 +593,8 @@
             var cts = new CancellationTokenSource();
 
             var topts = new TransferOptions(
-                stateChanged: (e) => tracker.AddOrUpdate(e, cts),
-                progressUpdated: (e) => tracker.AddOrUpdate(e, cts),
+                stateChanged: (e) => tracker.AddOrUpdate(e.Transfer, cts),
+                progressUpdated: (e) => tracker.AddOrUpdate(e.Transfer, cts),
                 slotAwaiter: async (tx, cancellationToken) =>
                 {
                     Console.WriteLine($"[UPLOAD SLOT REQUESTED] [{username}/{filename}]");

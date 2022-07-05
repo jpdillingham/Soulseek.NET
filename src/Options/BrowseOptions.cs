@@ -31,7 +31,7 @@ namespace Soulseek
         /// <param name="progressUpdated">The Action to invoke when the browse response receives data.</param>
         public BrowseOptions(
             int responseTimeout = 60000,
-            Action<BrowseProgressUpdatedEventArgs> progressUpdated = null)
+            Action<(string Username, long BytesTransferred, long BytesRemaining, double PercentComplete, long Size)> progressUpdated = null)
         {
             ResponseTimeout = responseTimeout;
             ProgressUpdated = progressUpdated;
@@ -40,7 +40,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the Action to invoke when the browse response receives data.
         /// </summary>
-        public Action<BrowseProgressUpdatedEventArgs> ProgressUpdated { get; }
+        public Action<(string Username, long BytesTransferred, long BytesRemaining, double PercentComplete, long Size)> ProgressUpdated { get; }
 
         /// <summary>
         ///     Gets the timeout for the response, in milliseconds. (Default = 60000).
