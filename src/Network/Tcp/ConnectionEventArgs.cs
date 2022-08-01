@@ -40,6 +40,8 @@ namespace Soulseek.Network.Tcp
         {
             CurrentLength = currentLength;
             TotalLength = totalLength;
+
+            PercentComplete = (CurrentLength / (double)TotalLength) * 100d;
         }
 
         /// <summary>
@@ -50,7 +52,7 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Gets the progress of the data transfer as a percentage of current and total data length.
         /// </summary>
-        public double PercentComplete => (CurrentLength / (double)TotalLength) * 100d;
+        public double PercentComplete { get; }
 
         /// <summary>
         ///     Gets the total expected length of the data transfer.
