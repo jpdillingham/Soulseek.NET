@@ -607,7 +607,7 @@ namespace Soulseek.Network.Tcp
 
             try
             {
-                while (totalBytesRead < length)
+                while (!Disposed && totalBytesRead < length)
                 {
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining; // cast to int is safe because of the check against buffer length.
@@ -707,7 +707,7 @@ namespace Soulseek.Network.Tcp
 
             try
             {
-                while (totalBytesWritten < length)
+                while (!Disposed && totalBytesWritten < length)
                 {
                     var bytesRemaining = length - totalBytesWritten;
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining;
