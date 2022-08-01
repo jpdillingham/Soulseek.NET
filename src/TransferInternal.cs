@@ -50,6 +50,8 @@ namespace Soulseek
             Token = token;
 
             Options = options ?? new TransferOptions();
+
+            WaitKey = new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
         }
 
         /// <summary>
@@ -192,7 +194,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the wait key for the transfer.
         /// </summary>
-        public WaitKey WaitKey => new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
+        public WaitKey WaitKey { get; }
 
         /// <summary>
         ///     Updates the transfer progress.

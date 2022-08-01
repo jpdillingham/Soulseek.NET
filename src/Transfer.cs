@@ -76,6 +76,11 @@ namespace Soulseek
             RemoteToken = remoteToken;
             IPEndPoint = ipEndPoint;
             Exception = exception;
+
+            BytesRemaining = Size - BytesTransferred;
+            ElapsedTime = StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.UtcNow) - StartTime.Value);
+            PercentComplete = Size == 0 ? 0 : (BytesTransferred / (double)Size) * 100;
+            RemainingTime = AverageSpeed == 0 ? null : (TimeSpan?)TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
         }
 
         /// <summary>
@@ -109,7 +114,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of remaining bytes to be transferred.
         /// </summary>
-        public long BytesRemaining => Size - BytesTransferred;
+        public long BytesRemaining { get; }
 
         /// <summary>
         ///     Gets the total number of bytes transferred.
@@ -124,7 +129,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current duration of the transfer, if it has been started.
         /// </summary>
-        public TimeSpan? ElapsedTime => StartTime == null ? null : (TimeSpan?)((EndTime ?? DateTime.UtcNow) - StartTime.Value);
+        public TimeSpan? ElapsedTime { get; }
 
         /// <summary>
         ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
@@ -149,12 +154,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
-        public double PercentComplete => Size == 0 ? 0 : (BytesTransferred / (double)Size) * 100;
+        public double PercentComplete { get; }
 
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.
         /// </summary>
-        public TimeSpan? RemainingTime => AverageSpeed == 0 ? null : (TimeSpan?)TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
+        public TimeSpan? RemainingTime { get; }
 
         /// <summary>
         ///     Gets the remote unique token for the transfer.

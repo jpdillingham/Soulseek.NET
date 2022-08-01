@@ -42,6 +42,15 @@ namespace Soulseek
 
             Attributes = (attributeList?.ToList() ?? new List<FileAttribute>()).AsReadOnly();
             AttributeCount = Attributes.Count;
+
+            BitDepth = GetAttributeValue(FileAttributeType.BitDepth);
+            BitRate = GetAttributeValue(FileAttributeType.BitRate);
+
+            var vbr = GetAttributeValue(FileAttributeType.VariableBitRate);
+            IsVariableBitRate = vbr == null ? (bool?)null : vbr != 0;
+
+            Length = GetAttributeValue(FileAttributeType.Length);
+            SampleRate = GetAttributeValue(FileAttributeType.SampleRate);
         }
 
         /// <summary>
@@ -57,12 +66,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.BitDepth"/> attribute.
         /// </summary>
-        public int? BitDepth => GetAttributeValue(FileAttributeType.BitDepth);
+        public int? BitDepth { get; }
 
         /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.BitRate"/> attribute.
         /// </summary>
-        public int? BitRate => GetAttributeValue(FileAttributeType.BitRate);
+        public int? BitRate { get; }
 
         /// <summary>
         ///     Gets the file code.
@@ -83,24 +92,17 @@ namespace Soulseek
         ///     Gets a value indicating whether the <see cref="FileAttributeType.VariableBitRate"/> attribute value indicates a
         ///     file with a variable bit rate.
         /// </summary>
-        public bool? IsVariableBitRate
-        {
-            get
-            {
-                var val = GetAttributeValue(FileAttributeType.VariableBitRate);
-                return val == null ? (bool?)null : val != 0;
-            }
-        }
+        public bool? IsVariableBitRate { get; }
 
         /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.Length"/> attribute.
         /// </summary>
-        public int? Length => GetAttributeValue(FileAttributeType.Length);
+        public int? Length { get; }
 
         /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.SampleRate"/> attribute.
         /// </summary>
-        public int? SampleRate => GetAttributeValue(FileAttributeType.SampleRate);
+        public int? SampleRate { get; }
 
         /// <summary>
         ///     Gets the file size in bytes.
