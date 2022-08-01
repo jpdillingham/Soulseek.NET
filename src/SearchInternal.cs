@@ -206,10 +206,11 @@ namespace Soulseek
         public async Task WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var taskCompletionSource = TaskCompletionSource;
 
             using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetException(new OperationCanceledException("Operation cancelled"))))
             {
-                var completedTask = await Task.WhenAny(TaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(taskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
                 await completedTask.ConfigureAwait(false);
             }
         }
