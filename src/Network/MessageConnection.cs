@@ -132,7 +132,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the username of the peer associated with the connection, if applicable.
         /// </summary>
-        public string Username { get; private set; } = string.Empty;
+        public string Username { get; } = string.Empty;
 
         /// <summary>
         ///     Begins the internal continuous read loop, if it has not yet started.
@@ -199,7 +199,7 @@ namespace Soulseek.Network
 
             try
             {
-                while (true)
+                while (!Disposed)
                 {
                     try
                     {

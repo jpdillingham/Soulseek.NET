@@ -3233,18 +3233,20 @@ namespace Soulseek
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(download.StartOffset);
 
+                    var tokenBucket = DownloadTokenBucket;
+
                     await download.Connection.ReadAsync(
                         length: download.Size.Value - startOffset,
                         outputStream: outputStream,
                         governor: async (requestedBytes, cancelToken) =>
                         {
                             var bytesGrantedByCaller = await options.Governor(new Transfer(download), requestedBytes, cancelToken).ConfigureAwait(false);
-                            return await DownloadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
+                            return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
                         },
                         reporter: (attemptedBytes, grantedBytes, actualBytes) =>
                         {
                             options.Reporter?.Invoke(new Transfer(download), attemptedBytes, grantedBytes, actualBytes);
-                            DownloadTokenBucket.Return(grantedBytes - actualBytes);
+                            tokenBucket.Return(grantedBytes - actualBytes);
                         },
                         cancellationToken: cancellationToken).ConfigureAwait(false);
 
@@ -3972,9 +3974,11 @@ namespace Soulseek
         private async Task<Transfer> UploadFromFileAsync(string username, string remoteFilename, string localFilename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options = options.WithDisposalOptions(disposeInputStreamOnCompletion: true);
-            var length = IOAdapter.GetFileInfo(localFilename).Length;
+            var ioAdapter = IOAdapter;
 
-            return await UploadFromStreamAsync(username, remoteFilename, length, () => IOAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read), token, options, cancellationToken).ConfigureAwait(false);
+            var length = ioAdapter.GetFileInfo(localFilename).Length;
+
+            return await UploadFromStreamAsync(username, remoteFilename, length, () => ioAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read), token, options, cancellationToken).ConfigureAwait(false);
         }
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -4138,18 +4142,20 @@ namespace Soulseek
 
                     if (size - startOffset > 0)
                     {
+                        var tokenBucket = UploadTokenBucket;
+
                         await upload.Connection.WriteAsync(
                             length: size - startOffset,
                             inputStream: inputStream,
                             governor: async (requestedBytes, cancelToken) =>
                             {
                                 var bytesGrantedByCaller = await options.Governor(new Transfer(upload), requestedBytes, cancelToken).ConfigureAwait(false);
-                                return await UploadTokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
+                                return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
                             },
                             reporter: (attemptedBytes, grantedBytes, actualBytes) =>
                             {
                                 options.Reporter?.Invoke(new Transfer(upload), attemptedBytes, grantedBytes, actualBytes);
-                                UploadTokenBucket.Return(grantedBytes - actualBytes);
+                                tokenBucket.Return(grantedBytes - actualBytes);
                             },
                             cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
