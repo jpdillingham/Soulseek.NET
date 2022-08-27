@@ -583,17 +583,11 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                Assert.Null(manager.AverageBroadcastLatency);
+                manager.SetProperty(nameof(manager.AverageBroadcastLatency), double.MaxValue);
 
                 await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
 
-                var first = manager.AverageBroadcastLatency;
-
-                Assert.NotNull(first);
-
-                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
-
-                Assert.NotEqual(first, manager.AverageBroadcastLatency);
+                Assert.True(manager.AverageBroadcastLatency < double.MaxValue);
             }
         }
 
