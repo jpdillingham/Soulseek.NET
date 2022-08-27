@@ -1065,7 +1065,7 @@ namespace Soulseek.Tests.Unit
                 bool fired = false;
 
                 s.DistributedNetworkStateChanged += (sender, args) => fired = true;
-                mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(1, "root", true, 1, true, null, default, true));
+                mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(0, 1, "root", true, 1, true, null, default, true));
 
                 Assert.True(fired);
             }
@@ -1079,7 +1079,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
             {
-                var ex = Record.Exception(() => mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(1, "root", true, 1, true, null, default, true)));
+                var ex = Record.Exception(() => mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(0, 1, "root", true, 1, true, null, default, true)));
 
                 Assert.Null(ex);
             }
