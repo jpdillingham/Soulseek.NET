@@ -30,6 +30,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedNetworkInfo"/> class.
         /// </summary>
+        /// <param name="averageBroadcastLatency">The average child broadcast latency.</param>
         /// <param name="branchLevel">The current distributed branch level.</param>
         /// <param name="branchRoot">The current distributed branch root.</param>
         /// <param name="isBranchRoot">A value indicating whether the client is currently operating as a branch root.</param>
@@ -39,6 +40,7 @@ namespace Soulseek
         /// <param name="parent">The current parent connection.</param>
         /// <param name="hasParent">A value indicating whether a parent connection is established.</param>
         public DistributedNetworkInfo(
+            double? averageBroadcastLatency,
             int branchLevel,
             string branchRoot,
             bool isBranchRoot,
@@ -48,6 +50,7 @@ namespace Soulseek
             (string Username, IPEndPoint IPEndPoint) parent,
             bool hasParent)
         {
+            AverageBroadcastLatency = averageBroadcastLatency;
             BranchLevel = branchLevel;
             BranchRoot = branchRoot;
             CanAcceptChildren = canAcceptChildren;
@@ -57,6 +60,11 @@ namespace Soulseek
             IsBranchRoot = isBranchRoot;
             Parent = parent;
         }
+
+        /// <summary>
+        ///     Gets the average child broadcast latency.
+        /// </summary>
+        public double? AverageBroadcastLatency { get; }
 
         /// <summary>
         ///     Gets the current distributed branch level.
@@ -100,6 +108,7 @@ namespace Soulseek
 
         internal static DistributedNetworkInfo FromDistributedConnectionManager(IDistributedConnectionManager manager)
             => new DistributedNetworkInfo(
+                averageBroadcastLatency: manager.AverageBroadcastLatency,
                 branchLevel: manager.BranchLevel,
                 branchRoot: manager.BranchRoot,
                 isBranchRoot: manager.IsBranchRoot,
