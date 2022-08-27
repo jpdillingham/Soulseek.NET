@@ -42,7 +42,7 @@ namespace Soulseek.Network
         private static readonly int StatusAgeLimit = 300000; // 5 minutes
         private static readonly int StatusDebounceTime = 5000; // 5 seconds
         private static readonly int WatchdogTime = 900000; // 15 minutes
-        private static readonly double LatencyAlpha = 2f / 10;
+        private static readonly double LatencyAlpha = 0.005;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedConnectionManager"/> class.
