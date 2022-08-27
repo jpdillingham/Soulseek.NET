@@ -1065,7 +1065,7 @@ namespace Soulseek.Tests.Unit
                 bool fired = false;
 
                 s.DistributedNetworkStateChanged += (sender, args) => fired = true;
-                mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(1, "root", true, 1, true, null, default, true));
+                mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(0, 1, "root", true, 1, true, null, default, true));
 
                 Assert.True(fired);
             }
@@ -1079,7 +1079,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
             {
-                var ex = Record.Exception(() => mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(1, "root", true, 1, true, null, default, true)));
+                var ex = Record.Exception(() => mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(0, 1, "root", true, 1, true, null, default, true)));
 
                 Assert.Null(ex);
             }
@@ -2057,6 +2057,7 @@ namespace Soulseek.Tests.Unit
             string parentName,
             IPEndPoint parentIP,
             bool hasParent,
+            double? averageBroadcastLatency,
             List<(string Username, IPEndPoint IPEndPoint)> children)
         {
             var dcm = new Mock<IDistributedConnectionManager>();
@@ -2069,6 +2070,7 @@ namespace Soulseek.Tests.Unit
             dcm.Setup(m => m.Parent).Returns((parentName, parentIP));
             dcm.Setup(m => m.HasParent).Returns(hasParent);
             dcm.Setup(m => m.Children).Returns(children.AsReadOnly());
+            dcm.Setup(m => m.AverageBroadcastLatency).Returns(averageBroadcastLatency);
 
             using (var s = new SoulseekClient(distributedConnectionManager: dcm.Object))
             {
@@ -2082,6 +2084,7 @@ namespace Soulseek.Tests.Unit
                 Assert.Equal(parentName, info.Parent.Username);
                 Assert.Equal(parentIP, info.Parent.IPEndPoint);
                 Assert.Equal(hasParent, info.HasParent);
+                Assert.Equal(averageBroadcastLatency, info.AverageBroadcastLatency);
 
                 foreach (var child in children)
                 {

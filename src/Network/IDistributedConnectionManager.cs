@@ -67,6 +67,11 @@ namespace Soulseek.Network
         event EventHandler<DistributedNetworkInfo> StateChanged;
 
         /// <summary>
+        ///     Gets the average child broadcast latency.
+        /// </summary>
+        double? AverageBroadcastLatency { get; }
+
+        /// <summary>
         ///     Gets the current distributed branch level.
         /// </summary>
         int BranchLevel { get; }

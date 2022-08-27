@@ -21,6 +21,7 @@ namespace Soulseek.Network
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.Diagnostics;
     using System.Linq;
     using System.Net;
     using System.Text;
@@ -41,6 +42,7 @@ namespace Soulseek.Network
         private static readonly int StatusAgeLimit = 300000; // 5 minutes
         private static readonly int StatusDebounceTime = 5000; // 5 seconds
         private static readonly int WatchdogTime = 900000; // 15 minutes
+        private static readonly double LatencyAlpha = 0.005;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedConnectionManager"/> class.
@@ -118,6 +120,11 @@ namespace Soulseek.Network
         ///     Occurs when the state of the distributed network changes.
         /// </summary>
         public event EventHandler<DistributedNetworkInfo> StateChanged;
+
+        /// <summary>
+        ///     Gets the average child broadcast latency.
+        /// </summary>
+        public double? AverageBroadcastLatency { get; private set; } = null;
 
         /// <summary>
         ///     Gets the current distributed branch level.
@@ -451,7 +458,7 @@ namespace Soulseek.Network
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
             cancellationToken ??= CancellationToken.None;
 
@@ -474,6 +481,9 @@ namespace Soulseek.Network
                 }
             }
 
+            var sw = new Stopwatch();
+            sw.Start();
+
             var tasks = new List<Task>();
 
             foreach (var child in ChildConnectionDictionary)
@@ -481,7 +491,19 @@ namespace Soulseek.Network
                 tasks.Add(Write(child, bytes, cancellationToken));
             }
 
-            return Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            sw.Stop();
+
+            if (!AverageBroadcastLatency.HasValue)
+            {
+                AverageBroadcastLatency = sw.ElapsedMilliseconds;
+            }
+            else
+            {
+                // EMA
+                AverageBroadcastLatency = ((sw.ElapsedMilliseconds - AverageBroadcastLatency) * LatencyAlpha) + AverageBroadcastLatency;
+            }
         }
 
         /// <summary>
