@@ -55,6 +55,7 @@ namespace Soulseek.Tests.Unit.Network
             Assert.False(c.HasParent);
             Assert.Equal((string.Empty, default(IPEndPoint)), c.Parent);
             Assert.Empty(c.PendingSolicitations);
+            Assert.Null(c.AverageBroadcastLatency);
         }
 
         [Trait("Category", "BranchRoot")]
@@ -542,6 +543,58 @@ namespace Soulseek.Tests.Unit.Network
 
             c1.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None));
             c2.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(bytes)), CancellationToken.None));
+        }
+
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync sets AverageBroadcastLatency"), AutoData]
+        public async Task BroadcastMessageAsync_Sets_AverageBroadcastLatency(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+            c1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
+
+            using (manager)
+            {
+                Assert.Null(manager.AverageBroadcastLatency);
+
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+
+                Assert.NotNull(manager.AverageBroadcastLatency);
+            }
+        }
+
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync updates AverageBroadcastLatency"), AutoData]
+        public async Task BroadcastMessageAsync_Updates_AverageBroadcastLatency(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+            c1.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
+
+            using (manager)
+            {
+                Assert.Null(manager.AverageBroadcastLatency);
+
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+
+                var first = manager.AverageBroadcastLatency;
+
+                Assert.NotNull(first);
+
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+
+                Assert.NotEqual(first, manager.AverageBroadcastLatency);
+            }
         }
 
         [Trait("Category", "BroadcastMessageAsync")]
