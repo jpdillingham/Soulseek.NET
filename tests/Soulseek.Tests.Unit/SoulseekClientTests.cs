@@ -2057,6 +2057,7 @@ namespace Soulseek.Tests.Unit
             string parentName,
             IPEndPoint parentIP,
             bool hasParent,
+            double? averageBroadcastLatency,
             List<(string Username, IPEndPoint IPEndPoint)> children)
         {
             var dcm = new Mock<IDistributedConnectionManager>();
@@ -2069,6 +2070,7 @@ namespace Soulseek.Tests.Unit
             dcm.Setup(m => m.Parent).Returns((parentName, parentIP));
             dcm.Setup(m => m.HasParent).Returns(hasParent);
             dcm.Setup(m => m.Children).Returns(children.AsReadOnly());
+            dcm.Setup(m => m.AverageBroadcastLatency).Returns(averageBroadcastLatency);
 
             using (var s = new SoulseekClient(distributedConnectionManager: dcm.Object))
             {
@@ -2082,6 +2084,7 @@ namespace Soulseek.Tests.Unit
                 Assert.Equal(parentName, info.Parent.Username);
                 Assert.Equal(parentIP, info.Parent.IPEndPoint);
                 Assert.Equal(hasParent, info.HasParent);
+                Assert.Equal(averageBroadcastLatency, info.AverageBroadcastLatency);
 
                 foreach (var child in children)
                 {
