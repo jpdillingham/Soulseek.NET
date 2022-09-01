@@ -59,7 +59,6 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(responseLimit, o.ResponseLimit);
             Assert.Equal(filterResponses, o.FilterResponses);
             Assert.Equal(minimumResponseFileCount, o.MinimumResponseFileCount);
-            Assert.Equal(minimumPeerFreeUploadSlots, o.MinimumPeerFreeUploadSlots);
             Assert.Equal(maximumPeerQueueLength, o.MaximumPeerQueueLength);
             Assert.Equal(minimumPeerUploadSpeed, o.MinimumPeerUploadSpeed);
             Assert.Equal(responseFilter, o.ResponseFilter);

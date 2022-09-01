@@ -110,26 +110,6 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
-        [Theory(DisplayName = "Response filter respects MinimumPeerFreeUploadSlots option")]
-        [InlineData(0, 1, false)]
-        [InlineData(1, 1, true)]
-        [InlineData(1, 0, true)]
-        public void Response_Filter_Respects_MinimumPeerFreeUploadSlots_Option(int actual, int option, bool expected)
-        {
-            var fixture = new Fixture();
-            var file = fixture.Create<File>();
-
-            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumPeerFreeUploadSlots: option));
-            var response = new SearchResponse("u", 1, actual, 1, 1, DuplicateFile(file, 1));
-
-            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
-
-            Assert.Equal(expected, filter);
-
-            s.Dispose();
-        }
-
-        [Trait("Category", "ResponseMeetsOptionCriteria")]
         [Theory(DisplayName = "Response filter respects MinimumPeerUploadSpeed option")]
         [InlineData(0, 1, false)]
         [InlineData(1, 1, true)]

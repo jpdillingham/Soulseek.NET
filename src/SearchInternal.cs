@@ -219,7 +219,6 @@ namespace Soulseek
         {
             if (Options.FilterResponses && (
                     response.FileCount + response.LockedFileCount < Options.MinimumResponseFileCount ||
-                    response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
                     response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
                     response.QueueLength >= Options.MaximumPeerQueueLength))
             {
