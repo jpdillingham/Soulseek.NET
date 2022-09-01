@@ -91,7 +91,8 @@ namespace Soulseek.Messaging.Messages
             builder
                 .WriteByte((byte)(searchResponse.HasFreeUploadSlot ? 1 : 0))
                 .WriteInteger(searchResponse.UploadSpeed)
-                .WriteLong(searchResponse.QueueLength);
+                .WriteInteger(searchResponse.QueueLength)
+                .WriteInteger(0); // unknown value included for compatibility
 
             builder.WriteInteger(searchResponse.LockedFileCount);
 
