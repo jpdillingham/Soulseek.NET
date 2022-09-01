@@ -466,6 +466,50 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data when HasFreeUploadSlot = false"), AutoData]
+        public void ToByteArray_Returns_Expected_Data_When_HasFreeUploadSlot_False(string username, int token, byte freeUploadSlots, int uploadSpeed, int queueLength)
+        {
+            var list = new List<File>();
+
+            var s = new SearchResponse(username, token, hasFreeUploadSlot: false, uploadSpeed, queueLength, list);
+            var m = s.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(m);
+            reader.Decompress();
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.SearchResponse, code);
+
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(0, reader.ReadInteger());
+
+            Assert.Equal(0, reader.ReadByte());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data when HasFreeUploadSlot = true"), AutoData]
+        public void ToByteArray_Returns_Expected_Data_When_HasFreeUploadSlot_True(string username, int token, byte freeUploadSlots, int uploadSpeed, int queueLength)
+        {
+            var list = new List<File>();
+
+            var s = new SearchResponse(username, token, hasFreeUploadSlot: true, uploadSpeed, queueLength, list);
+            var m = s.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(m);
+            reader.Decompress();
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.SearchResponse, code);
+
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(0, reader.ReadInteger());
+
+            Assert.Equal(1, reader.ReadByte());
+        }
+
+        [Trait("Category", "ToByteArray")]
         [Theory(DisplayName = "ToByteArray handles locked files"), AutoData]
         public void ToByteArray_Handles_Locked_Files(string username, int token, bool freeUploadSlots, int uploadSpeed, int queueLength)
         {
