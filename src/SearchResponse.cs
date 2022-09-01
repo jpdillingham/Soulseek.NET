@@ -37,7 +37,7 @@ namespace Soulseek
         /// <param name="fileList">The file list.</param>
         /// <param name="lockedFileList">The optional locked file list.</param>
         [Obsolete("FreeUploadSlots is either 1 or 0; use the HasFreeUploadSlot overload. This constructor will be removed in the next major release.")]
-        public SearchResponse(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
+        public SearchResponse(string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
         {
             Username = username;
             Token = token;
@@ -64,7 +64,7 @@ namespace Soulseek
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="fileList">The file list.</param>
         /// <param name="lockedFileList">The optional locked file list.</param>
-        public SearchResponse(string username, int token, bool hasFreeUploadSlot, int uploadSpeed, long queueLength, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
+        public SearchResponse(string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
         {
             Username = username;
             Token = token;
@@ -128,7 +128,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the length of the peer's upload queue.
         /// </summary>
-        public long QueueLength { get; }
+        public int QueueLength { get; }
 
         /// <summary>
         ///     Gets the unique search token.
