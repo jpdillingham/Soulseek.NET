@@ -66,7 +66,6 @@ namespace Soulseek
             FileLimit = fileLimit;
             FilterResponses = filterResponses;
             MinimumResponseFileCount = minimumResponseFileCount;
-            MinimumPeerFreeUploadSlots = minimumPeerFreeUploadSlots;
             MaximumPeerQueueLength = maximumPeerQueueLength;
             MinimumPeerUploadSpeed = minimumPeerUploadSpeed;
             ResponseFilter = responseFilter;
@@ -99,6 +98,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the minimum number of free upload slots a peer must have in order for a response to be processed. (Default = 0).
         /// </summary>
+        [Obsolete("This no longer does anything, and will be removed in the next major release.")]
         public int MinimumPeerFreeUploadSlots { get; }
 
         /// <summary>
