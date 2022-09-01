@@ -508,7 +508,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Sends resolved SearchResponse"), AutoData]
-        public void Sends_Resolved_SearchResponse(string query, string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength)
+        public void Sends_Resolved_SearchResponse(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
         {
             var files = new List<File>()
             {
@@ -535,7 +535,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Ignores PeerSearchRequest if search response resolver is null"), AutoData]
-        public void Ignores_PeerSearchRequest_If_Search_Response_Resolver_Is_Null(string query, string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength)
+        public void Ignores_PeerSearchRequest_If_Search_Response_Resolver_Is_Null(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
         {
             var files = new List<File>()
             {
@@ -564,7 +564,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Ignores PeerSearchRequest if search response is empty"), AutoData]
-        public void Ignores_PeerSearchRequest_If_Search_Response_Is_Empty(string query, string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength)
+        public void Ignores_PeerSearchRequest_If_Search_Response_Is_Empty(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
         {
             var files = new List<File>();
 
@@ -589,7 +589,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates diagnostic on failed search response resolution"), AutoData]
-        public void Creates_Diagnostic_On_Failed_Search_Response_Resolution(string query, string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength)
+        public void Creates_Diagnostic_On_Failed_Search_Response_Resolution(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
         {
             var files = new List<File>();
 
