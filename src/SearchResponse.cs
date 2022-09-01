@@ -17,6 +17,7 @@
 
 namespace Soulseek
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -35,13 +36,43 @@ namespace Soulseek
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="fileList">The file list.</param>
         /// <param name="lockedFileList">The optional locked file list.</param>
+        [Obsolete("FreeUploadSlots is either 1 or 0; use the HasFreeUploadSlot overload. This constructor will be removed in the next major release.")]
         public SearchResponse(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
         {
             Username = username;
             Token = token;
-            FreeUploadSlots = freeUploadSlots;
             UploadSpeed = uploadSpeed;
             QueueLength = queueLength;
+
+            HasFreeUploadSlot = freeUploadSlots > 0;
+            FreeUploadSlots = freeUploadSlots;
+
+            Files = (fileList?.ToList() ?? new List<File>()).AsReadOnly();
+            FileCount = Files.Count;
+
+            LockedFiles = (lockedFileList?.ToList() ?? new List<File>()).AsReadOnly();
+            LockedFileCount = LockedFiles.Count;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        /// </summary>
+        /// <param name="username">The username of the responding peer.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="hasFreeUploadSlot">A value indicating whether the peer has a free upload slot.</param>
+        /// <param name="uploadSpeed">The upload speed of the peer.</param>
+        /// <param name="queueLength">The length of the peer's upload queue.</param>
+        /// <param name="fileList">The file list.</param>
+        /// <param name="lockedFileList">The optional locked file list.</param>
+        public SearchResponse(string username, int token, bool hasFreeUploadSlot, int uploadSpeed, long queueLength, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
+        {
+            Username = username;
+            Token = token;
+            UploadSpeed = uploadSpeed;
+            QueueLength = queueLength;
+
+            HasFreeUploadSlot = hasFreeUploadSlot;
+            FreeUploadSlots = hasFreeUploadSlot ? 1 : 0;
 
             Files = (fileList?.ToList() ?? new List<File>()).AsReadOnly();
             FileCount = Files.Count;
@@ -57,7 +88,7 @@ namespace Soulseek
         /// <param name="fileList">The file list with which to replace the existing file list.</param>
         /// <param name="lockedFileList">The optional locked file list with which to replace the existing locked file list.</param>
         internal SearchResponse(SearchResponse searchResponse, IEnumerable<File> fileList, IEnumerable<File> lockedFileList = null)
-            : this(searchResponse.Username, searchResponse.Token, searchResponse.FreeUploadSlots, searchResponse.UploadSpeed, searchResponse.QueueLength, fileList, lockedFileList)
+            : this(searchResponse.Username, searchResponse.Token, hasFreeUploadSlot: searchResponse.FreeUploadSlots > 0, searchResponse.UploadSpeed, searchResponse.QueueLength, fileList, lockedFileList)
         {
         }
 
@@ -75,7 +106,13 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of free upload slots for the peer.
         /// </summary>
+        [Obsolete("FreeUploadSlots is either 1 or 0; use HasFreeUploadSlot. This constructor will be removed in the next major release.")]
         public int FreeUploadSlots { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether the peer has a free upload slot.
+        /// </summary>
+        public bool HasFreeUploadSlot { get; }
 
         /// <summary>
         ///     Gets the number of files contained within the result, as counted by the original response from the peer and prior
