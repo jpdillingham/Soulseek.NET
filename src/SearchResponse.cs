@@ -20,6 +20,7 @@ namespace Soulseek
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     A response to a file search.
@@ -144,5 +145,14 @@ namespace Soulseek
         ///     Gets the username of the responding peer.
         /// </summary>
         public string Username { get; }
+
+        /// <summary>
+        ///     Serializes the response to the raw byte array sent over the network.
+        /// </summary>
+        /// <returns>The serialized response.</returns>
+        public byte[] ToByteArray()
+        {
+            return SearchResponseFactory.ToByteArray(this);
+        }
     }
 }
