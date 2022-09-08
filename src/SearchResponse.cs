@@ -160,6 +160,9 @@ namespace Soulseek
     /// <summary>
     ///     A raw response to a file search, presented as a stream of binary data.
     /// </summary>
+    /// <remarks>
+    ///     This is a hack to simulate a discriminated union.
+    /// </remarks>
     public class RawSearchResponse : SearchResponse
     {
         /// <summary>
