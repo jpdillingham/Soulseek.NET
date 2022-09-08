@@ -19,6 +19,7 @@ namespace Soulseek
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using Soulseek.Messaging.Messages;
 
@@ -154,5 +155,43 @@ namespace Soulseek
         {
             return SearchResponseFactory.ToByteArray(this);
         }
+    }
+
+    /// <summary>
+    ///     A raw response to a file search, presented as a stream of binary data.
+    /// </summary>
+    public class RawSearchResponse : SearchResponse
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RawSearchResponse"/> class.
+        /// </summary>
+        /// <param name="length">The length of the response, in bytes.</param>
+        /// <param name="stream">The raw input stream.</param>
+        public RawSearchResponse(long length, Stream stream)
+            : base(string.Empty, 0, false, 0, 0, null)
+        {
+            if (length <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length), "The response length must be greater than zero");
+            }
+
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream), "The specified input stream is null");
+            }
+
+            Length = length;
+            Stream = stream;
+        }
+
+        /// <summary>
+        ///     Gets the length of the response, in bytes.
+        /// </summary>
+        public long Length { get; }
+
+        /// <summary>
+        ///     Gets the raw input stream providing the response.
+        /// </summary>
+        public Stream Stream { get; }
     }
 }

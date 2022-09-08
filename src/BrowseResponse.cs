@@ -17,12 +17,14 @@
 
 namespace Soulseek
 {
+    using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using Soulseek.Messaging.Messages;
 
     /// <summary>
-    ///     The response to a peer browse request.
+    ///     A response to a peer browse request.
     /// </summary>
     public class BrowseResponse
     {
@@ -68,5 +70,43 @@ namespace Soulseek
         {
             return BrowseResponseFactory.ToByteArray(this);
         }
+    }
+
+    /// <summary>
+    ///     A raw response to a peer browse request, presented as a stream of binary data.
+    /// </summary>
+    public class RawBrowseResponse : BrowseResponse
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RawBrowseResponse"/> class.
+        /// </summary>
+        /// <param name="length">The length of the response, in bytes.</param>
+        /// <param name="stream">The raw input stream.</param>
+        public RawBrowseResponse(long length, Stream stream)
+        {
+            if (length <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length), "The response length must be greater than zero");
+            }
+
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream), "The specified input stream is null");
+            }
+
+            Length = length;
+            Stream = stream;
+        }
+
+        /// <summary>
+        ///     Gets the length of the response, in bytes.
+        /// </summary>
+        public long Length { get; }
+
+        /// <summary>
+        ///     Gets the raw input stream providing the response.
+        /// </summary>
+        public Stream Stream { get; }
+
     }
 }
