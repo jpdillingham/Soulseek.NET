@@ -62,7 +62,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, "filename", "local"));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, "filename", Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -97,7 +97,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", filename, "local"));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", filename, Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -132,7 +132,7 @@ namespace Soulseek.Tests.Unit.Client
 
             using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "remote", "local"));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "remote", Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<FileNotFoundException>(ex);
@@ -182,7 +182,7 @@ namespace Soulseek.Tests.Unit.Client
 
             using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local"));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -233,7 +233,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local"));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -255,7 +255,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local"));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<IOException>(ex);
@@ -308,7 +308,7 @@ namespace Soulseek.Tests.Unit.Client
 
                     s.SetProperty("UploadDictionary", queued);
 
-                    var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", "local", 1));
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", Guid.NewGuid().ToString(), 1));
 
                     Assert.NotNull(ex);
                     Assert.IsType<DuplicateTokenException>(ex);
@@ -383,7 +383,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync file throws DuplicateTransferException when an existing Upload matches the username and filename"), AutoData]
-        public async Task UploadAsync_File_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_The_Username_And_Filename(string username, string filename)
+        public async Task UploadAsync_File_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_The_Username_And_Filename(string username, string filename, string localFilename)
         {
             using (var testFile = new TestFile())
             {
@@ -402,7 +402,7 @@ namespace Soulseek.Tests.Unit.Client
 
                     s.SetProperty("UploadDictionary", queued);
 
-                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, "local", 1));
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, localFilename, 1));
 
                     Assert.NotNull(ex);
                     Assert.IsType<DuplicateTransferException>(ex);
@@ -413,7 +413,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync file does not throw DuplicateTransferException when an existing Upload matches only the username"), AutoData]
-        public async Task UploadAsync_File_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Username(string username, string filename)
+        public async Task UploadAsync_File_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Username(string username, string filename, string localFilename)
         {
             using (var testFile = new TestFile())
             {
@@ -432,7 +432,7 @@ namespace Soulseek.Tests.Unit.Client
 
                     s.SetProperty("UploadDictionary", queued);
 
-                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", "local", 1));
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", localFilename, 1));
 
                     Assert.NotNull(ex);
                     Assert.IsNotType<DuplicateTransferException>(ex);
@@ -442,7 +442,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync file does not throw DuplicateTransferException when an existing Upload matches only the filename"), AutoData]
-        public async Task UploadAsync_File_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Filename(string username, string filename)
+        public async Task UploadAsync_File_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Filename(string username, string filename, string localFilename)
         {
             using (var testFile = new TestFile())
             {
@@ -461,7 +461,7 @@ namespace Soulseek.Tests.Unit.Client
 
                     s.SetProperty("UploadDictionary", queued);
 
-                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, "local", 1));
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, localFilename, 1));
 
                     Assert.NotNull(ex);
                     Assert.IsNotType<DuplicateTransferException>(ex);
@@ -491,7 +491,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync file uses given CancellationToken"), AutoData]
-        public async Task UploadAsync_File_Uses_Given_CancellationToken(string username, string filename)
+        public async Task UploadAsync_File_Uses_Given_CancellationToken(string username, string filename, string localFilename)
         {
             var cancellationToken = new CancellationToken(true);
 
@@ -514,7 +514,7 @@ namespace Soulseek.Tests.Unit.Client
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, "local", cancellationToken: cancellationToken));
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, localFilename, cancellationToken: cancellationToken));
 
                     Assert.NotNull(ex);
                     Assert.IsType<OperationCanceledException>(ex);
@@ -568,11 +568,12 @@ namespace Soulseek.Tests.Unit.Client
 
             var connManager = new Mock<IPeerConnectionManager>();
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<UserOfflineException>(ex);
@@ -599,11 +600,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -632,11 +634,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -674,11 +677,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -715,11 +719,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -814,11 +819,12 @@ namespace Soulseek.Tests.Unit.Client
 
             var timeoutEx = new TimeoutException("timed out");
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("timed out", timeoutEx));
 
@@ -864,11 +870,12 @@ namespace Soulseek.Tests.Unit.Client
 
             var cancelEx = new OperationCanceledException("canceled");
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("canceled", cancelEx));
 
@@ -915,11 +922,12 @@ namespace Soulseek.Tests.Unit.Client
 
             var thrownEx = new Exception("some exception");
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null);
+                var task = s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null);
 
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("some exception", thrownEx));
 
@@ -1634,11 +1642,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferRejectedException>(ex);
@@ -2123,11 +2132,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -2172,11 +2182,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -2216,11 +2227,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -2269,11 +2281,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -2321,11 +2334,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -2363,11 +2377,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferRejectedException>(ex);
@@ -2401,11 +2416,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new ConnectionException()));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -2439,7 +2455,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(conn.Object));
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new ConnectionException()));
-
+           
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -2450,7 +2467,7 @@ namespace Soulseek.Tests.Unit.Client
                     "UploadFromFileAsync",
                     username,
                     filename,
-                    "local",
+                    testFile.Path,
                     token,
                     new TransferOptions(stateChanged: (args) =>
                     {
@@ -2511,11 +2528,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
             }
@@ -2557,11 +2575,12 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
+            using (var testFile = new TestFile())
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, "local", token, new TransferOptions(maximumLingerTime: int.MaxValue), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, new TransferOptions(maximumLingerTime: int.MaxValue), null));
 
                 Assert.Null(ex);
             }
