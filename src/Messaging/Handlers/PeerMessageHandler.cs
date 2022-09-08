@@ -146,7 +146,11 @@ namespace Soulseek.Messaging.Handlers
                         {
                             var peerSearchResponse = await SoulseekClient.Options.SearchResponseResolver(connection.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
 
-                            if (peerSearchResponse != null && peerSearchResponse.FileCount + peerSearchResponse.LockedFileCount > 0)
+                            if (peerSearchResponse is RawSearchResponse rawSearchResponse)
+                            {
+                                await connection.WriteAsync(rawSearchResponse.Length, rawSearchResponse.Stream).ConfigureAwait(false);
+                            }
+                            else if (peerSearchResponse != null && peerSearchResponse.FileCount + peerSearchResponse.LockedFileCount > 0)
                             {
                                 await connection.WriteAsync(peerSearchResponse.ToByteArray()).ConfigureAwait(false);
                             }
@@ -173,7 +177,15 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Failed to resolve browse response: {ex.Message}", ex);
                         }
 
-                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
+                        if (browseResponse is RawBrowseResponse rawBrowseResponse)
+                        {
+                            await connection.WriteAsync(rawBrowseResponse.Length, rawBrowseResponse.Stream).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
+                        }
+
                         Diagnostic.Info($"Share contents sent to {connection.Username}");
 
                         break;
