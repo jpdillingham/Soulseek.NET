@@ -36,7 +36,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, "filename", "local"));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, "filename", Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);

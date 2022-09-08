@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, "filename", "local"));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, "filename", Guid.NewGuid().ToString()));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "EnqueueDownloadAsync")]
         [Theory(DisplayName = "EnqueueDownloadAsync returns download task after enqueue"), AutoData]
-        public async Task EnqueueDownloadAsync_Returns_Download_Task_After_Enqueue(string username, string filename, long size, int token, IPEndPoint endpoint)
+        public async Task EnqueueDownloadAsync_Returns_Download_Task_After_Enqueue(string username, string filename, string localFilename, long size, int token, IPEndPoint endpoint)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", (long?)size, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, localFilename, (long?)size, 0, token);
 
                 Assert.NotNull(downloadTask);
 
@@ -276,7 +276,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "EnqueueDownloadAsync")]
         [Theory(DisplayName = "EnqueueDownloadAsync throws download exception on error"), AutoData]
-        public async Task EnqueueDownloadAsync_Throws_Download_Exception_On_Error(string username, string filename, long size, int token, IPEndPoint endpoint)
+        public async Task EnqueueDownloadAsync_Throws_Download_Exception_On_Error(string username, string filename, string localFilename, long size, int token, IPEndPoint endpoint)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -329,7 +329,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var downloadTask = await s.EnqueueDownloadAsync(username, filename, "local", (long?)size, 0, token);
+                var downloadTask = await s.EnqueueDownloadAsync(username, filename, localFilename, (long?)size, 0, token);
 
                 Assert.NotNull(downloadTask);
 
@@ -410,7 +410,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "EnqueueDownloadAsync")]
         [Theory(DisplayName = "EnqueueDownloadAsync throws download exception on error before queue"), AutoData]
-        public async Task EnqueueDownloadAsync_Throws_Download_Exception_On_Error_Before_Queue(string username, string filename, long size, int token, IPEndPoint endpoint)
+        public async Task EnqueueDownloadAsync_Throws_Download_Exception_On_Error_Before_Queue(string username, string filename, string localFilename, long size, int token, IPEndPoint endpoint)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -463,7 +463,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, filename, "local", 0L, 0, token));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, filename, localFilename, 0L, 0, token));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
