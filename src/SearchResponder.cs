@@ -165,7 +165,14 @@ namespace Soulseek
                     throw;
                 }
 
-                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+                if (searchResponse is RawSearchResponse rawSearchResponse)
+                {
+                    await peerConnection.WriteAsync(rawSearchResponse.Length, rawSearchResponse.Stream).ConfigureAwait(false);
+                }
+                else
+                {
+                    await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+                }
 
                 Diagnostic.Debug($"Sent response containing {searchResponse.FileCount + searchResponse.LockedFileCount} files to {username} for query '{query}' with token {token}");
                 ResponseDelivered?.Invoke(this, new SearchRequestResponseEventArgs(username, token, query, searchResponse));
