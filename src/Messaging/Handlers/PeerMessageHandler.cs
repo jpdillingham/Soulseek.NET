@@ -149,6 +149,15 @@ namespace Soulseek.Messaging.Handlers
                             if (peerSearchResponse is RawSearchResponse rawSearchResponse)
                             {
                                 await connection.WriteAsync(rawSearchResponse.Length, rawSearchResponse.Stream).ConfigureAwait(false);
+
+                                try
+                                {
+                                    rawSearchResponse?.Stream?.Dispose();
+                                }
+                                catch
+                                {
+                                    // noop
+                                }
                             }
                             else if (peerSearchResponse != null && peerSearchResponse.FileCount + peerSearchResponse.LockedFileCount > 0)
                             {
@@ -180,6 +189,15 @@ namespace Soulseek.Messaging.Handlers
                         if (browseResponse is RawBrowseResponse rawBrowseResponse)
                         {
                             await connection.WriteAsync(rawBrowseResponse.Length, rawBrowseResponse.Stream).ConfigureAwait(false);
+
+                            try
+                            {
+                                rawBrowseResponse?.Stream?.Dispose();
+                            }
+                            catch
+                            {
+                                // noop
+                            }
                         }
                         else
                         {
