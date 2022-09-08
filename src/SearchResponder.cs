@@ -168,6 +168,15 @@ namespace Soulseek
                 if (searchResponse is RawSearchResponse rawSearchResponse)
                 {
                     await peerConnection.WriteAsync(rawSearchResponse.Length, rawSearchResponse.Stream).ConfigureAwait(false);
+
+                    try
+                    {
+                        rawSearchResponse?.Stream?.Dispose();
+                    }
+                    catch
+                    {
+                        // noop
+                    }
                 }
                 else
                 {
