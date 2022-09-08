@@ -83,6 +83,9 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="RawBrowseResponse"/> class.
         /// </summary>
+        /// <remarks>
+        ///     The input stream will be disposed after the response is written.
+        /// </remarks>
         /// <param name="length">The length of the response, in bytes.</param>
         /// <param name="stream">The raw input stream.</param>
         public RawBrowseResponse(long length, Stream stream)
