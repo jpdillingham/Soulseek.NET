@@ -138,3 +138,20 @@ For convenience, two scripts, `run` and `start`, have been included in `examples
 The example application is split into two projects; a .NET 5.0 WebAPI and a React application bootstrapped with create-react-app.  If you'd like to run these outside of Docker you'll need to start both applications; `dotnet run` for the API and `yarn|npm start` for the React application.  You can connect to http://localhost:3000, or the API serves Swagger UI at http://localhost:5000/swagger.
 
 A build script included in the `bin` directory of the example which will build the React app, copy the static files to the wwwroot directory of the API, build the API, then attempt to build the Docker image.
+
+## See also
+
+### References
+
+* [Nicotine+ (most up to date)](https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md)
+* [SoulseekProtocol - Museek+](https://www.museek-plus.org/wiki/SoulseekProtocol)
+* [SpulSeek Protocol Documentation (mirrored)](https://htmlpreview.github.io/?https://github.com/jpdillingham/Soulseek.NET/blob/master/docs/img/SoulSeek%20Protocol%20Documentation.html)
+
+### Alternative Clients and Libraries
+
+Much of Soulseek.NET was made possible by the work of others. The following resources were used as a reference:
+
+* [nicotine-plus](https://github.com/Nicotine-Plus/nicotine-plus)
+* [livelook](https://github.com/misterhat/livelook) by @misterhat
+* [museek-plus](https://github.com/eLvErDe/museek-plus) by @eLvErDe
+* [slsk-client](https://github.com/f-hj/slsk-client) by @f-hj.
