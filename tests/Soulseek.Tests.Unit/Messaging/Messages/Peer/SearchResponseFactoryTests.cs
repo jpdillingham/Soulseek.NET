@@ -467,7 +467,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "ToByteArray")]
         [Theory(DisplayName = "ToByteArray returns expected data when HasFreeUploadSlot = false"), AutoData]
-        public void ToByteArray_Returns_Expected_Data_When_HasFreeUploadSlot_False(string username, int token, byte freeUploadSlots, int uploadSpeed, int queueLength)
+        public void ToByteArray_Returns_Expected_Data_When_HasFreeUploadSlot_False(string username, int token, int uploadSpeed, int queueLength)
         {
             var list = new List<File>();
 
@@ -489,7 +489,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "ToByteArray")]
         [Theory(DisplayName = "ToByteArray returns expected data when HasFreeUploadSlot = true"), AutoData]
-        public void ToByteArray_Returns_Expected_Data_When_HasFreeUploadSlot_True(string username, int token, byte freeUploadSlots, int uploadSpeed, int queueLength)
+        public void ToByteArray_Returns_Expected_Data_When_HasFreeUploadSlot_True(string username, int token, int uploadSpeed, int queueLength)
         {
             var list = new List<File>();
 

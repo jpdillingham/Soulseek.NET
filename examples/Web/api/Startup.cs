@@ -625,7 +625,7 @@
             Task.Run(async () =>
             {
                 using var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read);
-                await Client.UploadAsync(username, filename, fileInfo.Length, () => stream, options: topts, cancellationToken: cts.Token);
+                await Client.UploadAsync(username, filename, fileInfo.Length, () => Task.FromResult((Stream)stream), options: topts, cancellationToken: cts.Token);
 
                 cts.Dispose();
             }).ContinueWith(t =>
