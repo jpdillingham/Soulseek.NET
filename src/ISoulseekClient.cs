@@ -594,7 +594,7 @@ namespace Soulseek
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously removes the currently logged in user from the list of members in the specified private <paramref name="roomName"/>.
@@ -693,7 +693,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Func{Stream}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -738,7 +738,7 @@ namespace Soulseek
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     <para>
@@ -787,7 +787,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, long, Func{Stream}, int?, TransferOptions, CancellationToken?)"/>, but
+        ///         <see cref="UploadAsync(string, string, long, Func{Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>, but
         ///         returns the upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
@@ -818,7 +818,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.
@@ -1353,6 +1353,6 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
     }
 }

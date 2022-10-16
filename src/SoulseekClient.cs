@@ -1072,7 +1072,7 @@ namespace Soulseek
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1279,7 +1279,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Func{Stream}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -1324,7 +1324,7 @@ namespace Soulseek
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1421,7 +1421,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, long, Func{Stream}, int?, TransferOptions, CancellationToken?)"/>, but
+        ///         <see cref="UploadAsync(string, string, long, Func{Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>, but
         ///         returns the upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
@@ -1452,7 +1452,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -2580,7 +2580,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -3047,10 +3047,10 @@ namespace Soulseek
                 fileMode = FileMode.Append;
             }
 
-            return await DownloadToStreamAsync(username, remoteFilename, () => IOAdapter.GetFileStream(localFilename, fileMode, FileAccess.Write, FileShare.None), size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
+            return await DownloadToStreamAsync(username, remoteFilename, () => Task.FromResult((Stream)IOAdapter.GetFileStream(localFilename, fileMode, FileAccess.Write, FileShare.None)), size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Stream> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new TransferInternal(TransferDirection.Download, username, remoteFilename, token, options)
             {
@@ -3224,7 +3224,7 @@ namespace Soulseek
 
                 try
                 {
-                    outputStream = outputStreamFactory();
+                    outputStream = await outputStreamFactory().ConfigureAwait(false);
 
                     Diagnostic.Debug($"Seeking download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {startOffset} bytes");
                     var startOffsetBytes = BitConverter.GetBytes(startOffset);
@@ -3978,10 +3978,10 @@ namespace Soulseek
 
             var length = ioAdapter.GetFileInfo(localFilename).Length;
 
-            return await UploadFromStreamAsync(username, remoteFilename, length, () => ioAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read), token, options, cancellationToken).ConfigureAwait(false);
+            return await UploadFromStreamAsync(username, remoteFilename, length, () => Task.FromResult((Stream)ioAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read)), token, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Stream> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
@@ -4122,7 +4122,7 @@ namespace Soulseek
 
                 try
                 {
-                    inputStream = inputStreamFactory();
+                    inputStream = await inputStreamFactory().ConfigureAwait(false);
 
                     var startOffsetBytes = await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
                     var startOffset = BitConverter.ToInt64(startOffsetBytes, 0);
