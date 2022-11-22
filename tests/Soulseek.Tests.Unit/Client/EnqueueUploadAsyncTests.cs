@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, "filename", 1, () => Task.FromResult((Stream)stream)));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, "filename", 1, (_) => Task.FromResult((Stream)stream)));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -84,7 +84,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, filename, 1, () => Task.FromResult((Stream)stream), token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, filename, 1, (_) => Task.FromResult((Stream)stream), token, new TransferOptions(), null));
 
                 Assert.Null(ex);
             }

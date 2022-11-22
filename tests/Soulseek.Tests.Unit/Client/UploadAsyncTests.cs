@@ -25,6 +25,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
+    using Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.Interfaces;
     using Moq;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging;
@@ -45,7 +46,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, "filename", 1, () => Task.FromResult((Stream)stream)));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, "filename", 1, (_) => Task.FromResult((Stream)stream)));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -80,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", filename, 1, () => Task.FromResult((Stream)stream)));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", filename, 1, (_) => Task.FromResult((Stream)stream)));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -149,7 +150,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", size, () => Task.FromResult((Stream)stream)));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", size, (_) => Task.FromResult((Stream)stream)));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -164,7 +165,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => Task.FromResult((Stream)stream)));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, (_) => Task.FromResult((Stream)stream)));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -213,7 +214,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => Task.FromResult((Stream)stream)));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, (_) => Task.FromResult((Stream)stream)));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -279,7 +280,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => Task.FromResult((Stream)stream), 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, (_) => Task.FromResult((Stream)stream), 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTokenException>(ex);
@@ -331,7 +332,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, () => Task.FromResult((Stream)stream), 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, (_) => Task.FromResult((Stream)stream), 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
@@ -353,7 +354,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", 1, () => Task.FromResult((Stream)stream), 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename + "!", 1, (_) => Task.FromResult((Stream)stream), 1));
 
                 Assert.NotNull(ex);
                 Assert.IsNotType<DuplicateTransferException>(ex);
@@ -374,7 +375,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("UploadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, 1, () => Task.FromResult((Stream)stream), 1));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username + "!", filename, 1, (_) => Task.FromResult((Stream)stream), 1));
 
                 Assert.NotNull(ex);
                 Assert.IsNotType<DuplicateTransferException>(ex);
@@ -482,7 +483,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, () => Task.FromResult((Stream)stream), cancellationToken: cancellationToken));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, (_) => Task.FromResult((Stream)stream), cancellationToken: cancellationToken));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -545,7 +546,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, () => Task.FromResult((Stream)stream)));
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", 1, (_) => Task.FromResult((Stream)stream)));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -1167,7 +1168,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(disposeInputStreamOnCompletion: true);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Null(ex);
 
@@ -1218,7 +1219,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Null(ex);
 
@@ -1271,11 +1272,61 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Null(ex);
                 Assert.Equal(offset, stream.Position);
             }
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync throws SoulseekClientException if seek is nonzero and input stream is not seekable"), AutoData]
+        public async Task UploadFromStreamAsync_Throws_SoulseekClientException_If_Seek_Is_NonZero_And_Input_Stream_Is_Not_Seekable(string username, IPEndPoint endpoint, string filename, int token)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+            long size = new Random().Next(1000);
+            long offset = size * 2;
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<Task>(new TransferException("foo", new NullReferenceException())));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(offset)));
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var stream = new UnReadableWriteableStream()) // CanSeek = false
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<SoulseekClientException>(ex);
+                Assert.IsType<TransferException>(ex.InnerException);
+            }
+
+            transferConn.Verify(m => m.Disconnect(It.IsAny<string>(), It.Is<TransferException>(ex => ex.Message.ContainsInsensitive("exceeds file length"))), Times.Once);
         }
 
         [Trait("Category", "UploadFromStreamAsync")]
@@ -1318,7 +1369,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -1368,7 +1419,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Null(ex);
                 Assert.Equal(offset, stream.Position);
@@ -1429,7 +1480,7 @@ namespace Soulseek.Tests.Unit.Client
                     ack = c;
                 });
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Equal(attempted, att);
                 Assert.Equal(granted, gr);
@@ -1493,7 +1544,7 @@ namespace Soulseek.Tests.Unit.Client
                     ack = c;
                 });
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Equal(attempted, att);
                 Assert.Equal(granted, gr);
@@ -1548,7 +1599,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0, reporter: null);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Null(ex);
             }
@@ -1603,7 +1654,7 @@ namespace Soulseek.Tests.Unit.Client
                 // return a fixed 21 from the governor provided in options
                 var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false, maximumLingerTime: 0, governor: (tx, a, c) => Task.FromResult(21));
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Null(ex);
 
@@ -2622,7 +2673,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(slotAwaiter: (tx, ct) => throw new Exception("foo"));
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.NotNull(ex);
 
@@ -2669,7 +2720,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(slotAwaiter: (t, c) => Task.FromCanceled(new CancellationToken(canceled: true)));
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.NotNull(ex);
 
@@ -2715,7 +2766,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var txoptions = new TransferOptions(slotReleased: (t) => throw new Exception("foo"));
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), token, txoptions, null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
 
                 Assert.Null(ex);
             }
@@ -2728,7 +2779,7 @@ namespace Soulseek.Tests.Unit.Client
             public override bool CanRead => false;
             public override bool CanWrite => false;
 
-            public override bool CanSeek => throw new NotImplementedException();
+            public override bool CanSeek => false;
 
             public override long Length => throw new NotImplementedException();
 
