@@ -25,7 +25,6 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
-    using Microsoft.VisualStudio.TestPlatform.PlatformAbstractions.Interfaces;
     using Moq;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging;
@@ -1282,12 +1281,59 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync does not seek stream if SeekInputStreamAutomatically is false"), AutoData]
+        public async Task UploadFromStreamAsync_Does_Not_Seek_Stream_If_SeekInputStreamAutomatically_Is_False(string username, IPEndPoint endpoint, string filename, int token)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+            long size = new Random().Next(1000);
+            long offset = size / 2;
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(offset)));
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var stream = new MemoryStream(new byte[size]))
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var txoptions = new TransferOptions(seekInputStreamAutomatically: false, disposeInputStreamOnCompletion: false, maximumLingerTime: 0);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, size, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
+
+                Assert.Null(ex);
+                Assert.Equal(0, stream.Position);
+            }
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync throws SoulseekClientException if seek is nonzero and input stream is not seekable"), AutoData]
         public async Task UploadFromStreamAsync_Throws_SoulseekClientException_If_Seek_Is_NonZero_And_Input_Stream_Is_Not_Seekable(string username, IPEndPoint endpoint, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
             long size = new Random().Next(1000);
-            long offset = size * 2;
+            long offset = size / 2;
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -1328,7 +1374,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<TransferException>(ex.InnerException);
             }
 
-            transferConn.Verify(m => m.Disconnect(It.IsAny<string>(), It.Is<TransferException>(ex => ex.Message.ContainsInsensitive("exceeds file length"))), Times.Once);
+            transferConn.Verify(m => m.Disconnect(It.IsAny<string>(), It.Is<TransferException>(ex => ex.Message.ContainsInsensitive("input stream does not support seeking"))), Times.Once);
         }
 
         [Trait("Category", "UploadFromStreamAsync")]
