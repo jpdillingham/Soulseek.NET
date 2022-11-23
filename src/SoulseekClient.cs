@@ -1421,7 +1421,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, long, Func{Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>, but
+        ///         <see cref="UploadAsync(string, string, long, Func{long, Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>, but
         ///         returns the upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
@@ -1452,7 +1452,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -2580,7 +2580,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -3978,10 +3978,10 @@ namespace Soulseek
 
             var length = ioAdapter.GetFileInfo(localFilename).Length;
 
-            return await UploadFromStreamAsync(username, remoteFilename, length, () => Task.FromResult((Stream)ioAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read)), token, options, cancellationToken).ConfigureAwait(false);
+            return await UploadFromStreamAsync(username, remoteFilename, length, (_) => Task.FromResult((Stream)ioAdapter.GetFileStream(localFilename, FileMode.Open, FileAccess.Read, FileShare.Read)), token, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<Task<Stream>> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
@@ -4122,8 +4122,6 @@ namespace Soulseek
 
                 try
                 {
-                    inputStream = await inputStreamFactory().ConfigureAwait(false);
-
                     var startOffsetBytes = await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
                     var startOffset = BitConverter.ToInt64(startOffsetBytes, 0);
 
@@ -4132,6 +4130,14 @@ namespace Soulseek
                     if (upload.StartOffset > upload.Size)
                     {
                         throw new TransferException($"Requested start offset of {startOffset} bytes exceeds file length of {upload.Size} bytes");
+                    }
+
+                    Diagnostic.Debug($"Resolving input stream for upload of {Path.GetFileName(upload.Filename)} to {username}");
+                    inputStream = await inputStreamFactory(upload.StartOffset).ConfigureAwait(false);
+
+                    if (upload.StartOffset > 0 && !inputStream.CanSeek)
+                    {
+                        throw new TransferException($"Requested non-zero start offset but input stream does not support seeking");
                     }
 
                     Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {startOffset} bytes");
@@ -4199,7 +4205,7 @@ namespace Soulseek
                 await uploadCompleted.ConfigureAwait(false);
 
                 upload.State = TransferStates.Completed | upload.State;
-                UpdateProgress(inputStream.Position);
+                UpdateProgress(inputStream?.Position ?? 0);
                 UpdateState(upload.State);
 
                 return new Transfer(upload);
