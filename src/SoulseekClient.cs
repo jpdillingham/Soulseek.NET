@@ -4205,7 +4205,7 @@ namespace Soulseek
                 await uploadCompleted.ConfigureAwait(false);
 
                 upload.State = TransferStates.Completed | upload.State;
-                UpdateProgress(inputStream.Position);
+                UpdateProgress(inputStream?.Position ?? 0);
                 UpdateState(upload.State);
 
                 return new Transfer(upload);
