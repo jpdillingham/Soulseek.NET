@@ -50,6 +50,9 @@ namespace Soulseek
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
+        /// <param name="seekInputStreamAutomatically">
+        ///     A value indicating whether the input stream should be automatically seeked to the desired start offset, if one is specified.
+        /// </param>
         /// <param name="disposeInputStreamOnCompletion">
         ///     A value indicating whether the input stream should be closed upon transfer completion.
         /// </param>
@@ -64,9 +67,11 @@ namespace Soulseek
             Action<Transfer> slotReleased = null,
             Action<Transfer, int, int, int> reporter = null,
             int maximumLingerTime = 3000,
+            bool seekInputStreamAutomatically = true,
             bool disposeInputStreamOnCompletion = false,
             bool disposeOutputStreamOnCompletion = false)
         {
+            SeekInputStreamAutomatically = seekInputStreamAutomatically;
             DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
@@ -113,6 +118,12 @@ namespace Soulseek
         public Action<Transfer, int, int, int> Reporter { get; }
 
         /// <summary>
+        ///     Gets a value indicating whether the input stream should be automatically seeked to the desired start offset, if
+        ///     one is specified.
+        /// </summary>
+        public bool SeekInputStreamAutomatically { get; }
+
+        /// <summary>
         ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
         public Func<Transfer, CancellationToken, Task> SlotAwaiter { get; }
@@ -146,6 +157,7 @@ namespace Soulseek
                 slotReleased: SlotReleased,
                 reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
+                seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
         }
@@ -172,6 +184,7 @@ namespace Soulseek
                 slotReleased: SlotReleased,
                 reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
+                seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);
         }

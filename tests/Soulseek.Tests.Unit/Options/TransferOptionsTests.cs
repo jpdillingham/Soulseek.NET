@@ -28,6 +28,7 @@ namespace Soulseek.Tests.Unit.Options
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_Given_Data(
+            bool seekInput,
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
@@ -46,9 +47,11 @@ namespace Soulseek.Tests.Unit.Options
                 slotReleased,
                 reporter,
                 maximumLingerTime,
+                seekInput,
                 disposeInput,
                 disposeOutput);
 
+            Assert.Equal(seekInput, o.SeekInputStreamAutomatically);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
             Assert.Equal(governor, o.Governor);
@@ -83,6 +86,7 @@ namespace Soulseek.Tests.Unit.Options
         [Trait("Category", "WithAdditionalStateChanged")]
         [Theory(DisplayName = "WithAdditionalStateChanged returns copy other than StateChanged"), AutoData]
         public void WithAdditionalStateChanged_Returns_Copy_Other_Than_StateChanged(
+            bool seekInput,
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
@@ -99,11 +103,13 @@ namespace Soulseek.Tests.Unit.Options
                 slotAwaiter: acquireSlot,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
+                seekInputStreamAutomatically: seekInput,
                 disposeInputStreamOnCompletion: disposeInput,
                 disposeOutputStreamOnCompletion: disposeOutput);
 
             var o = n.WithAdditionalStateChanged(null);
 
+            Assert.Equal(seekInput, o.SeekInputStreamAutomatically);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
             Assert.Equal(governor, o.Governor);
@@ -148,6 +154,7 @@ namespace Soulseek.Tests.Unit.Options
         [Trait("Category", "WithDisposalOptions")]
         [Theory(DisplayName = "WithDisposalOptions returns unchanged copy if both options are null"), AutoData]
         public void WithAdditionalStateChanged_Returns_Unchanged_Copy_If_Both_Options_Are_Null(
+            bool seekInput,
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
@@ -164,6 +171,7 @@ namespace Soulseek.Tests.Unit.Options
                 slotAwaiter: acquireSlot,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
+                seekInputStreamAutomatically: seekInput,
                 disposeInputStreamOnCompletion: disposeInput,
                 disposeOutputStreamOnCompletion: disposeOutput);
 
@@ -175,6 +183,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(seekInput, o.SeekInputStreamAutomatically);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
         }
@@ -182,6 +191,7 @@ namespace Soulseek.Tests.Unit.Options
         [Trait("Category", "WithDisposalOptions")]
         [Theory(DisplayName = "WithDisposalOptions returns changed copy if both options are specified"), AutoData]
         public void WithAdditionalStateChanged_Returns_Changed_Copy_If_Both_Options_Are_Specified(
+            bool seekInput,
             bool disposeInput,
             bool disposeOutput,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
@@ -198,6 +208,7 @@ namespace Soulseek.Tests.Unit.Options
                 slotAwaiter: acquireSlot,
                 slotReleased: slotReleased,
                 maximumLingerTime: maximumLingerTime,
+                seekInputStreamAutomatically: seekInput,
                 disposeInputStreamOnCompletion: !disposeInput,
                 disposeOutputStreamOnCompletion: !disposeOutput);
 
@@ -211,6 +222,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
+            Assert.Equal(seekInput, o.SeekInputStreamAutomatically);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
         }
