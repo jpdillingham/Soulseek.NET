@@ -273,7 +273,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryRespondAsync returns false if ResponseResolver returns zero files"), AutoData]
         public async Task TryRespondAsync_Returns_False_If_ResponseResolver_Returns_Zero_Files(string username, int token, string query)
         {
-            var response = new SearchResponse(username, token, 0, 0, 0, new List<File>());
+            var response = new SearchResponse(username, token, false, 0, 0, new List<File>());
             var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response)));
 
             var responded = await responder.TryRespondAsync(username, token, query);

@@ -670,7 +670,7 @@
                 return Task.FromResult(new SearchResponse(
                     Username,
                     token,
-                    freeUploadSlots: 1,
+                    hasFreeUploadSlot: true,
                     uploadSpeed: 0,
                     queueLength: 0,
                     fileList: results));

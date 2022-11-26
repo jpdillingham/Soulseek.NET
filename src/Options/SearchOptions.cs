@@ -31,9 +31,6 @@ namespace Soulseek
         /// <param name="responseLimit">The maximum number of search results to accept before the search is considered completed.</param>
         /// <param name="filterResponses">A value indicating whether responses are to be filtered.</param>
         /// <param name="minimumResponseFileCount">The minimum number of files a response must contain in order to be processed.</param>
-        /// <param name="minimumPeerFreeUploadSlots">
-        ///     The minimum number of free upload slots a peer must have in order for a response to be processed.
-        /// </param>
         /// <param name="maximumPeerQueueLength">The maximum queue depth a peer may have in order for a response to be processed.</param>
         /// <param name="minimumPeerUploadSpeed">
         ///     The minimum upload speed a peer must have in order for a response to be processed.
@@ -51,7 +48,6 @@ namespace Soulseek
             int responseLimit = 250,
             bool filterResponses = true,
             int minimumResponseFileCount = 1,
-            int minimumPeerFreeUploadSlots = 0,
             int maximumPeerQueueLength = int.MaxValue,
             int minimumPeerUploadSpeed = 0,
             int fileLimit = 25000,
@@ -94,12 +90,6 @@ namespace Soulseek
         ///     Gets the maximum queue depth a peer may have in order for a response to be processed. (Default = maximum integer value).
         /// </summary>
         public int MaximumPeerQueueLength { get; }
-
-        /// <summary>
-        ///     Gets the minimum number of free upload slots a peer must have in order for a response to be processed. (Default = 0).
-        /// </summary>
-        [Obsolete("This no longer does anything, and will be removed in the next major release.")]
-        public int MinimumPeerFreeUploadSlots { get; }
 
         /// <summary>
         ///     Gets the minimum upload speed a peer must have in order for a response to be processed. (Default = 0).

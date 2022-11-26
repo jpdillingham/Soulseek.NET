@@ -26,7 +26,7 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
-        public void Instantiates_With_Given_Data(string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength, File file)
+        public void Instantiates_With_Given_Data(string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength, File file)
         {
             var list = new List<File>()
             {
@@ -39,11 +39,11 @@ namespace Soulseek.Tests.Unit
                 file,
             };
 
-            var r = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, list, locked);
+            var r = new SearchResponse(username, token, hasFreeUploadSlot, uploadSpeed, queueLength, list, locked);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(token, r.Token);
-            Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
+            Assert.Equal(hasFreeUploadSlot, r.HasFreeUploadSlot);
             Assert.Equal(uploadSpeed, r.UploadSpeed);
             Assert.Equal(queueLength, r.QueueLength);
 
@@ -60,9 +60,9 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given response and list, replacing filecount with list length"), AutoData]
-        public void Instantiates_With_Given_Response_And_List(string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
+        public void Instantiates_With_Given_Response_And_List(string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength)
         {
-            var r1 = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, null);
+            var r1 = new SearchResponse(username, token, hasFreeUploadSlot, uploadSpeed, queueLength, null);
 
             var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext") });
 
@@ -75,43 +75,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(r1.UploadSpeed, r2.UploadSpeed);
             Assert.Equal(r1.QueueLength, r2.QueueLength);
 
-            Assert.Equal(freeUploadSlots > 0 ? 1 : 0, r2.FreeUploadSlots);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with HasFreeUploadSlot true if FreeUploadSlots GT 1"), AutoData]
-        public void Instantiates_With_HasFreeUploadSlot_True_If_FreeUploadSlots_GT_1(string username, int token, int uploadSpeed, int queueLength)
-        {
-            var r = new SearchResponse(username, token, freeUploadSlots: 1, uploadSpeed, queueLength, null);
-
-            Assert.True(r.HasFreeUploadSlot);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with HasFreeUploadSlot false if FreeUploadSlots EQ 0"), AutoData]
-        public void Instantiates_With_HasFreeUploadSlot_False_If_FreeUploadSlots_EQ_0(string username, int token, int uploadSpeed, int queueLength)
-        {
-            var r = new SearchResponse(username, token, freeUploadSlots: 0, uploadSpeed, queueLength, null);
-
-            Assert.False(r.HasFreeUploadSlot);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with FreeUploadSlots 1 if HasFreeUploadSlot true"), AutoData]
-        public void Instantiates_With_FreeUploadSlots_1_If_HasFreeUploadSlot_True(string username, int token, int uploadSpeed, int queueLength)
-        {
-            var r = new SearchResponse(username, token, hasFreeUploadSlot: true, uploadSpeed, queueLength, null);
-
-            Assert.Equal(1, r.FreeUploadSlots);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with FreeUploadSlots 1 if HasFreeUploadSlot true"), AutoData]
-        public void Instantiates_With_FreeUploadSlots_0_If_HasFreeUploadSlot_False(string username, int token, int uploadSpeed, int queueLength)
-        {
-            var r = new SearchResponse(username, token, hasFreeUploadSlot: false, uploadSpeed, queueLength, null);
-
-            Assert.Equal(0, r.FreeUploadSlots);
+            Assert.Equal(hasFreeUploadSlot, r2.HasFreeUploadSlot);
         }
     }
 }
