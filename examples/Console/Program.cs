@@ -71,7 +71,7 @@
                     var responses = await SearchAsync(client, Search, 1);
 
                     responses = responses
-                        .OrderByDescending(r => r.FreeUploadSlots)
+                        .OrderByDescending(r => r.HasFreeUploadSlot)
                         .ThenByDescending(r => r.UploadSpeed);
 
                     var response = SelectSearchResponse(responses);
@@ -95,7 +95,7 @@
                     responses = await SearchAsync(client, searchText, release.TrackCount);
 
                     responses = responses
-                        .OrderByDescending(r => r.FreeUploadSlots)
+                        .OrderByDescending(r => r.HasFreeUploadSlot)
                         .ThenByDescending(r => r.UploadSpeed);
 
                     var response = SelectSearchResponse(responses);
@@ -410,7 +410,7 @@
                 var response = responses.ToList()[index];
 
                 var cnt = $"Response {index + 1}/{responses.Count()}";
-                var res = $"User: {response.Username}, Upload speed: {response.UploadSpeed.ToKB()}/s, Free upload slots: {response.FreeUploadSlots}, Queue length: {response.QueueLength}";
+                var res = $"User: {response.Username}, Upload speed: {response.UploadSpeed.ToKB()}/s, Free upload slot: {response.HasFreeUploadSlot}, Queue length: {response.QueueLength}";
 
                 o($"\n┌{new string('─', res.Length - 29)} ──────── ──      ─ ─");
                 o($"│ {cnt}");

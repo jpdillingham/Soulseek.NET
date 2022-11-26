@@ -508,7 +508,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Sends resolved SearchResponse"), AutoData]
-        public void Sends_Resolved_SearchResponse(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
+        public void Sends_Resolved_SearchResponse(string query, string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength)
         {
             var files = new List<File>()
             {
@@ -516,7 +516,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 new File(2, "2", 2, "2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
-            var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
+            var response = new SearchResponse(username, token, hasFreeUploadSlot, uploadSpeed, queueLength, files);
             var options = new SoulseekClientOptions(searchResponseResolver: (u, i, q) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);
@@ -535,7 +535,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Ignores PeerSearchRequest if search response resolver is null"), AutoData]
-        public void Ignores_PeerSearchRequest_If_Search_Response_Resolver_Is_Null(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
+        public void Ignores_PeerSearchRequest_If_Search_Response_Resolver_Is_Null(string query, string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength)
         {
             var files = new List<File>()
             {
@@ -543,7 +543,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 new File(2, "2", 2, "2", new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
-            var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
+            var response = new SearchResponse(username, token, hasFreeUploadSlot, uploadSpeed, queueLength, files);
             var options = new SoulseekClientOptions(searchResponseResolver: null);
 
             var (handler, mocks) = GetFixture(options: options);
@@ -564,11 +564,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Ignores PeerSearchRequest if search response is empty"), AutoData]
-        public void Ignores_PeerSearchRequest_If_Search_Response_Is_Empty(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
+        public void Ignores_PeerSearchRequest_If_Search_Response_Is_Empty(string query, string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength)
         {
             var files = new List<File>();
 
-            var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
+            var response = new SearchResponse(username, token, hasFreeUploadSlot, uploadSpeed, queueLength, files);
             var options = new SoulseekClientOptions(searchResponseResolver: null);
 
             var (handler, mocks) = GetFixture(options: options);
@@ -589,11 +589,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates diagnostic on failed search response resolution"), AutoData]
-        public void Creates_Diagnostic_On_Failed_Search_Response_Resolution(string query, string username, int token, int freeUploadSlots, int uploadSpeed, int queueLength)
+        public void Creates_Diagnostic_On_Failed_Search_Response_Resolution(string query, string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength)
         {
             var files = new List<File>();
 
-            var response = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength, files);
+            var response = new SearchResponse(username, token, hasFreeUploadSlot, uploadSpeed, queueLength, files);
             var expectedEx = new Exception("error");
             var options = new SoulseekClientOptions(searchResponseResolver: (u, i, q) => Task.FromException<SearchResponse>(expectedEx));
 
