@@ -27,11 +27,12 @@
     <AdditionalFiles Include=".\.CodeAnalysis\stylecop.json" Link="Properties\stylecop.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
+    <None Include="..\README.md" Pack="true" PackagePath="\" Link="Properties\README.md"/>
   </ItemGroup>
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>6.0.0-pre.3</Version>
+    <Version>6.0.0-pre.4</Version>
     <Authors>JP Dillingham</Authors>
     <Product>Soulseek.NET</Product>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
@@ -47,6 +48,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
