@@ -113,6 +113,5 @@ namespace Soulseek
         ///     Gets the raw input stream providing the response.
         /// </summary>
         public Stream Stream { get; }
-
     }
 }

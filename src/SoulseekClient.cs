@@ -2133,7 +2133,7 @@ namespace Soulseek
         ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="query">The search query.</param>
-        /// <param name="responseReceived">The delegate to invoke for each response.</param>
+        /// <param name="responseHandler">The delegate to invoke for each response.</param>
         /// <param name="scope">the search scope.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
@@ -2144,14 +2144,14 @@ namespace Soulseek
         ///     Thrown when the search text of the specified <paramref name="query"/> is null, empty, or consists of only whitespace..
         /// </exception>
         /// <exception cref="ArgumentNullException">
-        ///     Thrown when the specified <paramref name="responseReceived"/> delegate is null.
+        ///     Thrown when the specified <paramref name="responseHandler"/> delegate is null.
         /// </exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseHandler, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (query == null)
             {
@@ -2168,9 +2168,9 @@ namespace Soulseek
                 throw new ArgumentException("Search query must contain at least one non-exclusion term", nameof(query));
             }
 
-            if (responseReceived == default)
+            if (responseHandler == default)
             {
-                throw new ArgumentNullException(nameof(responseReceived), "The specified Response delegate is null");
+                throw new ArgumentNullException(nameof(responseHandler), "The specified Response delegate is null");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -2198,7 +2198,7 @@ namespace Soulseek
                 throw new ArgumentException("Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
             }
 
-            return SearchToCallbackAsync(query, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCallbackAsync(query, responseHandler, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -3836,7 +3836,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<Search> SearchToCallbackAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task<Search> SearchToCallbackAsync(SearchQuery query, Action<SearchResponse> responseHandler, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var search = new SearchInternal(query.SearchText, token, options);
             var lastState = SearchStates.None;
@@ -3862,7 +3862,7 @@ namespace Soulseek
 
                 search.ResponseReceived = (response) =>
                 {
-                    responseReceived(response);
+                    responseHandler(response);
 
                     var e = new SearchResponseReceivedEventArgs(response, new Search(search));
                     options.ResponseReceived?.Invoke((e.Search, e.Response));

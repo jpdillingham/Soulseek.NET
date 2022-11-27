@@ -201,7 +201,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery(null), responseReceived: (r) => { }));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery(null), responseHandler: (r) => { }));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -217,7 +217,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("-no"), responseReceived: (r) => { }));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("-no"), responseHandler: (r) => { }));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -234,7 +234,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var options = new SearchOptions(removeSingleCharacterSearchTerms: true);
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), responseReceived: (r) => { }, options: options));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), responseHandler: (r) => { }, options: options));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -251,7 +251,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var options = new SearchOptions(removeSingleCharacterSearchTerms: false);
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), responseReceived: (r) => { }, options: options));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(query: new SearchQuery("a"), responseHandler: (r) => { }, options: options));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -301,11 +301,11 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText("foo"), responseReceived: null));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText("foo"), responseHandler: null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentNullException>(ex);
-                Assert.Equal("responseReceived", ((ArgumentNullException)ex).ParamName);
+                Assert.Equal("responseHandler", ((ArgumentNullException)ex).ParamName);
             }
         }
 
