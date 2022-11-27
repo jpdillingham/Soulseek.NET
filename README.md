@@ -145,7 +145,7 @@ A build script included in the `bin` directory of the example which will build t
 
 * [Nicotine+ (most up to date)](https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md)
 * [SoulseekProtocol - Museek+](https://www.museek-plus.org/wiki/SoulseekProtocol)
-* [SpulSeek Protocol Documentation (mirrored)](https://htmlpreview.github.io/?https://github.com/jpdillingham/Soulseek.NET/blob/master/docs/img/SoulSeek%20Protocol%20Documentation.html)
+* [Soulseek Protocol Documentation (mirrored)](https://htmlpreview.github.io/?https://github.com/jpdillingham/Soulseek.NET/blob/master/docs/Soulseek%20Protocol%20Documentation.html)
 
 ### Alternative Clients and Libraries
 
