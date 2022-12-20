@@ -197,25 +197,9 @@ namespace Soulseek.Messaging
         /// <exception cref="InvalidOperationException">
         ///     Thrown when attempting to write additional data to a message that has been compressed.
         /// </exception>
-        public MessageBuilder WriteString(string value, string encoding = null)
+        public MessageBuilder WriteString(string value, string encoding = Constants.Encoding.UTF8)
         {
-            byte[] bytes;
-
-            if (!string.IsNullOrEmpty(encoding))
-            {
-                bytes = Encoding.GetEncoding(encoding).GetBytes(value);
-            }
-            else
-            {
-                try
-                {
-                    bytes = Encoding.GetEncoding(Constants.Encoding.ISO88591, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetBytes(value);
-                }
-                catch (Exception)
-                {
-                    bytes = Encoding.GetEncoding(Constants.Encoding.UTF8).GetBytes(value);
-                }
-            }
+            var bytes = Encoding.GetEncoding(encoding).GetBytes(value);
 
             return WriteBytes(BitConverter.GetBytes(bytes.Length))
                 .WriteBytes(bytes);
