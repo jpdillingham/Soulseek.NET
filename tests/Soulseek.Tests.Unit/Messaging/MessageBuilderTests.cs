@@ -332,6 +332,28 @@ namespace Soulseek.Tests.Unit.Messaging
         }
 
         [Trait("Category", "WriteBytes")]
+        [InlineData(Constants.Encoding.UTF8)]
+        [InlineData(Constants.Encoding.ISO88591)]
+        [Theory(DisplayName = "WriteString obeys specified encoding")]
+        public void WriteString_Obeys_Specified_Encoding(string encoding)
+        {
+            var data = "බ";
+
+            var builder = new MessageBuilder();
+            builder.WriteString(data, encoding);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            var expectedBytes = new List<byte>();
+            var encodedBytes = Encoding.GetEncoding(encoding).GetBytes(data);
+            expectedBytes.AddRange(BitConverter.GetBytes(encodedBytes.Length));
+            expectedBytes.AddRange(encodedBytes);
+
+            Assert.Equal(expectedBytes.Count, payload.Count);
+            Assert.Equal(expectedBytes, payload);
+        }
+
+        [Trait("Category", "WriteBytes")]
         [Fact(DisplayName = "WriteString writes UTF8 if ISO-8859-1 is not supported")]
         public void WriteString_Writes_UTF8_If_ISO_Is_Not_Supported()
         {
