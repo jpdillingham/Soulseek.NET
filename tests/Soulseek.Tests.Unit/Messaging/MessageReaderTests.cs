@@ -402,6 +402,26 @@ namespace Soulseek.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadString")]
+        [InlineData(Constants.Encoding.UTF8)]
+        [InlineData(Constants.Encoding.ISO88591)]
+        [Theory(DisplayName = "ReadString respects specified encoding")]
+        public void ReadString_Respects_Specified_Encoding(string encoding)
+        {
+            var str = "Ð";
+            var utf8Bytes = Encoding.GetEncoding(Constants.Encoding.UTF8).GetBytes(str);
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteString(str, Constants.Encoding.UTF8)
+                .Build();
+
+            var expectedStr = Encoding.GetEncoding(encoding).GetString(utf8Bytes);
+            var readStr = new MessageReader<MessageCode.Peer>(msg).ReadString(encoding);
+
+            Assert.Equal(expectedStr, readStr);
+        }
+
+        [Trait("Category", "ReadString")]
         [Fact(DisplayName = "ReadString from nonzero position returns expected data")]
         public void ReadString_From_Nonzero_Position_Returns_Expected_Data()
         {
