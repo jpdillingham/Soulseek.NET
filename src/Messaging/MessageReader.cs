@@ -191,8 +191,13 @@ namespace Soulseek.Messaging
         /// <summary>
         ///     Reads a string at the head of the reader.
         /// </summary>
+        /// <remarks>
+        ///     If no <paramref name="encoding"/> is specified, UTF-8 will be attempted first,
+        ///     falling back to ISO-8859-1 if encoding fails.
+        /// </remarks>
+        /// <param name="encoding">The optional character encoding to use.</param>
         /// <returns>The read string.</returns>
-        public string ReadString()
+        public string ReadString(string encoding = null)
         {
             var length = ReadInteger();
 
@@ -204,13 +209,20 @@ namespace Soulseek.Messaging
             var bytes = Payload.Slice(Position, length).ToArray();
             string retVal;
 
-            try
+            if (!string.IsNullOrEmpty(encoding))
             {
-                retVal = Encoding.GetEncoding("UTF-8", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetString(bytes);
+                retVal = Encoding.GetEncoding(encoding).GetString(bytes);
             }
-            catch (Exception)
+            else
             {
-                retVal = Encoding.GetEncoding("ISO-8859-1").GetString(bytes);
+                try
+                {
+                    retVal = Encoding.GetEncoding(Constants.Encoding.UTF8, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetString(bytes);
+                }
+                catch (Exception)
+                {
+                    retVal = Encoding.GetEncoding(Constants.Encoding.ISO88591).GetString(bytes);
+                }
             }
 
             Position += length;
