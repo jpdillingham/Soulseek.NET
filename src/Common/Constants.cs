@@ -60,6 +60,22 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Character encodings.
+        /// </summary>
+        internal static class Encoding
+        {
+            /// <summary>
+            ///     UTF-8.
+            /// </summary>
+            public const string UTF8 = "UTF-8";
+
+            /// <summary>
+            ///     ISO-8859-1.
+            /// </summary>
+            public const string ISO88591 = "ISO-8859-1";
+        }
+
+        /// <summary>
         ///     Wait keys.
         /// </summary>
         internal static class WaitKey
