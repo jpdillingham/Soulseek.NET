@@ -23,6 +23,7 @@ namespace Soulseek.Messaging
     using System.IO;
     using System.Linq;
     using System.Text;
+    using Soulseek.Diagnostics;
     using Soulseek.Messaging.Compression;
 
     /// <summary>
@@ -211,8 +212,9 @@ namespace Soulseek.Messaging
                 {
                     bytes = Encoding.GetEncoding(CharacterEncoding.UTF8, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetBytes(value);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    GlobalDiagnosticFactory.Debug($"Fallback to ISO-8859-1 encoding for string ${value}", ex);
                     bytes = Encoding.GetEncoding(CharacterEncoding.ISO88591).GetBytes(value);
                 }
             }
