@@ -22,20 +22,34 @@ namespace Soulseek
     /// </summary>
     public class CharacterEncoding
     {
-        private CharacterEncoding(string name)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="CharacterEncoding"/> class.
+        /// </summary>
+        /// <param name="name">The encoding; UTF-8 or ISO-8859-1</param>
+        internal CharacterEncoding(string name)
         {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new System.ArgumentNullException(nameof(name));
+            }
+
+            if (name != "UTF-8" && name != "ISO-8859-1")
+            {
+                throw new System.ArgumentException("Invalid character encoding; must be one of UTF-8, ISO-8859-1", nameof(name));
+            }
+
             Name = name;
         }
 
         /// <summary>
         ///     Gets "ISO-8859-1" encoding.
         /// </summary>
-        public static CharacterEncoding ISO88591 => new CharacterEncoding("ISO-8859-1");
+        public static CharacterEncoding ISO88591 { get; } = new CharacterEncoding("ISO-8859-1");
 
         /// <summary>
         ///     Gets "UTF-8" encoding.
         /// </summary>
-        public static CharacterEncoding UTF8 => new CharacterEncoding("UTF-8");
+        public static CharacterEncoding UTF8 { get; } = new CharacterEncoding("UTF-8");
 
         private string Name { get; }
 
