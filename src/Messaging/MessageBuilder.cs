@@ -187,15 +187,35 @@ namespace Soulseek.Messaging
         /// <summary>
         ///     Writes the specified string <paramref name="value"/> to the message.
         /// </summary>
+        /// <remarks>
+        ///     If no <paramref name="encoding"/> is specified, <see cref="CharacterEncoding.UTF8"/> will be attempted first,
+        ///     falling back to <see cref="CharacterEncoding.ISO88591"/> if encoding fails.
+        /// </remarks>
         /// <param name="value">The value to write.</param>
         /// <param name="encoding">The optional character encoding to use.</param>
         /// <returns>This MessageBuilder.</returns>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when attempting to write additional data to a message that has been compressed.
         /// </exception>
-        public MessageBuilder WriteString(string value, string encoding = Constants.Encoding.UTF8)
+        public MessageBuilder WriteString(string value, CharacterEncoding encoding = null)
         {
-            var bytes = Encoding.GetEncoding(encoding).GetBytes(value);
+            byte[] bytes;
+
+            if (encoding != null)
+            {
+                bytes = Encoding.GetEncoding(encoding, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetBytes(value);
+            }
+            else
+            {
+                try
+                {
+                    bytes = Encoding.GetEncoding(CharacterEncoding.UTF8, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetBytes(value);
+                }
+                catch (Exception)
+                {
+                    bytes = Encoding.GetEncoding(CharacterEncoding.ISO88591).GetBytes(value);
+                }
+            }
 
             return WriteBytes(BitConverter.GetBytes(bytes.Length))
                 .WriteBytes(bytes);
