@@ -200,23 +200,17 @@ namespace Soulseek.Messaging
         /// </exception>
         public MessageBuilder WriteString(string value, CharacterEncoding encoding = null)
         {
+            encoding ??= CharacterEncoding.UTF8;
             byte[] bytes;
 
-            if (encoding != null)
+            try
             {
                 bytes = Encoding.GetEncoding(encoding, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetBytes(value);
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    bytes = Encoding.GetEncoding(CharacterEncoding.UTF8, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback).GetBytes(value);
-                }
-                catch (Exception ex)
-                {
-                    GlobalDiagnosticFactory.Debug($"Fallback to ISO-8859-1 encoding for string ${value}", ex);
-                    bytes = Encoding.GetEncoding(CharacterEncoding.ISO88591).GetBytes(value);
-                }
+                GlobalDiagnosticFactory.Debug($"Fallback to ISO-8859-1 encoding for string ${value}", ex);
+                bytes = Encoding.GetEncoding(CharacterEncoding.ISO88591).GetBytes(value);
             }
 
             return WriteBytes(BitConverter.GetBytes(bytes.Length))
