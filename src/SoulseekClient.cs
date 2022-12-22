@@ -120,8 +120,10 @@ namespace Soulseek
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
-            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
             IOAdapter = ioAdapter ?? new IOAdapter();
+
+            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+            GlobalDiagnosticFactory.Init(Diagnostic);
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
