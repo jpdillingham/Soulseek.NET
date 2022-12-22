@@ -209,7 +209,7 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                GlobalDiagnosticFactory.Debug($"Fallback to ISO-8859-1 encoding for string ${value}", ex);
+                GlobalDiagnosticFactory.Debug($"Fallback from ${encoding} to ISO-8859-1 encoding for string ${value}", ex);
                 bytes = Encoding.GetEncoding(CharacterEncoding.ISO88591).GetBytes(value);
             }
 
