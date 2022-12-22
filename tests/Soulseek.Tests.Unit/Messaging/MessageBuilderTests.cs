@@ -332,15 +332,15 @@ namespace Soulseek.Tests.Unit.Messaging
         }
 
         [Trait("Category", "WriteBytes")]
-        [InlineData(Constants.Encoding.UTF8)]
-        [InlineData(Constants.Encoding.ISO88591)]
+        [InlineData("UTF-8")]
+        [InlineData("ISO-8859-1")]
         [Theory(DisplayName = "WriteString obeys specified encoding")]
         public void WriteString_Obeys_Specified_Encoding(string encoding)
         {
             var data = "බ";
 
             var builder = new MessageBuilder();
-            builder.WriteString(data, encoding);
+            builder.WriteString(data, new CharacterEncoding(encoding));
 
             var payload = builder.GetProperty<List<byte>>("PayloadBytes");
 
