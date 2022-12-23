@@ -39,8 +39,8 @@ namespace Soulseek.Tests.Unit.Messaging
         }
 
         [Trait("Category", "Code")]
-        [Fact(DisplayName = "Code sets code bytes")]
-        public void Code_Sets_Code_Bytes()
+        [Fact(DisplayName = "Peer code sets code bytes")]
+        public void Peer_Code_Sets_Code_Bytes()
         {
             var builder = new MessageBuilder();
 
@@ -49,6 +49,19 @@ namespace Soulseek.Tests.Unit.Messaging
             var code = builder.GetProperty<List<byte>>("CodeBytes");
 
             Assert.Equal(BitConverter.GetBytes((int)MessageCode.Peer.BrowseRequest), code);
+        }
+
+        [Trait("Category", "Code")]
+        [Fact(DisplayName = "Server code sets code bytes")]
+        public void Server_Code_Sets_Code_Bytes()
+        {
+            var builder = new MessageBuilder();
+
+            builder.WriteCode(MessageCode.Server.AcceptChildren);
+
+            var code = builder.GetProperty<List<byte>>("CodeBytes");
+
+            Assert.Equal(BitConverter.GetBytes((int)MessageCode.Server.AcceptChildren), code);
         }
 
         [Trait("Category", "Code")]
