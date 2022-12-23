@@ -200,6 +200,20 @@ namespace Soulseek.Messaging
         /// <returns>The read string.</returns>
         public string ReadString(CharacterEncoding encoding = null)
         {
+            return ReadStringAndEncoding(encoding).Value;
+        }
+
+        /// <summary>
+        ///     Reads a string at the head of the reader and returns both the string and the <see cref="CharacterEncoding"/> used to encode it.
+        /// </summary>
+        /// <remarks>
+        ///     If no <paramref name="encoding"/> is specified, <see cref="CharacterEncoding.UTF8"/> will be attempted first,
+        ///     falling back to <see cref="CharacterEncoding.ISO88591"/> if encoding fails.
+        /// </remarks>
+        /// <param name="encoding">The optional character encoding to use.</param>
+        /// <returns>The read string.</returns>
+        public (string Value, CharacterEncoding Encoding) ReadStringAndEncoding(CharacterEncoding encoding = null)
+        {
             var length = ReadInteger();
 
             if (length > Payload.Length - Position)
@@ -217,12 +231,14 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                retVal = Encoding.GetEncoding(CharacterEncoding.ISO88591).GetString(bytes);
-                GlobalDiagnosticFactory.Warning($"Failed to decode {encoding} for string {retVal}; resorted to fallback encoding {CharacterEncoding.ISO88591} (base64: {Convert.ToBase64String(bytes)})", ex);
+                var requestedEncoding = encoding;
+                encoding = CharacterEncoding.ISO88591;
+                retVal = Encoding.GetEncoding(encoding).GetString(bytes);
+                GlobalDiagnosticFactory.Warning($"Failed to decode {requestedEncoding} for string {retVal}; resorted to fallback encoding {CharacterEncoding.ISO88591} (base64: {Convert.ToBase64String(bytes)})", ex);
             }
 
             Position += length;
-            return retVal;
+            return (retVal, encoding);
         }
 
         /// <summary>
