@@ -360,7 +360,7 @@ namespace Soulseek.Tests.Unit.Messaging
             var data = "බ";
 
             var builder = new MessageBuilder();
-            builder.WriteString(data);
+            builder.WriteString(data, CharacterEncoding.ISO88591);
 
             var payload = builder.GetProperty<List<byte>>("PayloadBytes");
 
