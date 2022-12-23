@@ -217,8 +217,8 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                GlobalDiagnosticFactory.Debug($"Fallback from ${encoding} to ISO-8859-1 encoding for bytes ${Convert.ToBase64String(bytes)} (base64)", ex);
                 retVal = Encoding.GetEncoding(CharacterEncoding.ISO88591).GetString(bytes);
+                GlobalDiagnosticFactory.Warning($"Failed to decode {encoding} for string {retVal}; resorted to fallback encoding {CharacterEncoding.ISO88591} (base64: {Convert.ToBase64String(bytes)})", ex);
             }
 
             Position += length;
