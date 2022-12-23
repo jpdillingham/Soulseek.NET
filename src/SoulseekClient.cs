@@ -123,7 +123,7 @@ namespace Soulseek
             IOAdapter = ioAdapter ?? new IOAdapter();
 
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-            GlobalDiagnosticFactory.Init(Diagnostic);
+            GlobalDiagnostic.Init(Diagnostic);
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);

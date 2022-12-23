@@ -1,4 +1,4 @@
-﻿// <copyright file="GlobalDiagnosticFactory.cs" company="JP Dillingham">
+﻿// <copyright file="GlobalDiagnostic.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ namespace Soulseek.Diagnostics
     ///     This should be used sparingly and only where it isn't feasible to pass a reference
     ///     to the source.
     /// </remarks>
-    internal static class GlobalDiagnosticFactory
+    internal static class GlobalDiagnostic
     {
         private static IDiagnosticFactory Factory { get; set; }
 

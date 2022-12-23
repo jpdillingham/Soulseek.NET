@@ -234,7 +234,7 @@ namespace Soulseek.Messaging
                 var requestedEncoding = encoding;
                 encoding = CharacterEncoding.ISO88591;
                 retVal = Encoding.GetEncoding(encoding).GetString(bytes);
-                GlobalDiagnosticFactory.Warning($"Failed to decode {requestedEncoding} for string {retVal}; resorted to fallback encoding {CharacterEncoding.ISO88591} (base64: {Convert.ToBase64String(bytes)})", ex);
+                GlobalDiagnostic.Warning($"Failed to decode {requestedEncoding} for string {retVal}; resorted to fallback encoding {CharacterEncoding.ISO88591} (base64: {Convert.ToBase64String(bytes)})", ex);
             }
 
             Position += length;
