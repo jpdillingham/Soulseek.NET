@@ -393,7 +393,7 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)
-                .WriteString("Ð")
+                .WriteString("Ð", CharacterEncoding.ISO88591)
                 .Build();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
