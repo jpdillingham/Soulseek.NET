@@ -337,7 +337,7 @@ namespace Soulseek.Tests.Unit.Messaging
         [Theory(DisplayName = "WriteString obeys specified encoding")]
         public void WriteString_Obeys_Specified_Encoding(string encoding)
         {
-            var data = "බ";
+            var data = "a";
 
             var builder = new MessageBuilder();
             builder.WriteString(data, new CharacterEncoding(encoding));
