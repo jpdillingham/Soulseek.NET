@@ -26,8 +26,14 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "GlobalDiagnostic")]
         [Fact]
-        public void Does_Not_Throw_If_Uninitialized()
+        public void Behaves_As_Expected()
         {
+            // because this is static and there's no great way to ensure the order
+            // in which these tests can run, test *everything* serially in this one test
+            // this is shitty, as is the need for GlobalDiagnostic in the first place
+            // but it works and the behavior correct, so ¯\_(ツ)_/¯
+            GlobalDiagnostic.Init(null);
+
             var ex = Record.Exception(() =>
             {
                 GlobalDiagnostic.Debug("foo");
@@ -38,19 +44,26 @@ namespace Soulseek.Tests.Unit
             });
 
             Assert.Null(ex);
-        }
 
-        [Trait("Category", "GlobalDiagnostic")]
-        [Fact]
-        public void Binds_Given_Factory()
-        {
             var f = new Mock<IDiagnosticFactory>();
+            ex = new Exception();
 
             GlobalDiagnostic.Init(f.Object);
 
-            GlobalDiagnostic.Info("test");
+            GlobalDiagnostic.Debug("foo");
+            GlobalDiagnostic.Debug("foo", ex);
+            GlobalDiagnostic.Info("asdfasdfa");
+            GlobalDiagnostic.Warning("warn");
+            GlobalDiagnostic.Warning("asdf", ex);
 
-            f.Verify(m => m.Info("test"), Times.Exactly(1));
+            f.Verify(m => m.Debug("foo"), Times.Exactly(1));
+            f.Verify(m => m.Debug("foo", ex), Times.Exactly(1));
+            f.Verify(m => m.Info("asdfasdfa"), Times.Exactly(1));
+            f.Verify(m => m.Warning("warn", null), Times.Exactly(1));
+            f.Verify(m => m.Warning("asdf", ex), Times.Exactly(1));
+
+            // try to clean up.  probably doesn't matter much
+            GlobalDiagnostic.Init(null);
         }
     }
 }
