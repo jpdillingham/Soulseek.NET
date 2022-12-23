@@ -40,26 +40,26 @@ namespace Soulseek.Diagnostics
         ///     Creates a <see cref="DiagnosticLevel.Debug"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
-        public static void Debug(string message) => Factory.Debug(message);
+        public static void Debug(string message) => Factory?.Debug(message);
 
         /// <summary>
         ///     Creates a <see cref="DiagnosticLevel.Debug"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         /// <param name="exception">An optional Exception.</param>
-        public static void Debug(string message, Exception exception) => Factory.Debug(message, exception);
+        public static void Debug(string message, Exception exception) => Factory?.Debug(message, exception);
 
         /// <summary>
         ///     Creates an <see cref="DiagnosticLevel.Info"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
-        public static void Info(string message) => Factory.Info(message);
+        public static void Info(string message) => Factory?.Info(message);
 
         /// <summary>
         ///     Creates a <see cref="DiagnosticLevel.Warning"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         /// <param name="exception">An optional Exception.</param>
-        public static void Warning(string message, Exception exception = null) => Factory.Warning(message, exception);
+        public static void Warning(string message, Exception exception = null) => Factory?.Warning(message, exception);
     }
 }
