@@ -69,6 +69,7 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "Throws ListenPortException on bad listen port")]
         public async Task Address_Throws_ListenPortException_On_Bad_Listen_Port()
         {
+            var address = Mocks.Address;
             var port = Mocks.Port;
 
             using (var s = new SoulseekClient(new SoulseekClientOptions(enableListener: true, listenPort: port)))
@@ -77,7 +78,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 try
                 {
-                    listener = new Listener(port, new ConnectionOptions());
+                    listener = new Listener(address, port, new ConnectionOptions());
                     listener.Start();
 
                     var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
@@ -660,6 +661,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             private static readonly Random Rng = new Random();
+            public static string Address => String.Join(".",Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString());
             public static int Port => Rng.Next(1024, IPEndPoint.MaxPort);
 
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
