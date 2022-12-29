@@ -40,6 +40,11 @@ namespace Soulseek.Network.Tcp
         bool Listening { get; }
 
         /// <summary>
+        ///     Gets the IP of the listener.
+        /// </summary>
+        string Address { get; }
+
+        /// <summary>
         ///     Gets the port of the listener.
         /// </summary>
         int Port { get; }

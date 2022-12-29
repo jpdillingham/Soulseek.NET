@@ -57,7 +57,7 @@ namespace Soulseek.Network
         /// <param name="connection">The accepted connection.</param>
         public async void HandleConnection(object sender, IConnection connection)
         {
-            Diagnostic.Debug($"Accepted incoming connection from {connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port} (id: {connection.Id})");
+            Diagnostic.Debug($"Accepted incoming connection from {connection.IPEndPoint.Address}:{SoulseekClient.Listener.Address} - Port: {SoulseekClient.Listener.Port} (id: {connection.Id})");
 
             try
             {
@@ -71,7 +71,7 @@ namespace Soulseek.Network
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.
-                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Address} - Port: {SoulseekClient.Listener.Port}) (id: {connection.Id})");
 
                     if (peerInit.ConnectionType == Constants.ConnectionType.Peer)
                     {
@@ -102,12 +102,12 @@ namespace Soulseek.Network
                     // to determine the username of the remote user.
                     if (SoulseekClient.PeerConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var peerUsername))
                     {
-                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Address} - Port: {SoulseekClient.Listener.Port}) (id: {connection.Id})");
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, peerUsername, pierceFirewall.Token), connection);
                     }
                     else if (SoulseekClient.DistributedConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var distributedUsername))
                     {
-                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Address} - Port: {SoulseekClient.Listener.Port}) (id: {connection.Id})");
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, distributedUsername, pierceFirewall.Token), connection);
                     }
                     else if (SoulseekClient.Options.SearchResponseCache != null && SoulseekClient.Options.SearchResponseCache.TryGet(pierceFirewall.Token, out var cachedSearchResponse))
@@ -116,7 +116,7 @@ namespace Soulseek.Network
                         // cache it with the manager for potential reuse, then try to send the pending response.
                         var (username, _, _, _) = cachedSearchResponse;
 
-                        Diagnostic.Debug($"PierceFirewall matching pending search response received from {username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"PierceFirewall matching pending search response received from {username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Address} - Port: {SoulseekClient.Listener.Port}) (id: {connection.Id})");
                         await SoulseekClient.PeerConnectionManager.AddOrUpdateMessageConnectionAsync(username, connection).ConfigureAwait(false);
                         await SoulseekClient.SearchResponder.TryRespondAsync(pierceFirewall.Token).ConfigureAwait(false);
                     }

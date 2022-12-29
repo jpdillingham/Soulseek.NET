@@ -38,14 +38,16 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="Listener"/> class.
         /// </summary>
+        /// <param name="address">IP Address to bind listener to.</param>
         /// <param name="port">The port of the listener.</param>
         /// <param name="connectionOptions">The optional options to use when creating <see cref="IConnection"/> instances.</param>
         /// <param name="tcpListener">The optional TcpClient instance to use.</param>
-        public Listener(int port, ConnectionOptions connectionOptions, ITcpListener tcpListener = null)
+        public Listener(string address, int port, ConnectionOptions connectionOptions, ITcpListener tcpListener = null)
         {
+            Address = address;
             Port = port;
             ConnectionOptions = connectionOptions ?? new ConnectionOptions();
-            TcpListener = tcpListener ?? new TcpListenerAdapter(new TcpListener(IPAddress.Parse("0.0.0.0"), port));
+            TcpListener = tcpListener ?? new TcpListenerAdapter(new TcpListener(IPAddress.Parse(Address), port));
         }
 
         /// <summary>
@@ -62,6 +64,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets a value indicating whether the listener is listening for connections.
         /// </summary>
         public bool Listening { get; private set; } = false;
+
+        /// <summary>
+        ///     Gets the port of the listener.
+        /// </summary>
+        public string Address { get; }
 
         /// <summary>
         ///     Gets the port of the listener.

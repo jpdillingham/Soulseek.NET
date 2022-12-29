@@ -52,6 +52,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var (client, mocks) = GetFixture();
 
+            var address = Mocks.Address;
             var port = Mocks.Port;
             var patch = new SoulseekClientOptionsPatch(listenPort: port);
 
@@ -60,7 +61,7 @@ namespace Soulseek.Tests.Unit.Client
             try
             {
                 // listen on the port to bind it
-                listener = new Listener(port, new ConnectionOptions());
+                listener = new Listener(address, port, new ConnectionOptions());
                 listener.Start();
 
                 using (client)
@@ -651,6 +652,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             private static readonly Random Rng = new Random();
+            public static string Address => String.Join(".",Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString());
             public static int Port => Rng.Next(1024, IPEndPoint.MaxPort);
 
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();

@@ -776,7 +776,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
-        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
+        /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception> //TODO: Reutilize?
         /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -832,12 +832,13 @@ namespace Soulseek
 
                 try
                 {
-                    listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                    listener = new Listener(Options.ListenAddress, Options.ListenPort, Options.IncomingConnectionOptions);
                     listener.Start();
                 }
                 catch (SocketException)
                 {
-                    throw new ListenPortException($"Failed to start listening on port {Options.ListenPort}; the port may be in use");
+                    //TODO: What other exceptions do we get? - Should be more clear
+                    throw new ListenPortException($"Failed to start listening on {Options.ListenAddress}:{Options.ListenPort}; the IP:Port may be in use or not available");
                 }
                 finally
                 {
@@ -1954,9 +1955,10 @@ namespace Soulseek
         ///         </list>
         ///     </para>
         ///     <para>
-        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options
+        ///         Enabling or disabling the listener or changing the listen address/port takes effect immediately. Remaining options
         ///         will be updated immediately, but any objects instantiated will not be updated (for example, established
         ///         connections will retain the options with which they were instantiated).
+        ///         TODO: Verify ^^
         ///     </para>
         /// </remarks>
         /// <param name="patch">A patch containing the updated options.</param>
@@ -1967,6 +1969,7 @@ namespace Soulseek
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
+        /// <exception cref="ListenAddressException">Thrown when the specified listen address can't be bound.</exception> //TODO: Add ListenAddress Exception
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
         {
@@ -1975,18 +1978,21 @@ namespace Soulseek
                 throw new ArgumentNullException(nameof(patch), "The patch must not be null");
             }
 
-            if (patch.ListenPort.HasValue && patch.ListenPort != Options.ListenPort)
+            if ((!String.IsNullOrEmpty(patch.ListenAddress) && !patch.ListenAddress.Equals(Options.ListenAddress)) || (patch.ListenPort.HasValue && patch.ListenPort != Options.ListenPort))
             {
                 Listener listener = null;
+                var newAddress = patch.ListenAddress ?? Options.ListenAddress;
+                var newPort = patch.ListenPort ?? Options.ListenPort;
 
                 try
                 {
-                    listener = new Listener(patch.ListenPort.Value, Options.IncomingConnectionOptions);
+                    listener = new Listener(newAddress, newPort, Options.IncomingConnectionOptions);
                     listener.Start();
                 }
-                catch (SocketException)
+                catch (SocketException exc)
                 {
-                    throw new ListenPortException($"Failed to start listening on port {patch.ListenPort.Value}; the port may be in use");
+                    /* throw new ListenPortException($"Failed to start listening on port {newPort}; the port may be in use"); */
+                    throw new ListenPortException($"Failed to listen on port message: {exc.Message}");
                 }
                 finally
                 {
@@ -2931,7 +2937,7 @@ namespace Soulseek
 
                     if (Options.EnableListener)
                     {
-                        Listener = new Listener(Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
+                        Listener = new Listener(Options.ListenAddress, Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
                         Listener.Start();
                     }
@@ -3717,10 +3723,11 @@ namespace Soulseek
                 }
 
                 var enableListenerChanged = patch.EnableListener.HasValue && patch.EnableListener.Value != Options.EnableListener;
+                var listenAddressChanged = !String.IsNullOrEmpty(patch.ListenAddress) && !patch.ListenAddress.Equals(Options.ListenAddress);
                 var listenPortChanged = patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort;
                 var incomingConnectionOptionsChanged = patch.IncomingConnectionOptions != null && patch.IncomingConnectionOptions != Options.IncomingConnectionOptions;
 
-                if (enableListenerChanged || listenPortChanged || incomingConnectionOptionsChanged)
+                if (enableListenerChanged || listenAddressChanged || listenPortChanged || incomingConnectionOptionsChanged)
                 {
                     var wasListening = Listener?.Listening ?? false;
 
@@ -3729,12 +3736,13 @@ namespace Soulseek
 
                     Options = Options.With(
                         enableListener: patch.EnableListener,
+                        listenAddress: patch.ListenAddress,
                         listenPort: patch.ListenPort,
                         incomingConnectionOptions: patch.IncomingConnectionOptions);
 
                     if (wasListening && Options.EnableListener)
                     {
-                        Listener = new Listener(Options.ListenPort, Options.IncomingConnectionOptions);
+                        Listener = new Listener(Options.ListenAddress, Options.ListenPort, Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
                         Listener.Start();
                     }
