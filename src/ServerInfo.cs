@@ -35,12 +35,23 @@ namespace Soulseek
         /// <param name="parentMinSpeed">The ParentMinSpeed value.</param>
         /// <param name="parentSpeedRatio">The ParentSpeedRatio value.</param>
         /// <param name="wishlistInterval">The interval for wishlist searches, in miliseconds.</param>
-        public ServerInfo(int? parentMinSpeed, int? parentSpeedRatio, int? wishlistInterval)
+        /// <param name="isSupporter">
+        ///     A value indicating whether the user has purchased privileges, regardless of whether the user has active privileges
+        ///     at the present moment.
+        /// </param>
+        public ServerInfo(int? parentMinSpeed, int? parentSpeedRatio, int? wishlistInterval, bool? isSupporter)
         {
             ParentMinSpeed = parentMinSpeed;
             ParentSpeedRatio = parentSpeedRatio;
             WishlistInterval = wishlistInterval;
+            IsSupporter = isSupporter;
         }
+
+        /// <summary>
+        ///     Gets a value indicating whether the user has purchased privileges, regardless of whether the user has active
+        ///     privileges at the present moment.
+        /// </summary>
+        public bool? IsSupporter { get; private set; }
 
         /// <summary>
         ///     Gets the ParentMinSpeed value.
