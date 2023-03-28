@@ -462,7 +462,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets information sent by the server upon login.
         /// </summary>
-        public ServerInfo ServerInfo { get; private set; } = new ServerInfo(parentMinSpeed: null, parentSpeedRatio: null, wishlistInterval: null);
+        public ServerInfo ServerInfo { get; private set; } = new ServerInfo(parentMinSpeed: null, parentSpeedRatio: null, wishlistInterval: null, isSupporter: null);
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -2986,7 +2986,8 @@ namespace Soulseek
                         var serverInfo = new ServerInfo(
                             await parentMinSpeedWait.ConfigureAwait(false),
                             await parentSpeedRatioWait.ConfigureAwait(false),
-                            await wishlistIntervalWait.ConfigureAwait(false) * 1000);
+                            await wishlistIntervalWait.ConfigureAwait(false) * 1000,
+                            response.IsSupporter);
 
                         ServerInfo = serverInfo;
                         ServerInfoReceived?.Invoke(this, serverInfo);
