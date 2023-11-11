@@ -300,7 +300,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerLogin"), AutoData]
-        public void Handles_ServerLogin(bool success, string message, IPAddress ip)
+        public void Handles_ServerLogin(bool success, string message, IPAddress ip, string hash, bool isSupporter)
         {
             LoginResponse result = null;
 
@@ -317,6 +317,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(success ? 1 : 0))
                 .WriteString(message)
                 .WriteBytes(ipBytes)
+                .WriteString(hash)
+                .WriteByte((byte)(isSupporter ? 1 : 0))
                 .Build();
 
             handler.HandleMessageRead(null, msg);
@@ -324,6 +326,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(success, result.Succeeded);
             Assert.Equal(message, result.Message);
             Assert.Equal(ip, result.IPAddress);
+            Assert.Equal(hash, result.Hash);
+            Assert.Equal(isSupporter, result.IsSupporter);
         }
 
         [Trait("Category", "Message")]

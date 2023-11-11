@@ -24,13 +24,14 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "ServerInfo")]
         [Theory(DisplayName = "Instantiates with given values"), AutoData]
-        public void ServerInfo_Initializes_With_Nulls(int parentMinSpeed, int parentSpeedRatio, int wishlistInterval)
+        public void ServerInfo_Initializes_With_Nulls(int parentMinSpeed, int parentSpeedRatio, int wishlistInterval, bool isSupporter)
         {
-            var info = new ServerInfo(parentMinSpeed, parentSpeedRatio, wishlistInterval);
+            var info = new ServerInfo(parentMinSpeed, parentSpeedRatio, wishlistInterval, isSupporter);
 
             Assert.Equal(parentMinSpeed, info.ParentMinSpeed);
             Assert.Equal(parentSpeedRatio, info.ParentSpeedRatio);
             Assert.Equal(wishlistInterval, info.WishlistInterval);
+            Assert.Equal(isSupporter, info.IsSupporter);
         }
     }
 }

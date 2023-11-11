@@ -12,9 +12,9 @@ echo "  nupkg: $LATEST"
 printf "  symbols: $LATEST_SYMBOLS\n\n"
 
 printf "pushing nupkg $LATEST\n\n"
-nuget push $LATEST -nosymbols -source ${NUGET_API} -apikey ${TOKEN_NUGET} -skipduplicate
+nuget push $LATEST -nosymbols -source ${NUGET_API} -skipduplicate
 
 printf "pushing symbols $LATEST_SYMBOLS\n\n"
-nuget push $LATEST_SYMBOLS -source ${NUGET_API} -apikey ${TOKEN_NUGET} -skipduplicate
+nuget push $LATEST_SYMBOLS -source ${NUGET_API} -skipduplicate
 
 printf "deployment complete."
