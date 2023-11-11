@@ -822,7 +822,7 @@ namespace Soulseek
                 }
                 catch (SocketException ex)
                 {
-                    throw new AddressException($"Failed to resolve address '{Address}': {ex.Message}", ex);
+                    throw new AddressException($"Failed to resolve address '{address}': {ex.Message}", ex);
                 }
             }
 
