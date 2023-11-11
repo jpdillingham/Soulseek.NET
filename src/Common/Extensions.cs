@@ -111,7 +111,6 @@ namespace Soulseek
         /// </summary>
         /// <param name="str">The string to hash.</param>
         /// <returns>The MD5 hash of the input string.</returns>
-        [SuppressMessage("Microsoft.NetCore.CSharp.Analyzers", "CA5351", Justification = "Required by the Soulseek protocol.")]
         public static string ToMD5Hash(this string str)
         {
             using MD5 md5Hash = MD5.Create();

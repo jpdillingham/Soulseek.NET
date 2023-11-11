@@ -25,7 +25,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="CharacterEncoding"/> class.
         /// </summary>
-        /// <param name="name">The encoding; UTF-8 or ISO-8859-1</param>
+        /// <param name="name">The encoding; UTF-8 or ISO-8859-1.</param>
         internal CharacterEncoding(string name)
         {
             if (string.IsNullOrEmpty(name))

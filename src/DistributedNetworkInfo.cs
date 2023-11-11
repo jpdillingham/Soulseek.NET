@@ -106,6 +106,11 @@ namespace Soulseek
         /// </summary>
         public (string Username, IPEndPoint IPEndPoint) Parent { get; }
 
+        /// <summary>
+        ///     Derives <see cref="DistributedNetworkInfo"/> from the internal <see cref="IDistributedConnectionManager"/>.
+        /// </summary>
+        /// <param name="manager">The manager instance from which to derive info.</param>
+        /// <returns>The derived info.</returns>
         internal static DistributedNetworkInfo FromDistributedConnectionManager(IDistributedConnectionManager manager)
             => new DistributedNetworkInfo(
                 averageBroadcastLatency: manager.AverageBroadcastLatency,
