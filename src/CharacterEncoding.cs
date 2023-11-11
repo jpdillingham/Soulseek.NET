@@ -53,6 +53,10 @@ namespace Soulseek
 
         private string Name { get; }
 
+        /// <summary>
+        ///     Converts an instance of <see cref="CharacterEncoding"/> to a <see cref="string"/>.
+        /// </summary>
+        /// <param name="encoding">The encoding to convert.</param>
         public static implicit operator string(CharacterEncoding encoding) => encoding.Name;
 
         /// <summary>
