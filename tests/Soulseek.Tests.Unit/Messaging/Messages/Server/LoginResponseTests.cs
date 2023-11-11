@@ -106,6 +106,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte(1)
                 .WriteString(string.Empty)
                 .WriteBytes(ipBytes)
+                .WriteString("foo")
+                .WriteByte(1)
                 .Build();
 
             var response = LoginResponse.FromByteArray(msg);
@@ -113,6 +115,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.True(response.Succeeded);
             Assert.Equal(string.Empty, response.Message);
             Assert.Equal(ip, response.IPAddress);
+            Assert.Equal("foo", response.Hash);
+            Assert.Equal(true, response.IsSupporter);
         }
     }
 }
