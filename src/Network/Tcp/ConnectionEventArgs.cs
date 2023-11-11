@@ -22,7 +22,9 @@ namespace Soulseek.Network.Tcp
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events.
     /// </summary>
+#pragma warning disable S2094 // Classes should not be empty
     internal abstract class ConnectionEventArgs : EventArgs
+#pragma warning restore S2094 // Classes should not be empty
     {
     }
 

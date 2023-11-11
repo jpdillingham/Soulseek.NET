@@ -22,7 +22,9 @@ namespace Soulseek.Network
     /// <summary>
     ///     EventArgs for <see cref="MessageConnection"/> events.
     /// </summary>
+#pragma warning disable S2094 // Classes should not be empty
     internal abstract class MessageConnectionEventArgs : EventArgs
+#pragma warning restore S2094 // Classes should not be empty
     {
     }
 

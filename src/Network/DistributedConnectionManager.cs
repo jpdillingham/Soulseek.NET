@@ -462,7 +462,7 @@ namespace Soulseek.Network
         {
             cancellationToken ??= CancellationToken.None;
 
-            async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
+            static async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
             {
                 IMessageConnection connection = default;
 
