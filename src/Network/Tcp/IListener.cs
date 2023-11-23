@@ -18,6 +18,7 @@
 namespace Soulseek.Network.Tcp
 {
     using System;
+    using System.Net;
 
     /// <summary>
     ///     Listens for client connections for TCP network services.
@@ -35,14 +36,14 @@ namespace Soulseek.Network.Tcp
         ConnectionOptions ConnectionOptions { get; }
 
         /// <summary>
+        ///     Gets the IP address to which the listener is bound.
+        /// </summary>
+        IPAddress IPAddress { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether the listener is listening for connections.
         /// </summary>
         bool Listening { get; }
-
-        /// <summary>
-        ///     Gets the IP of the listener.
-        /// </summary>
-        string Address { get; }
 
         /// <summary>
         ///     Gets the port of the listener.
