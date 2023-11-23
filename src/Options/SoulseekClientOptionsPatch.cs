@@ -82,7 +82,7 @@ namespace Soulseek
         /// </exception>
         public SoulseekClientOptionsPatch(
             bool? enableListener = null,
-            string? listenAddress = null,
+            string listenAddress = null,
             int? listenPort = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
@@ -108,11 +108,11 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null)
         {
             EnableListener = enableListener;
-            ListenAddress =  listenAddress;
-            
-            if (!String.IsNullOrEmpty(ListenAddress) && !IPAddress.TryParse(ListenAddress, out IPAddress ipAddress))
+            ListenAddress = listenAddress;
+
+            if (!string.IsNullOrEmpty(ListenAddress) && !IPAddress.TryParse(ListenAddress, out _))
             {
-                throw new ArgumentOutOfRangeException(nameof(listenAddress), $"{listenAddress} is not considered a valid IP Address.");
+                throw new ArgumentException($"{listenAddress} is not a valid IP Address.", nameof(listenAddress));
             }
 
             ListenPort = listenPort;

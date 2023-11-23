@@ -136,9 +136,9 @@ namespace Soulseek
             EnableListener = enableListener;
             ListenAddress = listenAddress;
 
-            if (!String.IsNullOrEmpty(ListenAddress) && !IPAddress.TryParse(ListenAddress, out IPAddress ipAddress))
+            if (!string.IsNullOrEmpty(ListenAddress) && !IPAddress.TryParse(ListenAddress, out _))
             {
-                throw new ArgumentOutOfRangeException(nameof(listenAddress), $"{listenAddress} is not considered a valid IP Address.");
+                throw new ArgumentException($"{listenAddress} is not a valid IP Address.", nameof(listenAddress));
             }
 
             ListenPort = listenPort;
