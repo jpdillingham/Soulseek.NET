@@ -105,7 +105,7 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null)
         {
             EnableListener = enableListener;
-            ListenIPAddress = listenIPAddress ?? IPAddress.Any;
+            ListenIPAddress = listenIPAddress;
 
             ListenPort = listenPort;
 
