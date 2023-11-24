@@ -45,7 +45,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
         /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
-        /// <param name="listenAddress">The IP address on which to listen for incoming connections.</param>
+        /// <param name="listenIPAddress">The IP address on which to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
@@ -93,9 +93,6 @@ namespace Soulseek
         ///     The delegate used to resolve the <see cref="int"/> response for an incoming request.
         /// </param>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the value supplied for <paramref name="listenAddress"/> is not a valid IPv4/IPv6 address.
-        /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
@@ -103,7 +100,7 @@ namespace Soulseek
         /// </exception>
         public SoulseekClientOptions(
             bool enableListener = true,
-            string listenAddress = "0.0.0.0",
+            IPAddress listenIPAddress = null,
             int listenPort = 50000,
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
@@ -134,12 +131,7 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null)
         {
             EnableListener = enableListener;
-            ListenAddress = listenAddress;
-
-            if (!string.IsNullOrEmpty(ListenAddress) && !IPAddress.TryParse(ListenAddress, out _))
-            {
-                throw new ArgumentException($"{listenAddress} is not a valid IP Address.", nameof(listenAddress));
-            }
+            ListenIPAddress = listenIPAddress ?? IPAddress.Any;
 
             ListenPort = listenPort;
 
@@ -276,9 +268,9 @@ namespace Soulseek
         public ConnectionOptions IncomingConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets the IP Address on which to listen for incoming connections. (Default = "0.0.0.0").
+        ///     Gets the IP Address on which to listen for incoming connections. (Default = IPAddress.Any/"0.0.0.0").
         /// </summary>
-        public string ListenAddress { get; }
+        public IPAddress ListenIPAddress { get; }
 
         /// <summary>
         ///     Gets the port on which to listen for incoming connections. (Default = 50000).
@@ -384,7 +376,7 @@ namespace Soulseek
 
             return With(
                 enableListener: patch.EnableListener,
-                listenAddress: patch.ListenAddress,
+                listenIPAddress: patch.ListenIPAddress,
                 listenPort: patch.ListenPort,
                 enableDistributedNetwork: patch.EnableDistributedNetwork,
                 acceptDistributedChildren: patch.AcceptDistributedChildren,
@@ -414,7 +406,7 @@ namespace Soulseek
         ///     Creates a clone of this instance with the specified substitutions.
         /// </summary>
         /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
-        /// <param name="listenAddress">The IP address on which to listen for incoming connections.</param>
+        /// <param name="listenIPAddress">The IP address on which to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
@@ -457,7 +449,7 @@ namespace Soulseek
         /// <returns>The cloned instance.</returns>
         internal SoulseekClientOptions With(
             bool? enableListener = null,
-            string? listenAddress = null,
+            IPAddress listenIPAddress = null,
             int? listenPort = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
@@ -484,7 +476,7 @@ namespace Soulseek
         {
             return new SoulseekClientOptions(
                 enableListener: enableListener ?? EnableListener,
-                listenAddress: listenAddress ?? ListenAddress,
+                listenIPAddress: listenIPAddress ?? ListenIPAddress,
                 listenPort: listenPort ?? ListenPort,
                 enableDistributedNetwork: enableDistributedNetwork ?? EnableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren ?? AcceptDistributedChildren,
