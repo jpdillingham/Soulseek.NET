@@ -69,7 +69,7 @@ namespace Soulseek.Tests.Unit.Client
                     var ex = await Record.ExceptionAsync(() => client.ReconfigureOptionsAsync(patch));
 
                     Assert.NotNull(ex);
-                    Assert.IsType<ListenPortException>(ex);
+                    Assert.IsType<ListenException>(ex);
                     Assert.True(ex.Message.ContainsInsensitive($"failed to start listening on port {port}"));
                 }
             }
@@ -652,7 +652,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             private static readonly Random Rng = new Random();
-            public static string Address => String.Join(".",Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString());
+            public static IPAddress Address => IPAddress.Parse(string.Join(".",Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString()));
             public static int Port => Rng.Next(1024, IPEndPoint.MaxPort);
 
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();

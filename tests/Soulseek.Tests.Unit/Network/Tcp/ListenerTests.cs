@@ -18,7 +18,7 @@
 namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using System;
-    using AutoFixture.Xunit2;
+    using System.Net;
     using Soulseek.Network.Tcp;
     using Xunit;
 
@@ -31,10 +31,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             return 50000 + RNG.Next(1, 9999);
         }
 
-        //TODO: Improve and maybe do ipv4/ipv6
-        private static string GetAddress()
+        private static IPAddress GetAddress()
         {
-            return String.Join(".",RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString());
+            return IPAddress.Parse(string.Join(".", RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString()));
         }
 
         [Trait("Category", "Instantiation")]
@@ -47,7 +46,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             var l = new Listener(address, port, options);
 
-            Assert.Equal(address, l.Address);
+            Assert.Equal(address, l.IPAddress);
             Assert.Equal(port, l.Port);
             Assert.Equal(options, l.ConnectionOptions);
 
