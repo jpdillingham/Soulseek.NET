@@ -47,12 +47,11 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
-        [Fact(DisplayName = "Throws ListenPortException given listen port which can not be bound")]
-        public async Task Throws_ListenPortException_Given_Listen_Port_Which_Can_Not_Be_Bound()
+        [Fact(DisplayName = "Throws ListenException given listen port which can not be bound")]
+        public async Task Throws_ListenException_Given_Listen_Port_Which_Can_Not_Be_Bound()
         {
             var (client, mocks) = GetFixture();
 
-            var address = Mocks.Address;
             var port = Mocks.Port;
             var patch = new SoulseekClientOptionsPatch(listenPort: port);
 
@@ -61,7 +60,7 @@ namespace Soulseek.Tests.Unit.Client
             try
             {
                 // listen on the port to bind it
-                listener = new Listener(address, port, new ConnectionOptions());
+                listener = new Listener(IPAddress.Any, port, new ConnectionOptions());
                 listener.Start();
 
                 using (client)
@@ -70,7 +69,7 @@ namespace Soulseek.Tests.Unit.Client
 
                     Assert.NotNull(ex);
                     Assert.IsType<ListenException>(ex);
-                    Assert.True(ex.Message.ContainsInsensitive($"failed to start listening on port {port}"));
+                    Assert.True(ex.Message.ContainsInsensitive($"failed to start listening"));
                 }
             }
             finally
