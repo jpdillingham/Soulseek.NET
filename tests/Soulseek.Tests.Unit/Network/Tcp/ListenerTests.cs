@@ -31,22 +31,16 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             return 50000 + RNG.Next(1, 9999);
         }
 
-        private static IPAddress GetAddress()
-        {
-            return IPAddress.Parse(string.Join(".", RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString(), RNG.Next(0, 254).ToString()));
-        }
-
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates properly")]
         public void Instantiates_Properly()
         {
             var options = new ConnectionOptions();
-            var address = GetAddress();
             var port = GetPort();
 
-            var l = new Listener(address, port, options);
+            var l = new Listener(IPAddress.Any, port, options);
 
-            Assert.Equal(address, l.IPAddress);
+            Assert.Equal(IPAddress.Any, l.IPAddress);
             Assert.Equal(port, l.Port);
             Assert.Equal(options, l.ConnectionOptions);
 
@@ -58,10 +52,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public void Start_Starts_Listening()
         {
             var options = new ConnectionOptions();
-            var address = GetAddress();
             var port = GetPort();
 
-            var l = new Listener(address, port, options);
+            var l = new Listener(IPAddress.Any, port, options);
 
             var first = l.Listening;
 
@@ -76,10 +69,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public void Stop_Stops_Listening()
         {
             var options = new ConnectionOptions();
-            var address = GetAddress();
             var port = GetPort();
 
-            var l = new Listener(address, port, options);
+            var l = new Listener(IPAddress.Any, port, options);
 
             l.Start();
 
