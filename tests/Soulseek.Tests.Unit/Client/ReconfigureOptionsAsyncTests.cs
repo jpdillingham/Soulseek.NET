@@ -315,6 +315,26 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Reconfigures listener if ListenIPAddress changed")]
+        public async Task Reconfigures_Listener_If_ListenIPAddress_Changed()
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(listenIPAddress: IPAddress.Parse("0.0.0.0")));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(true);
+
+            var patch = new SoulseekClientOptionsPatch(listenIPAddress: IPAddress.Parse("127.0.0.1"));
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.Equal(patch.ListenIPAddress, client.Listener.IPAddress);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
         [Fact(DisplayName = "Reconfigures listener if IncomingConnectionOptions changed")]
         public async Task Reconfigures_Listener_If_IncomingConnectionOptions_Changed()
         {
