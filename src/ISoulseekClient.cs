@@ -437,7 +437,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
-        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
+        /// <exception cref="ListenException">Thrown when binding a listener to the specified address and/or port fails.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -466,7 +466,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when a connection is already in the process of being established.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="AddressException">Thrown when the provided address can't be resolved.</exception>
-        /// <exception cref="ListenPortException">Thrown when the specified listen port can't be bound.</exception>
+        /// <exception cref="ListenException">Thrown when binding a listener to the specified address and/or port fails.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
@@ -1081,7 +1081,7 @@ namespace Soulseek
         ///         </list>
         ///     </para>
         ///     <para>
-        ///         Enabling or disabling the listener or changing the listen port takes effect immediately. Remaining options
+        ///         Enabling or disabling the listener or changing the listen address and/or port takes effect immediately. Remaining options
         ///         will be updated immediately, but any objects instantiated will not be updated (for example, established
         ///         connections will retain the options with which they were instantiated).
         ///     </para>
@@ -1093,7 +1093,7 @@ namespace Soulseek
         ///     required for the new options to fully take effect.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified listen port can't be bound.</exception>
+        /// <exception cref="ListenException">Thrown when binding a listener to the specified address and/or port fails.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null);
 

@@ -47,8 +47,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
-        [Fact(DisplayName = "Throws ListenPortException given listen port which can not be bound")]
-        public async Task Throws_ListenPortException_Given_Listen_Port_Which_Can_Not_Be_Bound()
+        [Fact(DisplayName = "Throws ListenException given listen port which can not be bound")]
+        public async Task Throws_ListenException_Given_Listen_Port_Which_Can_Not_Be_Bound()
         {
             var (client, mocks) = GetFixture();
 
@@ -60,7 +60,7 @@ namespace Soulseek.Tests.Unit.Client
             try
             {
                 // listen on the port to bind it
-                listener = new Listener(port, new ConnectionOptions());
+                listener = new Listener(IPAddress.Any, port, new ConnectionOptions());
                 listener.Start();
 
                 using (client)
@@ -68,8 +68,8 @@ namespace Soulseek.Tests.Unit.Client
                     var ex = await Record.ExceptionAsync(() => client.ReconfigureOptionsAsync(patch));
 
                     Assert.NotNull(ex);
-                    Assert.IsType<ListenPortException>(ex);
-                    Assert.True(ex.Message.ContainsInsensitive($"failed to start listening on port {port}"));
+                    Assert.IsType<ListenException>(ex);
+                    Assert.True(ex.Message.ContainsInsensitive($"failed to start listening"));
                 }
             }
             finally
@@ -311,6 +311,26 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ReconfigureOptionsAsync(patch);
 
                 Assert.Equal(patch.ListenPort, client.Listener.Port);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Reconfigures listener if ListenIPAddress changed")]
+        public async Task Reconfigures_Listener_If_ListenIPAddress_Changed()
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(listenIPAddress: IPAddress.Parse("0.0.0.0")));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(true);
+
+            var patch = new SoulseekClientOptionsPatch(listenIPAddress: IPAddress.Parse("127.0.0.1"));
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.Equal(patch.ListenIPAddress, client.Listener.IPAddress);
             }
         }
 
@@ -651,6 +671,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             private static readonly Random Rng = new Random();
+            public static IPAddress Address => IPAddress.Parse(string.Join(".",Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString()));
             public static int Port => Rng.Next(1024, IPEndPoint.MaxPort);
 
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();

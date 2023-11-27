@@ -66,8 +66,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
-        [Fact(DisplayName = "Throws ListenPortException on bad listen port")]
-        public async Task Address_Throws_ListenPortException_On_Bad_Listen_Port()
+        [Fact(DisplayName = "Throws ListenException on bad listen port")]
+        public async Task Address_Throws_ListenException_On_Bad_Listen_Port()
         {
             var port = Mocks.Port;
 
@@ -77,13 +77,13 @@ namespace Soulseek.Tests.Unit.Client
 
                 try
                 {
-                    listener = new Listener(port, new ConnectionOptions());
+                    listener = new Listener(IPAddress.Any, port, new ConnectionOptions());
                     listener.Start();
 
                     var ex = await Record.ExceptionAsync(() => s.ConnectAsync("u", "p"));
 
                     Assert.NotNull(ex);
-                    Assert.IsType<ListenPortException>(ex);
+                    Assert.IsType<ListenException>(ex);
                 }
                 finally
                 {

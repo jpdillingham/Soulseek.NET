@@ -1,4 +1,4 @@
-﻿// <copyright file="ListenPortException.cs" company="JP Dillingham">
+﻿// <copyright file="ListenException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -22,31 +22,31 @@ namespace Soulseek
     using System.Runtime.Serialization;
 
     /// <summary>
-    ///     Represents errors that occur while changing the currently logged in user's password.
+    ///     Represents errors that occur while attempting to initialize a listener.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class ListenPortException : SoulseekClientException
+    public class ListenException : SoulseekClientException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ListenPortException"/> class.
+        ///     Initializes a new instance of the <see cref="ListenException"/> class.
         /// </summary>
-        public ListenPortException()
+        public ListenException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ListenPortException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="ListenException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public ListenPortException(string message)
+        public ListenException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ListenPortException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="ListenException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -54,17 +54,17 @@ namespace Soulseek
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
         ///     inner exception is specified.
         /// </param>
-        public ListenPortException(string message, Exception innerException)
+        public ListenException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ListenPortException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="ListenException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected ListenPortException(SerializationInfo info, StreamingContext context)
+        protected ListenException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }

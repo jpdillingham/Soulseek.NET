@@ -65,10 +65,12 @@ namespace Soulseek.Tests.Unit.Options
             var placeInQueueResponseResolver = new Func<string, IPEndPoint, string, Task<int?>>((s, i, ss) => Task.FromResult<int?>(0));
 
             var rnd = new Random();
+            var listenAddress = IPAddress.Parse(string.Join(".", rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString()));
             var listenPort = rnd.Next(1024, 65535);
 
             var o = new SoulseekClientOptions(
                 enableListener,
+                listenAddress,
                 listenPort,
                 enableDistributedNetwork: enableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren,
@@ -99,6 +101,7 @@ namespace Soulseek.Tests.Unit.Options
                 placeInQueueResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
+            Assert.Equal(listenAddress, o.ListenIPAddress);
             Assert.Equal(listenPort, o.ListenPort);
             Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
             Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
@@ -336,10 +339,12 @@ namespace Soulseek.Tests.Unit.Options
             var placeInQueueResponseResolver = new Func<string, IPEndPoint, string, Task<int?>>((s, i, ss) => Task.FromResult<int?>(0));
 
             var rnd = new Random();
+            var listenAddress = IPAddress.Parse(string.Join(".", rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString()));
             var listenPort = rnd.Next(1024, 65535);
 
             var patch = new SoulseekClientOptionsPatch(
                 enableListener,
+                listenAddress,
                 listenPort,
                 enableDistributedNetwork: enableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren,
@@ -377,6 +382,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(DiagnosticLevel.None, o.MinimumDiagnosticLevel);
 
             Assert.Equal(enableListener, o.EnableListener);
+            Assert.Equal(listenAddress, o.ListenIPAddress);
             Assert.Equal(listenPort, o.ListenPort);
             Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
             Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
@@ -442,10 +448,12 @@ namespace Soulseek.Tests.Unit.Options
             var placeInQueueResponseResolver = new Func<string, IPEndPoint, string, Task<int?>>((s, i, ss) => Task.FromResult<int?>(0));
 
             var rnd = new Random();
+            var listenAddress = IPAddress.Parse(string.Join(".", rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString(), rnd.Next(0, 254).ToString()));
             var listenPort = rnd.Next(1024, 65535);
 
             var o = new SoulseekClientOptions().With(
                 enableListener,
+                listenAddress,
                 listenPort,
                 enableDistributedNetwork: enableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren,
@@ -471,6 +479,7 @@ namespace Soulseek.Tests.Unit.Options
                 placeInQueueResolver: placeInQueueResponseResolver);
 
             Assert.Equal(enableListener, o.EnableListener);
+            Assert.Equal(listenAddress, o.ListenIPAddress);
             Assert.Equal(listenPort, o.ListenPort);
             Assert.Equal(enableDistributedNetwork, o.EnableDistributedNetwork);
             Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);

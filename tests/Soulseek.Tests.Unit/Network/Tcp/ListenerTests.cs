@@ -18,7 +18,7 @@
 namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using System;
-    using AutoFixture.Xunit2;
+    using System.Net;
     using Soulseek.Network.Tcp;
     using Xunit;
 
@@ -38,8 +38,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             var options = new ConnectionOptions();
             var port = GetPort();
 
-            var l = new Listener(port, options);
+            var l = new Listener(IPAddress.Any, port, options);
 
+            Assert.Equal(IPAddress.Any, l.IPAddress);
             Assert.Equal(port, l.Port);
             Assert.Equal(options, l.ConnectionOptions);
 
@@ -53,7 +54,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             var options = new ConnectionOptions();
             var port = GetPort();
 
-            var l = new Listener(port, options);
+            var l = new Listener(IPAddress.Any, port, options);
 
             var first = l.Listening;
 
@@ -70,7 +71,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             var options = new ConnectionOptions();
             var port = GetPort();
 
-            var l = new Listener(port, options);
+            var l = new Listener(IPAddress.Any, port, options);
 
             l.Start();
 

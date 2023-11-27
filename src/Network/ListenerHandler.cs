@@ -57,7 +57,7 @@ namespace Soulseek.Network
         /// <param name="connection">The accepted connection.</param>
         public async void HandleConnection(object sender, IConnection connection)
         {
-            Diagnostic.Debug($"Accepted incoming connection from {connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port} (id: {connection.Id})");
+            Diagnostic.Debug($"Accepted incoming connection from {connection.IPEndPoint.Address} on {SoulseekClient.Listener.IPAddress}:{SoulseekClient.Listener.Port} (id: {connection.Id})");
 
             try
             {

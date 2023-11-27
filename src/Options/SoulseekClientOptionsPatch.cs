@@ -31,6 +31,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SoulseekClientOptionsPatch"/> class.
         /// </summary>
         /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
+        /// <param name="listenIPAddress">The IP address on which to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
@@ -78,6 +79,7 @@ namespace Soulseek
         /// </exception>
         public SoulseekClientOptionsPatch(
             bool? enableListener = null,
+            IPAddress listenIPAddress = null,
             int? listenPort = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
@@ -103,6 +105,8 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null)
         {
             EnableListener = enableListener;
+            ListenIPAddress = listenIPAddress;
+
             ListenPort = listenPort;
 
             if (ListenPort < 1024 || ListenPort > IPEndPoint.MaxPort)
@@ -215,6 +219,11 @@ namespace Soulseek
         ///     Gets the options for incoming connections.
         /// </summary>
         public ConnectionOptions IncomingConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the IP address on which to listen for incoming connections. (Default = IPAddress.Any/"0.0.0.0").
+        /// </summary>
+        public IPAddress ListenIPAddress { get; }
 
         /// <summary>
         ///     Gets the port on which to listen for incoming connections.
