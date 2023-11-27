@@ -839,7 +839,7 @@ namespace Soulseek
                 }
                 catch (Exception)
                 {
-                    throw new ListenException($"Failed to start listening on {Options.ListenIPAddress}:{Options.ListenPort}; the IP:Port may be in use or is otherwise unavailable");
+                    throw new ListenException($"Failed to start listening on {Options.ListenIPAddress}:{Options.ListenPort}; the IP and/or port may be in use or are otherwise unavailable");
                 }
                 finally
                 {
@@ -1992,7 +1992,7 @@ namespace Soulseek
                 }
                 catch (Exception)
                 {
-                    throw new ListenException($"Failed to start listening on {Options.ListenIPAddress}:{Options.ListenPort}; the IP:Port may be in use or is otherwise unavailable");
+                    throw new ListenException($"Failed to start listening on {newAddress}:{newPort}; the IP and/or port may be in use or are otherwise unavailable");
                 }
                 finally
                 {
