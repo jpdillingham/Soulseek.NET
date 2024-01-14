@@ -189,6 +189,7 @@ namespace Soulseek.Network.Tcp
         protected SystemTimer WatchdogTimer { get; set; }
 
         private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private SemaphoreSlim WriteSemaphore { get; set; } = new SemaphoreSlim(initialCount: 1, maxCount: 1);
         private SemaphoreSlim WriteQueueSemaphore { get; set; }
 
         /// <summary>
@@ -695,6 +696,9 @@ namespace Soulseek.Network.Tcp
 
             await WriteQueueSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
+            // obtain the write semaphore for this connection.  this keeps concurrent writes
+            // from interleaving, which will mangle the messages on the receiving end
+            await WriteSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             ResetInactivityTime();
 
 #if NETSTANDARD2_0
@@ -746,6 +750,7 @@ namespace Soulseek.Network.Tcp
             finally
             {
                 WriteQueueSemaphore.Release();
+                WriteSemaphore.Release();
 
 #if NETSTANDARD2_1_OR_GREATER
                 System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
