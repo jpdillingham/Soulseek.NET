@@ -189,6 +189,7 @@ namespace Soulseek.Network.Tcp
         protected SystemTimer WatchdogTimer { get; set; }
 
         private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private SemaphoreSlim WriteSemaphore { get; set; } = new SemaphoreSlim(initialCount: 1, maxCount: 1);
         private SemaphoreSlim WriteQueueSemaphore { get; set; }
 
         /// <summary>
@@ -693,20 +694,30 @@ namespace Soulseek.Network.Tcp
                 throw new ConnectionWriteDroppedException($"Dropped buffered message to {IPEndPoint}; the write buffer is full");
             }
 
+            // a failure to allocate memory will throw, so we need to do it within the try/catch
+            // declare and initialize it here so it's available in the finally block
+            byte[] buffer = Array.Empty<byte>();
+
+            // grab a slot on the queue semaphore.  note that this isn't for synchronization, it's to
+            // maintain a count of waiting writes
             await WriteQueueSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            ResetInactivityTime();
-
-#if NETSTANDARD2_0
-            var buffer = new byte[Options.WriteBufferSize];
-#else
-            var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(Options.WriteBufferSize);
-#endif
-
-            long totalBytesWritten = 0;
+            // obtain the write semaphore for this connection.  this keeps concurrent writes
+            // from interleaving, which will mangle the messages on the receiving end
+            await WriteSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
+                ResetInactivityTime();
+
+#if NETSTANDARD2_0
+                buffer = new byte[Options.WriteBufferSize];
+#else
+                buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(Options.WriteBufferSize);
+#endif
+
+                long totalBytesWritten = 0;
+
                 while (!Disposed && totalBytesWritten < length)
                 {
                     var bytesRemaining = length - totalBytesWritten;
@@ -746,6 +757,7 @@ namespace Soulseek.Network.Tcp
             finally
             {
                 WriteQueueSemaphore.Release();
+                WriteSemaphore.Release();
 
 #if NETSTANDARD2_1_OR_GREATER
                 System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
