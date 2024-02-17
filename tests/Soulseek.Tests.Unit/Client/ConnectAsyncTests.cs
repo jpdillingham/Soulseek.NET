@@ -570,7 +570,12 @@ namespace Soulseek.Tests.Unit.Client
 
             mocks.Waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+
             mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.WishlistInterval)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<int>(new TimeoutException("timed out")));
+            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentMinSpeed)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<int>(new TimeoutException("timed out")));
+            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentSpeedRatio)), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<int>(new TimeoutException("timed out")));
 
             using (client)
@@ -585,9 +590,13 @@ namespace Soulseek.Tests.Unit.Client
 
                 var agg = ex.InnerException.InnerException as AggregateException;
 
-                Assert.True(agg.InnerExceptions.Count == 1);
-                Assert.IsType<NoResponseException>(agg.InnerExceptions.First());
-                Assert.IsType<TimeoutException>(agg.InnerExceptions.First().InnerException);
+                Assert.True(agg.InnerExceptions.Count == 3);
+
+                foreach (var inner in agg.InnerExceptions)
+                {
+                    Assert.IsType<NoResponseException>(inner);
+                    Assert.IsType<TimeoutException>(inner.InnerException);
+                }
             }
         }
 
