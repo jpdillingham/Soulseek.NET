@@ -22,7 +22,7 @@ namespace Soulseek
     using System.Runtime.Serialization;
 
     /// <summary>
-    ///     Represents an error performing an operation in or on a private chat room.
+    ///     Represents an error receiving a response to an expected server message.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
