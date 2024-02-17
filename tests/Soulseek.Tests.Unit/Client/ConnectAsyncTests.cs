@@ -581,7 +581,13 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<SoulseekClientException>(ex);
                 Assert.True(ex.Message.ContainsInsensitive("did not receive one or more expected server messages"));
                 Assert.IsType<ConnectionException>(ex.InnerException);
-                Assert.IsType<TimeoutException>(ex.InnerException.InnerException);
+                Assert.IsType<AggregateException>(ex.InnerException.InnerException);
+
+                var agg = ex.InnerException.InnerException as AggregateException;
+
+                Assert.True(agg.InnerExceptions.Count == 1);
+                Assert.IsType<NoResponseException>(agg.InnerExceptions.First());
+                Assert.IsType<TimeoutException>(agg.InnerExceptions.First().InnerException);
             }
         }
 
