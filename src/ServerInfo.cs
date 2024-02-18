@@ -48,10 +48,10 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets a value indicating whether the user has purchased privileges, regardless of whether the user has active
+        ///     Gets a value indicating whether the logged in user has ever purchased privileges, regardless of whether the user has active
         ///     privileges at the present moment.
         /// </summary>
-        public bool? IsSupporter { get; private set; }
+        public bool? IsSupporter { get; }
 
         /// <summary>
         ///     Gets the ParentMinSpeed value.
