@@ -2984,9 +2984,26 @@ namespace Soulseek
                         {
                             await Task.WhenAll(parentMinSpeedWait, parentSpeedRatioWait, wishlistIntervalWait).ConfigureAwait(false);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                            throw new ConnectionException("Did not receive one or more expected server messages upon login", ex);
+                            var missing = new List<Exception>();
+
+                            if (parentMinSpeedWait.Exception is not null)
+                            {
+                                missing.Add(new NoResponseException("Failed to receive ParentMinSpeed", parentMinSpeedWait.Exception.InnerException));
+                            }
+
+                            if (parentSpeedRatioWait.Exception is not null)
+                            {
+                                missing.Add(new NoResponseException("Failed to receive ParentSpeedRatio", parentSpeedRatioWait.Exception.InnerException));
+                            }
+
+                            if (wishlistIntervalWait.Exception is not null)
+                            {
+                                missing.Add(new NoResponseException("Failed to receive WishlistInterval", wishlistIntervalWait.Exception.InnerException));
+                            }
+
+                            throw new ConnectionException($"Did not receive one or more expected server messages upon login", new AggregateException(missing));
                         }
 
                         var serverInfo = new ServerInfo(
