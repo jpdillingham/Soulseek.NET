@@ -1137,6 +1137,24 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "ExcludedSearchPhrasesReceived fires when handler raises"), AutoData]
+        public void ExcludedSearchPhrasesReceived_Fires_When_Handler_Raises(string[] usernames)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = usernames.ToList().AsReadOnly();
+            IReadOnlyCollection<string> actualArgs = null;
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                s.ExcludedSearchPhrasesReceived += (sender, args) => actualArgs = args;
+                mock.Raise(m => m.ExcludedSearchPhrasesReceived += null, mock.Object, expectedArgs);
+
+                Assert.NotNull(actualArgs);
+                Assert.Equal(expectedArgs, actualArgs);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
         [Theory(DisplayName = "PrivilegedUserListReceived does not throw if event not bound"), AutoData]
         public void PrivilegedUserListReceived_Does_Not_Throw_If_Event_Not_Bound(string[] usernames)
         {
@@ -1146,6 +1164,21 @@ namespace Soulseek.Tests.Unit
             using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivilegedUserListReceived += null, mock.Object, expectedArgs));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ServerMessageHandler Event")]
+        [Theory(DisplayName = "ExcludedSearchPhrasesReceived does not throw if event not bound"), AutoData]
+        public void ExcludedSearchPhrasesReceived_Does_Not_Throw_If_Event_Not_Bound(string[] usernames)
+        {
+            var mock = new Mock<IServerMessageHandler>();
+            var expectedArgs = usernames.ToList().AsReadOnly();
+
+            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            {
+                var ex = Record.Exception(() => mock.Raise(m => m.ExcludedSearchPhrasesReceived += null, mock.Object, expectedArgs));
 
                 Assert.Null(ex);
             }
