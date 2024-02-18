@@ -71,6 +71,14 @@ The external interface of the library is sparse and well documented; the best re
 * [SearchOptions](https://github.com/jpdillingham/Soulseek.NET/blob/master/src/Options/SearchOptions.cs)
 * [TransferOptions](https://github.com/jpdillingham/Soulseek.NET/blob/master/src/Options/TransferOptions.cs)
 
+## Excluded Search Phrases
+
+Starting around the beginning of 2024, the Soulseek server has begun sending a list of 'excluded search phrases' as a way to restrict content exchanged on the network and appease copyright trolls.
+
+This list of phrases is delivered in the event `ExcludedSearchPhrassReceived`, and it is my expectation that any outgoing search results _must_ be filtered to exclude files that contain any of the excluded phrases in the path or filename.
+
+I appreciate everyone's cooperation and commitment to ensuring the long term health of the Soulseek network.
+
 # Example Web Application
 
 Note that the example application as been superseded by [slskd](https://github.com/slskd/slskd) and will no longer be maintained.

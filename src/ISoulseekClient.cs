@@ -92,6 +92,11 @@ namespace Soulseek
         event EventHandler<DownloadFailedEventArgs> DownloadFailed;
 
         /// <summary>
+        ///     Occurs when the server sends a list of excluded ("banned") search phrases.
+        /// </summary>
+        event EventHandler<IReadOnlyCollection<string>> ExcludedSearchPhrasesReceived;
+
+        /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
         event EventHandler<string> GlobalMessageReceived;

@@ -477,11 +477,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivilegedUserListReceived"), AutoData]
         public void Raises_PrivilegedUserListReceived(string[] names)
         {
-            IReadOnlyCollection<string> result = null;
+            IReadOnlyCollection<string> waitResult = null;
+            IReadOnlyCollection<string> eventResult = null;
             var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
-                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => waitResult = response);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivilegedUsers)
@@ -494,14 +495,74 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var msg = builder.Build();
 
-            handler.PrivilegedUserListReceived += (sender, e) => result = e;
+            handler.PrivilegedUserListReceived += (sender, e) => eventResult = e;
 
             handler.HandleMessageRead(null, msg);
 
             foreach (var name in names)
             {
-                Assert.Contains(result, n => n == name);
+                Assert.Contains(waitResult, n => n == name);
+                Assert.Contains(eventResult, n => n == name);
             }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises ExcludedSearchPhrasesReceived"), AutoData]
+        public void Raises_ExcludedSearchPhrasesReceived(string[] names)
+        {
+            IReadOnlyCollection<string> waitResult = null;
+            IReadOnlyCollection<string> eventResult = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => waitResult = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ExcludedSearchPhrases)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            handler.ExcludedSearchPhrasesReceived += (sender, e) => eventResult = e;
+
+            handler.HandleMessageRead(null, msg);
+
+            foreach (var name in names)
+            {
+                Assert.Contains(waitResult, n => n == name);
+                Assert.Contains(eventResult, n => n == name);
+            }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on ExcludedSearchPhrasesReceived when unbound"), AutoData]
+        public void Does_Not_Throw_On_ExcludedSearchPhrasesReceived_When_Unbound(string[] names)
+        {
+            IReadOnlyCollection<string> result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ExcludedSearchPhrases)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, msg));
+
+            Assert.Null(ex);
         }
 
         [Trait("Category", "Message")]

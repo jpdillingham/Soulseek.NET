@@ -21,7 +21,6 @@ namespace Soulseek
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
-    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
 
     /// <summary>
@@ -165,6 +164,10 @@ namespace Soulseek
                     throw;
                 }
 
+                // clients may choose to return a RawSearchResponse to the resolver. this is a way for clients to send a byte array directly to the network,
+                // bypassing serialization. the use case is a bit imaginary, but the same was done for RawBrowseResponse to allow slskd to cache the browse
+                // response to disk, avoiding serializing to json and deserializing to BrowseResponse each time; it's a performance optimization. this seemed
+                // like a good idea at the time but now that i'm reviewing it ~1.5 years later i'm wondering what i was thinking :)
                 if (searchResponse is RawSearchResponse rawSearchResponse)
                 {
                     await peerConnection.WriteAsync(rawSearchResponse.Length, rawSearchResponse.Stream).ConfigureAwait(false);
