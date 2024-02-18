@@ -505,6 +505,37 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises ExcludedSearchPhrasesReceived"), AutoData]
+        public void Raises_ExcludedSearchPhrasesReceived(string[] names)
+        {
+            IReadOnlyCollection<string> result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ExcludedSearchPhrases)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            handler.ExcludedSearchPhrasesReceived += (sender, e) => result = e;
+
+            handler.HandleMessageRead(null, msg);
+
+            foreach (var name in names)
+            {
+                Assert.Contains(result, n => n == name);
+            }
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates connection on ConnectToPeerResponse 'P'"), AutoData]
         public void Creates_Connection_On_ConnectToPeerResponse_P(string username, int token, IPAddress ip, int port)
         {
