@@ -258,7 +258,6 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.ExcludedSearchPhrases:
                         var excludedSearchPhraseList = ExcludedSearchPhrasesNotification.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), excludedSearchPhraseList);
                         ExcludedSearchPhrasesReceived?.Invoke(this, excludedSearchPhraseList);
                         break;
 
@@ -293,7 +292,6 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.PrivilegedUsers:
                         var privilegedUserList = PrivilegedUserListNotification.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), privilegedUserList);
                         PrivilegedUserListReceived?.Invoke(this, privilegedUserList);
                         break;
 
