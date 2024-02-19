@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -184,6 +184,17 @@ namespace Soulseek
             ServerMessageHandler.GlobalMessageReceived += (sender, e) => GlobalMessageReceived?.Invoke(this, e);
             ServerMessageHandler.DistributedNetworkReset += (sender, e) => DistributedNetworkReset?.Invoke(this, e);
             ServerMessageHandler.ExcludedSearchPhrasesReceived += (sender, e) => ExcludedSearchPhrasesReceived?.Invoke(this, e);
+
+            ServerMessageHandler.ServerInfoReceived += (sender, e) =>
+            {
+                ServerInfo = ServerInfo.With(
+                    parentMinSpeed: e.ParentMinSpeed,
+                    parentSpeedRatio: e.ParentSpeedRatio,
+                    wishlistInterval: e.WishlistInterval,
+                    isSupporter: e.IsSupporter);
+
+                ServerInfoReceived?.Invoke(this, ServerInfo);
+            };
 
             ServerMessageHandler.KickedFromServer += (sender, e) =>
             {
