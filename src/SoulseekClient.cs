@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -2979,10 +2979,6 @@ namespace Soulseek
 
                     var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
 
-                    var parentMinSpeedWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentMinSpeed), cancellationToken: combinedCts.Token);
-                    var parentSpeedRatioWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.ParentSpeedRatio), cancellationToken: combinedCts.Token);
-                    var wishlistIntervalWait = Waiter.Wait<int>(new WaitKey(MessageCode.Server.WishlistInterval), cancellationToken: combinedCts.Token);
-
                     // concatenate the login request with the set listen port command to prevent a race condition where remote users
                     // are notified of the login but the listen port is not yet set, resulting in the server reporting a port of 0 if
                     // the notified users attempt to connect (e.g. to re-request uploads). this is still possible, but much less likely.
@@ -2997,40 +2993,8 @@ namespace Soulseek
 
                     if (response.Succeeded)
                     {
-                        try
-                        {
-                            await Task.WhenAll(parentMinSpeedWait, parentSpeedRatioWait, wishlistIntervalWait).ConfigureAwait(false);
-                        }
-                        catch (Exception)
-                        {
-                            var missing = new List<Exception>();
-
-                            if (parentMinSpeedWait.Exception is not null)
-                            {
-                                missing.Add(new NoResponseException("Failed to receive ParentMinSpeed", parentMinSpeedWait.Exception.InnerException));
-                            }
-
-                            if (parentSpeedRatioWait.Exception is not null)
-                            {
-                                missing.Add(new NoResponseException("Failed to receive ParentSpeedRatio", parentSpeedRatioWait.Exception.InnerException));
-                            }
-
-                            if (wishlistIntervalWait.Exception is not null)
-                            {
-                                missing.Add(new NoResponseException("Failed to receive WishlistInterval", wishlistIntervalWait.Exception.InnerException));
-                            }
-
-                            throw new ConnectionException($"Did not receive one or more expected server messages upon login", new AggregateException(missing));
-                        }
-
-                        var serverInfo = new ServerInfo(
-                            await parentMinSpeedWait.ConfigureAwait(false),
-                            await parentSpeedRatioWait.ConfigureAwait(false),
-                            await wishlistIntervalWait.ConfigureAwait(false) * 1000,
-                            response.IsSupporter);
-
-                        ServerInfo = serverInfo;
-                        ServerInfoReceived?.Invoke(this, serverInfo);
+                        ServerInfo = ServerInfo.With(isSupporter: response.IsSupporter);
+                        ServerInfoReceived?.Invoke(this, ServerInfo);
 
                         Username = username;
 
