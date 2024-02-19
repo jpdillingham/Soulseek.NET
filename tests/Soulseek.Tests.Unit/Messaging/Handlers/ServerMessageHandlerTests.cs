@@ -274,28 +274,87 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Handles IntegerResponse messages")]
-        [InlineData(MessageCode.Server.ParentMinSpeed)]
-        [InlineData(MessageCode.Server.ParentSpeedRatio)]
-        [InlineData(MessageCode.Server.WishlistInterval)]
-        internal void Handles_IntegerResponse_Messages(MessageCode.Server code)
+        [Fact(DisplayName = "Handles ParentMinSpeed")]
+        internal void Handles_ParentMinSpeed()
         {
             int value = new Random().Next();
-            int? result = null;
+            ServerInfo result = null;
 
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<int>()))
-                .Callback<WaitKey, int>((key, response) => result = response);
+            handler.ServerInfoReceived += (_, arg) => result = arg;
 
             var msg = new MessageBuilder()
-                .WriteCode(code)
+                .WriteCode(MessageCode.Server.ParentMinSpeed)
                 .WriteInteger(value)
                 .Build();
 
             handler.HandleMessageRead(null, msg);
 
-            Assert.Equal(value, result);
+            Assert.Equal(value, result.ParentMinSpeed);
+        }
+
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Handles ParentSpeedRatio")]
+        internal void Handles_ParentSpeedRatio()
+        {
+            int value = new Random().Next();
+            ServerInfo result = null;
+
+            var (handler, mocks) = GetFixture();
+
+            handler.ServerInfoReceived += (_, arg) => result = arg;
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ParentSpeedRatio)
+                .WriteInteger(value)
+                .Build();
+
+            handler.HandleMessageRead(null, msg);
+
+            Assert.Equal(value, result.ParentSpeedRatio);
+        }
+
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Handles WishlistInterval")]
+        internal void Handles_WishlistInterval()
+        {
+            int value = new Random().Next();
+            ServerInfo result = null;
+
+            var (handler, mocks) = GetFixture();
+
+            handler.ServerInfoReceived += (_, arg) => result = arg;
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.WishlistInterval)
+                .WriteInteger(value)
+                .Build();
+
+            handler.HandleMessageRead(null, msg);
+
+            Assert.Equal(value, result.WishlistInterval);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on ServerInfo messages when ServerInfoReceived is unbound")]
+        [InlineData(MessageCode.Server.ParentMinSpeed)]
+        [InlineData(MessageCode.Server.ParentSpeedRatio)]
+        [InlineData(MessageCode.Server.WishlistInterval)]
+        internal void Does_Not_Throw_On_ServerInfo_When_ServerInfoReceived_Is_Unbound(MessageCode.Server code)
+        {
+            var (handler, mocks) = GetFixture();
+
+            // this is where we would bind the event handler, but we're not because that's what we're testing
+
+            var msg = new MessageBuilder()
+                .WriteCode(code)
+                .WriteInteger(42)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, msg));
+
+            Assert.Null(ex);
         }
 
         [Trait("Category", "Message")]
@@ -445,44 +504,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Handles ServerPrivilegedUsers"), AutoData]
-        public void Handles_ServerPrivilegedUsers(string[] names)
-        {
-            IReadOnlyCollection<string> result = null;
-            var (handler, mocks) = GetFixture();
-
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
-                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
-
-            var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Server.PrivilegedUsers)
-                .WriteInteger(names.Length);
-
-            foreach (var name in names)
-            {
-                builder.WriteString(name);
-            }
-
-            var msg = builder.Build();
-
-            handler.HandleMessageRead(null, msg);
-
-            foreach (var name in names)
-            {
-                Assert.Contains(result, n => n == name);
-            }
-        }
-
-        [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises PrivilegedUserListReceived"), AutoData]
         public void Raises_PrivilegedUserListReceived(string[] names)
         {
-            IReadOnlyCollection<string> waitResult = null;
             IReadOnlyCollection<string> eventResult = null;
             var (handler, mocks) = GetFixture();
-
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
-                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => waitResult = response);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivilegedUsers)
@@ -501,21 +527,38 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             foreach (var name in names)
             {
-                Assert.Contains(waitResult, n => n == name);
                 Assert.Contains(eventResult, n => n == name);
             }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not throw on PrivilegedUserListReceived when unbound"), AutoData]
+        public void Does_Not_Throw_On_PrivilegedUserListReceived_When_Unbound(string[] names)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ExcludedSearchPhrases)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, msg));
+
+            Assert.Null(ex);
         }
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises ExcludedSearchPhrasesReceived"), AutoData]
         public void Raises_ExcludedSearchPhrasesReceived(string[] names)
         {
-            IReadOnlyCollection<string> waitResult = null;
             IReadOnlyCollection<string> eventResult = null;
             var (handler, mocks) = GetFixture();
-
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
-                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => waitResult = response);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.ExcludedSearchPhrases)
@@ -534,7 +577,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             foreach (var name in names)
             {
-                Assert.Contains(waitResult, n => n == name);
                 Assert.Contains(eventResult, n => n == name);
             }
         }
