@@ -509,18 +509,12 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "Connect")]
         [Theory(DisplayName = "Raises ServerInfoReceived on login"), AutoData]
-        public async Task Raises_ServerInfoReceived_On_Login(string user, string password, int parentMinSpeed, int parentSpeedRatio, int wishlistInterval)
+        public async Task Raises_ServerInfoReceived_On_Login(string user, string password, bool isSupporter)
         {
             var (client, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentMinSpeed)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(parentMinSpeed));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentSpeedRatio)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(parentSpeedRatio));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.WishlistInterval)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(wishlistInterval));
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty, isSupporter: isSupporter)));
 
             using (client)
             {
@@ -531,72 +525,27 @@ namespace Soulseek.Tests.Unit.Client
                 await client.ConnectAsync(user, password);
 
                 Assert.NotNull(args);
-                Assert.Equal(parentMinSpeed, args.ParentMinSpeed);
-                Assert.Equal(parentSpeedRatio, args.ParentSpeedRatio);
-                Assert.Equal(wishlistInterval * 1000, args.WishlistInterval);
+
+                // IsSupporter is the only property we can expect to be set at this stage, the rest are
+                // delivered/set out of band now (originally they were required during login)
+                Assert.Equal(isSupporter, args.IsSupporter);
             }
         }
 
         [Trait("Category", "Connect")]
         [Theory(DisplayName = "Sets ServerInfo on login"), AutoData]
-        public async Task Sets_ServerInfo_On_Login(string user, string password, int parentMinSpeed, int parentSpeedRatio, int wishlistInterval)
+        public async Task Sets_ServerInfo_On_Login(string user, string password, bool isSupporter)
         {
             var (client, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentMinSpeed)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(parentMinSpeed));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentSpeedRatio)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(parentSpeedRatio));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.WishlistInterval)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(wishlistInterval));
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty, isSupporter: isSupporter)));
 
             using (client)
             {
                 await client.ConnectAsync(user, password);
 
-                Assert.Equal(parentMinSpeed, client.ServerInfo.ParentMinSpeed);
-                Assert.Equal(parentSpeedRatio, client.ServerInfo.ParentSpeedRatio);
-                Assert.Equal(wishlistInterval * 1000, client.ServerInfo.WishlistInterval);
-            }
-        }
-
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Throws SoulseekClientException if expected login messages are not sent"), AutoData]
-        public async Task Throws_SoulseekClientException_If_Expected_Login_Messages_Are_Not_Sent(string user, string password)
-        {
-            var (client, mocks) = GetFixture();
-
-            mocks.Waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
-
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.WishlistInterval)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<int>(new TimeoutException("timed out")));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentMinSpeed)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<int>(new TimeoutException("timed out")));
-            mocks.Waiter.Setup(m => m.Wait<int>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.Server.ParentSpeedRatio)), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<int>(new TimeoutException("timed out")));
-
-            using (client)
-            {
-                var ex = await Record.ExceptionAsync(() => client.ConnectAsync(user, password));
-
-                Assert.NotNull(ex);
-                Assert.IsType<SoulseekClientException>(ex);
-                Assert.True(ex.Message.ContainsInsensitive("did not receive one or more expected server messages"));
-                Assert.IsType<ConnectionException>(ex.InnerException);
-                Assert.IsType<AggregateException>(ex.InnerException.InnerException);
-
-                var agg = ex.InnerException.InnerException as AggregateException;
-
-                Assert.True(agg.InnerExceptions.Count == 3);
-
-                foreach (var inner in agg.InnerExceptions)
-                {
-                    Assert.IsType<NoResponseException>(inner);
-                    Assert.IsType<TimeoutException>(inner.InnerException);
-                }
+                Assert.Equal(isSupporter, client.ServerInfo.IsSupporter);
             }
         }
 

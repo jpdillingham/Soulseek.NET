@@ -157,6 +157,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
+        ///     Occurs when the server sends operational information.
+        /// </summary>
+        public event EventHandler<ServerInfo> ServerInfoReceived;
+
+        /// <summary>
         ///     Occurs when a user fails to connect.
         /// </summary>
         public event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
@@ -203,8 +208,20 @@ namespace Soulseek.Messaging.Handlers
                 switch (code)
                 {
                     case MessageCode.Server.ParentMinSpeed:
+                        var parentMinSpeed = IntegerResponse.FromByteArray<MessageCode.Server>(message);
+                        ServerInfoReceived?.Invoke(this, new ServerInfo(parentMinSpeed: parentMinSpeed));
+                        break;
+
                     case MessageCode.Server.ParentSpeedRatio:
+                        var parentSpeedRatio = IntegerResponse.FromByteArray<MessageCode.Server>(message);
+                        ServerInfoReceived?.Invoke(this, new ServerInfo(parentSpeedRatio: parentSpeedRatio));
+                        break;
+
                     case MessageCode.Server.WishlistInterval:
+                        var wishlistInterval = IntegerResponse.FromByteArray<MessageCode.Server>(message);
+                        ServerInfoReceived?.Invoke(this, new ServerInfo(wishlistInterval: wishlistInterval));
+                        break;
+
                     case MessageCode.Server.CheckPrivileges:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
                         break;
@@ -241,7 +258,6 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.ExcludedSearchPhrases:
                         var excludedSearchPhraseList = ExcludedSearchPhrasesNotification.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), excludedSearchPhraseList);
                         ExcludedSearchPhrasesReceived?.Invoke(this, excludedSearchPhraseList);
                         break;
 
@@ -276,7 +292,6 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.PrivilegedUsers:
                         var privilegedUserList = PrivilegedUserListNotification.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), privilegedUserList);
                         PrivilegedUserListReceived?.Invoke(this, privilegedUserList);
                         break;
 
