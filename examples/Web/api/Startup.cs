@@ -1,4 +1,4 @@
-﻿namespace WebAPI
+namespace WebAPI
 {
     using System;
     using System.Collections.Concurrent;
@@ -294,6 +294,11 @@
                     Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
                     Console.ResetColor();
                 }
+            };
+
+            Client.ServerInfoReceived += (e, args) =>
+            {
+                Console.WriteLine($"[SERVER INFO] {JsonSerializer.Serialize(args)}");
             };
 
             // bind transfer events.  see TransferStateChangedEventArgs and TransferProgressEventArgs.
