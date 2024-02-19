@@ -559,7 +559,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var (handler, mocks) = GetFixture();
 
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Server.ExcludedSearchPhrases)
+                .WriteCode(MessageCode.Server.PrivilegedUsers)
                 .WriteInteger(names.Length);
 
             foreach (var name in names)
