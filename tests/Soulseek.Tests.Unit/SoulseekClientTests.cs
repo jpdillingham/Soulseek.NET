@@ -712,6 +712,41 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "ServerInfoReceived")]
+        [Theory(DisplayName = "Raises ServerInfoReceived on receipt"), AutoData]
+        public void Raises_ServerInfoReceived_On_Receipt(ServerInfo info)
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            {
+                ServerInfo args = default;
+                s.ServerInfoReceived += (sender, e) => args = e;
+
+                handlerMock.Raise(m => m.ServerInfoReceived += null, this, info);
+
+                Assert.NotNull(args);
+                Assert.Equal(info.ParentMinSpeed, args.ParentMinSpeed);
+                Assert.Equal(info.ParentSpeedRatio, args.ParentSpeedRatio);
+                Assert.Equal(info.WishlistInterval, args.WishlistInterval);
+                Assert.Equal(info.IsSupporter, args.IsSupporter);
+            }
+        }
+
+        [Trait("Category", "ServerInfoReceived")]
+        [Fact(DisplayName = "Does not throw when ServerInfoReceived and no handler bound")]
+        public void Does_Not_Throw_When_ServerInfoReceived_And_No_Handler_Bound()
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            {
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.ServerInfoReceived += null, this, new ServerInfo()));
+
+                Assert.Null(ex);
+            }
+        }
+
         [Trait("Category", "MessageRead")]
         [Fact(DisplayName = "MessageRead invokes HandleMessageRead")]
         public void MessageRead_Invokes_HandleMessageRead()
