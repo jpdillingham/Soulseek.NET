@@ -337,6 +337,29 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles IntegerResponse messages")]
+        [InlineData(MessageCode.Server.CheckPrivileges)]
+        internal void Handles_IntegerResponse_Messages(MessageCode.Server code)
+        {
+            int value = new Random().Next();
+            int? result = null;
+
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<int>()))
+                .Callback<WaitKey, int>((key, response) => result = response);
+
+            var msg = new MessageBuilder()
+                .WriteCode(code)
+                .WriteInteger(value)
+                .Build();
+
+            handler.HandleMessageRead(null, msg);
+
+            Assert.Equal(value, result);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Does not throw on ServerInfo messages when ServerInfoReceived is unbound")]
         [InlineData(MessageCode.Server.ParentMinSpeed)]
         [InlineData(MessageCode.Server.ParentSpeedRatio)]
@@ -344,8 +367,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         internal void Does_Not_Throw_On_ServerInfo_When_ServerInfoReceived_Is_Unbound(MessageCode.Server code)
         {
             var (handler, mocks) = GetFixture();
-
-            // this is where we would bind the event handler, but we're not because that's what we're testing
 
             var msg = new MessageBuilder()
                 .WriteCode(code)
