@@ -132,6 +132,11 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<RoomTickerRemovedEventArgs> RoomTickerRemoved;
 
         /// <summary>
+        ///     Occurs when the server sends operational information.
+        /// </summary>
+        event EventHandler<ServerInfo> ServerInfoReceived;
+
+        /// <summary>
         ///     Occurs when a user fails to connect.
         /// </summary>
         event EventHandler<UserCannotConnectEventArgs> UserCannotConnect;
