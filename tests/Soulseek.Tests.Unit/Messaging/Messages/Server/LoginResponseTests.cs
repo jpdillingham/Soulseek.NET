@@ -116,7 +116,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(string.Empty, response.Message);
             Assert.Equal(ip, response.IPAddress);
             Assert.Equal("foo", response.Hash);
-            Assert.Equal(true, response.IsSupporter);
+            Assert.True(response.IsSupporter);
         }
     }
 }

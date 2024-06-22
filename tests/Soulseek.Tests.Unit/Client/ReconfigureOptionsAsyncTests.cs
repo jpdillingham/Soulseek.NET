@@ -671,7 +671,7 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             private static readonly Random Rng = new Random();
-            public static IPAddress Address => IPAddress.Parse(string.Join(".",Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString()));
+            public static IPAddress Address => IPAddress.Parse(string.Join(".", Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString()));
             public static int Port => Rng.Next(1024, IPEndPoint.MaxPort);
 
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
