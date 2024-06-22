@@ -414,9 +414,9 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
-                    case MessageCode.Server.AddUser:
-                        var addUserResponse = AddUserResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, addUserResponse.Username), addUserResponse);
+                    case MessageCode.Server.WatchUser:
+                        var watchUserResponse = WatchUserResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, watchUserResponse.Username), watchUserResponse);
                         break;
 
                     case MessageCode.Server.GetStatus:

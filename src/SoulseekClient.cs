@@ -245,6 +245,11 @@ namespace Soulseek
         public event EventHandler DistributedNetworkReset;
 
         /// <summary>
+        ///     Occurs when the state of the distributed network changes.
+        /// </summary>
+        public event EventHandler<DistributedNetworkInfo> DistributedNetworkStateChanged;
+
+        /// <summary>
         ///     Occurs when a new parent is adopted.
         /// </summary>
         public event EventHandler<DistributedParentEventArgs> DistributedParentAdopted;
@@ -253,11 +258,6 @@ namespace Soulseek
         ///     Occurs when the parent is disconnected.
         /// </summary>
         public event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
-
-        /// <summary>
-        ///     Occurs when the state of the distributed network changes.
-        /// </summary>
-        public event EventHandler<DistributedNetworkInfo> DistributedNetworkStateChanged;
 
         /// <summary>
         ///     Occurs when a user reports that a download has been denied.
@@ -669,20 +669,8 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
-            }
-
-            return AddUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
-        }
+        [Obsolete("Use WatchUserAsync instead.  This method will be removed in the next major version.")]
+        public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null) => WatchUserAsync(username, cancellationToken);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -847,8 +835,8 @@ namespace Soulseek
             {
                 Listener listener = null;
 
-                // probe to see if we can listen on the configured port and address.  if this throws, something is either
-                // already listening on this port, or the user has specified a bad interface IP
+                // probe to see if we can listen on the configured port and address. if this throws, something is either already
+                // listening on this port, or the user has specified a bad interface IP
                 try
                 {
                     listener = new Listener(Options.ListenIPAddress, Options.ListenPort, Options.IncomingConnectionOptions);
@@ -994,7 +982,9 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
-        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
+        /// <exception cref="TransferSizeMismatchException">
+        ///     Thrown when the remote size of the transfer is different from the specified size.
+        /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1091,7 +1081,9 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
-        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
+        /// <exception cref="TransferSizeMismatchException">
+        ///     Thrown when the remote size of the transfer is different from the specified size.
+        /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1221,8 +1213,8 @@ namespace Soulseek
         /// </summary>
         /// <remarks>
         ///     <para>
-        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///         specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
+        ///         without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
         ///     </para>
         ///     <para>
         ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
@@ -1258,7 +1250,9 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
-        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
+        /// <exception cref="TransferSizeMismatchException">
+        ///     Thrown when the remote size of the transfer is different from the specified size.
+        /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1306,8 +1300,8 @@ namespace Soulseek
         /// </summary>
         /// <remarks>
         ///     <para>
-        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///         specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
+        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
+        ///         without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
         ///     </para>
         ///     <para>
         ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
@@ -1343,7 +1337,9 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
-        /// <exception cref="TransferSizeMismatchException">Thrown when the remote size of the transfer is different from the specified size.</exception>
+        /// <exception cref="TransferSizeMismatchException">
+        ///     Thrown when the remote size of the transfer is different from the specified size.
+        /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1442,8 +1438,8 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, long, Func{long, Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>, but
-        ///         returns the upload Task as soon as the upload has been locally enqueued.
+        ///         <see cref="UploadAsync(string, string, long, Func{long, Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>,
+        ///         but returns the upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
@@ -1973,9 +1969,9 @@ namespace Soulseek
         ///         </list>
         ///     </para>
         ///     <para>
-        ///         Enabling or disabling the listener or changing the listen address and/or port takes effect immediately. Remaining options
-        ///         will be updated immediately, but any objects instantiated will not be updated (for example, established
-        ///         connections will retain the options with which they were instantiated).
+        ///         Enabling or disabling the listener or changing the listen address and/or port takes effect immediately.
+        ///         Remaining options will be updated immediately, but any objects instantiated will not be updated (for example,
+        ///         established connections will retain the options with which they were instantiated).
         ///     </para>
         /// </remarks>
         /// <param name="patch">A patch containing the updated options.</param>
@@ -1994,8 +1990,8 @@ namespace Soulseek
                 throw new ArgumentNullException(nameof(patch), "The patch must not be null");
             }
 
-            // if the listen address or port is changing, probe to see if we can listen on the new address/port
-            // if not, reject the reconfigure attempt
+            // if the listen address or port is changing, probe to see if we can listen on the new address/port if not, reject the
+            // reconfigure attempt
             if ((patch.ListenIPAddress != null && !patch.ListenIPAddress.Equals(Options.ListenIPAddress)) || (patch.ListenPort.HasValue && patch.ListenPort != Options.ListenPort))
             {
                 Listener listener = null;
@@ -2491,6 +2487,38 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously removes the specified <paramref name="username"/> from the server watch list for the current session.
+        /// </summary>
+        /// <remarks>
+        ///     Once a user is removed the server will no longer send status updates for that user, ending
+        ///     <see cref="UserStatusChanged"/> events for that user.
+        /// </remarks>
+        /// <param name="username">The username of the user to unwatch.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task UnwatchUserAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
+            }
+
+            return UnwatchUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified
         ///     <paramref name="localFilename"/> to the the specified <paramref name="username"/> using the specified unique
         ///     <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
@@ -2650,6 +2678,39 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
+        /// </summary>
+        /// <remarks>
+        ///     Once a user is added the server will begin sending status updates for that user, which will generate
+        ///     <see cref="UserStatusChanged"/> events.
+        /// </remarks>
+        /// <param name="username">The username of the user to watch.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<UserData> WatchUserAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
+            }
+
+            return WatchUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Disposes this instance.
         /// </summary>
         /// <param name="disposing">A value indicating whether disposal is in progress.</param>
@@ -2734,28 +2795,6 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to add user {username} as moderator of private room {roomName}: {ex.Message}", ex);
-            }
-        }
-
-        private async Task<UserData> AddUserInternalAsync(string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.Server.AddUser, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new AddUserRequest(username), cancellationToken).ConfigureAwait(false);
-
-                var response = await addUserWait.ConfigureAwait(false);
-
-                if (!response.Exists)
-                {
-                    throw new UserNotFoundException($"User {username} does not exist");
-                }
-
-                return response.UserData;
-            }
-            catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
-            {
-                throw new SoulseekClientException($"Failed to add user {username}: {ex.Message}", ex);
             }
         }
 
@@ -2979,10 +3018,10 @@ namespace Soulseek
 
                     var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
 
-                    // concatenate the login request with the set listen port command to prevent a race condition where remote users
-                    // are notified of the login but the listen port is not yet set, resulting in the server reporting a port of 0 if
-                    // the notified users attempt to connect (e.g. to re-request uploads). this is still possible, but much less likely.
-                    // the server will not accept a listen port command prior to login.
+                    // concatenate the login request with the set listen port command to prevent a race condition where remote
+                    // users are notified of the login but the listen port is not yet set, resulting in the server reporting a
+                    // port of 0 if the notified users attempt to connect (e.g. to re-request uploads). this is still possible,
+                    // but much less likely. the server will not accept a listen port command prior to login.
                     var loginBytes = new LoginRequest(username, password).ToByteArray()
                         .Concat(new SetListenPortCommand(Options.ListenPort).ToByteArray())
                         .ToArray();
@@ -3096,9 +3135,9 @@ namespace Soulseek
             {
                 UpdateState(TransferStates.Queued | TransferStates.Locally);
 
-                // acquire the global download semaphore to ensure we aren't trying to process more than the
-                // total allotted concurrent downloads globally. if we hit this limit, downloads will stack up behind it and will be
-                // processed in a first-in-first-out manner.
+                // acquire the global download semaphore to ensure we aren't trying to process more than the total allotted
+                // concurrent downloads globally. if we hit this limit, downloads will stack up behind it and will be processed in
+                // a first-in-first-out manner.
                 await GlobalDownloadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
                 globalSemaphoreAcquired = true;
@@ -3129,8 +3168,8 @@ namespace Soulseek
                         throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
                     }
 
-                    // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
-                    // fake a transition to queued for conststency
+                    // the peer is ready to initiate the transfer immediately; we are bypassing their queue. fake a transition to
+                    // queued for conststency
                     UpdateState(TransferStates.Queued | TransferStates.Remotely);
 
                     // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
@@ -3980,6 +4019,18 @@ namespace Soulseek
             ServerMessageHandler.HandleMessageWritten(sender, e);
         }
 
+        private async Task UnwatchUserInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new UnwatchUserCommand(username), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new SoulseekClientException($"Failed to unwatch user {username}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<Transfer> UploadFromFileAsync(string username, string remoteFilename, string localFilename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options = options.WithDisposalOptions(disposeInputStreamOnCompletion: true);
@@ -4363,6 +4414,28 @@ namespace Soulseek
                     UpdateProgress(finalStreamPosition);
                     UpdateState(upload.State);
                 }
+            }
+        }
+
+        private async Task<UserData> WatchUserInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var addUserWait = Waiter.Wait<WatchUserResponse>(new WaitKey(MessageCode.Server.WatchUser, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new WatchUserRequest(username), cancellationToken).ConfigureAwait(false);
+
+                var response = await addUserWait.ConfigureAwait(false);
+
+                if (!response.Exists)
+                {
+                    throw new UserNotFoundException($"User {username} does not exist");
+                }
+
+                return response.UserData;
+            }
+            catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new SoulseekClientException($"Failed to watch user {username}: {ex.Message}", ex);
             }
         }
     }

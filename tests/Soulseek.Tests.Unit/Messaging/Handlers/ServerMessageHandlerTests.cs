@@ -918,14 +918,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerAddUser"), AutoData]
         public void Handles_ServerAddUser(string username, bool exists, UserData userData)
         {
-            AddUserResponse result = null;
+            WatchUserResponse result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<AddUserResponse>()))
-                .Callback<WaitKey, AddUserResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<WatchUserResponse>()))
+                .Callback<WaitKey, WatchUserResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.Server.AddUser)
+                .WriteCode(MessageCode.Server.WatchUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
                 .WriteInteger((int)userData.Status)
