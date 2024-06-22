@@ -2479,6 +2479,38 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously removes the specified <paramref name="username"/> from the server watch list for the current session.
+        /// </summary>
+        /// <remarks>
+        ///     Once a user is removed the server will no longer send status updates for that user, ending
+        ///     <see cref="UserStatusChanged"/> events for that user.
+        /// </remarks>
+        /// <param name="username">The username of the user to unwatch.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task UnwatchUserAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
+            }
+
+            return UnwatchUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified
         ///     <paramref name="localFilename"/> to the the specified <paramref name="username"/> using the specified unique
         ///     <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
@@ -2644,7 +2676,7 @@ namespace Soulseek
         ///     Once a user is added the server will begin sending status updates for that user, which will generate
         ///     <see cref="UserStatusChanged"/> events.
         /// </remarks>
-        /// <param name="username">The username of the user to add.</param>
+        /// <param name="username">The username of the user to watch.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
         /// <exception cref="ArgumentException">
@@ -2758,6 +2790,18 @@ namespace Soulseek
             }
         }
 
+        private async Task UnwatchUserInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new UnwatchUserCommand(username), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new SoulseekClientException($"Failed to unwatch user {username}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<UserData> WatchUserInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
@@ -2776,7 +2820,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new SoulseekClientException($"Failed to add user {username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to watch user {username}: {ex.Message}", ex);
             }
         }
 
