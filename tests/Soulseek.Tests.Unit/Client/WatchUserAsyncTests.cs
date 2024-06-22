@@ -90,6 +90,31 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        [Trait("Category", "AddUserAsync")]
+        [Theory(DisplayName = "AddUserAsync returns expected info"), AutoData]
+        [Obsolete("remove me when removing AddUserAsync")]
+        public async Task AddUserAsync_Returns_Expected_Info(string username, UserData userData)
+        {
+            var result = new WatchUserResponse(username, true, userData);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<WatchUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient(waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var add = await s.AddUserAsync(username);
+
+                Assert.Equal(result.UserData, add);
+            }
+        }
+
         [Trait("Category", "WatchUserAsync")]
         [Theory(DisplayName = "WatchUserAsync uses given CancellationToken"), AutoData]
         public async Task WatchUserAsync_Uses_Given_CancellationToken(string username, UserData userData, CancellationToken cancellationToken)
