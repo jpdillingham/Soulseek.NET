@@ -807,5 +807,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(roomName, reader.ReadString());
             Assert.Equal(message, reader.ReadString());
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "UnwatchUserCommand")]
+        [Theory(DisplayName = "UnwatchUserCommand constructs the correct message"), AutoData]
+        public void UnwatchUserCommand_Constructs_The_Correct_Message(string username)
+        {
+            var a = new UnwatchUserCommand(username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.UnwatchUser, code);
+            Assert.Equal(username, reader.ReadString());
+            Assert.False(reader.HasMoreData);
+        }
     }
 }

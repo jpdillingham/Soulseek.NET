@@ -1,4 +1,4 @@
-﻿// <copyright file="WatchUserRequest.cs" company="JP Dillingham">
+﻿// <copyright file="UnwatchUserCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -18,21 +18,21 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Adds a user to the server-side watch list.
+    ///     Removes a user from the server-side watch list.
     /// </summary>
-    internal sealed class WatchUserRequest : IOutgoingMessage
+    internal sealed class UnwatchUserCommand : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="WatchUserRequest"/> class.
+        ///     Initializes a new instance of the <see cref="UnwatchUserCommand"/> class.
         /// </summary>
-        /// <param name="username">The username of the user to watch.</param>
-        public WatchUserRequest(string username)
+        /// <param name="username">The username of the user to unwatch.</param>
+        public UnwatchUserCommand(string username)
         {
             Username = username;
         }
 
         /// <summary>
-        ///     Gets the username of the user to watch.
+        ///     Gets the username of the user unwatch.
         /// </summary>
         public string Username { get; }
 
@@ -43,7 +43,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.WatchUser)
+                .WriteCode(MessageCode.Server.UnwatchUser)
                 .WriteString(Username)
                 .Build();
         }
