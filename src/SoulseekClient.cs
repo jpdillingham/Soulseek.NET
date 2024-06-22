@@ -669,20 +669,8 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-            {
-                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
-            }
-
-            return AddUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
-        }
+        [Obsolete("Use WatchUserAsync instead.  This method will be removed in the next major version.")]
+        public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null) => WatchUserAsync(username, cancellationToken);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -2650,6 +2638,39 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
+        /// </summary>
+        /// <remarks>
+        ///     Once a user is added the server will begin sending status updates for that user, which will generate
+        ///     <see cref="UserStatusChanged"/> events.
+        /// </remarks>
+        /// <param name="username">The username of the user to add.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<UserData> WatchUserAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
+            }
+
+            return WatchUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Disposes this instance.
         /// </summary>
         /// <param name="disposing">A value indicating whether disposal is in progress.</param>
@@ -2737,12 +2758,12 @@ namespace Soulseek
             }
         }
 
-        private async Task<UserData> AddUserInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserData> WatchUserInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
-                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.Server.AddUser, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new AddUserRequest(username), cancellationToken).ConfigureAwait(false);
+                var addUserWait = Waiter.Wait<WatchUserResponse>(new WaitKey(MessageCode.Server.WatchUser, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new WatchUserRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var response = await addUserWait.ConfigureAwait(false);
 

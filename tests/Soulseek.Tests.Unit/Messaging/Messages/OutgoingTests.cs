@@ -306,23 +306,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "AddUserRequest instantiates properly"), AutoData]
         public void AddUserRequest_Instantiates_Properly(string username)
         {
-            var a = new AddUserRequest(username);
+            var a = new WatchUserRequest(username);
 
             Assert.Equal(username, a.Username);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "AddUserRequest")]
-        [Theory(DisplayName = "AddUserRequest constructs the correct message"), AutoData]
-        public void AddUserRequest_Constructs_The_Correct_Message(string username)
+        [Trait("Request", "WatchUserRequest")]
+        [Theory(DisplayName = "WatchUserRequest constructs the correct message"), AutoData]
+        public void WatchUserRequest_Constructs_The_Correct_Message(string username)
         {
-            var a = new AddUserRequest(username);
+            var a = new WatchUserRequest(username);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.Server.AddUser, code);
+            Assert.Equal(MessageCode.Server.WatchUser, code);
             Assert.Equal(username, reader.ReadString());
         }
 

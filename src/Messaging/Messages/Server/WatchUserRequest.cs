@@ -1,4 +1,4 @@
-﻿// <copyright file="AddUserRequest.cs" company="JP Dillingham">
+﻿// <copyright file="WatchUserRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Adds a user to the server-side watch list.
     /// </summary>
-    internal sealed class AddUserRequest : IOutgoingMessage
+    internal sealed class WatchUserRequest : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AddUserRequest"/> class.
+        ///     Initializes a new instance of the <see cref="WatchUserRequest"/> class.
         /// </summary>
         /// <param name="username">The username of the user to add.</param>
-        public AddUserRequest(string username)
+        public WatchUserRequest(string username)
         {
             Username = username;
         }
@@ -43,7 +43,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.AddUser)
+                .WriteCode(MessageCode.Server.WatchUser)
                 .WriteString(Username)
                 .Build();
         }

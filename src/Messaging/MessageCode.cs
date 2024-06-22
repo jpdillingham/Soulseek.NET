@@ -244,7 +244,12 @@ namespace Soulseek.Messaging
             /// <summary>
             ///     5
             /// </summary>
-            AddUser = 5,
+            WatchUser = 5,
+
+            /// <summary>
+            ///     6
+            /// </summary>
+            UnwatchUser = 6,
 
             /// <summary>
             ///     7

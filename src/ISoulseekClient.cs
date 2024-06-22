@@ -67,6 +67,11 @@ namespace Soulseek
         event EventHandler DistributedNetworkReset;
 
         /// <summary>
+        ///     Occurs when the state of the distributed network changes.
+        /// </summary>
+        event EventHandler<DistributedNetworkInfo> DistributedNetworkStateChanged;
+
+        /// <summary>
         ///     Occurs when a new parent is adopted.
         /// </summary>
         event EventHandler<DistributedParentEventArgs> DistributedParentAdopted;
@@ -75,11 +80,6 @@ namespace Soulseek
         ///     Occurs when the parent is disconnected.
         /// </summary>
         event EventHandler<DistributedParentEventArgs> DistributedParentDisconnected;
-
-        /// <summary>
-        ///     Occurs when the state of the distributed network changes.
-        /// </summary>
-        event EventHandler<DistributedNetworkInfo> DistributedNetworkStateChanged;
 
         /// <summary>
         ///     Occurs when a user reports that a download has been denied.
@@ -390,6 +390,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        [Obsolete("Use WatchUserAsync instead.  This method will be removed in the next major version.")]
         Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -1359,5 +1360,25 @@ namespace Soulseek
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
+        /// </summary>
+        /// <remarks>
+        ///     Once a user is added the server will begin sending status updates for that user, which will generate
+        ///     <see cref="UserStatusChanged"/> events.
+        /// </remarks>
+        /// <param name="username">The username of the user to add.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<UserData> WatchUserAsync(string username, CancellationToken? cancellationToken = null);
     }
 }
