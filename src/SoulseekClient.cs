@@ -2009,7 +2009,7 @@ namespace Soulseek
                 }
                 finally
                 {
-                    listener.Stop();
+                    listener?.Stop();
                 }
             }
 
