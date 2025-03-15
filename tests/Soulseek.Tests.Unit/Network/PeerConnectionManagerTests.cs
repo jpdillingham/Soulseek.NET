@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Null(ex);
             Assert.NotNull(c);
 
-            Assert.Equal(0, c.MessageConnections.Count);
+            Assert.Empty(c.MessageConnections);
         }
 
         [Trait("Category", "Instantiation")]

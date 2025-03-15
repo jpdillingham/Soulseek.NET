@@ -446,7 +446,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadContinuously")]
         [Theory(DisplayName = "ReadContinuously raises MessageRead on read"), AutoData]
-        public void ReadContinuously_Raises_MessageRead_On_Read(string username, IPEndPoint endpoint)
+        public async Task ReadContinuously_Raises_MessageRead_On_Read(string username, IPEndPoint endpoint)
         {
             int callCount = 0;
 
@@ -485,7 +485,7 @@ namespace Soulseek.Tests.Unit.Network
 
                     c.MessageRead += (sender, e) => readMessage = e.Message;
 
-                    Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+                    await Task.Delay(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
                     Assert.Equal(MessageCode.Peer.InfoRequest, new MessageReader<MessageCode.Peer>(readMessage).ReadCode());
                 }
@@ -494,7 +494,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadContinuously")]
         [Theory(DisplayName = "ReadContinuously raises MessageDataRead on read"), AutoData]
-        public void ReadContinuously_Raises_MessageDataRead_On_Read(string username, IPEndPoint endpoint, int code)
+        public async Task ReadContinuously_Raises_MessageDataRead_On_Read(string username, IPEndPoint endpoint, int code)
         {
             int callCount = 0;
 
@@ -538,7 +538,7 @@ namespace Soulseek.Tests.Unit.Network
                     // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
                     do
                     {
-                        Thread.Sleep(100);
+                        await Task.Delay(100);
                     }
                     while (readMessage == null && DateTime.UtcNow <= maxTime);
 
@@ -549,7 +549,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadContinuously")]
         [Theory(DisplayName = "ReadContinuously raises MessageReceived on read"), AutoData]
-        public void ReadContinuously_Raises_MessageReceived_On_Read(string username, IPEndPoint endpoint, int code)
+        public async Task ReadContinuously_Raises_MessageReceived_On_Read(string username, IPEndPoint endpoint, int code)
         {
             int callCount = 0;
 
@@ -588,7 +588,7 @@ namespace Soulseek.Tests.Unit.Network
 
                     c.MessageReceived += (sender, e) => readMessage = e.Code;
 
-                    Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+                    await Task.Delay(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
                     Assert.Equal(code, BitConverter.ToInt32(readMessage));
                 }
