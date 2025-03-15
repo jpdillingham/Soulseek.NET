@@ -260,7 +260,7 @@ namespace Soulseek.Messaging
             Position = position;
         }
 
-        private void Decompress(byte[] inData, out byte[] outData)
+        private static void Decompress(byte[] inData, out byte[] outData)
         {
             static void CopyStream(Stream input, Stream output)
             {
