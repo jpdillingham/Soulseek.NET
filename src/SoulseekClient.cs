@@ -3924,29 +3924,37 @@ namespace Soulseek
                 UpdateState(SearchStates.InProgress);
 
                 await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
+                UpdateState(SearchStates.Completed | search.State);
 
                 return new Search(search);
             }
             catch (OperationCanceledException)
             {
                 search.Complete(SearchStates.Cancelled);
+                UpdateState(SearchStates.Completed | SearchStates.Cancelled);
+
                 throw;
             }
             catch (TimeoutException)
             {
+                // note that a timeout in this context is a timeout writing the search request to the server;
+                // if a search 'times out' waiting for results, it completes successfully with the TimedOut state
+                // and does not throw
                 search.Complete(SearchStates.Errored);
+                UpdateState(SearchStates.Completed | SearchStates.Errored);
+
                 throw;
             }
             catch (Exception ex)
             {
                 search.Complete(SearchStates.Errored);
+                UpdateState(SearchStates.Completed | SearchStates.Errored);
+
                 throw new SoulseekClientException($"Failed to search for {query.SearchText} ({token}): {ex.Message}", ex);
             }
             finally
             {
                 Searches.TryRemove(search.Token, out _);
-
-                UpdateState(SearchStates.Completed | search.State);
                 search.Dispose();
             }
         }
