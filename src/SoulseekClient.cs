@@ -3975,7 +3975,6 @@ namespace Soulseek
             }
             finally
             {
-
                 Searches.TryRemove(search.Token, out _);
                 search.Dispose();
             }
