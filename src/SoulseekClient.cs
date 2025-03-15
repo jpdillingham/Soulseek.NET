@@ -518,6 +518,7 @@ namespace Soulseek
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private ITokenBucket DownloadTokenBucket { get; }
+        private SemaphoreSlim SearchSemaphore { get; }
         private SemaphoreSlim GlobalDownloadSemaphore { get; }
         private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
