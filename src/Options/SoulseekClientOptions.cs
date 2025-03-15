@@ -50,6 +50,7 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="maximumConcurrentSearches">The number of allowed concurrent searches.</param>
         /// <param name="maximumConcurrentUploads">The number of allowed concurrent uploads.</param>
         /// <param name="maximumUploadSpeed">The total maximum allowable upload speed, in kibibytes per second.</param>
         /// <param name="maximumConcurrentDownloads">The number of allowed concurrent downloads.</param>
@@ -105,6 +106,7 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
+            int maximumConcurrentSearches = 1,
             int maximumConcurrentUploads = 10,
             int maximumUploadSpeed = int.MaxValue,
             int maximumConcurrentDownloads = int.MaxValue,
@@ -147,6 +149,13 @@ namespace Soulseek
             if (DistributedChildLimit < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(distributedChildLimit), "Must be greater than or equal to zero");
+            }
+
+            MaximumConcurrentSearches = maximumConcurrentSearches;
+
+            if (MaximumConcurrentSearches < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maximumConcurrentSearches), "Must be greater than or equal to one");
             }
 
             MaximumConcurrentUploads = maximumConcurrentUploads;
@@ -281,6 +290,11 @@ namespace Soulseek
         ///     Gets the number of allowed concurrent downloads. (Default = int.MaxValue).
         /// </summary>
         public int MaximumConcurrentDownloads { get; }
+
+        /// <summary>
+        ///     Gets the number of allowed concurrent searches. (Default = 5).
+        /// </summary>
+        public int MaximumConcurrentSearches { get; }
 
         /// <summary>
         ///     Gets the number of allowed concurrent uploads. (Default = 10).
