@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -3903,33 +3903,51 @@ namespace Soulseek
 
             try
             {
-                var message = scope.Type switch
+                Diagnostic.Debug($"Attempting to acquire search semaphore for search '{query.SearchText}' ({SearchSemaphore.CurrentCount} left)");
+                UpdateState(SearchStates.Queued);
+
+                // obtain a semaphore, or wait until one becomes available. this is done as a protective measure
+                // against automation that may not think to do this, resulting in the server being bombarded by requests
+                await SearchSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Acquired search semaphore for search '{query.SearchText}'");
+
+                try
                 {
-                    SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
-                    SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
-                    SearchScopeType.Wishlist => new WishlistSearchRequest(search.SearchText, search.Token).ToByteArray(),
-                    _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
-                };
+                    var message = scope.Type switch
+                    {
+                        SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
+                        SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
+                        SearchScopeType.Wishlist => new WishlistSearchRequest(search.SearchText, search.Token).ToByteArray(),
+                        _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
+                    };
 
-                search.ResponseReceived = (response) =>
+                    search.ResponseReceived = (response) =>
+                    {
+                        responseHandler(response);
+
+                        var e = new SearchResponseReceivedEventArgs(response, new Search(search));
+                        options.ResponseReceived?.Invoke((e.Search, e.Response));
+                        SearchResponseReceived?.Invoke(this, e);
+                    };
+
+                    Searches.TryAdd(search.Token, search);
+                    UpdateState(SearchStates.Requested);
+
+                    await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
+                    UpdateState(SearchStates.InProgress);
+
+                    await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
+                    UpdateState(SearchStates.Completed | search.State);
+
+                    Diagnostic.Debug($"Search for '{query.SearchText}' completed: {search.State}");
+
+                    return new Search(search);
+                }
+                finally
                 {
-                    responseHandler(response);
-
-                    var e = new SearchResponseReceivedEventArgs(response, new Search(search));
-                    options.ResponseReceived?.Invoke((e.Search, e.Response));
-                    SearchResponseReceived?.Invoke(this, e);
-                };
-
-                Searches.TryAdd(search.Token, search);
-                UpdateState(SearchStates.Requested);
-
-                await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
-                UpdateState(SearchStates.InProgress);
-
-                await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
-                UpdateState(SearchStates.Completed | search.State);
-
-                return new Search(search);
+                    SearchSemaphore.Release(releaseCount: 1);
+                    Diagnostic.Debug($"Released search semaphore for search '{query.SearchText}'");
+                }
             }
             catch (OperationCanceledException)
             {
@@ -3957,6 +3975,7 @@ namespace Soulseek
             }
             finally
             {
+
                 Searches.TryRemove(search.Token, out _);
                 search.Dispose();
             }
