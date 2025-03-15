@@ -221,7 +221,7 @@ namespace Soulseek.Messaging
                 .WriteBytes(bytes);
         }
 
-        private static void Compress(byte[] inData, out byte[] outData)
+        private void Compress(byte[] inData, out byte[] outData)
         {
             static void CopyStream(Stream input, Stream output)
             {
