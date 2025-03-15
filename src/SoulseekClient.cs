@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -101,6 +101,8 @@ namespace Soulseek
         {
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
+
+            SearchSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentSearches, maxCount: Options.MaximumConcurrentSearches);
 
             GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentDownloads, maxCount: Options.MaximumConcurrentDownloads);
             GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
