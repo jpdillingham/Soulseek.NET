@@ -2012,7 +2012,7 @@ namespace Soulseek
                 }
                 finally
                 {
-                    listener.Stop();
+                    listener?.Stop();
                 }
             }
 
@@ -3958,7 +3958,7 @@ namespace Soulseek
             }
             catch (TimeoutException)
             {
-                // note that a timeout in this context is a timeout writing the search request to the server;
+                // note that a timeout in this context is a timeout writing the search request to the server.
                 // if a search 'times out' waiting for results, it completes successfully with the TimedOut state
                 // and does not throw
                 search.Complete(SearchStates.Errored);
