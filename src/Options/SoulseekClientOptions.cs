@@ -106,7 +106,7 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
-            int maximumConcurrentSearches = 1,
+            int maximumConcurrentSearches = 10,
             int maximumConcurrentUploads = 10,
             int maximumUploadSpeed = int.MaxValue,
             int maximumConcurrentDownloads = int.MaxValue,
