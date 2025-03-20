@@ -298,6 +298,28 @@ namespace Soulseek.Tests.Unit.Options
             Assert.IsType<ArgumentOutOfRangeException>(ex);
         }
 
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if MaxConcurrentSearches is negative")]
+        public void Throws_If_MaxConcurrentSearches_Is_Negative()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentSearches: -1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if MaxConcurrentSearches is zero")]
+        public void Throws_If_MaxConcurrentSearches_Is_Zero()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentSearches: 0));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
         [Trait("Category", "With")]
         [Fact(DisplayName = "Throws if patch is null")]
         public void Throws_If_Patch_Is_Null()
