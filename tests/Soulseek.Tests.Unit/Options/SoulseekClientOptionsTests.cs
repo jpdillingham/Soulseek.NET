@@ -36,6 +36,7 @@ namespace Soulseek.Tests.Unit.Options
             bool acceptDistributedChildren,
             int distributedChildLimit,
             bool enableUploadQueue,
+            int maximumConcurrentSearches,
             int maximumConcurrentUploads,
             int maximumUploadSpeed,
             int maximumConcurrentDownloads,
@@ -75,6 +76,7 @@ namespace Soulseek.Tests.Unit.Options
                 enableDistributedNetwork: enableDistributedNetwork,
                 acceptDistributedChildren: acceptDistributedChildren,
                 distributedChildLimit: distributedChildLimit,
+                maximumConcurrentSearches: maximumConcurrentSearches,
                 maximumConcurrentUploads: maximumConcurrentUploads,
                 maximumUploadSpeed: maximumUploadSpeed,
                 maximumConcurrentDownloads: maximumConcurrentDownloads,
@@ -107,6 +109,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(acceptDistributedChildren, o.AcceptDistributedChildren);
             Assert.Equal(distributedChildLimit, o.DistributedChildLimit);
             Assert.Equal(enableUploadQueue, o.EnableDistributedNetwork);
+            Assert.Equal(maximumConcurrentSearches, o.MaximumConcurrentSearches);
             Assert.Equal(maximumConcurrentUploads, o.MaximumConcurrentUploads);
             Assert.Equal(maximumUploadSpeed, o.MaximumUploadSpeed);
             Assert.Equal(maximumConcurrentDownloads, o.MaximumConcurrentDownloads);
@@ -293,6 +296,28 @@ namespace Soulseek.Tests.Unit.Options
         {
             SoulseekClientOptions x;
             var ex = Record.Exception(() => x = new SoulseekClientOptions(listenPort: 1023));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if MaxConcurrentSearches is negative")]
+        public void Throws_If_MaxConcurrentSearches_Is_Negative()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentSearches: -1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if MaxConcurrentSearches is zero")]
+        public void Throws_If_MaxConcurrentSearches_Is_Zero()
+        {
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(maximumConcurrentSearches: 0));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);

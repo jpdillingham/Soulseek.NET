@@ -102,6 +102,8 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
+            SearchSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentSearches, maxCount: Options.MaximumConcurrentSearches);
+
             GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentDownloads, maxCount: Options.MaximumConcurrentDownloads);
             GlobalUploadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentUploads, maxCount: Options.MaximumConcurrentUploads);
 
@@ -516,6 +518,7 @@ namespace Soulseek
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private ITokenBucket DownloadTokenBucket { get; }
+        private SemaphoreSlim SearchSemaphore { get; }
         private SemaphoreSlim GlobalDownloadSemaphore { get; }
         private SemaphoreSlim GlobalUploadSemaphore { get; }
         private IIOAdapter IOAdapter { get; set; } = new IOAdapter();
@@ -3900,53 +3903,79 @@ namespace Soulseek
 
             try
             {
-                var message = scope.Type switch
+                Diagnostic.Debug($"Attempting to acquire search semaphore for search '{query.SearchText}' ({SearchSemaphore.CurrentCount} left)");
+                UpdateState(SearchStates.Queued);
+
+                // obtain a semaphore, or wait until one becomes available. this is done as a protective measure
+                // against automation that may not think to do this, resulting in the server being bombarded by requests
+                await SearchSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Acquired search semaphore for search '{query.SearchText}'");
+
+                try
                 {
-                    SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
-                    SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
-                    SearchScopeType.Wishlist => new WishlistSearchRequest(search.SearchText, search.Token).ToByteArray(),
-                    _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
-                };
+                    var message = scope.Type switch
+                    {
+                        SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
+                        SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
+                        SearchScopeType.Wishlist => new WishlistSearchRequest(search.SearchText, search.Token).ToByteArray(),
+                        _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
+                    };
 
-                search.ResponseReceived = (response) =>
+                    search.ResponseReceived = (response) =>
+                    {
+                        responseHandler(response);
+
+                        var e = new SearchResponseReceivedEventArgs(response, new Search(search));
+                        options.ResponseReceived?.Invoke((e.Search, e.Response));
+                        SearchResponseReceived?.Invoke(this, e);
+                    };
+
+                    Searches.TryAdd(search.Token, search);
+                    UpdateState(SearchStates.Requested);
+
+                    await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
+                    UpdateState(SearchStates.InProgress);
+
+                    await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
+                    UpdateState(SearchStates.Completed | search.State);
+
+                    Diagnostic.Debug($"Search for '{query.SearchText}' completed: {search.State}");
+
+                    return new Search(search);
+                }
+                finally
                 {
-                    responseHandler(response);
-
-                    var e = new SearchResponseReceivedEventArgs(response, new Search(search));
-                    options.ResponseReceived?.Invoke((e.Search, e.Response));
-                    SearchResponseReceived?.Invoke(this, e);
-                };
-
-                Searches.TryAdd(search.Token, search);
-                UpdateState(SearchStates.Requested);
-
-                await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
-                UpdateState(SearchStates.InProgress);
-
-                await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
-
-                return new Search(search);
+                    SearchSemaphore.Release(releaseCount: 1);
+                    Diagnostic.Debug($"Released search semaphore for search '{query.SearchText}'");
+                }
             }
             catch (OperationCanceledException)
             {
                 search.Complete(SearchStates.Cancelled);
+                UpdateState(SearchStates.Completed | SearchStates.Cancelled);
+
                 throw;
             }
             catch (TimeoutException)
             {
+                // note that a timeout in this context is a timeout writing the search request to the server.
+                // if a search 'times out' waiting for results, it completes successfully with the TimedOut state
+                // and does not throw
                 search.Complete(SearchStates.Errored);
+                UpdateState(SearchStates.Completed | SearchStates.Errored);
+
                 throw;
             }
             catch (Exception ex)
             {
                 search.Complete(SearchStates.Errored);
+                UpdateState(SearchStates.Completed | SearchStates.Errored);
+
                 throw new SoulseekClientException($"Failed to search for {query.SearchText} ({token}): {ex.Message}", ex);
             }
             finally
             {
                 Searches.TryRemove(search.Token, out _);
-
-                UpdateState(SearchStates.Completed | search.State);
                 search.Dispose();
             }
         }

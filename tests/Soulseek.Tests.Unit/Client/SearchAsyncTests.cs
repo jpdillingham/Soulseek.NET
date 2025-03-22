@@ -585,12 +585,12 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ct = new CancellationToken(true);
+                var ct = new CancellationToken(canceled: true);
 
                 var ex = await Record.ExceptionAsync(() => s.SearchAsync(SearchQuery.FromText(searchText), SearchScope.Network, token, options, ct));
 
                 Assert.NotNull(ex);
-                Assert.IsType<OperationCanceledException>(ex);
+                Assert.IsAssignableFrom<OperationCanceledException>(ex);
             }
         }
 
