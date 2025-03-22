@@ -18,6 +18,7 @@
 namespace Soulseek
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
@@ -64,7 +65,7 @@ namespace Soulseek
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
         /// <param name="directoryContentsResolver">
-        ///     The delegate used to resolve the <see cref="Directory"/> for an incoming <see cref="FolderContentsRequest"/>.
+        ///     The delegate used to resolve the list of <see cref="Directory"/> for an incoming <see cref="FolderContentsRequest"/>.
         /// </param>
         /// <param name="userInfoResolver">The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.</param>
         /// <param name="enqueueDownload">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
@@ -99,7 +100,7 @@ namespace Soulseek
             Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
             ISearchResponseCache searchResponseCache = null,
             Func<string, IPEndPoint, Task<BrowseResponse>> browseResponseResolver = null,
-            Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResolver = null,
+            Func<string, IPEndPoint, int, string, Task<IEnumerable<Directory>>> directoryContentsResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownload = null,
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null)
@@ -184,7 +185,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate used to resolve the response for an incoming directory contents request.
         /// </summary>
-        public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResolver { get; }
+        public Func<string, IPEndPoint, int, string, Task<IEnumerable<Directory>>> DirectoryContentsResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed distributed children.
