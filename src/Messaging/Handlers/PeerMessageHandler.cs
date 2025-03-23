@@ -18,6 +18,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
@@ -210,7 +211,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.FolderContentsRequest:
                         var folderContentsRequest = FolderContentsRequest.FromByteArray(message);
-                        Directory outgoingFolderContents = null;
+                        IEnumerable<Directory> outgoingFolderContents = null;
 
                         try
                         {
@@ -227,7 +228,7 @@ namespace Soulseek.Messaging.Handlers
 
                         if (outgoingFolderContents != null)
                         {
-                            var folderContentsResponseMessage = new FolderContentsResponse(folderContentsRequest.Token, outgoingFolderContents);
+                            var folderContentsResponseMessage = new FolderContentsResponse(folderContentsRequest.Token, folderContentsRequest.DirectoryName, outgoingFolderContents);
 
                             await connection.WriteAsync(folderContentsResponseMessage).ConfigureAwait(false);
                             Diagnostic.Info($"Folder contents for {folderContentsRequest.DirectoryName} sent to {connection.Username}");
@@ -237,7 +238,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.FolderContentsResponse:
                         var folderContentsResponse = FolderContentsResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.FolderContentsResponse, connection.Username, folderContentsResponse.Token), folderContentsResponse.Directory);
+                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.FolderContentsResponse, connection.Username, folderContentsResponse.Token), folderContentsResponse.Directories);
                         break;
 
                     case MessageCode.Peer.InfoResponse:

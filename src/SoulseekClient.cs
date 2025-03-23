@@ -1509,7 +1509,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Directory> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<Directory>> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -3399,7 +3399,7 @@ namespace Soulseek
                         finally
                         {
 #if NETSTANDARD2_0
-                        outputStream?.Dispose();
+                            outputStream?.Dispose();
 #else
                             await outputStream.DisposeAsync().ConfigureAwait(false);
 #endif
@@ -3454,12 +3454,12 @@ namespace Soulseek
             }
         }
 
-        private async Task<Directory> GetDirectoryContentsInternalAsync(string username, string directoryName, int token, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<Directory>> GetDirectoryContentsInternalAsync(string username, string directoryName, int token, CancellationToken cancellationToken)
         {
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.FolderContentsResponse, username, token);
-                var contentsWait = Waiter.Wait<Directory>(waitKey, cancellationToken: cancellationToken);
+                var contentsWait = Waiter.Wait<IEnumerable<Directory>>(waitKey, cancellationToken: cancellationToken);
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
 
@@ -3468,7 +3468,7 @@ namespace Soulseek
 
                 var response = await contentsWait.ConfigureAwait(false);
 
-                return response;
+                return response.ToList().AsReadOnly();
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -4426,7 +4426,7 @@ namespace Soulseek
                     if (options.DisposeInputStreamOnCompletion && inputStream != null)
                     {
 #if NETSTANDARD2_0
-                    inputStream.Dispose();
+                        inputStream.Dispose();
 #else
                         await inputStream.DisposeAsync().ConfigureAwait(false);
 #endif

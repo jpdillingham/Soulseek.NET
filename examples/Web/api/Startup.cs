@@ -481,14 +481,24 @@ namespace WebAPI
         /// <param name="token">The unique token for the request, supplied by the requesting user.</param>
         /// <param name="directory">The requested directory.</param>
         /// <returns>A Task resolving an instance of Soulseek.Directory containing the contents of the requested directory.</returns>
-        private Task<Soulseek.Directory> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
+        private Task<IEnumerable<Soulseek.Directory>> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
         {
-            var result = new Soulseek.Directory(
-                directory.Replace("/", @"\"),
-                System.IO.Directory.GetFiles(directory)
+            static Soulseek.Directory MakeDirectory(string dir) => new Soulseek.Directory(
+                name: dir.Replace("/", @"\"),
+                fileList: System.IO.Directory.GetFiles(dir)
                     .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f))));
 
-            return Task.FromResult(result);
+            var list = new List<Soulseek.Directory>()
+            {
+                MakeDirectory(directory)
+            };
+
+            foreach (var subDirectory in System.IO.Directory.GetDirectories(directory))
+            {
+                list.Add(MakeDirectory(subDirectory));
+            }
+
+            return Task.FromResult(list.AsEnumerable());
         }
 
         private string UploadQueueMode = "FIFO";
