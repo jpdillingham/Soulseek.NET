@@ -1,4 +1,4 @@
-// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -3459,7 +3459,7 @@ namespace Soulseek
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.FolderContentsResponse, username, token);
-                var contentsWait = Waiter.Wait<IReadOnlyCollection<Directory>>(waitKey, cancellationToken: cancellationToken);
+                var contentsWait = Waiter.Wait<IEnumerable<Directory>>(waitKey, cancellationToken: cancellationToken);
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
 
@@ -3468,7 +3468,7 @@ namespace Soulseek
 
                 var response = await contentsWait.ConfigureAwait(false);
 
-                return response;
+                return response.ToList().AsReadOnly();
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
