@@ -18,6 +18,8 @@
 namespace Soulseek.Tests.Unit.Client
 {
     using System;
+    using System.Collections.Generic;
+
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -504,7 +506,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var searchResponseResolver = new Func<string, int, SearchQuery, Task<SearchResponse>>((s, i, q) => Task.FromResult<SearchResponse>(null));
             var browseResponseResolver = new Func<string, IPEndPoint, Task<BrowseResponse>>((s, i) => Task.FromResult<BrowseResponse>(null));
-            var directoryContentsResponseResolver = new Func<string, IPEndPoint, int, string, Task<Directory>>((s, i, ii, ss) => Task.FromResult<Directory>(null));
+            var directoryContentsResponseResolver = new Func<string, IPEndPoint, int, string, Task<IEnumerable<Directory>>>((s, i, ii, ss) => Task.FromResult<IEnumerable<Directory>>(null));
             var userInfoResponseResolver = new Func<string, IPEndPoint, Task<UserInfo>>((s, i) => Task.FromResult<UserInfo>(null));
             var enqueueDownloadAction = new Func<string, IPEndPoint, string, Task>((s, i, ss) => Task.CompletedTask);
             var placeInQueueResponseResolver = new Func<string, IPEndPoint, string, Task<int?>>((s, i, ss) => Task.FromResult<int?>(0));

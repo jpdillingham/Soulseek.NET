@@ -35,10 +35,12 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Given_Data(int token, Directory dir)
         {
-            var a = new FolderContentsResponse(token, dir);
+            var dirList = new List<Directory>() { dir };
+            var a = new FolderContentsResponse(token, directoryName: dir.Name, directories: dirList);
 
             Assert.Equal(token, a.Token);
-            Assert.Equal(dir, a.Directory);
+            Assert.Equal(dir.Name, a.DirectoryName);
+            Assert.Equal(dirList, a.Directories);
         }
 
         [Trait("Category", "Parse")]
@@ -94,8 +96,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
             Assert.Equal(token, r.Token);
-            Assert.Equal(dirname, r.Directory.Name);
-            Assert.Equal(0, r.Directory.FileCount);
+            Assert.Equal(dirname, r.Directories.First().Name);
+            Assert.Equal(0, r.Directories.First().FileCount);
         }
 
         [Trait("Category", "Parse")]
@@ -145,11 +147,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
 
-            Assert.Equal(dirname, r.Directory.Name);
-            Assert.Equal(1, r.Directory.FileCount);
-            Assert.Single(r.Directory.Files);
+            Assert.Equal(dirname, r.Directories.First().Name);
+            Assert.Equal(1, r.Directories.First().FileCount);
+            Assert.Single(r.Directories.First().Files);
 
-            var f = r.Directory.Files.ToList();
+            var f = r.Directories.First().Files.ToList();
 
             Assert.Equal(0x0, f[0].Code);
             Assert.Equal("foo", f[0].Filename);
@@ -184,7 +186,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
 
-            var d = r.Directory;
+            var d = r.Directories.First();
 
             Assert.Equal(dir.Name, d.Name);
             Assert.Equal(dir.FileCount, d.FileCount);
@@ -223,7 +225,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             var dir = new Directory(dirname, list);
 
-            var r = new FolderContentsResponse(token, dir);
+            var r = new FolderContentsResponse(token, dirname, new List<Directory>() { dir });
 
             var bytes = r.ToByteArray();
 

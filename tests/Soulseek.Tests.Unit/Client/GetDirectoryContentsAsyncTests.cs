@@ -18,6 +18,8 @@
 namespace Soulseek.Tests.Unit.Client
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -114,8 +116,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                Directory dir = null;
-                var ex = await Record.ExceptionAsync(async () => dir = await s.GetDirectoryContentsAsync(username, directory));
+                IEnumerable<Directory> dirs = null;
+                var ex = await Record.ExceptionAsync(async () => dirs = await s.GetDirectoryContentsAsync(username, directory));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -150,8 +152,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                Directory dir = null;
-                var ex = await Record.ExceptionAsync(async () => dir = await s.GetDirectoryContentsAsync(username, directory));
+                IEnumerable<Directory> dirs = null;
+                var ex = await Record.ExceptionAsync(async () => dirs = await s.GetDirectoryContentsAsync(username, directory));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -173,8 +175,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                Directory dir = null;
-                var ex = await Record.ExceptionAsync(async () => dir = await s.GetDirectoryContentsAsync(username, directory));
+                IEnumerable<Directory> dirs = null;
+                var ex = await Record.ExceptionAsync(async () => dirs = await s.GetDirectoryContentsAsync(username, directory));
 
                 Assert.NotNull(ex);
                 Assert.IsType<UserOfflineException>(ex);
@@ -209,8 +211,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                Directory dir = null;
-                var ex = await Record.ExceptionAsync(async () => dir = await s.GetDirectoryContentsAsync(username, directory));
+                IEnumerable<Directory> dirs = null;
+                var ex = await Record.ExceptionAsync(async () => dirs = await s.GetDirectoryContentsAsync(username, directory));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -222,10 +224,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetDirectoryContentsAsync returns expected Directory"), AutoData]
         public async Task GetDirectoryContentsAsync_Returns_Expected_Directory(string username, string directory)
         {
-            var result = new Directory(directory);
+            var result = new List<Directory>() { new Directory(directory) }.AsEnumerable();
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<Directory>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<IEnumerable<Directory>>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
@@ -254,10 +256,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetDirectoryContentsAsync uses given token"), AutoData]
         public async Task GetDirectoryContentsAsync_Uses_Given_Token(string username, string directory, int token)
         {
-            var result = new Directory(directory);
+            var result = new List<Directory>() { new Directory(directory) }.AsEnumerable();
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<Directory>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<IEnumerable<Directory>>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
@@ -293,10 +295,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetDirectoryContentsAsync uses given CancellationToken"), AutoData]
         public async Task GetDirectoryContentsAsync_Uses_Given_CancellationToken(string username, string directory, CancellationToken cancellationToken)
         {
-            var result = new Directory(directory);
+            var result = new List<Directory>() { new Directory(directory) }.AsEnumerable();
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<Directory>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<IEnumerable<Directory>>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));

@@ -302,11 +302,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
-            var msg = new FolderContentsResponse(token, new Directory(dirname)).ToByteArray();
+            var msg = new FolderContentsResponse(token, dirname, new List<Directory>() { new Directory(dirname) }).ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, msg);
 
-            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.FolderContentsResponse, username, token), It.IsAny<Directory>()), Times.Once);
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.FolderContentsResponse, username, token), It.IsAny<IEnumerable<Directory>>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -675,8 +675,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var dir = new Directory(dirname, files);
 
-            var response = new FolderContentsResponse(token, dir);
-            var options = new SoulseekClientOptions(directoryContentsResolver: (u, i, t, d) => Task.FromResult(dir));
+            var response = new FolderContentsResponse(token, dirname, new List<Directory>() { dir });
+            var options = new SoulseekClientOptions(directoryContentsResolver: (u, i, t, d) => Task.FromResult(new List<Directory>() { dir }.AsEnumerable()));
 
             var (handler, mocks) = GetFixture(options: options);
 
