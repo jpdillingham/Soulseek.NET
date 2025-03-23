@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -3399,7 +3399,7 @@ namespace Soulseek
                         finally
                         {
 #if NETSTANDARD2_0
-                        outputStream?.Dispose();
+                            outputStream?.Dispose();
 #else
                             await outputStream.DisposeAsync().ConfigureAwait(false);
 #endif
@@ -4426,7 +4426,7 @@ namespace Soulseek
                     if (options.DisposeInputStreamOnCompletion && inputStream != null)
                     {
 #if NETSTANDARD2_0
-                    inputStream.Dispose();
+                        inputStream.Dispose();
 #else
                         await inputStream.DisposeAsync().ConfigureAwait(false);
 #endif
