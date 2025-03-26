@@ -3903,6 +3903,9 @@ namespace Soulseek
 
             try
             {
+                Searches.TryAdd(search.Token, search);
+                UpdateState(SearchStates.Requested);
+
                 Diagnostic.Debug($"Attempting to acquire search semaphore for search '{query.SearchText}' ({SearchSemaphore.CurrentCount} left)");
                 UpdateState(SearchStates.Queued);
 
@@ -3929,9 +3932,6 @@ namespace Soulseek
                         options.ResponseReceived?.Invoke((e.Search, e.Response));
                         SearchResponseReceived?.Invoke(this, e);
                     };
-
-                    Searches.TryAdd(search.Token, search);
-                    UpdateState(SearchStates.Requested);
 
                     await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
                     UpdateState(SearchStates.InProgress);
