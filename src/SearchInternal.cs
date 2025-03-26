@@ -53,7 +53,6 @@ namespace Soulseek
             };
 
             SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.TimedOut); };
-            SearchTimeoutTimer.Reset();
         }
 
         /// <summary>
