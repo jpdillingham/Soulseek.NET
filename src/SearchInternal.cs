@@ -87,9 +87,9 @@ namespace Soulseek
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets or sets the state of the search.
+        ///     Gets the state of the search.
         /// </summary>
-        public SearchStates State { get; set; } = SearchStates.None;
+        public SearchStates State { get; private set; } = SearchStates.None;
 
         /// <summary>
         ///     Gets the unique identifier for the search.
@@ -142,6 +142,22 @@ namespace Soulseek
                 }
 
                 Disposed = true;
+            }
+        }
+
+        /// <summary>
+        ///     Sets the Search <see cref="State"/>.
+        /// </summary>
+        /// <param name="state">The state to which the Search is to be set.</param>
+        public void SetState(SearchStates state)
+        {
+            var previousState = State;
+            State = state;
+
+            // ensure the timeout timer is reset only one time, immediately after the search request is sent to the server.
+            if (previousState != SearchStates.InProgress && State == SearchStates.InProgress)
+            {
+                SearchTimeoutTimer.Reset();
             }
         }
 

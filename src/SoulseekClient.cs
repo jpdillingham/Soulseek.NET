@@ -3894,7 +3894,7 @@ namespace Soulseek
 
             void UpdateState(SearchStates state)
             {
-                search.State = state;
+                search.SetState(state);
                 var e = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
                 lastState = state;
                 options.StateChanged?.Invoke((e.PreviousState, e.Search));
