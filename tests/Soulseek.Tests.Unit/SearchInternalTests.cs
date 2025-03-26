@@ -550,7 +550,43 @@ namespace Soulseek.Tests.Unit
             }
         }
 
-        private List<File> DuplicateFile(File file, int count)
+        [Trait("Category", "Timer")]
+        [Fact(DisplayName = "Timer is disabled initially")]
+        public void Timer_Disabled_Initially()
+        {
+            using (var s = new SearchInternal("foo", 1))
+            {
+                var timer = s.GetProperty<System.Timers.Timer>("SearchTimeoutTimer");
+
+                Assert.False(timer.Enabled);
+            }
+        }
+
+        [Trait("Category", "Timer")]
+        [Fact(DisplayName = "Timer starts on transition to InProgress")]
+        public void Timer_Starts_On_InProgress_Transition()
+        {
+            using (var s = new SearchInternal("foo", 1))
+            {
+                var timer = s.GetProperty<System.Timers.Timer>("SearchTimeoutTimer");
+
+                Assert.False(timer.Enabled);
+
+                s.SetState(SearchStates.Requested);
+
+                Assert.False(timer.Enabled);
+
+                s.SetState(SearchStates.Queued);
+
+                Assert.False(timer.Enabled);
+
+                s.SetState(SearchStates.InProgress);
+
+                Assert.True(timer.Enabled);
+            }
+        }
+
+        private static List<File> DuplicateFile(File file, int count)
         {
             var list = new List<File>();
 
