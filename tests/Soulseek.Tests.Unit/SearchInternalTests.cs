@@ -153,10 +153,8 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "TryAddResponse ignores response when search is not in progress")]
         public void TryAddResponse_Ignores_Response_When_Search_Is_Not_In_Progress()
         {
-            var s = new SearchInternal("foo", 42)
-            {
-                State = SearchStates.Completed,
-            };
+            var s = new SearchInternal("foo", 42);
+            s.SetState(SearchStates.Completed);
 
             s.TryAddResponse(new SearchResponse("bar", 42, true, 1, 1, null));
 
@@ -172,10 +170,8 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "TryAddResponse ignores response when token does not match")]
         public void TryAddResponse_Ignores_Response_When_Token_Does_Not_Match()
         {
-            var s = new SearchInternal("foo", 42)
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", 42);
+            s.SetState(SearchStates.InProgress);
 
             s.TryAddResponse(new SearchResponse("bar", 24, true, 1, 1, null));
 
@@ -191,10 +187,8 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "TryAddResponse ignores response when response criteria not met")]
         public void TryAddResponse_Ignores_Response_When_Response_Criteria_Not_Met()
         {
-            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1));
+            s.SetState(SearchStates.InProgress);
 
             s.TryAddResponse(new SearchResponse("bar", 42, true, 1, 1, null));
 
@@ -212,10 +206,8 @@ namespace Soulseek.Tests.Unit
         {
             bool Filter(SearchResponse response) => false;
 
-            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 0, responseFilter: Filter))
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 0, responseFilter: Filter));
+            s.SetState(SearchStates.InProgress);
 
             s.TryAddResponse(new SearchResponse("bar", 42, true, 1, 1, null));
 
@@ -233,10 +225,8 @@ namespace Soulseek.Tests.Unit
         {
             bool Filter(File file) => false;
 
-            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1, fileFilter: Filter))
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1, fileFilter: Filter));
+            s.SetState(SearchStates.InProgress);
 
             s.TryAddResponse(new SearchResponse("bar", 42, true, 1, 1, new List<File>() { new File(1, "a", 1, "b") }));
 
@@ -254,10 +244,8 @@ namespace Soulseek.Tests.Unit
         {
             bool Filter(File file) => false;
 
-            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1, fileFilter: Filter))
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1, fileFilter: Filter));
+            s.SetState(SearchStates.InProgress);
 
             s.TryAddResponse(new SearchResponse("bar", 42, true, 1, 1, null, lockedFileList: new List<File>() { new File(1, "a", 1, "b") }));
 
@@ -273,10 +261,8 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
         public void TryAddResponse_Adds_Response(string username, int token, File file)
         {
-            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1));
+            s.SetState(SearchStates.InProgress);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.SearchResponse)
@@ -315,10 +301,8 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryAddResponse swallows exceptions"), AutoData]
         public void TryAddResponse_Swallows_Exceptions(string username, int token, File file)
         {
-            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1));
+            s.SetState(SearchStates.InProgress);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.SearchResponse)
@@ -355,10 +339,8 @@ namespace Soulseek.Tests.Unit
                     minimumResponseFileCount: 1,
                     fileFilter: (f) => false);
 
-            var s = new SearchInternal("foo", token, options)
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", token, options);
+            s.SetState(SearchStates.InProgress);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.SearchResponse)
@@ -400,10 +382,8 @@ namespace Soulseek.Tests.Unit
                     minimumResponseFileCount: 1,
                     responseFilter: (r) => false);
 
-            var s = new SearchInternal("foo", token, options)
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", token, options);
+            s.SetState(SearchStates.InProgress);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.SearchResponse)
@@ -445,10 +425,8 @@ namespace Soulseek.Tests.Unit
                     minimumResponseFileCount: 1,
                     fileLimit: 1);
 
-            var s = new SearchInternal("foo", token, options)
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", token, options);
+            s.SetState(SearchStates.InProgress);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.SearchResponse)
@@ -487,10 +465,8 @@ namespace Soulseek.Tests.Unit
                     responseLimit: 1,
                     fileLimit: 10000000);
 
-            var s = new SearchInternal("foo", token, options)
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", token, options);
+            s.SetState(SearchStates.InProgress);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.SearchResponse)
@@ -531,10 +507,8 @@ namespace Soulseek.Tests.Unit
         {
             SearchResponse addResponse = null;
 
-            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
-            {
-                State = SearchStates.InProgress,
-            };
+            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1));
+            s.SetState(SearchStates.InProgress);
 
             s.ResponseReceived += (response) => addResponse = response;
 
@@ -576,7 +550,43 @@ namespace Soulseek.Tests.Unit
             }
         }
 
-        private List<File> DuplicateFile(File file, int count)
+        [Trait("Category", "Timer")]
+        [Fact(DisplayName = "Timer is disabled initially")]
+        public void Timer_Disabled_Initially()
+        {
+            using (var s = new SearchInternal("foo", 1))
+            {
+                var timer = s.GetProperty<System.Timers.Timer>("SearchTimeoutTimer");
+
+                Assert.False(timer.Enabled);
+            }
+        }
+
+        [Trait("Category", "Timer")]
+        [Fact(DisplayName = "Timer starts on transition to InProgress")]
+        public void Timer_Starts_On_InProgress_Transition()
+        {
+            using (var s = new SearchInternal("foo", 1))
+            {
+                var timer = s.GetProperty<System.Timers.Timer>("SearchTimeoutTimer");
+
+                Assert.False(timer.Enabled);
+
+                s.SetState(SearchStates.Requested);
+
+                Assert.False(timer.Enabled);
+
+                s.SetState(SearchStates.Queued);
+
+                Assert.False(timer.Enabled);
+
+                s.SetState(SearchStates.InProgress);
+
+                Assert.True(timer.Enabled);
+            }
+        }
+
+        private static List<File> DuplicateFile(File file, int count)
         {
             var list = new List<File>();
 

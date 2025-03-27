@@ -3894,7 +3894,7 @@ namespace Soulseek
 
             void UpdateState(SearchStates state)
             {
-                search.State = state;
+                search.SetState(state);
                 var e = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
                 lastState = state;
                 options.StateChanged?.Invoke((e.PreviousState, e.Search));
@@ -3903,7 +3903,10 @@ namespace Soulseek
 
             try
             {
-                Diagnostic.Debug($"Attempting to acquire search semaphore for search '{query.SearchText}' ({SearchSemaphore.CurrentCount} left)");
+                Searches.TryAdd(search.Token, search);
+                UpdateState(SearchStates.Requested);
+
+                Diagnostic.Debug($"Attempting to acquire search semaphore for search '{query.SearchText}' ({SearchSemaphore.CurrentCount} available)");
                 UpdateState(SearchStates.Queued);
 
                 // obtain a semaphore, or wait until one becomes available. this is done as a protective measure
@@ -3930,9 +3933,6 @@ namespace Soulseek
                         SearchResponseReceived?.Invoke(this, e);
                     };
 
-                    Searches.TryAdd(search.Token, search);
-                    UpdateState(SearchStates.Requested);
-
                     await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
                     UpdateState(SearchStates.InProgress);
 
@@ -3946,7 +3946,7 @@ namespace Soulseek
                 finally
                 {
                     SearchSemaphore.Release(releaseCount: 1);
-                    Diagnostic.Debug($"Released search semaphore for search '{query.SearchText}'");
+                    Diagnostic.Debug($"Released search semaphore for search '{query.SearchText}' ({SearchSemaphore.CurrentCount} available)");
                 }
             }
             catch (OperationCanceledException)

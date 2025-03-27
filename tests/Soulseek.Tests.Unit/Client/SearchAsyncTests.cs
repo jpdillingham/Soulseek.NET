@@ -491,11 +491,10 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1);
 
-            using (var search = new SearchInternal(searchText, token, options)
+            using (var search = new SearchInternal(searchText, token, options))
             {
-                State = SearchStates.InProgress,
-            })
-            {
+                search.SetState(SearchStates.InProgress);
+
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), null))
                     .Returns(Task.CompletedTask);
@@ -643,11 +642,10 @@ namespace Soulseek.Tests.Unit.Client
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1, stateChanged: (e) => fired = true);
 
-            using (var search = new SearchInternal(searchText, token, options)
+            using (var search = new SearchInternal(searchText, token, options))
             {
-                State = SearchStates.InProgress,
-            })
-            {
+                search.SetState(SearchStates.InProgress);
+
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), null))
                     .Returns(Task.CompletedTask);
@@ -672,11 +670,10 @@ namespace Soulseek.Tests.Unit.Client
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1);
 
-            using (var search = new SearchInternal(searchText, token, options)
+            using (var search = new SearchInternal(searchText, token, options))
             {
-                State = SearchStates.InProgress,
-            })
-            {
+                search.SetState(SearchStates.InProgress);
+
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), null))
                     .Returns(Task.CompletedTask);

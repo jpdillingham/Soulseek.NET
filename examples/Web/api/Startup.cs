@@ -413,6 +413,11 @@ namespace WebAPI
                 // Console.WriteLine($"[SEARCH REQUEST] {args.Username} requesting '{args.Query}'");
             };
 
+            Client.SearchStateChanged += (e, args) =>
+            {
+                Console.WriteLine($"[SEARCH STATE CHANGED] {args.Search.SearchText} {args.PreviousState} => {args.Search.State}");
+            };
+
             Client.SearchResponseDelivered += (e, args) =>
             {
                 Console.WriteLine($"[SEARCH RESPONSE DELIVERY] {args.SearchResponse.FileCount + args.SearchResponse.LockedFileCount} files to {args.Username} for query '{args.Query}'");

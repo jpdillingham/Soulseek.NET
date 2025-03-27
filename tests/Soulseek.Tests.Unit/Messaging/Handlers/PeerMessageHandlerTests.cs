@@ -439,10 +439,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             using (var search = new SearchInternal("foo", token)
             {
-                State = SearchStates.InProgress,
                 ResponseReceived = (r) => responses.Add(r),
             })
             {
+                search.SetState(SearchStates.InProgress);
                 mocks.Searches.TryAdd(token, search);
 
                 handler.HandleMessageRead(mocks.PeerConnection.Object, msg);
