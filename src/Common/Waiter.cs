@@ -349,8 +349,11 @@ namespace Soulseek
                 {
                     if (disposing)
                     {
+                        // this will be null if the wait is disposed before Register() is called,
+                        // which can happen if a transfer fails very fast (e.g. if the remote client rejects it)
+                        TimeoutTokenSource?.Dispose();
+
                         CancellationTokenRegistration.Dispose();
-                        TimeoutTokenSource.Dispose();
                         TimeoutTokenRegistration.Dispose();
                     }
 
