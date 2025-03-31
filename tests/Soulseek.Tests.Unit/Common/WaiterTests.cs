@@ -562,5 +562,28 @@ namespace Soulseek.Tests.Unit
                 }
             }
         }
+
+        [Trait("Category", "PendingWait")]
+        [Fact(DisplayName = "PendingWait Dispose() does not throw if not Registered")]
+        public void PendingWait_Dispose_Does_Not_Throw_If_Not_Registered()
+        {
+            var p = new PendingWait(new TaskCompletionSource(), 99999, cancelAction: () => { }, timeoutAction: () => { }, CancellationToken.None);
+
+            var ex = Record.Exception(() => p.Dispose());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "PendingWait")]
+        [Fact(DisplayName = "PendingWait Dispose() does not throw if Registered")]
+        public void PendingWait_Dispose_Does_Not_Throw_If_Registered()
+        {
+            var p = new PendingWait(new TaskCompletionSource(), 99999, cancelAction: () => { }, timeoutAction: () => { }, CancellationToken.None);
+            p.Register();
+
+            var ex = Record.Exception(() => p.Dispose());
+
+            Assert.Null(ex);
+        }
     }
 }
