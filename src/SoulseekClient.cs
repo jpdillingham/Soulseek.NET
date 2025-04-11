@@ -3459,7 +3459,7 @@ namespace Soulseek
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.FolderContentsResponse, username, token);
-                var contentsWait = Waiter.Wait<IEnumerable<Directory>>(waitKey, cancellationToken: cancellationToken);
+                var contentsWait = Waiter.Wait<IReadOnlyCollection<Directory>>(waitKey, cancellationToken: cancellationToken);
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
 

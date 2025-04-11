@@ -585,5 +585,25 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(ex);
         }
+
+        [Trait("Category", "Exception")]
+        [Fact(DisplayName = "Thorws SoulseekClientException given type mismatch")]
+        public void Throws_SoulseekClientException_Given_Type_Mismatch()
+        {
+            using (var waiter = new Waiter())
+            {
+                var key = new WaitKey(MessageCode.Server.Login);
+
+                // wait for a Guid
+                _ = waiter.Wait<Guid>(key);
+
+                // complete with an int
+                var ex = Record.Exception(() => waiter.Complete<int>(key, 42));
+
+                Assert.NotNull(ex);
+                Assert.IsType<SoulseekClientException>(ex);
+                Assert.Contains("mismatch", ex.Message);
+            }
+        }
     }
 }
