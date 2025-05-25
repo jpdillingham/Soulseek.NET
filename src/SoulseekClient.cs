@@ -2727,10 +2727,20 @@ namespace Soulseek
                     Listener?.Stop();
 
                     PeerConnectionManager.Dispose();
-
                     DistributedConnectionManager.Dispose();
 
                     Waiter.Dispose();
+
+                    UploadTokenBucket.Dispose();
+                    DownloadTokenBucket.Dispose();
+
+                    StateSyncRoot.Dispose();
+                    UploadSemaphoreSyncRoot.Dispose();
+                    UserEndPointSemaphoreSyncRoot.Dispose();
+
+                    SearchSemaphore.Dispose();
+                    GlobalUploadSemaphore.Dispose();
+                    GlobalDownloadSemaphore.Dispose();
 
                     ServerConnection?.Dispose();
 
