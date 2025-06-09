@@ -37,6 +37,19 @@ namespace Soulseek.Diagnostics
         public static void Init(IDiagnosticFactory factory) => Factory = factory;
 
         /// <summary>
+        ///     Creates a <see cref="DiagnosticLevel.Trace"/> diagnostic message.
+        /// </summary>
+        /// <param name="message">The desired message.</param>
+        public static void Trace(string message) => Factory?.Trace(message);
+
+        /// <summary>
+        ///     Creates a <see cref="DiagnosticLevel.Trace"/> diagnostic message.
+        /// </summary>
+        /// <param name="message">The desired message.</param>
+        /// <param name="exception">An optional Exception.</param>
+        public static void Trace(string message, Exception exception) => Factory?.Trace(message, exception);
+
+        /// <summary>
         ///     Creates a <see cref="DiagnosticLevel.Debug"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>

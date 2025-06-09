@@ -34,6 +34,45 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(handler, d.GetProperty<Action<DiagnosticEventArgs>>("EventHandler"));
         }
 
+        [Trait("Category", "Trace")]
+        [Theory(DisplayName = "Raises event on trace"), AutoData]
+        public void Raises_Event_On_Trace(string message)
+        {
+            DiagnosticEventArgs e = null;
+
+            var d = new DiagnosticFactory(DiagnosticLevel.Trace, (args) =>
+            {
+                e = args;
+            });
+
+            d.Trace(message);
+
+            Assert.Equal(message, e.Message);
+            Assert.Equal(DiagnosticLevel.Trace, e.Level);
+            Assert.False(e.IncludesException);
+            Assert.Null(e.Exception);
+        }
+
+        [Trait("Category", "Trace")]
+        [Theory(DisplayName = "Raises event on trace with Exception"), AutoData]
+        public void Raises_Event_On_Trace_With_Exception(string message, Exception ex)
+        {
+            DiagnosticEventArgs e = null;
+
+            var d = new DiagnosticFactory(DiagnosticLevel.Trace, (args) =>
+            {
+                e = args;
+            });
+
+            d.Trace(message, ex);
+
+            Assert.Equal(message, e.Message);
+            Assert.Equal(ex, e.Exception);
+            Assert.Equal(DiagnosticLevel.Trace, e.Level);
+            Assert.True(e.IncludesException);
+            Assert.NotNull(e.Exception);
+        }
+
         [Trait("Category", "Debug")]
         [Theory(DisplayName = "Raises event on debug"), AutoData]
         public void Raises_Event_On_Debug(string message)
