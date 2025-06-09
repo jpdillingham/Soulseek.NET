@@ -36,6 +36,8 @@ namespace Soulseek.Tests.Unit
 
             var ex = Record.Exception(() =>
             {
+                GlobalDiagnostic.Trace("asdf");
+                GlobalDiagnostic.Trace("asdf", new Exception("xyz"));
                 GlobalDiagnostic.Debug("foo");
                 GlobalDiagnostic.Debug("foo", new Exception("bar"));
                 GlobalDiagnostic.Info("asdfasdfa");
@@ -50,12 +52,16 @@ namespace Soulseek.Tests.Unit
 
             GlobalDiagnostic.Init(f.Object);
 
+            GlobalDiagnostic.Trace("asdf");
+            GlobalDiagnostic.Trace("asdf", ex);
             GlobalDiagnostic.Debug("foo");
             GlobalDiagnostic.Debug("foo", ex);
             GlobalDiagnostic.Info("asdfasdfa");
             GlobalDiagnostic.Warning("warn");
             GlobalDiagnostic.Warning("asdf", ex);
 
+            f.Verify(m => m.Trace("asdf"), Times.Exactly(1));
+            f.Verify(m => m.Trace("asdf", ex), Times.Exactly(1));
             f.Verify(m => m.Debug("foo"), Times.Exactly(1));
             f.Verify(m => m.Debug("foo", ex), Times.Exactly(1));
             f.Verify(m => m.Info("asdfasdfa"), Times.Exactly(1));
