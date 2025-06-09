@@ -17,13 +17,14 @@
 
 namespace Soulseek
 {
+    using System;
     using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
     ///     Implements the 'token bucket' or 'leaky bucket' rate limiting algorithm.
     /// </summary>
-    internal interface ITokenBucket
+    internal interface ITokenBucket : IDisposable
     {
         /// <summary>
         ///     Gets the bucket capacity.

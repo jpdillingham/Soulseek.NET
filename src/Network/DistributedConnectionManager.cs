@@ -825,6 +825,10 @@ namespace Soulseek.Network
                 {
                     WatchdogTimer.Dispose();
                     StatusDebounceTimer.Dispose();
+
+                    StatusSyncRoot.Dispose();
+                    ParentSyncRoot.Dispose();
+
                     RemoveAndDisposeAll();
                 }
 

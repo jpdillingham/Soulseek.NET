@@ -574,6 +574,9 @@ namespace Soulseek.Network.Tcp
                     WatchdogTimer.Dispose();
                     Stream?.Dispose();
                     TcpClient?.Dispose();
+
+                    WriteSemaphore?.Dispose();
+                    WriteQueueSemaphore?.Dispose();
                 }
 
                 Disposed = true;
