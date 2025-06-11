@@ -3386,9 +3386,17 @@ namespace Soulseek
 
                 long finalStreamPosition = 0;
 
+                // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
+                // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
+                // just assume the final size is the requested size of the file and move on
                 try
                 {
-                    finalStreamPosition = outputStream?.Position ?? 0;
+                    finalStreamPosition = outputStream?.Position ?? size ?? 0;
+                }
+                catch (Exception)
+                {
+                    finalStreamPosition = size ?? 0;
+                }
 
                     if (options.DisposeOutputStreamOnCompletion && outputStream != null)
                     {
@@ -4419,9 +4427,17 @@ namespace Soulseek
 
                 long finalStreamPosition = 0;
 
+                // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
+                // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
+                // just assume the final size is the requested size of the file and move on
                 try
                 {
-                    finalStreamPosition = inputStream?.Position ?? 0;
+                    finalStreamPosition = inputStream?.Position ?? size;
+                }
+                catch (Exception)
+                {
+                    finalStreamPosition = size;
+                }
 
                     if (options.DisposeInputStreamOnCompletion && inputStream != null)
                     {
