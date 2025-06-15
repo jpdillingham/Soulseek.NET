@@ -2156,6 +2156,63 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        [Trait("Category", "DownloadToStreamAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync throws DuplicateTransferException when failing to insert UniqueKeyDictionary"), AutoData]
+        public async Task DownloadToStreamAsync_Throws_DuplicateTransferException_When_Failing_To_Insert_UniqueKeyDictionary(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var waiter = new Mock<IWaiter>();
+            var conn = new Mock<IMessageConnection>();
+            var connManager = new Mock<IPeerConnectionManager>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                tracked.TryAdd($"{TransferDirection.Download}:{username}:{filename}", true);
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, new TransferOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadToStreamAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync throws DuplicateTransferException when failing to insert DownloadDictionary"), AutoData]
+        public async Task DownloadToStreamAsync_Throws_DuplicateTransferException_When_Failing_To_Insert_DownloadDictionary(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var waiter = new Mock<IWaiter>();
+            var conn = new Mock<IMessageConnection>();
+            var connManager = new Mock<IPeerConnectionManager>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(token, new TransferInternal(TransferDirection.Download, "foo", "bar", token));
+
+                s.SetProperty("DownloadDictionary", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, new TransferOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+
+                // ensure the unique key is released
+                Assert.Empty(tracked);
+            }
+        }
+
         [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync throws TimeoutException on unexpected transfer connection timeout"), AutoData]
         public async Task DownloadToStreamAsync_Throws_TimeoutException_On_Unexpected_Transfer_Connection_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
