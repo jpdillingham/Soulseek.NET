@@ -511,6 +511,7 @@ namespace Soulseek
         internal virtual IMessageConnection ServerConnection { get; private set; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, TransferInternal> UploadDictionary { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
+        internal virtual ConcurrentDictionary<string, bool> UniqueKeyDictionary { get; set; } = new ConcurrentDictionary<string, bool>();
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
