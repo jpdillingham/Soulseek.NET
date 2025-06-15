@@ -1184,6 +1184,61 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync does not throw and produces a warning diagnostic if stream disposal fails"), AutoData]
+        public async Task UploadFromStreamAsync_Does_Not_Throw_And_Produces_Warning_Diagnostic_If_Stream_Disposal_Fails(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            try
+            {
+                using (var stream = new UnDisposableStream())
+                using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, diagnosticFactory: diagnostic.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var txoptions = new TransferOptions(disposeInputStreamOnCompletion: true);
+
+                    var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
+
+                    Assert.Null(ex);
+
+                    diagnostic.Verify(m => m.Warning(It.Is<string>(str => str.ContainsInsensitive("failed to finalize input stream")), It.IsAny<Exception>()), Times.Once);
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // noop; this is expected because UnDisposableStream throws when dispose is called
+            }
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync does not dispose stream given false dispose option flag"), AutoData]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task UploadFromStreamAsync_Does_Not_Dispose_Stream_Given_False_Dispose_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
@@ -1230,6 +1285,58 @@ namespace Soulseek.Tests.Unit.Client
                 });
 
                 Assert.Null(ex2);
+            }
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync does not throw if stream Position getter throws in finally block"), AutoData]
+        public async Task UploadFromStreamAsync_Does_Not_Throw_If_Stream_Position_Getter_Throws(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+
+            // reading the start offset
+            transferConn.Setup(m => m.ReadAsync(8L, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new byte[8]));
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            // note: this stream is rigged so .Position throws the third time it's called, so we hit the finally block
+            // this is shitty and fragile
+            using (var stream = new UnPositionableStream())
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, diagnosticFactory: diagnostic.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, txoptions, null));
+
+                Assert.Null(ex);
+
+                diagnostic.Verify(m => m.Warning(It.Is<string>(str => str.ContainsInsensitive("determine final position")), It.IsAny<Exception>()), Times.Once);
             }
         }
 
@@ -2856,6 +2963,105 @@ namespace Soulseek.Tests.Unit.Client
             public override void Write(byte[] buffer, int offset, int count)
             {
                 throw new NotImplementedException();
+            }
+        }
+
+        private class UnPositionableStream : Stream
+        {
+            public override bool CanRead => false;
+            public override bool CanWrite => false;
+
+            public override bool CanSeek => false;
+
+            public override long Length => 0;
+
+            private int timesCalled = 0;
+
+            public override long Position
+            {
+                get
+                {
+                    timesCalled++;
+
+                    if (timesCalled == 3)
+                    {
+                        throw new NotImplementedException($"times called: {timesCalled}");
+                    }
+
+                    return 0;
+                }
+                set => throw new NotImplementedException();
+            }
+
+            public override void Flush()
+            {
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                return count;
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                return offset;
+            }
+
+            public override void SetLength(long value)
+            {
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+            }
+        }
+
+        private class UnDisposableStream : Stream
+        {
+            public override bool CanRead => false;
+            public override bool CanWrite => false;
+
+            public override bool CanSeek => false;
+
+            public override long Length => 0;
+
+            public override long Position { get; set; }
+
+            public new void Dispose()
+            {
+                throw new ObjectDisposedException("failed disposal");
+            }
+
+            public override ValueTask DisposeAsync()
+            {
+                throw new ObjectDisposedException("failed disposal");
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                throw new ObjectDisposedException("failed disposal");
+            }
+
+            public override void Flush()
+            {
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                return count;
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                return offset;
+            }
+
+            public override void SetLength(long value)
+            {
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
             }
         }
     }
