@@ -340,6 +340,28 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync stream throws DuplicateTransferException when an existing Upload matches a unique key"), AutoData]
+        public async Task UploadAsync_Stream_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_A_Unique_Key(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                tracked.TryAdd($"{TransferDirection.Upload}:{username}:{filename}", true);
+
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, (_) => Task.FromResult((Stream)stream), 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+                Assert.Contains($"An active or queued upload of {filename} to {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync stream does not throw DuplicateTransferException when an existing Upload matches only the username"), AutoData]
         public async Task UploadAsync_Stream_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Username(string username, string filename)
         {
@@ -401,6 +423,36 @@ namespace Soulseek.Tests.Unit.Client
                     queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
                     s.SetProperty("UploadDictionary", queued);
+
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, localFilename, 1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<DuplicateTransferException>(ex);
+                    Assert.Contains($"An active or queued upload of {filename} to {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                }
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file throws DuplicateTransferException when an existing Upload matches a unique key"), AutoData]
+        public async Task UploadAsync_File_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_A_Unique_Key(string username, string filename, string localFilename)
+        {
+            using (var testFile = new TestFile())
+            {
+                var ioMock = new Mock<IIOAdapter>();
+                ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                    .Returns(true);
+                ioMock.Setup(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>(), It.IsAny<FileShare>()))
+                    .Returns(new FileStream(testFile.Path, FileMode.Open, FileAccess.Read));
+
+                using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var tracked = new ConcurrentDictionary<string, bool>();
+                    tracked.TryAdd($"{TransferDirection.Upload}:{username}:{filename}", true);
+
+                    s.SetProperty("UniqueKeyDictionary", tracked);
 
                     var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, localFilename, 1));
 
@@ -1131,8 +1183,65 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync throws DuplicateTransferException when failing to insert UniqueKeyDictionary"), AutoData]
+        public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_Unique_Key_Add_Fails(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var waiter = new Mock<IWaiter>();
+            var conn = new Mock<IMessageConnection>();
+            var connManager = new Mock<IPeerConnectionManager>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                tracked.TryAdd($"{TransferDirection.Upload}:{username}:{filename}", true);
+
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, null, null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync throws DuplicateTransferException when failing to insert UploadDictionary"), AutoData]
+        public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_UploadDictionary_Add_Fails(string username, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var waiter = new Mock<IWaiter>();
+            var conn = new Mock<IMessageConnection>();
+            var connManager = new Mock<IPeerConnectionManager>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(token, new TransferInternal(TransferDirection.Upload, "foo", "bar", token));
+
+                s.SetProperty("UploadDictionary", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, null, null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+
+                // release the unique key
+                Assert.Empty(tracked);
+            }
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync disposes stream given dispose option flag"), AutoData]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task UploadFromStreamAsync_Disposes_Stream_Given_Dispose_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
@@ -2927,6 +3036,98 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("encountered exception releasing upload slot")), It.IsAny<Exception>()));
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync releases unique key when succeeding"), AutoData]
+        public async Task UploadFromStreamAsync_Releases_Unique_Key_When_Succeeding(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options: options, diagnosticFactory: diagnostic.Object, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, null, null));
+
+                Assert.Null(ex);
+
+                Assert.Empty(tracked);
+            }
+        }
+
+        [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync releases unique key when failing"), AutoData]
+        public async Task UploadFromStreamAsync_Releases_Unique_Key_When_Failing(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Throws(new Exception("oops"));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options: options, diagnosticFactory: diagnostic.Object, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, new Func<long, Task<Stream>>((_) => Task.FromResult((Stream)stream)), token, null, null));
+
+                Assert.NotNull(ex);
+
+                Assert.Empty(tracked);
+            }
         }
 
         private class UnReadableWriteableStream : Stream

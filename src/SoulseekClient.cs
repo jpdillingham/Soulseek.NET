@@ -511,6 +511,7 @@ namespace Soulseek
         internal virtual IMessageConnection ServerConnection { get; private set; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, TransferInternal> UploadDictionary { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
+        internal virtual ConcurrentDictionary<string, bool> UniqueKeyDictionary { get; set; } = new ConcurrentDictionary<string, bool>();
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
@@ -1038,6 +1039,11 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
 
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Download}:{username}:{remoteFilename}"))
+            {
+                throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
+            }
+
             options ??= new TransferOptions();
 
             return DownloadToFileAsync(username, remoteFilename, localFilename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -1133,6 +1139,11 @@ namespace Soulseek
             }
 
             if (DownloadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            {
+                throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
+            }
+
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Download}:{username}:{remoteFilename}"))
             {
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
@@ -2599,6 +2610,11 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
 
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Upload}:{username}:{remoteFilename}"))
+            {
+                throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
+            }
+
             options ??= new TransferOptions();
 
             return UploadFromFileAsync(username, remoteFilename, localFilename, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -2671,6 +2687,11 @@ namespace Soulseek
             }
 
             if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            {
+                throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
+            }
+
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Upload}:{username}:{remoteFilename}"))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
@@ -3111,13 +3132,34 @@ namespace Soulseek
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options ??= new TransferOptions();
+
             var download = new TransferInternal(TransferDirection.Download, username, remoteFilename, token, options)
             {
                 StartOffset = startOffset,
                 Size = size,
             };
 
-            DownloadDictionary.TryAdd(download.Token, download);
+            // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
+            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
+            // a caller can spam calls and get downloads through concurrently. this check is the last line of defense; if we make
+            // it past here this unique combination is "locked" until the transfer is complete (as long as we remove it in the finally block!)
+            var uniqueKey = $"{TransferDirection.Download}:{username}:{remoteFilename}";
+
+            if (!UniqueKeyDictionary.TryAdd(key: uniqueKey, value: true))
+            {
+                throw new DuplicateTransferException($"Duplicate download of {remoteFilename} from {username} aborted");
+            }
+
+            // we also can't allow the same token to be used across different transfers. we're checking for this in the public-scoped
+            // methods as well, but again, concurrent calls can sneak past.
+            if (!DownloadDictionary.TryAdd(download.Token, download))
+            {
+                // we would have obtained exclusive access over this unique combination in the code above, so we need to release it
+                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+
+                throw new DuplicateTransferException($"Duplicate download of {remoteFilename} from {username} aborted");
+            }
 
             var lastState = TransferStates.None;
 
@@ -3392,8 +3434,6 @@ namespace Soulseek
 
                 download.Connection?.Dispose();
 
-                DownloadDictionary.TryRemove(download.Token, out _);
-
                 long finalStreamPosition = 0;
 
                 // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
@@ -3437,6 +3477,9 @@ namespace Soulseek
                     UpdateProgress(download.StartOffset + finalStreamPosition);
                     UpdateState(download.State);
                 }
+
+                DownloadDictionary.TryRemove(download.Token, out _);
+                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
             }
         }
 
@@ -4092,12 +4135,33 @@ namespace Soulseek
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options ??= new TransferOptions();
+
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
                 Size = size,
             };
 
-            UploadDictionary.TryAdd(upload.Token, upload);
+            // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
+            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
+            // a caller can spam calls and get transfers through concurrently. this check is the last line of defense; if we make
+            // it past here this unique combination is "locked" until the transfer is complete (as long as we remove it in the finally block!)
+            var uniqueKey = $"{TransferDirection.Upload}:{username}:{remoteFilename}";
+
+            if (!UniqueKeyDictionary.TryAdd(key: uniqueKey, value: true))
+            {
+                throw new DuplicateTransferException($"Duplicate upload of {remoteFilename} to {username} aborted");
+            }
+
+            // we also can't allow the same token to be used across different transfers. we're checking for this in the public-scoped
+            // methods as well, but again, concurrent calls can sneak past.
+            if (!UploadDictionary.TryAdd(upload.Token, upload))
+            {
+                // we would have obtained exclusive access over this unique combination in the code above, so we need to release it
+                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+
+                throw new DuplicateTransferException($"Duplicate upload of {remoteFilename} to {username} aborted");
+            }
 
             var lastState = TransferStates.None;
 
@@ -4435,8 +4499,6 @@ namespace Soulseek
                     }
                 }
 
-                UploadDictionary.TryRemove(upload.Token, out _);
-
                 long finalStreamPosition = 0;
 
                 // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
@@ -4473,6 +4535,9 @@ namespace Soulseek
                     UpdateProgress(finalStreamPosition);
                     UpdateState(upload.State);
                 }
+
+                UploadDictionary.TryRemove(upload.Token, out _);
+                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
             }
         }
 
