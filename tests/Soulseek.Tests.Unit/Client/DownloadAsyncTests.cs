@@ -2183,7 +2183,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "DownloadToStreamAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync throws DuplicateTransferException when failing to insert DownloadDictionary"), AutoData]
-        public async Task DownloadToStreamAsync_Throws_DuplicateTransferException_When_Failing_To_Insert_DownloadDictionary(string username, IPEndPoint endpoint, string filename, int token, int size)
+        public async Task DownloadToStreamAsync_Throws_DuplicateTransferException_When_Failing_To_Insert_DownloadDictionary(string username, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
             var waiter = new Mock<IWaiter>();
