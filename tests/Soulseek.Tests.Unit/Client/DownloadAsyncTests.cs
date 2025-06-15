@@ -393,6 +393,27 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync throws DuplicateTransferException when an existing download matches a unique key"), AutoData]
+        public async Task DownloadAsync_Throws_DuplicateTransferException_When_An_Existing_Download_Matches_A_Unique_Key(string username, string filename, string localFilename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                tracked.TryAdd($"{TransferDirection.Download}:{username}:{filename}", true);
+
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, localFilename, token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+                Assert.Contains($"An active or queued download of {filename} from {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Theory(DisplayName = "DownloadAsync does not throw DuplicateTransferException when an existing download matches only the username"), AutoData]
         public async Task DownloadAsync_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Download_Matches_Only_The_Username(string username, string filename, string localFilename)
         {
@@ -445,6 +466,28 @@ namespace Soulseek.Tests.Unit.Client
                 queued.TryAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
                 s.SetProperty("DownloadDictionary", queued);
+
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, () => Task.FromResult((Stream)stream), token: 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+                Assert.Contains($"An active or queued download of {filename} from {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream throws DuplicateTransferException when an existing download matches a unique key"), AutoData]
+        public async Task DownloadAsync_Stream_Throws_DuplicateTransferException_When_An_Existing_Download_Matches_A_Unique_Key(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                tracked.TryAdd($"{TransferDirection.Download}:{username}:{filename}", true);
+
+                s.SetProperty("UniqueKeyDictionary", tracked);
 
                 var ex = await Record.ExceptionAsync(() => s.DownloadAsync(username, filename, () => Task.FromResult((Stream)stream), token: 1));
 

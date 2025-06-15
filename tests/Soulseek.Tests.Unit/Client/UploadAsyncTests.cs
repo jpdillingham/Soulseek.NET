@@ -340,6 +340,28 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync stream throws DuplicateTransferException when an existing Upload matches a unique key"), AutoData]
+        public async Task UploadAsync_Stream_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_A_Unique_Key(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var tracked = new ConcurrentDictionary<string, bool>();
+                tracked.TryAdd($"{TransferDirection.Upload}:{username}:{filename}", true);
+
+                s.SetProperty("UniqueKeyDictionary", tracked);
+
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, 1, (_) => Task.FromResult((Stream)stream), 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+                Assert.Contains($"An active or queued upload of {filename} to {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync stream does not throw DuplicateTransferException when an existing Upload matches only the username"), AutoData]
         public async Task UploadAsync_Stream_Does_Not_Throw_DuplicateTransferException_When_An_Existing_Upload_Matches_Only_The_Username(string username, string filename)
         {
@@ -401,6 +423,36 @@ namespace Soulseek.Tests.Unit.Client
                     queued.TryAdd(0, new TransferInternal(TransferDirection.Upload, username, filename, 0));
 
                     s.SetProperty("UploadDictionary", queued);
+
+                    var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, localFilename, 1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<DuplicateTransferException>(ex);
+                    Assert.Contains($"An active or queued upload of {filename} to {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                }
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync file throws DuplicateTransferException when an existing Upload matches a unique key"), AutoData]
+        public async Task UploadAsync_File_Throws_DuplicateTransferException_When_An_Existing_Upload_Matches_A_Unique_Key(string username, string filename, string localFilename)
+        {
+            using (var testFile = new TestFile())
+            {
+                var ioMock = new Mock<IIOAdapter>();
+                ioMock.Setup(m => m.Exists(It.IsAny<string>()))
+                    .Returns(true);
+                ioMock.Setup(m => m.GetFileStream(It.IsAny<string>(), It.IsAny<FileMode>(), It.IsAny<FileAccess>(), It.IsAny<FileShare>()))
+                    .Returns(new FileStream(testFile.Path, FileMode.Open, FileAccess.Read));
+
+                using (var s = new SoulseekClient(ioAdapter: ioMock.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var tracked = new ConcurrentDictionary<string, bool>();
+                    tracked.TryAdd($"{TransferDirection.Upload}:{username}:{filename}", true);
+
+                    s.SetProperty("UniqueKeyDictionary", tracked);
 
                     var ex = await Record.ExceptionAsync(() => s.UploadAsync(username, filename, localFilename, 1));
 
