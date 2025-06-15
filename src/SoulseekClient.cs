@@ -3132,6 +3132,8 @@ namespace Soulseek
 
         private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options ??= new TransferOptions();
+
             var download = new TransferInternal(TransferDirection.Download, username, remoteFilename, token, options)
             {
                 StartOffset = startOffset,
@@ -4133,6 +4135,8 @@ namespace Soulseek
 
         private async Task<Transfer> UploadFromStreamAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            options ??= new TransferOptions();
+
             var upload = new TransferInternal(TransferDirection.Upload, username, remoteFilename, token, options)
             {
                 Size = size,
