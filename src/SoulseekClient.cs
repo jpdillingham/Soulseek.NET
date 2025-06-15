@@ -3393,8 +3393,9 @@ namespace Soulseek
                 {
                     finalStreamPosition = outputStream?.Position ?? 0;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Diagnostic.Warning($"Failed to determine final position of output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
                 }
 
                 if (options.DisposeOutputStreamOnCompletion && outputStream != null)
@@ -4435,8 +4436,9 @@ namespace Soulseek
                 {
                     finalStreamPosition = inputStream?.Position ?? 0;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Diagnostic.Warning($"Failed to determine final position of input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                 }
 
                 if (options.DisposeInputStreamOnCompletion && inputStream != null)
