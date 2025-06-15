@@ -1039,6 +1039,11 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
 
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Download}:{username}:{remoteFilename}"))
+            {
+                throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
+            }
+
             options ??= new TransferOptions();
 
             return DownloadToFileAsync(username, remoteFilename, localFilename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -1134,6 +1139,11 @@ namespace Soulseek
             }
 
             if (DownloadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            {
+                throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
+            }
+
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Download}:{username}:{remoteFilename}"))
             {
                 throw new DuplicateTransferException($"An active or queued download of {remoteFilename} from {username} is already in progress");
             }
@@ -2600,6 +2610,11 @@ namespace Soulseek
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
 
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Upload}:{username}:{remoteFilename}"))
+            {
+                throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
+            }
+
             options ??= new TransferOptions();
 
             return UploadFromFileAsync(username, remoteFilename, localFilename, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -2672,6 +2687,11 @@ namespace Soulseek
             }
 
             if (UploadDictionary.Values.Any(d => d.Username == username && d.Filename == remoteFilename))
+            {
+                throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
+            }
+
+            if (UniqueKeyDictionary.ContainsKey($"{TransferDirection.Upload}:{username}:{remoteFilename}"))
             {
                 throw new DuplicateTransferException($"An active or queued upload of {remoteFilename} to {username} is already in progress");
             }
