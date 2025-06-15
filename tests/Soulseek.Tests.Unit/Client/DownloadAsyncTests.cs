@@ -27,6 +27,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Diagnostics;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -1411,7 +1412,6 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync disposes output stream given option flag"), AutoData]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task DownloadToStreamAsync_Disposes_Output_Stream_Given_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
@@ -1466,6 +1466,136 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync does not throw and produces a warning diagnostic if stream disposal fails"), AutoData]
+        public async Task DownloadToStreamAsync_Does_Not_Throw_And_Produces_Warning_Diagnostic_If_Stream_Disposal_Fails(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(data));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            try
+            {
+                using (var stream = new UnDisposableStream())
+                using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, diagnosticFactory: diagnostic.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var txoptions = new TransferOptions(disposeOutputStreamOnCompletion: true);
+
+                    var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, txoptions, null));
+
+                    Assert.Null(ex);
+
+                    diagnostic.Verify(m => m.Warning(It.Is<string>(str => str.ContainsInsensitive("failed to finalize output stream")), It.IsAny<Exception>()), Times.Once);
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // noop; this is expected because UnDisposableStream throws when dispose is called
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync does not throw and produces a warning diagnostic if stream flush fails"), AutoData]
+        public async Task DownloadToStreamAsync_Does_Not_Throw_And_Produces_Warning_Diagnostic_If_Stream_Flush_Fails(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(data));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+
+            try
+            {
+                using (var stream = new UnFlushableStream())
+                using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, diagnosticFactory: diagnostic.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var txoptions = new TransferOptions(disposeOutputStreamOnCompletion: true);
+
+                    var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, txoptions, null));
+
+                    Assert.Null(ex);
+
+                    diagnostic.Verify(m => m.Warning(It.Is<string>(str => str.ContainsInsensitive("failed to finalize output stream")), It.IsAny<Exception>()), Times.Once);
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // noop; this is expected because UnDisposableStream throws when dispose is called
             }
         }
 
@@ -3206,6 +3336,90 @@ namespace Soulseek.Tests.Unit.Client
 
             public override void Flush()
             {
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                return count;
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                return offset;
+            }
+
+            public override void SetLength(long value)
+            {
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+            }
+        }
+
+        private class UnDisposableStream : Stream
+        {
+            public override bool CanRead => false;
+            public override bool CanWrite => false;
+
+            public override bool CanSeek => false;
+
+            public override long Length => 0;
+
+            public override long Position { get; set; }
+
+            public new void Dispose()
+            {
+                throw new ObjectDisposedException("failed disposal");
+            }
+
+            public override ValueTask DisposeAsync()
+            {
+                throw new ObjectDisposedException("failed disposal");
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                throw new ObjectDisposedException("failed disposal");
+            }
+
+            public override void Flush()
+            {
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                return count;
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                return offset;
+            }
+
+            public override void SetLength(long value)
+            {
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+            }
+        }
+
+        private class UnFlushableStream : Stream
+        {
+            public override bool CanRead => false;
+            public override bool CanWrite => false;
+
+            public override bool CanSeek => false;
+
+            public override long Length => 0;
+
+            public override long Position { get; set; }
+
+            public override void Flush()
+            {
+                throw new IOException("failed to flush");
             }
 
             public override int Read(byte[] buffer, int offset, int count)
