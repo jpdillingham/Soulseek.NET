@@ -2174,7 +2174,7 @@ namespace Soulseek.Tests.Unit.Client
                 tracked.TryAdd($"{TransferDirection.Download}:{username}:{filename}", true);
                 s.SetProperty("UniqueKeyDictionary", tracked);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, null, null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
@@ -2203,7 +2203,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.SetProperty("DownloadDictionary", queued);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, null, null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
