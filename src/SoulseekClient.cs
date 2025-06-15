@@ -4138,7 +4138,26 @@ namespace Soulseek
                 Size = size,
             };
 
-            UploadDictionary.TryAdd(upload.Token, upload);
+            // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
+            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
+            // a caller can spam calls and get transfers through concurrently. this check is the last line of defense; if we make
+            // it past here this unique combination is "locked" until the transfer is complete (as long as we remove it in the finally block!)
+            var uniqueKey = $"{TransferDirection.Upload}:{username}:{remoteFilename}";
+
+            if (!UniqueKeyDictionary.TryAdd(key: uniqueKey, value: true))
+            {
+                throw new DuplicateTransferException($"Duplicate upload of {remoteFilename} to {username} aborted");
+            }
+
+            // we also can't allow the same token to be used across different transfers. we're checking for this in the public-scoped
+            // methods as well, but again, concurrent calls can sneak past.
+            if (!UploadDictionary.TryAdd(upload.Token, upload))
+            {
+                // we would have obtained exclusive access over this unique combination in the code above, so we need to release it
+                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+
+                throw new DuplicateTransferException($"Duplicate upload of {remoteFilename} to {username} aborted");
+            }
 
             var lastState = TransferStates.None;
 
@@ -4476,8 +4495,6 @@ namespace Soulseek
                     }
                 }
 
-                UploadDictionary.TryRemove(upload.Token, out _);
-
                 long finalStreamPosition = 0;
 
                 // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
@@ -4514,6 +4531,9 @@ namespace Soulseek
                     UpdateProgress(finalStreamPosition);
                     UpdateState(upload.State);
                 }
+
+                UploadDictionary.TryRemove(upload.Token, out _);
+                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
             }
         }
 
