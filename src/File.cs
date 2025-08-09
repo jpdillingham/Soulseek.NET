@@ -43,14 +43,29 @@ namespace Soulseek
             Attributes = (attributeList?.ToList() ?? new List<FileAttribute>()).AsReadOnly();
             AttributeCount = Attributes.Count;
 
-            BitDepth = GetAttributeValue(FileAttributeType.BitDepth);
-            BitRate = GetAttributeValue(FileAttributeType.BitRate);
-
-            var vbr = GetAttributeValue(FileAttributeType.VariableBitRate);
-            IsVariableBitRate = vbr == null ? (bool?)null : vbr != 0;
-
-            Length = GetAttributeValue(FileAttributeType.Length);
-            SampleRate = GetAttributeValue(FileAttributeType.SampleRate);
+            foreach (var attribute in Attributes)
+            {
+                switch (attribute.Type)
+                {
+                    case FileAttributeType.BitDepth:
+                        BitDepth = attribute.Value;
+                        break;
+                    case FileAttributeType.BitRate:
+                        BitRate = attribute.Value;
+                        break;
+                    case FileAttributeType.VariableBitRate:
+                        IsVariableBitRate = attribute.Value != 0;
+                        break;
+                    case FileAttributeType.Length:
+                        Length = attribute.Value;
+                        break;
+                    case FileAttributeType.SampleRate:
+                        SampleRate = attribute.Value;
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         /// <summary>
@@ -108,15 +123,5 @@ namespace Soulseek
         ///     Gets the file size in bytes.
         /// </summary>
         public long Size { get; }
-
-        /// <summary>
-        ///     Returns the value of the specified attribute <paramref name="type"/>.
-        /// </summary>
-        /// <param name="type">The attribute to return.</param>
-        /// <returns>The value of the specified attribute.</returns>
-        public int? GetAttributeValue(FileAttributeType type)
-        {
-            return Attributes.FirstOrDefault(a => a.Type == type)?.Value;
-        }
     }
 }
