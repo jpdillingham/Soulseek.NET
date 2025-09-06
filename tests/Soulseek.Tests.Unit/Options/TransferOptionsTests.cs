@@ -69,8 +69,8 @@ namespace Soulseek.Tests.Unit.Options
         {
             var o = new TransferOptions();
 
-            Assert.False(o.DisposeInputStreamOnCompletion);
-            Assert.False(o.DisposeOutputStreamOnCompletion);
+            Assert.True(o.DisposeInputStreamOnCompletion);
+            Assert.True(o.DisposeOutputStreamOnCompletion);
 
             var ex = await Record.ExceptionAsync(() => o.Governor(null, 1, CancellationToken.None));
             Assert.Null(ex);
