@@ -525,10 +525,23 @@ namespace Soulseek.Messaging.Handlers
                         var searchRequest = ServerSearchRequest.FromByteArray(message);
 
                         // sometimes (most of the time?) a room search will result in a request to ourselves (assuming we are
-                        // joined to it)
+                        // joined to it), and we can also search our own shares. the vast majority of other search requests
+                        // will come from the distributed network, and in those cases we will ignore any search request
+                        // originating from our own client. in this case we might respond.
                         if (searchRequest.Username == SoulseekClient.Username)
                         {
-                            break;
+                            // check the list of searches that are underway to see if there's one that 1) matches this token,
+                            // 2) has a scope of User, and 3) has a subject list that contains our username. if all of the
+                            // above are true, we deliberately searched ourselves and therefore will return results.
+                            if (SoulseekClient.Searches.Values
+                                .Any(s => s.Token == searchRequest.Token
+                                    && s.Scope.Type == SearchScopeType.User
+                                    && s.Scope.Subjects.Any(subject => subject.Equals(SoulseekClient.Username, StringComparison.OrdinalIgnoreCase))))
+                            {
+                                await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+                            }
+
+                            break; // we didn't deliberately search ourselves, so don't respond
                         }
 
                         await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
