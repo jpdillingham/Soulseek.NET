@@ -68,8 +68,8 @@ namespace Soulseek
             Action<Transfer, int, int, int> reporter = null,
             int maximumLingerTime = 3000,
             bool seekInputStreamAutomatically = true,
-            bool disposeInputStreamOnCompletion = false,
-            bool disposeOutputStreamOnCompletion = false)
+            bool disposeInputStreamOnCompletion = true,
+            bool disposeOutputStreamOnCompletion = true)
         {
             SeekInputStreamAutomatically = seekInputStreamAutomatically;
             DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
