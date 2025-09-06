@@ -2132,6 +2132,38 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             // verify that SearchResponder is NOT called since this is not an intentional self-search
             mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Never);
         }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Responds to SearchRequest if it came from the local user, and the search was intentionally sent"), AutoData]
+        public void Responds_To_SearchRequest_If_It_Came_From_The_Local_User_And_It_Was_Intentionally_Sent(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, false, 1, 1, new List<File>() { new File(1, "test.mp3", 123456, ".mp3") });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
+
+            // create a search with User scope that includes the local username in subjects
+            var searchQuery = new SearchQuery(query);
+            var searchScope = SearchScope.User(username); // The local user is searching themselves
+            var searchInternal = new SearchInternal(searchQuery, searchScope, token);
+
+            // add the search to the active searches dictionary
+            var searches = new ConcurrentDictionary<int, SearchInternal>();
+            searches.TryAdd(token, searchInternal);
+
+            mocks.Client.Setup(m => m.Searches).Returns(searches);
+
+            var message = GetServerSearchRequest(username, token, query);
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            // Verify that the search responder was called since this is an intentional self-search
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Once);
+        }
         }
 
         [Trait("Category", "Message")]
