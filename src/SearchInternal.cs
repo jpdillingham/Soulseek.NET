@@ -35,12 +35,14 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchInternal"/> class.
         /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="query">The search query.</param>
+        /// <param name="scope">The search scope.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
-        public SearchInternal(string searchText, int token, SearchOptions options = null)
+        public SearchInternal(SearchQuery query, SearchScope scope, int token, SearchOptions options = null)
         {
-            SearchText = searchText;
+            Query = query;
+            Scope = scope;
             Token = token;
 
             Options = options ?? new SearchOptions();
@@ -71,6 +73,11 @@ namespace Soulseek
         public SearchOptions Options { get; }
 
         /// <summary>
+        ///     Gets the search query.
+        /// </summary>
+        public SearchQuery Query { get; }
+
+        /// <summary>
         ///     Gets the current number of responses received.
         /// </summary>
         public int ResponseCount => responseCount;
@@ -81,9 +88,9 @@ namespace Soulseek
         public Action<SearchResponse> ResponseReceived { get; set; }
 
         /// <summary>
-        ///     Gets the text for which to search.
+        ///     Gets the scope of the search.
         /// </summary>
-        public string SearchText { get; }
+        public SearchScope Scope { get; }
 
         /// <summary>
         ///     Gets the state of the search.
