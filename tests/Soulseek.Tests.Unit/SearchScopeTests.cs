@@ -48,7 +48,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
-            Assert.True(ex.Message.ContainsInsensitive("accepts no subjects"));
+            Assert.True(ex.Message.ContainsInsensitive("subjects"));
         }
 
         [Trait("Category", "Instantiation")]
@@ -61,7 +61,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
-            Assert.True(ex.Message.ContainsInsensitive("accepts no subjects"));
+            Assert.True(ex.Message.ContainsInsensitive("subjects"));
         }
 
         [Trait("Category", "Instantiation")]

@@ -2117,6 +2117,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Setup(m => m.Username)
                 .Returns(username);
 
+            // no active searches in dictionary, so this should NOT be treated as intentional
+            var searches = new ConcurrentDictionary<int, SearchInternal>();
+            mocks.Client.Setup(m => m.Searches).Returns(searches);
+
             var message = GetServerSearchRequest(username, token, query);
             var endpoint = new IPEndPoint(IPAddress.None, 0);
 
@@ -2124,6 +2128,105 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
+
+            // verify that SearchResponder is NOT called since this is not an intentional self-search
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Responds to SearchRequest if it came from the local user, and the search was intentionally sent"), AutoData]
+        public void Responds_To_SearchRequest_If_It_Came_From_The_Local_User_And_It_Was_Intentionally_Sent(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, false, 1, 1, new List<File>() { new File(1, "test.mp3", 123456, ".mp3") });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
+
+            // create a search with User scope that includes the local username in subjects
+            var searchQuery = new SearchQuery(query);
+            var searchScope = SearchScope.User(username); // The local user is searching themselves
+            var searchInternal = new SearchInternal(searchQuery, searchScope, token);
+
+            // add the search to the active searches dictionary
+            var searches = new ConcurrentDictionary<int, SearchInternal>();
+            searches.TryAdd(token, searchInternal);
+
+            mocks.Client.Setup(m => m.Searches).Returns(searches);
+
+            var message = GetServerSearchRequest(username, token, query);
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            // Verify that the search responder was called since this is an intentional self-search
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest from local user if search scope is not User"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_From_Local_User_If_Search_Scope_Is_Not_User(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, false, 1, 1, new List<File>() { new File(1, "test.mp3", 123456, ".mp3") });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
+
+            // create a search with Network scope (not User scope), so it shouldn't be treated as intentional
+            var searchQuery = new SearchQuery(query);
+            var searchScope = SearchScope.Network;
+            var searchInternal = new SearchInternal(searchQuery, searchScope, token);
+
+            // add the search to the active searches dictionary
+            var searches = new ConcurrentDictionary<int, SearchInternal>();
+            searches.TryAdd(token, searchInternal);
+
+            mocks.Client.Setup(m => m.Searches).Returns(searches);
+
+            var message = GetServerSearchRequest(username, token, query);
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            // verify that SearchResponder is NOT called since scope is not User
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest from local user if username not in search subjects"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_From_Local_User_If_Username_Not_In_Search_Subjects(string username, string otherUsername, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, false, 1, 1, new List<File>() { new File(1, "test.mp3", 123456, ".mp3") });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
+
+            // create a search with User scope but different username in subjects
+            var searchQuery = new SearchQuery(query);
+            var searchScope = SearchScope.User(otherUsername); // Different username, not the local user
+            var searchInternal = new SearchInternal(searchQuery, searchScope, token);
+
+            // add the search to the active searches dictionary
+            var searches = new ConcurrentDictionary<int, SearchInternal>();
+            searches.TryAdd(token, searchInternal);
+
+            mocks.Client.Setup(m => m.Searches).Returns(searches);
+
+            var message = GetServerSearchRequest(username, token, query);
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            // verify that SearchResponder is NOT called since local username is not in subjects
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Never);
         }
 
         [Trait("Category", "Message")]

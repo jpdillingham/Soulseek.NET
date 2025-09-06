@@ -415,7 +415,7 @@ namespace WebAPI
 
             Client.SearchStateChanged += (e, args) =>
             {
-                Console.WriteLine($"[SEARCH STATE CHANGED] {args.Search.SearchText} {args.PreviousState} => {args.Search.State}");
+                Console.WriteLine($"[SEARCH STATE CHANGED] {args.Search.Query.SearchText} {args.PreviousState} => {args.Search.State}");
             };
 
             Client.SearchResponseDelivered += (e, args) =>
@@ -666,39 +666,47 @@ namespace WebAPI
         /// <returns>A Task resolving a SearchResponse, or null.</returns>
         private Task<SearchResponse> SearchResponseResolver(string username, int token, SearchQuery query)
         {
-            var defaultResponse = Task.FromResult<SearchResponse>(null);
-
-            // some bots continually query for very common strings.  blacklist known names here.
-            var blacklist = new[] { "Lola45", "Lolo51", "rajah" };
-            if (blacklist.Contains(username))
+            try
             {
-                return defaultResponse;
-            }
+                var defaultResponse = Task.FromResult<SearchResponse>(null);
 
-            // some bots and perhaps users search for very short terms.  only respond to queries >= 3 characters.  sorry, U2 fans.
-            if (query.Query.Length < 3)
+                // some bots continually query for very common strings.  blacklist known names here.
+                var blacklist = new[] { "Lola45", "Lolo51", "rajah" };
+                if (blacklist.Contains(username))
+                {
+                    return defaultResponse;
+                }
+
+                // some bots and perhaps users search for very short terms.  only respond to queries >= 3 characters.  sorry, U2 fans.
+                if (query.Query.Length < 3)
+                {
+                    return defaultResponse;
+                }
+
+                var results = SharedFileCache.Search(query);
+
+                if (results.Any())
+                {
+                    Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query.SearchText}");
+
+                    return Task.FromResult(new SearchResponse(
+                        Username,
+                        token,
+                        hasFreeUploadSlot: true,
+                        uploadSpeed: 0,
+                        queueLength: 0,
+                        fileList: results));
+                }
+
+                // if no results, either return null or an instance of SearchResponse with a fileList of length 0
+                // in either case, no response will be sent to the requestor.
+                return Task.FromResult<SearchResponse>(null);
+            }
+            catch (Exception ex)
             {
-                return defaultResponse;
+                Console.WriteLine(ex);
+                throw;
             }
-
-            var results = SharedFileCache.Search(query);
-
-            if (results.Any())
-            {
-                Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query.SearchText}");
-
-                return Task.FromResult(new SearchResponse(
-                    Username,
-                    token,
-                    hasFreeUploadSlot: true,
-                    uploadSpeed: 0,
-                    queueLength: 0,
-                    fileList: results));
-            }
-
-            // if no results, either return null or an instance of SearchResponse with a fileList of length 0
-            // in either case, no response will be sent to the requestor.
-            return Task.FromResult<SearchResponse>(null);
         }
 
         class IPAddressConverter : JsonConverter<IPAddress>

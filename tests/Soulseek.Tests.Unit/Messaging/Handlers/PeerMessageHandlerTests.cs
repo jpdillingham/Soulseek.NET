@@ -437,7 +437,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var responses = new List<SearchResponse>();
 
-            using (var search = new SearchInternal("foo", token)
+            using (var search = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, token)
             {
                 ResponseReceived = (r) => responses.Add(r),
             })

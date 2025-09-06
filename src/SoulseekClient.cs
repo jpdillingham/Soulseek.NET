@@ -3952,7 +3952,7 @@ namespace Soulseek
 
         private async Task<Search> SearchToCallbackAsync(SearchQuery query, Action<SearchResponse> responseHandler, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
-            var search = new SearchInternal(query.SearchText, token, options);
+            var search = new SearchInternal(query, scope, token, options);
             var lastState = SearchStates.None;
 
             void UpdateState(SearchStates state)
@@ -3981,10 +3981,10 @@ namespace Soulseek
                 {
                     var message = scope.Type switch
                     {
-                        SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray(),
-                        SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray()).ToArray(),
-                        SearchScopeType.Wishlist => new WishlistSearchRequest(search.SearchText, search.Token).ToByteArray(),
-                        _ => new SearchRequest(search.SearchText, search.Token).ToByteArray()
+                        SearchScopeType.Room => new RoomSearchRequest(scope.Subjects.First(), search.Query.SearchText, search.Token).ToByteArray(),
+                        SearchScopeType.User => scope.Subjects.SelectMany(u => new UserSearchRequest(u, search.Query.SearchText, search.Token).ToByteArray()).ToArray(),
+                        SearchScopeType.Wishlist => new WishlistSearchRequest(search.Query.SearchText, search.Token).ToByteArray(),
+                        _ => new SearchRequest(search.Query.SearchText, search.Token).ToByteArray()
                     };
 
                     search.ResponseReceived = (response) =>

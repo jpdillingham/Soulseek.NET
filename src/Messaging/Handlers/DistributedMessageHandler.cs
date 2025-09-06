@@ -168,6 +168,11 @@ namespace Soulseek.Messaging.Handlers
 
                                 _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(embeddedMessage.DistributedMessage).ConfigureAwait(false);
 
+                                if (embeddedSearchRequest.Username == SoulseekClient.Username)
+                                {
+                                    break; // don't respond to our own searches
+                                }
+
                                 await SoulseekClient.SearchResponder.TryRespondAsync(embeddedSearchRequest.Username, embeddedSearchRequest.Token, embeddedSearchRequest.Query).ConfigureAwait(false);
 
                                 break;
@@ -183,6 +188,11 @@ namespace Soulseek.Messaging.Handlers
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
                         _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
+
+                        if (searchRequest.Username == SoulseekClient.Username)
+                        {
+                            break; // don't respond to our own searches
+                        }
 
                         await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
