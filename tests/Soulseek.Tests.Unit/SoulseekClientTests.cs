@@ -354,8 +354,8 @@ namespace Soulseek.Tests.Unit
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                using (var search1 = new SearchInternal(string.Empty, 0, new SearchOptions()))
-                using (var search2 = new SearchInternal(string.Empty, 1, new SearchOptions()))
+                using (var search1 = new SearchInternal(new SearchQuery(string.Empty), SearchScope.Network, 0, new SearchOptions()))
+                using (var search2 = new SearchInternal(new SearchQuery(string.Empty), SearchScope.Network, 1, new SearchOptions()))
                 {
                     var searches = new ConcurrentDictionary<int, SearchInternal>();
                     searches.TryAdd(0, search1);
@@ -425,7 +425,7 @@ namespace Soulseek.Tests.Unit
 
             var p = new Mock<IPeerConnectionManager>();
 
-            using (var search = new SearchInternal("foo", 1))
+            using (var search = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 1))
             {
                 var searches = new ConcurrentDictionary<int, SearchInternal>();
                 searches.TryAdd(1, search);

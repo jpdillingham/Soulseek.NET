@@ -313,7 +313,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "SearchAsync throws DuplicateTokenException given a token in use"), AutoData]
         public async Task SearchAsync_Throws_DuplicateTokenException_Given_A_Token_In_Use(string text, int token)
         {
-            using (var search = new SearchInternal(text, token, new SearchOptions()))
+            using (var search = new SearchInternal(new SearchQuery(text), SearchScope.Network, token, new SearchOptions()))
             {
                 var dict = new ConcurrentDictionary<int, SearchInternal>();
                 dict.TryAdd(token, search);
@@ -335,7 +335,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "SearchAsync delegate throws DuplicateTokenException given a token in use"), AutoData]
         public async Task SearchAsync_Delegate_Throws_DuplicateTokenException_Given_A_Token_In_Use(string text, int token)
         {
-            using (var search = new SearchInternal(text, token, new SearchOptions()))
+            using (var search = new SearchInternal(new SearchQuery(text), SearchScope.Network, token, new SearchOptions()))
             {
                 var dict = new ConcurrentDictionary<int, SearchInternal>();
                 dict.TryAdd(token, search);
@@ -391,7 +391,7 @@ namespace Soulseek.Tests.Unit.Client
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
                 handler.HandleMessageRead(conn.Object, msg);
 
-                var (search, responses) = await task.ConfigureAwait(false);
+                var (search, responses) = await task;
 
                 var res = responses.ToList()[0];
 
@@ -399,7 +399,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(token, res.Token);
 
                 Assert.Equal(SearchStates.Completed | SearchStates.TimedOut, search.State);
-                Assert.Equal(searchText, search.SearchText);
+                Assert.Equal(searchText, search.Query.SearchText);
                 Assert.Equal(token, search.Token);
                 Assert.Equal(1, search.ResponseCount);
                 Assert.Equal(1, search.FileCount);
@@ -470,7 +470,7 @@ namespace Soulseek.Tests.Unit.Client
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
                 handler.HandleMessageRead(conn.Object, msg);
 
-                var search = await task.ConfigureAwait(false);
+                var search = await task;
 
                 var res = responses.ToList()[0];
 
@@ -478,7 +478,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(token, res.Token);
 
                 Assert.Equal(SearchStates.Completed | SearchStates.TimedOut, search.State);
-                Assert.Equal(searchText, search.SearchText);
+                Assert.Equal(searchText, search.Query.SearchText);
                 Assert.Equal(token, search.Token);
                 Assert.Equal(1, search.ResponseCount);
                 Assert.Equal(1, search.FileCount);
@@ -491,7 +491,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1);
 
-            using (var search = new SearchInternal(searchText, token, options))
+            using (var search = new SearchInternal(new SearchQuery(searchText), SearchScope.Network, token, options))
             {
                 search.SetState(SearchStates.InProgress);
 
@@ -508,7 +508,7 @@ namespace Soulseek.Tests.Unit.Client
 
                     var active = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches").ToList();
 
-                    cts.Cancel();
+                    await cts.CancelAsync();
 
                     await Record.ExceptionAsync(() => task); // swallow the cancellation exception
 
@@ -535,12 +535,12 @@ namespace Soulseek.Tests.Unit.Client
 
                 var active = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches").ToList();
 
-                cts.Cancel();
+                await cts.CancelAsync();
 
                 await Record.ExceptionAsync(() => task); // swallow the cancellation exception
 
                 Assert.Single(active);
-                Assert.Contains(active, kvp => kvp.Value.SearchText == searchText);
+                Assert.Contains(active, kvp => kvp.Value.Query.SearchText == searchText);
             }
         }
 
@@ -561,12 +561,12 @@ namespace Soulseek.Tests.Unit.Client
 
                 var active = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches").ToList();
 
-                cts.Cancel();
+                await cts.CancelAsync();
 
                 await Record.ExceptionAsync(() => task); // swallow the cancellation exception
 
                 Assert.Single(active);
-                Assert.Contains(active, kvp => kvp.Value.SearchText == searchText);
+                Assert.Contains(active, kvp => kvp.Value.Query.SearchText == searchText);
             }
         }
 
@@ -642,7 +642,7 @@ namespace Soulseek.Tests.Unit.Client
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1, stateChanged: (e) => fired = true);
 
-            using (var search = new SearchInternal(searchText, token, options))
+            using (var search = new SearchInternal(new SearchQuery(searchText), SearchScope.Network, token, options))
             {
                 search.SetState(SearchStates.InProgress);
 
@@ -670,7 +670,7 @@ namespace Soulseek.Tests.Unit.Client
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1);
 
-            using (var search = new SearchInternal(searchText, token, options))
+            using (var search = new SearchInternal(new SearchQuery(searchText), SearchScope.Network, token, options))
             {
                 search.SetState(SearchStates.InProgress);
 
@@ -715,7 +715,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 searches.FirstOrDefault(r => r.Key == token).Value.ResponseReceived.Invoke(response);
 
-                cts.Cancel();
+                await cts.CancelAsync();
                 await Record.ExceptionAsync(() => task); // swallow the cancellation exception
 
                 Assert.True(fired);
