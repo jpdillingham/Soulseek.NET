@@ -2117,6 +2117,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Client.Setup(m => m.Username)
                 .Returns(username);
 
+            // no active searches in dictionary, so this should NOT be treated as intentional
+            var searches = new ConcurrentDictionary<int, SearchInternal>();
+            mocks.Client.Setup(m => m.Searches).Returns(searches);
+
             var message = GetServerSearchRequest(username, token, query);
             var endpoint = new IPEndPoint(IPAddress.None, 0);
 
@@ -2124,6 +2128,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
+
+            // verify that SearchResponder is NOT called since this is not an intentional self-search
+            mocks.SearchResponder.Verify(m => m.TryRespondAsync(username, token, query), Times.Never);
+        }
         }
 
         [Trait("Category", "Message")]
