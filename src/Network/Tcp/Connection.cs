@@ -189,6 +189,7 @@ namespace Soulseek.Network.Tcp
         protected SystemTimer WatchdogTimer { get; set; }
 
         private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private CancellationTokenSource DisconnectCancellationTokenSource { get; } = new CancellationTokenSource();
         private SemaphoreSlim WriteSemaphore { get; set; } = new SemaphoreSlim(initialCount: 1, maxCount: 1);
         private SemaphoreSlim WriteQueueSemaphore { get; set; }
 
@@ -308,6 +309,8 @@ namespace Soulseek.Network.Tcp
                 message ??= exception?.Message;
 
                 ChangeState(ConnectionState.Disconnecting, message);
+
+                DisconnectCancellationTokenSource.Cancel();
 
                 InactivityTimer?.Stop();
                 WatchdogTimer.Stop();
@@ -577,6 +580,8 @@ namespace Soulseek.Network.Tcp
 
                     WriteSemaphore?.Dispose();
                     WriteQueueSemaphore?.Dispose();
+
+                    DisconnectCancellationTokenSource?.Dispose();
                 }
 
                 Disposed = true;
