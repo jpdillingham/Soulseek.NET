@@ -53,7 +53,7 @@
         [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string id, [FromQuery]bool remove = false)
+        public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required] string id, [FromQuery] bool remove = false)
         {
             return CancelTransfer(TransferDirection.Download, username, id, remove);
         }
@@ -71,7 +71,7 @@
         [Authorize]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string id, [FromQuery]bool remove = false)
+        public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required] string id, [FromQuery] bool remove = false)
         {
             return CancelTransfer(TransferDirection.Upload, username, id, remove);
         }
@@ -90,7 +90,7 @@
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(string), 403)]
         [ProducesResponseType(typeof(string), 500)]
-        public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromBody]QueueDownloadRequest request)
+        public async Task<IActionResult> Enqueue([FromRoute, Required] string username, [FromBody] QueueDownloadRequest request)
         {
             try
             {
@@ -130,6 +130,7 @@
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -158,7 +159,7 @@
         [HttpGet("downloads/{username}")]
         [Authorize]
         [ProducesResponseType(200)]
-        public IActionResult GetDownloads([FromRoute, Required]string username)
+        public IActionResult GetDownloads([FromRoute, Required] string username)
         {
             return Ok(Tracker.Transfers
                 .WithDirection(TransferDirection.Download)
@@ -179,15 +180,15 @@
         [Authorize]
         [ProducesResponseType(typeof(DTO.Transfer), 200)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string id)
+        public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required] string username, [FromRoute, Required] string id)
         {
             var record = Tracker.Transfers.WithDirection(TransferDirection.Download).FromUser(username).WithId(id);
-            
+
             if (record == default)
             {
                 return NotFound();
             }
-            
+
             record.Transfer.PlaceInQueue = await Client.GetDownloadPlaceInQueueAsync(username, record.Transfer.Filename);
             return Ok(record.Transfer);
         }
@@ -216,7 +217,7 @@
         [HttpGet("uploads/{username}")]
         [Authorize]
         [ProducesResponseType(200)]
-        public IActionResult GetUploads([FromRoute, Required]string username)
+        public IActionResult GetUploads([FromRoute, Required] string username)
         {
             return Ok(Tracker.Transfers
                 .WithDirection(TransferDirection.Upload)
@@ -234,7 +235,7 @@
         [HttpGet("uploads/{username}/{id}")]
         [Authorize]
         [ProducesResponseType(200)]
-        public IActionResult GetUploads([FromRoute, Required]string username, [FromRoute, Required]string id)
+        public IActionResult GetUploads([FromRoute, Required] string username, [FromRoute, Required] string id)
         {
             return Ok(Tracker.Transfers
                 .WithDirection(TransferDirection.Upload)

@@ -510,7 +510,7 @@ namespace Soulseek.Network
                 incomingConnection.HandoffTcpClient());
 
             connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {token} disconnected. (type: {connection.Type}, id: {connection.Id})");
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {token} disconnected: {e.Exception?.Message ?? e.Message}. (type: {connection.Type}, id: {connection.Id})");
 
             Diagnostic.Debug($"Inbound transfer connection to {username} ({connection.IPEndPoint}) for token {token} handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
@@ -548,7 +548,7 @@ namespace Soulseek.Network
                 SoulseekClient.Options.TransferConnectionOptions);
 
             connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token} disconnected. (type: {connection.Type}, id: {connection.Id})");
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token} disconnected: {e.Exception?.Message ?? e.Message}. (type: {connection.Type}, id: {connection.Id})");
 
             int remoteToken;
 
@@ -769,7 +769,7 @@ namespace Soulseek.Network
             var connection = ConnectionFactory.GetTransferConnection(ipEndPoint, SoulseekClient.Options.TransferConnectionOptions);
 
             connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} to {ipEndPoint} disconnected. (type: {connection.Type}, id: {connection.Id})");
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} to {ipEndPoint} disconnected: {e.Exception?.Message ?? e.Message}. (type: {connection.Type}, id: {connection.Id})");
 
             try
             {
@@ -812,7 +812,7 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Indirect transfer connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
                 connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
-                connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
+                connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected: {e.Exception?.Message ?? e.Message}. (type: {connection.Type}, id: {connection.Id})");
 
                 Diagnostic.Debug($"Indirect transfer connection for {token} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
