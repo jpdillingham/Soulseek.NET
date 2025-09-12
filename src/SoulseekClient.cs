@@ -3304,7 +3304,13 @@ namespace Soulseek
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
-                    disconnectedTaskCancellationSource.SetException(e.Exception ?? new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
+                    if (e.Exception is OperationCanceledException || e.Exception is TimeoutException)
+                    {
+                        disconnectedTaskCancellationSource.SetException(e.Exception);
+                        return;
+                    }
+
+                    disconnectedTaskCancellationSource.SetException(new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
                 };
 
                 outputStream = await outputStreamFactory().ConfigureAwait(false);
@@ -3318,7 +3324,7 @@ namespace Soulseek
 
                 var tokenBucket = DownloadTokenBucket;
 
-                var downloadTask = download.Connection.ReadAsync(
+                var readTask = download.Connection.ReadAsync(
                     length: download.Size.Value - startOffset,
                     outputStream: outputStream,
                     governor: async (requestedBytes, cancelToken) =>
@@ -3333,7 +3339,10 @@ namespace Soulseek
                     },
                     cancellationToken: linkedCancellationToken);
 
-                var firstTask = await Task.WhenAny(new List<Task>() { disconnectedTask, downloadTask }).ConfigureAwait(false);
+                var firstTask = await Task.WhenAny(new List<Task>() { disconnectedTask, readTask }).ConfigureAwait(false);
+
+                // cancel the losing task
+                linkedCancellationTokenSource.Cancel();
 
                 if (firstTask == disconnectedTask)
                 {
@@ -3341,10 +3350,7 @@ namespace Soulseek
                     await disconnectedTask.ConfigureAwait(false);
                 }
 
-                await downloadTask.ConfigureAwait(false);
-
-                // cancel the losing task
-                linkedCancellationTokenSource.Cancel();
+                await readTask.ConfigureAwait(false);
 
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(TransferStates.Succeeded | TransferStates.Completed);
@@ -3358,7 +3364,7 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 download.Exception = ex;
-                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Rejected | TransferStates.Completed);
 
                 throw;
@@ -3366,7 +3372,7 @@ namespace Soulseek
             catch (TransferSizeMismatchException ex)
             {
                 download.Exception = ex;
-                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Aborted | TransferStates.Completed);
 
                 throw;
@@ -3375,7 +3381,7 @@ namespace Soulseek
             {
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer cancelled", ex);
-                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Cancelled | TransferStates.Completed);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3386,7 +3392,7 @@ namespace Soulseek
             {
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer timed out", ex);
-                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(TransferStates.TimedOut | TransferStates.Completed);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3397,7 +3403,7 @@ namespace Soulseek
             {
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer error", ex);
-                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Errored | TransferStates.Completed);
 
                 Diagnostic.Debug(ex.ToString());
