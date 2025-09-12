@@ -3197,8 +3197,6 @@ namespace Soulseek
                 Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
                 globalSemaphoreAcquired = true;
 
-                Task downloadCompleted;
-
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
 
@@ -3233,9 +3231,6 @@ namespace Soulseek
 
                     UpdateState(TransferStates.Initializing);
 
-                    // prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
-
                     // connect to the peer to retrieve the file; for these types of transfers, we must initiate the transfer connection.
                     download.Connection = await PeerConnectionManager
                         .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
@@ -3266,9 +3261,6 @@ namespace Soulseek
 
                     UpdateState(TransferStates.Initializing);
 
-                    // also prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
-
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
                     peerConnection = await PeerConnectionManager
@@ -3298,98 +3290,93 @@ namespace Soulseek
                     }
                 }
 
+                // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
+                // to determine the outcome of the download.
+                var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
+                var disconnectedTask = disconnectedTaskCancellationSource.Task;
+
+                // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
+                // we'll do that with a cancellation token that we bind to the one that was passed into the method.
+                using var manualCancellationTokenSource = new CancellationTokenSource();
+                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, manualCancellationTokenSource.Token);
+                var linkedCancellationToken = linkedCancellationTokenSource.Token;
+
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
-                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive way
-                    // to be sure we conclude the transfer in a way that accurately represents what happened.
-                    if (download.State.HasFlag(TransferStates.Succeeded))
-                    {
-                        Waiter.Complete(download.WaitKey);
-                    }
-                    else if (e.Exception is TimeoutException)
-                    {
-                        download.State = TransferStates.TimedOut;
-                        Waiter.Throw(download.WaitKey, e.Exception);
-                    }
-                    else if (e.Exception is OperationCanceledException)
-                    {
-                        download.State = TransferStates.Cancelled;
-                        Waiter.Throw(download.WaitKey, e.Exception);
-                    }
-                    else
-                    {
-                        Waiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
-                    }
+                    disconnectedTaskCancellationSource.SetException(e.Exception ?? new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
                 };
 
-                try
+                outputStream = await outputStreamFactory().ConfigureAwait(false);
+
+                Diagnostic.Debug($"Seeking download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {startOffset} bytes");
+                var startOffsetBytes = BitConverter.GetBytes(startOffset);
+                await download.Connection.WriteAsync(startOffsetBytes, linkedCancellationToken).ConfigureAwait(false);
+
+                UpdateState(TransferStates.InProgress);
+                UpdateProgress(download.StartOffset);
+
+                var tokenBucket = DownloadTokenBucket;
+
+                var downloadTask = download.Connection.ReadAsync(
+                    length: download.Size.Value - startOffset,
+                    outputStream: outputStream,
+                    governor: async (requestedBytes, cancelToken) =>
+                    {
+                        var bytesGrantedByCaller = await options.Governor(new Transfer(download), requestedBytes, cancelToken).ConfigureAwait(false);
+                        return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancelToken).ConfigureAwait(false);
+                    },
+                    reporter: (attemptedBytes, grantedBytes, actualBytes) =>
+                    {
+                        options.Reporter?.Invoke(new Transfer(download), attemptedBytes, grantedBytes, actualBytes);
+                        tokenBucket.Return(grantedBytes - actualBytes);
+                    },
+                    cancellationToken: linkedCancellationToken);
+
+                var firstTask = await Task.WhenAny(new List<Task>() { disconnectedTask, downloadTask }).ConfigureAwait(false);
+
+                if (firstTask == disconnectedTask)
                 {
-                    outputStream = await outputStreamFactory().ConfigureAwait(false);
-
-                    Diagnostic.Debug($"Seeking download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {startOffset} bytes");
-                    var startOffsetBytes = BitConverter.GetBytes(startOffset);
-                    await download.Connection.WriteAsync(startOffsetBytes, cancellationToken).ConfigureAwait(false);
-
-                    UpdateState(TransferStates.InProgress);
-                    UpdateProgress(download.StartOffset);
-
-                    var tokenBucket = DownloadTokenBucket;
-
-                    await download.Connection.ReadAsync(
-                        length: download.Size.Value - startOffset,
-                        outputStream: outputStream,
-                        governor: async (requestedBytes, cancelToken) =>
-                        {
-                            var bytesGrantedByCaller = await options.Governor(new Transfer(download), requestedBytes, cancelToken).ConfigureAwait(false);
-                            return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
-                        },
-                        reporter: (attemptedBytes, grantedBytes, actualBytes) =>
-                        {
-                            options.Reporter?.Invoke(new Transfer(download), attemptedBytes, grantedBytes, actualBytes);
-                            tokenBucket.Return(grantedBytes - actualBytes);
-                        },
-                        cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                    download.State = TransferStates.Succeeded;
-
-                    download.Connection.Disconnect("Transfer complete");
-                    Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
-                }
-                catch (Exception ex)
-                {
-                    download.Connection.Disconnect(exception: ex);
+                    // this is guaranteed to throw; we control the TCS and we're calling SetException() above
+                    await disconnectedTask.ConfigureAwait(false);
                 }
 
-                // wait for the download to complete this wait is either completed (on success) or thrown (on anything other than
-                // success) in the Disconnected event handler of the transfer connection
-                await downloadCompleted.ConfigureAwait(false);
+                await downloadTask.ConfigureAwait(false);
 
-                download.State = TransferStates.Completed | download.State;
+                // cancel the losing task
+                linkedCancellationTokenSource.Cancel();
+
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(download.State);
+                UpdateState(TransferStates.Succeeded | TransferStates.Completed);
+
+                Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
+
+                download.Connection.Disconnect("Transfer complete");
 
                 return new Transfer(download);
             }
             catch (TransferRejectedException ex)
             {
-                download.State = TransferStates.Rejected;
                 download.Exception = ex;
+                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateState(TransferStates.Rejected | TransferStates.Completed);
 
                 throw;
             }
             catch (TransferSizeMismatchException ex)
             {
-                download.State = TransferStates.Aborted;
                 download.Exception = ex;
+                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateState(TransferStates.Aborted | TransferStates.Completed);
 
                 throw;
             }
             catch (OperationCanceledException ex)
             {
-                download.State = TransferStates.Cancelled;
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer cancelled", ex);
+                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateState(TransferStates.Cancelled | TransferStates.Completed);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3397,9 +3384,10 @@ namespace Soulseek
             }
             catch (TimeoutException ex)
             {
-                download.State = TransferStates.TimedOut;
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer timed out", ex);
+                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateState(TransferStates.TimedOut | TransferStates.Completed);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3407,9 +3395,10 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                download.State = TransferStates.Errored;
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer error", ex);
+                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateState(TransferStates.Errored | TransferStates.Completed);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3423,7 +3412,6 @@ namespace Soulseek
             finally
             {
                 // clean up the waits in case the code threw before they were awaited.
-                Waiter.Complete(download.WaitKey);
                 Waiter.Cancel(transferStartRequestedWaitKey);
 
                 if (globalSemaphoreAcquired)
@@ -3471,12 +3459,12 @@ namespace Soulseek
                     }
                 }
 
-                if (!download.State.HasFlag(TransferStates.Completed))
-                {
-                    download.State = TransferStates.Completed | download.State;
-                    UpdateProgress(download.StartOffset + finalStreamPosition);
-                    UpdateState(download.State);
-                }
+                // if (!download.State.HasFlag(TransferStates.Completed))
+                // {
+                //     download.State = TransferStates.Completed | download.State;
+                //     UpdateProgress(download.StartOffset + finalStreamPosition);
+                //     UpdateState(download.State);
+                // }
 
                 DownloadDictionary.TryRemove(download.Token, out _);
                 UniqueKeyDictionary.TryRemove(uniqueKey, out _);
