@@ -619,7 +619,7 @@ namespace Soulseek.Network.Tcp
                     var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, cancellationToken).ConfigureAwait(false));
 
 #if NETSTANDARD2_0
-                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesGranted, linkedCancellationToken).ConfigureAwait(false);
+                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesGranted, cancellationToken).ConfigureAwait(false);
 #else
                     var bytesRead = await Stream.ReadAsync(new Memory<byte>(buffer, 0, bytesGranted), cancellationToken).ConfigureAwait(false);
 #endif
@@ -630,7 +630,7 @@ namespace Soulseek.Network.Tcp
                     }
 
 #if NETSTANDARD2_0
-                    await outputStream.WriteAsync(buffer, 0, bytesRead, linkedCancellationToken).ConfigureAwait(false);
+                    await outputStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 #else
                     await outputStream.WriteAsync(new Memory<byte>(buffer, 0, bytesRead), cancellationToken).ConfigureAwait(false);
 #endif
@@ -729,8 +729,8 @@ namespace Soulseek.Network.Tcp
                     var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, cancellationToken).ConfigureAwait(false));
 
 #if NETSTANDARD2_0
-                    var bytesRead = await inputStream.ReadAsync(buffer, 0, bytesGranted, linkedCancellationToken).ConfigureAwait(false);
-                    await Stream.WriteAsync(buffer, 0, bytesRead, linkedCancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(buffer, 0, bytesGranted, cancellationToken).ConfigureAwait(false);
+                    await Stream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 #else
                     var bytesRead = await inputStream.ReadAsync(new Memory<byte>(buffer, 0, bytesGranted), cancellationToken).ConfigureAwait(false);
                     await Stream.WriteAsync(new ReadOnlyMemory<byte>(buffer, 0, bytesRead), cancellationToken).ConfigureAwait(false);
