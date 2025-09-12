@@ -614,6 +614,9 @@ namespace Soulseek.Network.Tcp
 
             long totalBytesRead = 0;
 
+            using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, DisconnectCancellationTokenSource.Token);
+            var linkedCancellationToken = linkedCancellationTokenSource.Token;
+
             try
             {
                 while (!Disposed && totalBytesRead < length)
@@ -621,12 +624,12 @@ namespace Soulseek.Network.Tcp
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining; // cast to int is safe because of the check against buffer length.
 
-                    var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, cancellationToken).ConfigureAwait(false));
+                    var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, linkedCancellationToken).ConfigureAwait(false));
 
 #if NETSTANDARD2_0
-                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesGranted, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesGranted, linkedCancellationToken).ConfigureAwait(false);
 #else
-                    var bytesRead = await Stream.ReadAsync(new Memory<byte>(buffer, 0, bytesGranted), cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await Stream.ReadAsync(new Memory<byte>(buffer, 0, bytesGranted), linkedCancellationToken).ConfigureAwait(false);
 #endif
 
                     if (bytesRead == 0)
@@ -635,9 +638,9 @@ namespace Soulseek.Network.Tcp
                     }
 
 #if NETSTANDARD2_0
-                    await outputStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+                    await outputStream.WriteAsync(buffer, 0, bytesRead, linkedCancellationToken).ConfigureAwait(false);
 #else
-                    await outputStream.WriteAsync(new Memory<byte>(buffer, 0, bytesRead), cancellationToken).ConfigureAwait(false);
+                    await outputStream.WriteAsync(new Memory<byte>(buffer, 0, bytesRead), linkedCancellationToken).ConfigureAwait(false);
 #endif
 
                     totalBytesRead += bytesRead;
@@ -650,7 +653,7 @@ namespace Soulseek.Network.Tcp
                     ResetInactivityTime();
                 }
 
-                await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                await outputStream.FlushAsync(linkedCancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -706,13 +709,16 @@ namespace Soulseek.Network.Tcp
             // declare and initialize it here so it's available in the finally block
             byte[] buffer = Array.Empty<byte>();
 
+            using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, DisconnectCancellationTokenSource.Token);
+            var linkedCancellationToken = linkedCancellationTokenSource.Token;
+
             // grab a slot on the queue semaphore.  note that this isn't for synchronization, it's to
             // maintain a count of waiting writes
-            await WriteQueueSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WriteQueueSemaphore.WaitAsync(linkedCancellationToken).ConfigureAwait(false);
 
             // obtain the write semaphore for this connection.  this keeps concurrent writes
             // from interleaving, which will mangle the messages on the receiving end
-            await WriteSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WriteSemaphore.WaitAsync(linkedCancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -731,14 +737,14 @@ namespace Soulseek.Network.Tcp
                     var bytesRemaining = length - totalBytesWritten;
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining;
 
-                    var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, cancellationToken).ConfigureAwait(false));
+                    var bytesGranted = Math.Min(bytesToRead, await governor(bytesToRead, linkedCancellationToken).ConfigureAwait(false));
 
 #if NETSTANDARD2_0
-                    var bytesRead = await inputStream.ReadAsync(buffer, 0, bytesGranted, cancellationToken).ConfigureAwait(false);
-                    await Stream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(buffer, 0, bytesGranted, linkedCancellationToken).ConfigureAwait(false);
+                    await Stream.WriteAsync(buffer, 0, bytesRead, linkedCancellationToken).ConfigureAwait(false);
 #else
-                    var bytesRead = await inputStream.ReadAsync(new Memory<byte>(buffer, 0, bytesGranted), cancellationToken).ConfigureAwait(false);
-                    await Stream.WriteAsync(new ReadOnlyMemory<byte>(buffer, 0, bytesRead), cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await inputStream.ReadAsync(new Memory<byte>(buffer, 0, bytesGranted), linkedCancellationToken).ConfigureAwait(false);
+                    await Stream.WriteAsync(new ReadOnlyMemory<byte>(buffer, 0, bytesRead), linkedCancellationToken).ConfigureAwait(false);
 #endif
 
                     totalBytesWritten += bytesRead;
