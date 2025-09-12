@@ -73,7 +73,7 @@ namespace WebAPI
             SharedCacheTTL = Configuration.GetValue<long>("SHARED_CACHE_TTL", 3600000); // 1 hour
             EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", true);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
-            DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
+            DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Debug);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 10000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
@@ -82,7 +82,6 @@ namespace WebAPI
             ReadBufferSize = Configuration.GetValue<int>("READ_BUFFER_SIZE", 16384);
             WriteBufferSize = Configuration.GetValue<int>("WRITE_BUFFER_SIZE", 16384);
 
-            DiagnosticLevel = DiagnosticLevel.Info;
             EnableDistributedNetwork = false;
 
             JwtSigningKey = new SymmetricSecurityKey(PBKDF2.GetKey(Password));
@@ -314,7 +313,7 @@ namespace WebAPI
 
                 Console.WriteLine($"[{direction}] [{user}/{file}] {oldState} => {state}{(completed ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%) @ {args.Transfer.AverageSpeed.SizeSuffix()}/s" : string.Empty)}");
 
-                if (completed && args.Transfer.State.HasFlag(TransferStates.Succeeded))
+                if (completed && args.Transfer.State.HasFlag(TransferStates.Succeeded) && args.Transfer.AverageSpeed > 0)
                 {
                     _ = Client.SendUploadSpeedAsync((int)(args.Transfer.AverageSpeed));
                 }
@@ -323,7 +322,7 @@ namespace WebAPI
             Client.TransferProgressUpdated += (e, args) =>
             {
                 // this is really verbose.
-                // Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.Transfer.BytesTransferred}/{args.Transfer.Size} {args.Transfer.PercentComplete}% {args.Transfer.AverageSpeed}kb/s");
+                //Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.Transfer.BytesTransferred}/{args.Transfer.Size} {args.Transfer.PercentComplete}% {args.Transfer.AverageSpeed}kb/s");
             };
 
             // bind BrowseProgressUpdated to track progress of browse response payload transfers.  
