@@ -3365,18 +3365,14 @@ namespace Soulseek
             }
             catch (TransferRejectedException ex)
             {
-                download.State = TransferStates.Rejected | TransferStates.Completed;
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Rejected | TransferStates.Completed);
 
                 throw;
             }
             catch (TransferSizeMismatchException ex)
             {
-                download.State = TransferStates.Aborted | TransferStates.Completed;
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Aborted | TransferStates.Completed);
 
                 throw;
@@ -3387,7 +3383,7 @@ namespace Soulseek
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer cancelled", ex);
                 UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
-                UpdateState(TransferStates.Cancelled | TransferStates.Completed);
+                UpdateState(download.State);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3399,7 +3395,7 @@ namespace Soulseek
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer timed out", ex);
                 UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
-                UpdateState(TransferStates.TimedOut | TransferStates.Completed);
+                UpdateState(download.State);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3411,7 +3407,7 @@ namespace Soulseek
                 download.Exception = ex;
                 download.Connection?.Disconnect("Transfer error", ex);
                 UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
-                UpdateState(TransferStates.Errored | TransferStates.Completed);
+                UpdateState(download.State);
 
                 Diagnostic.Debug(ex.ToString());
 
