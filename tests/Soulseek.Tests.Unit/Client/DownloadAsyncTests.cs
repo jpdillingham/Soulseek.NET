@@ -845,14 +845,14 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
-            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new OperationCanceledException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            // here is the thing that is supposed to make this test work
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException());
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -940,8 +940,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new TimeoutException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
@@ -990,8 +988,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1042,8 +1038,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1090,9 +1084,13 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        /// <summary>
+        ///     This test is intended to be the definitive source of truth regarding the sequence of Progress and State events
+        ///     for a successful transfer.
+        /// </summary>
         [Trait("Category", "DownloadToFileAsync")]
-        [Theory(DisplayName = "DownloadToFileAsync raises expected events on success when skipping queue"), AutoData]
-        public async Task DownloadToFileAsync_Raises_Expected_Events_On_Success_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, string localFilename, int token, int size)
+        [Theory(DisplayName = "DownloadToFileAsync raises expected events on success"), AutoData]
+        public async Task DownloadToFileAsync_Raises_Expected_Events_On_Success(string username, IPEndPoint endpoint, string filename, string localFilename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1104,8 +1102,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1114,8 +1112,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1135,34 +1131,60 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var events = new List<TransferStateChangedEventArgs>();
+                // we need to capture both types of events in the same place so that they are chronological
+                var events = new List<TransferEventArgs>();
 
                 s.TransferStateChanged += (sender, e) =>
                 {
                     events.Add(e);
                 };
 
+                s.TransferProgressUpdated += (sender, e) =>
+                {
+                    events.Add(e);
+                };
+
                 await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, localFilename, (long?)size, 0, token, new TransferOptions(), null);
 
-                Assert.Equal(6, events.Count);
+                Assert.Equal(8, events.Count);
 
-                Assert.Equal(TransferStates.None, events[0].PreviousState);
-                Assert.Equal(TransferStates.Queued | TransferStates.Locally, events[0].Transfer.State);
+                // 1: None -> Queued | Locally
+                Assert.Equal(TransferStates.None, ((TransferStateChangedEventArgs)events[0]).PreviousState);
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, ((TransferStateChangedEventArgs)events[0]).Transfer.State);
 
-                Assert.Equal(TransferStates.Queued | TransferStates.Locally, events[1].PreviousState);
-                Assert.Equal(TransferStates.Requested, events[1].Transfer.State);
+                // 2: Queued | Locally -> Requested
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, ((TransferStateChangedEventArgs)events[1]).PreviousState);
+                Assert.Equal(TransferStates.Requested, ((TransferStateChangedEventArgs)events[1]).Transfer.State);
 
-                Assert.Equal(TransferStates.Requested, events[2].PreviousState);
-                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[2].Transfer.State);
+                // 3: Requested -> Queued | Remotely
+                // note that somewhere along the way a change was made so that this state transition is captured even
+                // if the remote client allows the transfer to begin immediately
+                Assert.Equal(TransferStates.Requested, ((TransferStateChangedEventArgs)events[2]).PreviousState);
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, ((TransferStateChangedEventArgs)events[2]).Transfer.State);
 
-                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[3].PreviousState);
-                Assert.Equal(TransferStates.Initializing, events[3].Transfer.State);
+                // 4: Queued | Remotely -> Initializing
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, ((TransferStateChangedEventArgs)events[3]).PreviousState);
+                Assert.Equal(TransferStates.Initializing, ((TransferStateChangedEventArgs)events[3]).Transfer.State);
 
-                Assert.Equal(TransferStates.Initializing, events[4].PreviousState);
-                Assert.Equal(TransferStates.InProgress, events[4].Transfer.State);
+                // 5: Initializing -> InProgress
+                Assert.Equal(TransferStates.Initializing, ((TransferStateChangedEventArgs)events[4]).PreviousState);
+                Assert.Equal(TransferStates.InProgress, ((TransferStateChangedEventArgs)events[4]).Transfer.State);
 
-                Assert.Equal(TransferStates.InProgress, events[5].PreviousState);
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[5].Transfer.State);
+                // 6: Initial progress event is sent immediately after transitioning into InProgress
+                var e5 = (TransferProgressUpdatedEventArgs)events[5];
+                Assert.Equal(TransferStates.InProgress, e5.Transfer.State);
+                Assert.Equal(0, e5.Transfer.BytesTransferred);
+
+                // 7: Final progress event is sent immediately before transitioning into Completed | Succeeded
+                // note that the size here is 0 because we can't inject an output stream; the final reported size
+                // comes from the output stream position
+                var e6 = (TransferProgressUpdatedEventArgs)events[6];
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, e6.Transfer.State);
+                Assert.Equal(0, e6.Transfer.BytesTransferred);
+
+                // 8: InProgress -> Completed | Succeeded
+                Assert.Equal(TransferStates.InProgress, ((TransferStateChangedEventArgs)events[7]).PreviousState);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, ((TransferStateChangedEventArgs)events[7]).Transfer.State);
             }
         }
 
@@ -1190,8 +1212,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1255,8 +1275,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1316,8 +1334,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1372,8 +1388,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1423,8 +1437,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1481,8 +1493,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1540,8 +1550,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1605,8 +1613,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1676,14 +1682,6 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // complete our TCS when the disconnected event handler fires
-            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
-                .Callback(() => tcs.TrySetResult(data));
-
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
@@ -1736,8 +1734,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1797,8 +1793,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1875,14 +1869,6 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // complete our TCS when the disconnected event handler fires
-            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
-                .Callback(() => tcs.TrySetResult(data));
-
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
@@ -1955,14 +1941,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
-
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // complete our TCS when the disconnected event handler fires
-            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
-                .Callback(() => tcs.TrySetResult(data));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -2041,14 +2019,6 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // complete our TCS when the disconnected event handler fires
-            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
-                .Callback(() => tcs.TrySetResult(data));
-
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
@@ -2113,14 +2083,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
-
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // complete our TCS when the disconnected event handler fires
-            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>()))
-                .Callback(() => tcs.TrySetResult(data));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -2224,11 +2186,19 @@ namespace Soulseek.Tests.Unit.Client
 
             var request = new TransferRequest(TransferDirection.Download, token, filename, size);
 
-            var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new Exception())); // fake an exception to move execution to the indefinite wait
+            // help us hang the read task indefinitely
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            // capture the cancellation token passed to read so we can ensure it is cancelled
+            CancellationToken? capturedToken = default;
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    capturedToken = cancellationToken.GetValueOrDefault();
+                })
+                .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2241,14 +2211,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
-
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // throw our TCS when the disconnected event handler throws
-            waiter.Setup(m => m.Throw(It.IsAny<WaitKey>(), It.IsAny<Exception>()))
-                .Callback<WaitKey, Exception>((key, ex) => tcs.SetException(ex));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -2288,11 +2250,19 @@ namespace Soulseek.Tests.Unit.Client
 
             var request = new TransferRequest(TransferDirection.Download, token, filename, size);
 
-            var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new Exception())); // fake an exception to move execution to the indefinite wait
+            // help us hang the read task indefinitely
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            // capture the cancellation token passed to read so we can ensure it is cancelled
+            CancellationToken? capturedToken = default;
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    capturedToken = cancellationToken.GetValueOrDefault();
+                })
+                .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2305,14 +2275,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
-
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // throw our TCS when the disconnected event handler throws
-            waiter.Setup(m => m.Throw(It.IsAny<WaitKey>(), It.IsAny<Exception>()))
-                .Callback<WaitKey, Exception>((key, ex) => tcs.SetException(ex));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -2331,6 +2293,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, new TransferOptions(), null);
 
+                // make the transfer appear to disconnect
                 transferConn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("cancelled", new OperationCanceledException("cancelled")));
 
                 var ex = await Record.ExceptionAsync(() => task);
@@ -2338,6 +2301,9 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
                 Assert.Equal("cancelled", ex.Message);
+
+                // make sure the read is cancelled (this would hang if not, but still)
+                Assert.True(capturedToken.Value.IsCancellationRequested);
             }
         }
 
@@ -2352,11 +2318,19 @@ namespace Soulseek.Tests.Unit.Client
 
             var request = new TransferRequest(TransferDirection.Download, token, filename, size);
 
-            var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new Exception())); // fake an exception to move execution to the indefinite wait
+            // help us hang the read task indefinitely
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+            // capture the cancellation token passed to read so we can ensure it is cancelled
+            CancellationToken? capturedToken = default;
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    capturedToken = cancellationToken.GetValueOrDefault();
+                })
+                .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2369,14 +2343,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
-
-            // make download wait for our task completion source
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
-
-            // throw our TCS when the disconnected event handler throws
-            waiter.Setup(m => m.Throw(It.IsAny<WaitKey>(), It.IsAny<Exception>()))
-                .Callback<WaitKey, Exception>((key, ex) => tcs.SetException(ex));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -2407,6 +2373,9 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.Equal("Transfer failed: some exception", ex.InnerException.Message);
                 Assert.Equal(thrownEx, ex.InnerException.InnerException);
+
+                // make sure the read is cancelled (this would hang if not, but still)
+                Assert.True(capturedToken.Value.IsCancellationRequested);
             }
         }
 
@@ -2435,8 +2404,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2493,8 +2460,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2558,8 +2523,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2619,8 +2582,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2677,8 +2638,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2742,8 +2701,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2799,8 +2756,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2857,8 +2812,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2886,7 +2839,10 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(3, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
+                Assert.Equal(TransferStates.InProgress, events[1].Transfer.State);
 
+                // whether really actually intended or not, this test is expecting that the final progress event
+                // shows the transfer in a terminal state
                 Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[2].Transfer.State);
             }
         }
@@ -2920,8 +2876,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2978,8 +2932,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3041,8 +2993,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3092,6 +3042,10 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
+            // this fails the download
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException(new MessageReadException()));
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -3099,8 +3053,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new MessageReadException()));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3155,6 +3107,10 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
+            // this fails the download
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException(new TimeoutException()));
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -3162,8 +3118,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<byte[]>(new TimeoutException()));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3247,7 +3201,7 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<byte[]>(new NullReferenceException()));
+                .Returns(Task.FromException<byte[]>(new ConnectionReadException("connection ReadAsync wraps everything in ConnectionReadException", new NullReferenceException())));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3256,9 +3210,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new ConnectionException("foo", new NullReferenceException())));
 
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
@@ -3283,7 +3234,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
-                Assert.IsType<ConnectionException>(ex.InnerException);
+                Assert.IsAssignableFrom<ConnectionException>(ex.InnerException);
                 Assert.IsType<NullReferenceException>(ex.InnerException.InnerException);
             }
         }
@@ -3312,9 +3263,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new TimeoutException()));
 
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
@@ -3367,9 +3315,6 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new OperationCanceledException()));
-
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3420,8 +3365,6 @@ namespace Soulseek.Tests.Unit.Client
 
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3472,8 +3415,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(data));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
