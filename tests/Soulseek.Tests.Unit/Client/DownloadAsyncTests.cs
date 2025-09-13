@@ -2897,7 +2897,10 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(3, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
+                Assert.Equal(TransferStates.InProgress, events[1].Transfer.State);
 
+                // whether really actually intended or not, this test is expecting that the final progress event
+                // shows the transfer in a terminal state
                 Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[2].Transfer.State);
             }
         }
