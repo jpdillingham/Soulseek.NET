@@ -1084,9 +1084,13 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        /// <summary>
+        ///     This test is intended to be the definitive source of truth regarding the sequence of Progress and State events
+        ///     for a successful transfer.
+        /// </summary>
         [Trait("Category", "DownloadToFileAsync")]
-        [Theory(DisplayName = "DownloadToFileAsync raises expected events on success when skipping queue"), AutoData]
-        public async Task DownloadToFileAsync_Raises_Expected_Events_On_Success_When_Skipping_Queue(string username, IPEndPoint endpoint, string filename, string localFilename, int token, int size)
+        [Theory(DisplayName = "DownloadToFileAsync raises expected events on success"), AutoData]
+        public async Task DownloadToFileAsync_Raises_Expected_Events_On_Success(string username, IPEndPoint endpoint, string filename, string localFilename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1098,8 +1102,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1127,34 +1131,60 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var events = new List<TransferStateChangedEventArgs>();
+                // we need to capture both types of events in the same place so that they are chronological
+                var events = new List<TransferEventArgs>();
 
                 s.TransferStateChanged += (sender, e) =>
                 {
                     events.Add(e);
                 };
 
+                s.TransferProgressUpdated += (sender, e) =>
+                {
+                    events.Add(e);
+                };
+
                 await s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, localFilename, (long?)size, 0, token, new TransferOptions(), null);
 
-                Assert.Equal(6, events.Count);
+                Assert.Equal(8, events.Count);
 
-                Assert.Equal(TransferStates.None, events[0].PreviousState);
-                Assert.Equal(TransferStates.Queued | TransferStates.Locally, events[0].Transfer.State);
+                // 1: None -> Queued | Locally
+                Assert.Equal(TransferStates.None, ((TransferStateChangedEventArgs)events[0]).PreviousState);
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, ((TransferStateChangedEventArgs)events[0]).Transfer.State);
 
-                Assert.Equal(TransferStates.Queued | TransferStates.Locally, events[1].PreviousState);
-                Assert.Equal(TransferStates.Requested, events[1].Transfer.State);
+                // 2: Queued | Locally -> Requested
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, ((TransferStateChangedEventArgs)events[1]).PreviousState);
+                Assert.Equal(TransferStates.Requested, ((TransferStateChangedEventArgs)events[1]).Transfer.State);
 
-                Assert.Equal(TransferStates.Requested, events[2].PreviousState);
-                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[2].Transfer.State);
+                // 3: Requested -> Queued | Remotely
+                // note that somewhere along the way a change was made so that this state transition is captured even
+                // if the remote client allows the transfer to begin immediately
+                Assert.Equal(TransferStates.Requested, ((TransferStateChangedEventArgs)events[2]).PreviousState);
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, ((TransferStateChangedEventArgs)events[2]).Transfer.State);
 
-                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, events[3].PreviousState);
-                Assert.Equal(TransferStates.Initializing, events[3].Transfer.State);
+                // 4: Queued | Remotely -> Initializing
+                Assert.Equal(TransferStates.Queued | TransferStates.Remotely, ((TransferStateChangedEventArgs)events[3]).PreviousState);
+                Assert.Equal(TransferStates.Initializing, ((TransferStateChangedEventArgs)events[3]).Transfer.State);
 
-                Assert.Equal(TransferStates.Initializing, events[4].PreviousState);
-                Assert.Equal(TransferStates.InProgress, events[4].Transfer.State);
+                // 5: Initializing -> InProgress
+                Assert.Equal(TransferStates.Initializing, ((TransferStateChangedEventArgs)events[4]).PreviousState);
+                Assert.Equal(TransferStates.InProgress, ((TransferStateChangedEventArgs)events[4]).Transfer.State);
 
-                Assert.Equal(TransferStates.InProgress, events[5].PreviousState);
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[5].Transfer.State);
+                // 6: Initial progress event is sent immediately after transitioning into InProgress
+                var e5 = (TransferProgressUpdatedEventArgs)events[5];
+                Assert.Equal(TransferStates.InProgress, e5.Transfer.State);
+                Assert.Equal(0, e5.Transfer.BytesTransferred);
+
+                // 7: Final progress event is sent immediately before transitioning into Completed | Succeeded
+                // note that the size here is 0 because we can't inject an output stream; the final reported size
+                // comes from the output stream position
+                var e6 = (TransferProgressUpdatedEventArgs)events[6];
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, e6.Transfer.State);
+                Assert.Equal(0, e6.Transfer.BytesTransferred);
+
+                // 8: InProgress -> Completed | Succeeded
+                Assert.Equal(TransferStates.InProgress, ((TransferStateChangedEventArgs)events[7]).PreviousState);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, ((TransferStateChangedEventArgs)events[7]).Transfer.State);
             }
         }
 
