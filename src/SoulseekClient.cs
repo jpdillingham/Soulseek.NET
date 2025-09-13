@@ -3352,10 +3352,10 @@ namespace Soulseek
 
                 await readTask.ConfigureAwait(false);
 
-                // update the state 'manually' so the final progress update is issued in the terminal state
-                download.State = TransferStates.Succeeded | TransferStates.Completed;
+                // update the state 'manually' so the final UpdateProgress() captures the Transfer in the terminal state
+                download.State = TransferStates.Completed | TransferStates.Succeeded;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(TransferStates.Succeeded | TransferStates.Completed);
+                UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
                 Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
 
@@ -3366,22 +3366,23 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 download.Exception = ex;
-                UpdateState(TransferStates.Rejected | TransferStates.Completed);
+                UpdateState(TransferStates.Completed | TransferStates.Rejected);
 
                 throw;
             }
             catch (TransferSizeMismatchException ex)
             {
                 download.Exception = ex;
-                UpdateState(TransferStates.Aborted | TransferStates.Completed);
+                UpdateState(TransferStates.Completed | TransferStates.Aborted);
 
                 throw;
             }
             catch (OperationCanceledException ex)
             {
-                download.State = TransferStates.Cancelled | TransferStates.Completed;
-                download.Exception = ex;
                 download.Connection?.Disconnect("Transfer cancelled", ex);
+
+                download.State = TransferStates.Completed | TransferStates.Cancelled;
+                download.Exception = ex;
                 UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(download.State);
 
@@ -3391,9 +3392,10 @@ namespace Soulseek
             }
             catch (TimeoutException ex)
             {
-                download.State = TransferStates.TimedOut | TransferStates.Completed;
-                download.Exception = ex;
                 download.Connection?.Disconnect("Transfer timed out", ex);
+
+                download.State = TransferStates.Completed | TransferStates.TimedOut;
+                download.Exception = ex;
                 UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(download.State);
 
@@ -3403,9 +3405,10 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                download.State = TransferStates.Errored | TransferStates.Completed;
-                download.Exception = ex;
                 download.Connection?.Disconnect("Transfer error", ex);
+
+                download.State = TransferStates.Completed | TransferStates.Errored;
+                download.Exception = ex;
                 UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
                 UpdateState(download.State);
 
