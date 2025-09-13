@@ -3353,7 +3353,7 @@ namespace Soulseek
                 await readTask.ConfigureAwait(false);
 
                 // update the state 'manually' so the final progress update is issued in the terminal state
-                download.State = TransferStates.Completed | download.State;
+                download.State = TransferStates.Succeeded | TransferStates.Completed;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(TransferStates.Succeeded | TransferStates.Completed);
 
