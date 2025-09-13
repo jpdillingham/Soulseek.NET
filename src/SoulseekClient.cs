@@ -3339,7 +3339,7 @@ namespace Soulseek
                     },
                     cancellationToken: linkedCancellationToken);
 
-                var firstTask = await Task.WhenAny(new List<Task>() { disconnectedTask, readTask }).ConfigureAwait(false);
+                var firstTask = await Task.WhenAny(disconnectedTask, readTask).ConfigureAwait(false);
 
                 // cancel the losing task
                 linkedCancellationTokenSource.Cancel();
@@ -3383,7 +3383,7 @@ namespace Soulseek
 
                 download.State = TransferStates.Completed | TransferStates.Cancelled;
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(download.State);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3396,7 +3396,7 @@ namespace Soulseek
 
                 download.State = TransferStates.Completed | TransferStates.TimedOut;
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(download.State);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3409,7 +3409,7 @@ namespace Soulseek
 
                 download.State = TransferStates.Completed | TransferStates.Errored;
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + outputStream?.Position ?? 0);
+                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(download.State);
 
                 Diagnostic.Debug(ex.ToString());
