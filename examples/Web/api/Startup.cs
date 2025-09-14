@@ -342,7 +342,7 @@ namespace WebAPI
                 browseTracker.AddOrUpdate(args.Username, args);
             };
 
-            // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
+            // bind UserStatusChanged to monitor the status of users added via WatchUserAsync().
             Client.UserStatusChanged += (e, args) =>
             {
                 // Console.WriteLine($"[USER] {args.Username}: {args.Status}");
