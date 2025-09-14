@@ -32,13 +32,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
     public class ConnectionTests
     {
-        private readonly Action<string> output;
-
-        public ConnectionTests(ITestOutputHelper outputHelper)
-        {
-            output = (s) => outputHelper.WriteLine(s);
-        }
-
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates properly"), AutoData]
         public void Instantiates_Properly(IPEndPoint endpoint)
@@ -311,8 +304,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             {
                 var t = new Mock<ITcpClient>();
                 t.Setup(m => m.Client).Returns(socket);
+#pragma warning disable S2925 // "Thread.Sleep" should not be used in tests
+
                 t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
                     .Returns(Task.Run(() => Thread.Sleep(10000)));
+#pragma warning restore S2925 // "Thread.Sleep" should not be used in tests
 
                 var o = new ConnectionOptions(connectTimeout: 0);
                 using (var c = new Connection(endpoint, options: o, tcpClient: t.Object))
@@ -337,8 +333,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             {
                 var t = new Mock<ITcpClient>();
                 t.Setup(m => m.Client).Returns(socket);
+#pragma warning disable S2925 // "Thread.Sleep" should not be used in tests
+
                 t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
                     .Returns(Task.Run(() => Thread.Sleep(10000)));
+#pragma warning restore S2925 // "Thread.Sleep" should not be used in tests
 
                 var o = new ConnectionOptions(connectTimeout: 10000);
 
@@ -348,7 +347,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     using (var cts = new CancellationTokenSource())
                     {
-                        cts.Cancel();
+                        await cts.CancelAsync();
                         ex = await Record.ExceptionAsync(() => c.ConnectAsync(cts.Token));
                     }
 

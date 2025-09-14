@@ -1184,7 +1184,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync throws DuplicateTransferException when failing to insert UniqueKeyDictionary"), AutoData]
-        public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_Unique_Key_Add_Fails(string username, IPEndPoint endpoint, string filename, int token, int size)
+        public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_Unique_Key_Add_Fails(string username, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
             var waiter = new Mock<IWaiter>();
@@ -1210,7 +1210,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync throws DuplicateTransferException when failing to insert UploadDictionary"), AutoData]
-        public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_UploadDictionary_Add_Fails(string username, string filename, int token, int size)
+        public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_UploadDictionary_Add_Fails(string username, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
             var waiter = new Mock<IWaiter>();
@@ -1282,9 +1282,11 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Null(ex);
 
+                long p;
+
                 var ex2 = Record.Exception(() =>
                 {
-                    var p = stream.Position;
+                    p = stream.Position;
                 });
 
                 Assert.NotNull(ex2);
@@ -3227,11 +3229,6 @@ namespace Soulseek.Tests.Unit.Client
             public override long Length => 0;
 
             public override long Position { get; set; }
-
-            public new void Dispose()
-            {
-                throw new ObjectDisposedException("failed disposal");
-            }
 
             public override ValueTask DisposeAsync()
             {

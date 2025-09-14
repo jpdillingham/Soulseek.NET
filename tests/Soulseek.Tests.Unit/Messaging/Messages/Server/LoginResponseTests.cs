@@ -25,7 +25,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
     public class LoginResponseTests
     {
-        private string RandomGuid => Guid.NewGuid().ToString();
+        private static string RandomGuid { get; } = Guid.NewGuid().ToString();
         private Random Random { get; } = new Random();
 
         [Trait("Category", "Instantiation")]

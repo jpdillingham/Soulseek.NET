@@ -230,7 +230,7 @@ namespace Soulseek.Tests.Unit.Client
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken), Times.AtLeastOnce);
         }
 
-        private (SoulseekClient client, Mocks Mocks) GetFixture(SoulseekClientOptions options = null)
+        private static (SoulseekClient client, Mocks Mocks) GetFixture(SoulseekClientOptions options = null)
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(

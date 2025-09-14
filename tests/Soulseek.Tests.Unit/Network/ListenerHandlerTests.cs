@@ -430,7 +430,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.SearchResponder.Verify(m => m.TryRespondAsync(token), Times.Once);
         }
 
-        private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPEndPoint endpoint, SoulseekClientOptions clientOptions = null)
+        private static (ListenerHandler Handler, Mocks Mocks) GetFixture(IPEndPoint endpoint, SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
 
