@@ -123,6 +123,11 @@ namespace WebAPI
                     });
             }
 
+#pragma warning disable ASP5001 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable SYSLIB0020 // Type or member is obsolete
+
+            // the compiler really fucking hates this
             services.AddMvc(options =>
             {
                 options.EnableEndpointRouting = false;
@@ -132,8 +137,13 @@ namespace WebAPI
                 {
                     options.JsonSerializerOptions.Converters.Add(new IPAddressConverter());
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
                     options.JsonSerializerOptions.IgnoreNullValues = true;
+
                 });
+#pragma warning restore SYSLIB0020 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore ASP5001 // Type or member is obsolete
 
             services.AddRouting(options => options.LowercaseUrls = true);
 
@@ -201,7 +211,7 @@ namespace WebAPI
                 await next();
             });
 
-            WebRoot ??= Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
+            WebRoot ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "wwwroot");
             Console.WriteLine($"Serving static content from {WebRoot}");
 
             var fileServerOptions = new FileServerOptions

@@ -150,9 +150,9 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool replayed)
         {
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: false);
-            var (handler, mocks) = GetFixture(options);
+            var (handler, _) = GetFixture(options);
 
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            var epoch = DateTime.UnixEpoch;
             var timestamp = epoch.AddSeconds(timeOffset);
 
             var msg = new MessageBuilder()
@@ -181,7 +181,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises UserCannotConnect event on CannotConnect if username"), AutoData]
         public void Raises_UserCannotConnect_Event_On_CannotConnect_If_Username(int token, string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.CannotConnect)
@@ -203,7 +203,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises UserCannotConnect event on CannotConnect if no username"), AutoData]
         public void Does_Not_Raise_UserCannotConnect_Event_On_CannotConnect_If_No_Username(int token)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.CannotConnect)
@@ -238,7 +238,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on CannotConnect if UserCannotConnect event is unbound"), AutoData]
         public void Does_Not_Throw_On_CannotConnect_If_UserCannotConnect_Event_Is_Unbound(int token, string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.CannotConnect)
@@ -280,7 +280,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             int value = new Random().Next();
             ServerInfo result = null;
 
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             handler.ServerInfoReceived += (_, arg) => result = arg;
 
@@ -301,7 +301,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             int value = new Random().Next();
             ServerInfo result = null;
 
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             handler.ServerInfoReceived += (_, arg) => result = arg;
 
@@ -322,7 +322,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             int value = new Random().Next();
             ServerInfo result = null;
 
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             handler.ServerInfoReceived += (_, arg) => result = arg;
 
@@ -366,7 +366,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [InlineData(MessageCode.Server.WishlistInterval)]
         internal void Does_Not_Throw_On_ServerInfo_When_ServerInfoReceived_Is_Unbound(MessageCode.Server code)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var msg = new MessageBuilder()
                 .WriteCode(code)
@@ -444,22 +444,22 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(null, builder.Build());
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.Public, r => r.Name == name);
             }
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.Private, r => r.Name == name);
             }
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.Owned, r => r.Name == name);
             }
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.ModeratedRoomNames, r => r == name);
             }
@@ -503,22 +503,22 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(null, builder.Build());
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.Public, r => r.Name == name);
             }
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.Private, r => r.Name == name);
             }
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.Owned, r => r.Name == name);
             }
 
-            foreach (var (name, userCount) in rooms)
+            foreach (var (name, _) in rooms)
             {
                 Assert.Contains(result.ModeratedRoomNames, r => r == name);
             }
@@ -529,7 +529,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_PrivilegedUserListReceived(string[] names)
         {
             IReadOnlyCollection<string> eventResult = null;
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivilegedUsers)
@@ -556,7 +556,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PrivilegedUserListReceived when unbound"), AutoData]
         public void Does_Not_Throw_On_PrivilegedUserListReceived_When_Unbound(string[] names)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivilegedUsers)
@@ -579,7 +579,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_ExcludedSearchPhrasesReceived(string[] names)
         {
             IReadOnlyCollection<string> eventResult = null;
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.ExcludedSearchPhrases)
@@ -1069,7 +1069,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
         public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)
@@ -1093,7 +1093,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises UserStatsChanged on GetUserStats"), AutoData]
         public void Raises_UserStatsChanged_On_GetUserStats(string username, int averageSpeed, long uploadCount, int fileCount, int directoryCount)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetUserStats)
@@ -1191,7 +1191,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles SayInChatRoom"), AutoData]
         public void Handles_SayInChatRoom(string roomName, string username, string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.SayInChatRoom)
@@ -1214,7 +1214,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on SayInChatRoom when RoomMessageReceived is unbound"), AutoData]
         public void Does_Not_Throw_On_SayInChatRoom_When_RoomMessageReceived_Is_Unbound(string roomName, string username, string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.SayInChatRoom)
@@ -1233,7 +1233,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles PublicChat"), AutoData]
         public void Handles_PublicChatMessage(string roomName, string username, string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PublicChat)
@@ -1256,7 +1256,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PublicChat if PublicChatMessageReceived is not bound"), AutoData]
         public void Does_Not_Throw_On_PublicChat_If_PublicChatMessageReceived_Is_Not_Bound(string roomName, string username, string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PublicChat)
@@ -1275,7 +1275,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles UserJoinedRoom"), AutoData]
         public void Handles_UserJoinedRoom(string roomName, string username, UserData data)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.UserJoinedRoom)
@@ -1309,7 +1309,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on UserJoinedRoom when RoomJoined is unbound"), AutoData]
         public void Does_Not_Throw_On_UserJoinedRoom_When_RoomJoined_Is_Unbound(string roomName, string username, UserData data)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.UserJoinedRoom)
@@ -1334,7 +1334,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles UserLeftRoom"), AutoData]
         public void Handles_UserLeftRoom(string roomName, string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.UserLeftRoom)
@@ -1355,7 +1355,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on UserLeftRoom when RoomLeft is unbound"), AutoData]
         public void Does_Not_Throw_On_UserLeftRoom_When_RoomLeft_Is_Unbound(string roomName, string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.UserLeftRoom)
@@ -1373,7 +1373,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Fact(DisplayName = "Raises KickedFromServer on KickedFromServer")]
         public void Raises_KickedFromServer_On_KickedFromServer()
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.KickedFromServer)
@@ -1392,7 +1392,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Fact(DisplayName = "Does not throw on KickedFromServer when KickedFromServer is unbound")]
         public void Does_Not_Throw_On_KickedFromServer_When_KickedFromServer_Is_Unbound()
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.KickedFromServer)
@@ -1407,7 +1407,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivilegeNotificationReceived on AddPrivilegedUser"), AutoData]
         public void Raises_PrivilegeNotificationReceived_On_AddPrivilegedUser(string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.AddPrivilegedUser)
@@ -1430,7 +1430,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on AddPrivilegedUser when PrivilegeNotificationReceived is unbound"), AutoData]
         public void Does_Not_Throw_On_AddPrivilegedUser_When_PrivilegeNotificationReceived_Is_Unbound(string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.AddPrivilegedUser)
@@ -1446,7 +1446,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivilegeNotificationReceived on NotifyPrivileges"), AutoData]
         public void Raises_PrivilegeNotificationReceived_On_NotifyPrivileges(string username, int id)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.NotifyPrivileges)
@@ -1470,7 +1470,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Fact(DisplayName = "Raises DistributedNetworkReset on DistributedReset")]
         public void Raises_DistributedNetworkReset_On_DistributedReset()
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.DistributedReset)
@@ -1581,7 +1581,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles GlobalAdminMessage"), AutoData]
         public void Handles_GlobalAdminMessage(string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GlobalAdminMessage)
@@ -1600,7 +1600,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on GlobalAdminMessage when GlobalAdminMessage is unbound"), AutoData]
         public void Does_Not_Throw_On_GlobalAdminMessage_When_GlobalAdminMessage_Is_Unbound(string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GlobalAdminMessage)
@@ -1647,7 +1647,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateRoomMembershipAdded on PrivateRoomAdded"), AutoData]
         public void Raises_PrivateRoomMembershipAdded_On_PrivateRoomAdded(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomAdded)
@@ -1667,7 +1667,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PrivateRoomAdded when PrivateRoomMembershipAdded is unbound"), AutoData]
         public void Does_Not_Throw_On_PrivateRoomAdded_When_PrivateRoomMembershipAdded_Is_Unbound(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomAdded)
@@ -1683,7 +1683,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateRoomModeratorAdded on PrivateRoomOperatorAdded"), AutoData]
         public void Raises_PrivateRoomModerationAdded_On_PrivateRoomOperatorAdded(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomOperatorAdded)
@@ -1703,7 +1703,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PrivateRoomOperatorAdded when PrivateRoomModerationAdded is unbound"), AutoData]
         public void Does_Not_Throw_On_PrivateRoomOperatorAdded_When_PrivateRoomModerationAdded_Is_Unbound(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomOperatorAdded)
@@ -1719,7 +1719,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateRoomMembershipRemoved on PrivateRoomRemoved"), AutoData]
         public void Raises_PrivateRoomMembershipRemoved_On_PrivateRoomRemoved(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomRemoved)
@@ -1739,7 +1739,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PrivateRoomRemoved when PrivateRoomMembershipRemoved is unbound"), AutoData]
         public void Does_Not_Throw_On_PrivateRoomRemoved_When_PrivateRoomMembershipRemoved_Is_Unbound(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomRemoved)
@@ -1787,7 +1787,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateRoomModerationRemoved on PrivateRoomOperatorRemoved"), AutoData]
         public void Raises_PrivateRoomModerationRemoved_On_PrivateRoomOperatorRemoved(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomOperatorRemoved)
@@ -1807,7 +1807,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PrivateRoomOperatorRemoved when PrivateRoomModerationRemoved is unbound"), AutoData]
         public void Does_Not_Throw_On_PrivateRoomOperatorRemoved_When_PrivateRoomModerationRemoved_Is_Unbound(string roomName)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomOperatorRemoved)
@@ -1839,7 +1839,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateRoomUserListReceived on PrivateRoomUsers"), AutoData]
         public void Raises_PrivateRoomUserListReceived_On_PrivateRoomUsers(string roomName, List<string> users)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomUsers)
@@ -1870,7 +1870,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PrivateRoomUsers when PrivateRoomUserListReceived is unbound"), AutoData]
         public void Does_Not_Throw_On_PrivateRoomUsers_When_PrivateRoomUserListReceived(string roomName, List<string> users)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomUsers)
@@ -1890,7 +1890,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateRoomModeratorListReceived on PrivateRoomOwned"), AutoData]
         public void Raises_PrivateRoomModeratedUserListReceived_On_PrivateRoomOwned(string roomName, List<string> users)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomOwned)
@@ -1921,7 +1921,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on PrivateRoomOwned when PrivateRoomModeratedUserListReceived is unbound"), AutoData]
         public void Does_Not_Throw_On_PrivateRoomOwned_When_PrivateRoomModeratedUserListRecieved_Is_Unbound(string roomName, List<string> users)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateRoomOwned)
@@ -2234,7 +2234,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Does_Not_Throw_When_Handling_SearchRequest_If_SearchResponseResolver_Is_Null(string username, int token, string query)
         {
             var options = new SoulseekClientOptions(searchResponseResolver: null);
-            var (handler, mocks) = GetFixture(options);
+            var (handler, _) = GetFixture(options);
 
             var conn = new Mock<IMessageConnection>();
 
@@ -2262,7 +2262,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises RoomTickerListReceived on RoomTickers"), AutoData]
         public void Raises_RoomTickerListRecieved_On_RoomTickers(string roomName, List<RoomTicker> tickers)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomTickers)
@@ -2297,7 +2297,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on RoomTickers when RoomTickerListReceived is unbound"), AutoData]
         public void Does_Not_Throw_On_RoomTickers_When_RoomTickerListReceived_Is_Unbound(string roomName, List<RoomTicker> tickers)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomTickers)
@@ -2322,7 +2322,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises RoomTickerAdded on RoomTickerAdd"), AutoData]
         public void Raises_RoomTickerAdded_On_RoomTickerAdd(string roomName, string username, string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomTickerAdd)
@@ -2346,7 +2346,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on RoomTickerAdd when RoomTickerAdded is unbound"), AutoData]
         public void Does_Not_Throw_On_RoomTickerAdd_When_RoomTickerAdded_Is_Unbound(string roomName, string username, string msg)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomTickerAdd)
@@ -2364,7 +2364,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises RoomTickerRemoved on RoomTickerRemove"), AutoData]
         public void Raises_RoomTickerRemoved_On_RoomTickerRemove(string roomName, string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomTickerRemove)
@@ -2386,7 +2386,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw on RoomTickerRemove when RoomTickerRemoved is unbound"), AutoData]
         public void Does_Not_Throw_On_RoomTickerRemove_When_RoomTickerRemoved_Is_Unbound(string roomName, string username)
         {
-            var (handler, mocks) = GetFixture();
+            var (handler, _) = GetFixture();
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomTickerRemove)
@@ -2399,7 +2399,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Null(ex);
         }
 
-        private byte[] GetServerSearchRequest(string username, int token, string query)
+        private static byte[] GetServerSearchRequest(string username, int token, string query)
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Server.FileSearch)
@@ -2409,7 +2409,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Build();
         }
 
-        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
+        private static (ServerMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
 

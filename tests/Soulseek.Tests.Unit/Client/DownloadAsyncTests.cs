@@ -3441,11 +3441,6 @@ namespace Soulseek.Tests.Unit.Client
 
             public override long Position { get; set; }
 
-            public new void Dispose()
-            {
-                throw new ObjectDisposedException("failed disposal");
-            }
-
             public override ValueTask DisposeAsync()
             {
                 throw new ObjectDisposedException("failed disposal");
