@@ -137,7 +137,7 @@ namespace Soulseek.Tests.Unit
         {
             var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
-            var s = new DateTime(2019, 4, 25);
+            var s = new DateTime(2019, 4, 25, 0, 0, 0, DateTimeKind.Utc);
 
             d.SetProperty("StartTime", s);
 
@@ -150,8 +150,8 @@ namespace Soulseek.Tests.Unit
         {
             var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
-            var s = new DateTime(2019, 4, 25);
-            var e = new DateTime(2019, 4, 26);
+            var s = new DateTime(2019, 4, 25, 0, 0, 0, DateTimeKind.Utc);
+            var e = new DateTime(2019, 4, 26, 0, 0, 0, DateTimeKind.Utc);
 
             d.SetProperty("StartTime", s);
             d.SetProperty("EndTime", e);

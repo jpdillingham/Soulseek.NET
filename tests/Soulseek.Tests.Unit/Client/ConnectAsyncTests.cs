@@ -329,7 +329,7 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "Sets state to Connected | LoggedIn on success")]
         public async Task Sets_State_To_Connected_LoggedIn_On_Success()
         {
-            var (client, mocks) = GetFixture();
+            var (client, _) = GetFixture();
 
             using (client)
             {
@@ -449,7 +449,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task Starts_Listener_On_Success(string user, string password)
         {
             var port = Mocks.Port;
-            var (client, mocks) = GetFixture(new SoulseekClientOptions(listenPort: port));
+            var (client, _) = GetFixture(new SoulseekClientOptions(listenPort: port));
 
             using (client)
             {
@@ -588,7 +588,7 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        private (SoulseekClient client, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
+        private static (SoulseekClient client, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(

@@ -319,7 +319,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(4, m.ReadInteger());
         }
 
-        private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
+        private static MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
         {
             builder
                 .WriteString(dir.Name)

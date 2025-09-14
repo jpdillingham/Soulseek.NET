@@ -1368,7 +1368,7 @@ namespace Soulseek.Tests.Unit.Network
         internal void MessageConnectionProvisional_Disconnected_Disposes_Connection(string message)
         {
             var conn = new Mock<IMessageConnection>();
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             using (manager)
             {
@@ -1391,7 +1391,7 @@ namespace Soulseek.Tests.Unit.Network
             var dict = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
             dict.GetOrAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
 
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             manager.SetProperty("MessageConnectionDictionary", dict);
 
@@ -1449,7 +1449,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var dict = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
 
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             manager.SetProperty("MessageConnectionDictionary", dict);
 
@@ -2121,7 +2121,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(conn.Object);
 
             using (manager)
-            using (var c = await manager.GetOrAddMessageConnectionAsync(ctpr).ConfigureAwait(false))
+            using (var c = await manager.GetOrAddMessageConnectionAsync(ctpr))
             {
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
 
@@ -2130,7 +2130,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.True(dict.TryGetValue(username, out var record));
 
-                using (var cached = await record.Value.ConfigureAwait(false))
+                using (var cached = await record.Value)
                 {
                     Assert.Equal(conn.Object, cached);
                 }
@@ -2152,7 +2152,7 @@ namespace Soulseek.Tests.Unit.Network
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
                 dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
 
-                var c = await manager.GetOrAddMessageConnectionAsync(ctpr).ConfigureAwait(false);
+                var c = await manager.GetOrAddMessageConnectionAsync(ctpr);
 
                 Assert.Equal(conn.Object, c);
 
@@ -2413,7 +2413,7 @@ namespace Soulseek.Tests.Unit.Network
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
 
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
             dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(Task.FromResult(direct.Object)));
@@ -2889,7 +2889,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "TryInvalidateMessageConnectionCache removes corresponding entry from MessageConnectionDictionary"), AutoData]
         internal void TryInvalidateMessageConnectionCache_Removes_Corresponding_Entry_From_MessageConnectionDictionary(string username)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             using (manager)
             {
@@ -2908,7 +2908,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "TryInvalidateMessageConnectionCache returns true if cache is invalidated"), AutoData]
         internal void TryInvalidateMessageConnectionCache_Returns_True_If_Cache_Is_Invalidated(string username)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             using (manager)
             {
@@ -2927,7 +2927,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "TryInvalidateMessageConnectionCache returns false if cache is missed"), AutoData]
         internal void TryInvalidateMessageConnectionCache_Returns_False_If_Cache_Is_Missed(string username)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             using (manager)
             {
@@ -2968,7 +2968,7 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
+        private static (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
 
@@ -2985,7 +2985,7 @@ namespace Soulseek.Tests.Unit.Network
             return (handler, mocks);
         }
 
-        private Mock<IMessageConnection> GetMessageConnectionMock(string username, IPEndPoint endpoint)
+        private static Mock<IMessageConnection> GetMessageConnectionMock(string username, IPEndPoint endpoint)
         {
             var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Username).Returns(username);
@@ -2994,7 +2994,7 @@ namespace Soulseek.Tests.Unit.Network
             return mock;
         }
 
-        private Mock<IConnection> GetConnectionMock(IPEndPoint endpoint)
+        private static Mock<IConnection> GetConnectionMock(IPEndPoint endpoint)
         {
             var mock = new Mock<IConnection>();
             mock.Setup(m => m.IPEndPoint)
