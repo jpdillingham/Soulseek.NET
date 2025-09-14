@@ -3388,7 +3388,9 @@ namespace Soulseek
 
                 Diagnostic.Debug(ex.ToString());
 
-                throw;
+                // cancelled async operations can throw TaskCanceledException, which is a subclass of OperationCanceledException,
+                // but we want to be deterministic, so wrap and re-throw them.
+                throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
             }
             catch (TimeoutException ex)
             {
