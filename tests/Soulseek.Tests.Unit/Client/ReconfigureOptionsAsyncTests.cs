@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "Throws ListenException given listen port which can not be bound")]
         public async Task Throws_ListenException_Given_Listen_Port_Which_Can_Not_Be_Bound()
         {
-            var (client, mocks) = GetFixture();
+            var (client, _) = GetFixture();
 
             var port = Mocks.Port;
             var patch = new SoulseekClientOptionsPatch(listenPort: port);
@@ -485,7 +485,7 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "Updates options")]
         public async Task Updates_Options()
         {
-            var (client, mocks) = GetFixture(new SoulseekClientOptions(
+            var (client, _) = GetFixture(new SoulseekClientOptions(
                 enableListener: false,
                 listenPort: Mocks.Port,
                 enableDistributedNetwork: false,
@@ -637,7 +637,7 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        private (SoulseekClient client, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
+        private static (SoulseekClient client, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(
@@ -673,7 +673,6 @@ namespace Soulseek.Tests.Unit.Client
             }
 
             private static readonly Random Rng = new Random();
-            public static IPAddress Address => IPAddress.Parse(string.Join(".", Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString(), Rng.Next(0, 254).ToString()));
             public static int Port => Rng.Next(1024, IPEndPoint.MaxPort);
 
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();

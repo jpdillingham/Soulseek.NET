@@ -90,7 +90,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises DownloadDenied on UploadDenied"), AutoData]
         public void Raises_DownloadDenied_On_UploadDenied(string username, string filename, string message)
         {
-            var (handler, mocks) = GetFixture(username);
+            var (_, mocks) = GetFixture(username);
 
             using (var client = new SoulseekClient(options: null))
             {
@@ -112,7 +112,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises DownloadFailed on UploadFailed"), AutoData]
         public void Raises_DownloadFailed_On_UploadFailed(string username, string filename)
         {
-            var (handler, mocks) = GetFixture(username);
+            var (_, mocks) = GetFixture(username);
 
             using (var client = new SoulseekClient(options: null))
             {
@@ -459,7 +459,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(userInfoResolver: (u, i) => { throw new Exception(); });
 
             var defaultResponse = await new SoulseekClientOptions()
-                .UserInfoResolver(null, null).ConfigureAwait(false);
+                .UserInfoResolver(null, null);
 
             var (handler, mocks) = GetFixture(options: options);
 
@@ -1054,7 +1054,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Error handling peer message")), It.IsAny<Exception>()), Times.Once);
         }
 
-        private (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
+        private static (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
 

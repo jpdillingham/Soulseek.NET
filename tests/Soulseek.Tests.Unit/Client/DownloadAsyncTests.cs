@@ -836,8 +836,6 @@ namespace Soulseek.Tests.Unit.Client
             var response = new TransferResponse(token, "Queued");
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
-            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
-
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None))
                 .Returns(Task.CompletedTask);
@@ -979,8 +977,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -1028,8 +1024,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1203,8 +1197,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -1266,8 +1258,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -1325,8 +1315,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -1362,7 +1350,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 _ = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, localFilename, (long?)size, 0, token, new TransferOptions(), null));
 
-                Assert.Equal(TransferStates.Completed | TransferStates.Aborted, events.Last().Transfer.State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Aborted, events[events.Count - 1].Transfer.State);
             }
         }
 
@@ -1378,8 +1366,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1427,8 +1413,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1484,8 +1468,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -1516,9 +1498,11 @@ namespace Soulseek.Tests.Unit.Client
                 var txoptions = new TransferOptions(disposeOutputStreamOnCompletion: true);
                 await s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, txoptions, null);
 
+                long p;
+
                 var ex = Record.Exception(() =>
                 {
-                    var p = stream.Position;
+                    p = stream.Position;
                 });
 
                 Assert.NotNull(ex);
@@ -1540,8 +1524,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1604,8 +1586,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -1667,9 +1647,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -1724,8 +1701,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1783,8 +1758,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1853,9 +1826,6 @@ namespace Soulseek.Tests.Unit.Client
                 {
                     reporter(attempted, granted, actual);
                 });
-
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1926,9 +1896,6 @@ namespace Soulseek.Tests.Unit.Client
                 {
                     reporter(attempted, granted, actual);
                 });
-
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2004,9 +1971,6 @@ namespace Soulseek.Tests.Unit.Client
                     reporter(attempted, granted, actual);
                 });
 
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -2069,9 +2033,6 @@ namespace Soulseek.Tests.Unit.Client
                     await governor(size, CancellationToken.None);
                 });
 
-            var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -2120,7 +2081,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "DownloadToStreamAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync throws DuplicateTransferException when failing to insert UniqueKeyDictionary"), AutoData]
-        public async Task DownloadToStreamAsync_Throws_DuplicateTransferException_When_Failing_To_Insert_UniqueKeyDictionary(string username, IPEndPoint endpoint, string filename, int token, int size)
+        public async Task DownloadToStreamAsync_Throws_DuplicateTransferException_When_Failing_To_Insert_UniqueKeyDictionary(string username, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
             var waiter = new Mock<IWaiter>();
@@ -2451,8 +2412,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -2514,8 +2473,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -2573,8 +2530,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -2610,7 +2565,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 _ = await Record.ExceptionAsync(() => s.InvokeMethod<Task<Transfer>>("DownloadToFileAsync", username, filename, localFilename, (long?)size, 0, token, new TransferOptions(), null));
 
-                Assert.Equal(TransferStates.Completed | TransferStates.Aborted, events.Last().Transfer.State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Aborted, events[events.Count - 1].Transfer.State);
             }
         }
 
@@ -2628,8 +2583,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2692,8 +2645,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -2746,8 +2697,6 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2802,8 +2751,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new byte[size]))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2867,8 +2814,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -2922,8 +2867,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2983,8 +2926,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -3354,8 +3295,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -3406,8 +3345,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
-
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
@@ -3440,43 +3377,6 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<SoulseekClientException>(ex);
                 Assert.IsType<Exception>(ex.InnerException);
                 Assert.Equal(expected, ex.InnerException);
-            }
-        }
-
-        private class UnReadableWriteableStream : Stream
-        {
-            public override bool CanRead => false;
-            public override bool CanWrite => false;
-
-            public override bool CanSeek => throw new NotImplementedException();
-
-            public override long Length => throw new NotImplementedException();
-
-            public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            public override void Flush()
-            {
-                throw new NotImplementedException();
-            }
-
-            public override int Read(byte[] buffer, int offset, int count)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override long Seek(long offset, SeekOrigin origin)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void SetLength(long value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void Write(byte[] buffer, int offset, int count)
-            {
-                throw new NotImplementedException();
             }
         }
 

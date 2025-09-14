@@ -25,7 +25,6 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
-    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
 
@@ -87,7 +86,7 @@ namespace Soulseek.Tests.Unit
         public void TryDiscard_Removes_Token_From_Cache(int responseToken, string username, int token, string query, SearchResponse searchResponse)
         {
             var cache = GetCacheMock();
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
 
             (string Username, int Token, string Query, SearchResponse SearchResponse) record = (username, token, query, searchResponse);
 
@@ -106,7 +105,7 @@ namespace Soulseek.Tests.Unit
         public void TryDiscard_Raises_ResponseDeliveryFailed_When_Discarding(int responseToken, string username, int token, string query, SearchResponse searchResponse)
         {
             var cache = GetCacheMock();
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
 
             (string Username, int Token, string Query, SearchResponse SearchResponse) record = (username, token, query, searchResponse);
 
@@ -131,7 +130,7 @@ namespace Soulseek.Tests.Unit
         public void TryDiscard_Does_Not_Throw_Raising_Unbound_ResponseDeliveryFailed_When_Discarding(int responseToken, string username, int token, string query, SearchResponse searchResponse)
         {
             var cache = GetCacheMock();
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
 
             (string Username, int Token, string Query, SearchResponse SearchResponse) record = (username, token, query, searchResponse);
 
@@ -167,7 +166,7 @@ namespace Soulseek.Tests.Unit
         public void TryDiscard_Returns_False_If_Not_Cached(int responseToken)
         {
             var cache = GetCacheMock();
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
 
             (string Username, int Token, string Query, SearchResponse SearchResponse) record = default;
 
@@ -186,7 +185,7 @@ namespace Soulseek.Tests.Unit
         public void TryDiscard_Returns_False_If_Cache_Throws(int responseToken)
         {
             var cache = GetCacheMock();
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
 
             (string Username, int Token, string Query, SearchResponse SearchResponse) record = default;
 
@@ -523,7 +522,7 @@ namespace Soulseek.Tests.Unit
             cache.Setup(m => m.TryRemove(responseToken, out record))
                 .Returns(false);
 
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
 
             var responded = await responder.TryRespondAsync(responseToken);
 
@@ -540,7 +539,7 @@ namespace Soulseek.Tests.Unit
             cache.Setup(m => m.TryRemove(responseToken, out record))
                 .Throws(new Exception());
 
-            var (responder, mocks) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseCache: cache.Object));
 
             var responded = await responder.TryRespondAsync(responseToken);
 
@@ -786,7 +785,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(ex);
         }
 
-        private (SearchResponder SearchResponder, Mocks Mocks) GetFixture(SoulseekClientOptions options = null)
+        private static (SearchResponder SearchResponder, Mocks Mocks) GetFixture(SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
 
@@ -797,7 +796,7 @@ namespace Soulseek.Tests.Unit
             return (responder, mocks);
         }
 
-        private Mock<ISearchResponseCache> GetCacheMock() => new Mock<ISearchResponseCache>();
+        private static Mock<ISearchResponseCache> GetCacheMock() => new Mock<ISearchResponseCache>();
 
         private class Mocks
         {

@@ -522,7 +522,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "BroadcastMessageAsync broadcasts message"), AutoData]
         public async Task BroadcastMessageAsync_Broadcasts_Message(byte[] bytes)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var c1 = new Mock<IMessageConnection>();
             c1.Setup(m => m.State)
@@ -549,7 +549,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "BroadcastMessageAsync sets AverageBroadcastLatency"), AutoData]
         public async Task BroadcastMessageAsync_Sets_AverageBroadcastLatency(byte[] bytes)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var c1 = new Mock<IMessageConnection>();
             c1.Setup(m => m.State)
@@ -572,7 +572,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "BroadcastMessageAsync updates AverageBroadcastLatency"), AutoData]
         public async Task BroadcastMessageAsync_Updates_AverageBroadcastLatency(byte[] bytes)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var c1 = new Mock<IMessageConnection>();
             c1.Setup(m => m.State)
@@ -595,7 +595,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "BroadcastMessageAsync does not broadcast message to unconnected connections"), AutoData]
         public async Task BroadcastMessageAsync_Does_Not_Broadcast_Message_To_Unconnected_Connections(byte[] bytes)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var c1 = new Mock<IMessageConnection>();
             c1.Setup(m => m.State)
@@ -622,7 +622,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "BroadcastMessageAsync disconnects connection if write throws"), AutoData]
         public async Task BroadcastMessageAsync_Disconnects_Connection_If_Write_Throws(byte[] bytes)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var c1 = new Mock<IMessageConnection>();
             c1.Setup(m => m.State)
@@ -646,7 +646,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "BroadcastMessageAsync does not throw if connection is null"), AutoData]
         public async Task BroadcastMessageAsync_Does_Not_Throw_If_Connection_Is_Null(byte[] bytes)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var c1 = new Mock<IMessageConnection>();
 
@@ -3205,7 +3205,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 var semaphore = manager.GetProperty<SemaphoreSlim>("ParentSyncRoot");
-                semaphore.Wait();
+                await semaphore.WaitAsync();
 
                 await manager.AddParentConnectionAsync(candidates);
             }
@@ -3791,7 +3791,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead ignores all other messages"), AutoData]
         internal void WaitForParentCandidateConnection_MessageRead_Ignores_All_Other_Messages(string username, IPEndPoint endpoint)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
@@ -3809,7 +3809,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead disconnects and disposes on exception"), AutoData]
         internal void WaitForParentCandidateConnection_MessageRead_Disconnects_And_Disposes_On_Exception(string username, IPEndPoint endpoint)
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
 
@@ -3986,7 +3986,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
-        private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
+        private static (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
 
@@ -4003,7 +4003,7 @@ namespace Soulseek.Tests.Unit.Network
             return (handler, mocks);
         }
 
-        private Mock<IMessageConnection> GetMessageConnectionMock(string username, IPEndPoint endpoint)
+        private static Mock<IMessageConnection> GetMessageConnectionMock(string username, IPEndPoint endpoint)
         {
             var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Username).Returns(username);
@@ -4012,7 +4012,7 @@ namespace Soulseek.Tests.Unit.Network
             return mock;
         }
 
-        private Mock<IConnection> GetConnectionMock(IPEndPoint endpoint)
+        private static Mock<IConnection> GetConnectionMock(IPEndPoint endpoint)
         {
             var mock = new Mock<IConnection>();
             mock.Setup(m => m.IPEndPoint)
