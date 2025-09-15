@@ -2261,7 +2261,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
-                Assert.Equal("cancelled", ex.Message);
+                Assert.Equal("Operation cancelled", ex.Message);
 
                 // make sure the read is cancelled (this would hang if not, but still)
                 Assert.True(capturedToken.Value.IsCancellationRequested);
