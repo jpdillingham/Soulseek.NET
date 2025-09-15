@@ -4263,14 +4263,20 @@ namespace Soulseek
                     disconnectedTaskCancellationSource.SetException(new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
                 };
 
-                var startOffsetBytes = await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
-                var startOffset = BitConverter.ToInt64(startOffsetBytes, 0);
-
-                upload.StartOffset = startOffset;
+                try
+                {
+                    var startOffsetBytes = await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
+                    upload.StartOffset = BitConverter.ToInt64(startOffsetBytes, 0);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException && ex is not TimeoutException)
+                {
+                    Diagnostic.Debug($"Failed to read start offset for upload of {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
+                    throw new ConnectionException($"Failed to read transfer start offset: {ex.Message}", ex);
+                }
 
                 if (upload.StartOffset > upload.Size)
                 {
-                    throw new TransferException($"Requested start offset of {startOffset} bytes exceeds file length of {upload.Size} bytes");
+                    throw new TransferException($"Requested start offset of {upload.StartOffset} bytes exceeds file length of {upload.Size} bytes");
                 }
 
                 Diagnostic.Debug($"Resolving input stream for upload of {Path.GetFileName(upload.Filename)} to {username}");
@@ -4283,8 +4289,8 @@ namespace Soulseek
                         throw new TransferException($"Requested non-zero start offset but input stream does not support seeking");
                     }
 
-                    Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {startOffset} bytes");
-                    inputStream.Seek(startOffset, SeekOrigin.Begin);
+                    Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
+                    inputStream.Seek(upload.StartOffset, SeekOrigin.Begin);
                 }
 
                 UpdateState(TransferStates.InProgress);
@@ -4293,12 +4299,12 @@ namespace Soulseek
                 Task writeTask;
 
                 // don't try to write to the connection if the peer is re-requesting a file that's already complete
-                if (size - startOffset > 0)
+                if (upload.Size - upload.StartOffset > 0)
                 {
                     var tokenBucket = UploadTokenBucket;
 
                     writeTask = upload.Connection.WriteAsync(
-                        length: size - startOffset,
+                        length: upload.Size.Value - upload.StartOffset,
                         inputStream: inputStream,
                         governor: async (requestedBytes, cancelToken) =>
                         {
