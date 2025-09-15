@@ -839,10 +839,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromFileAsync")]
         [Theory(DisplayName = "UploadFromFileAsync throws TimeoutException on unexpected transfer connection timeout"), AutoData]
-        public async Task UploadFromFileAsync_Throws_TimeoutException_On_Unexpected_Transfer_Connection_Timeout(string username, IPEndPoint endpoint, string filename, int token, int size)
+        public async Task UploadFromFileAsync_Throws_TimeoutException_On_Unexpected_Transfer_Connection_Timeout(string username, IPEndPoint endpoint, string filename, int token, byte[] data)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
-            var response = new TransferResponse(token, size);
+            var response = new TransferResponse(token, data.Length);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -852,8 +852,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
             waiter.Setup(m => m.Throw(It.IsAny<WaitKey>(), It.IsAny<TimeoutException>()))
                 .Callback<WaitKey, Exception>((key, ex) => tcs.SetException(ex));
 
@@ -862,6 +860,10 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
 
             var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task); // hang indefinitely
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
@@ -871,7 +873,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var timeoutEx = new TimeoutException("timed out");
 
-            using (var testFile = new TestFile())
+            using (var testFile = new TestFile(data))
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -890,10 +892,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromFileAsync")]
         [Theory(DisplayName = "UploadFromFileAsync throws OperationCanceledException on unexpected transfer connection cancellation"), AutoData]
-        public async Task UploadFromFileAsync_Throws_OperationCanceledException_On_Unexpected_Transfer_Connection_Cancellation(string username, IPEndPoint endpoint, string filename, int token, int size)
+        public async Task UploadFromFileAsync_Throws_OperationCanceledException_On_Unexpected_Transfer_Connection_Cancellation(string username, IPEndPoint endpoint, string filename, int token, byte[] data)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
-            var response = new TransferResponse(token, size);
+            var response = new TransferResponse(token, data.Length);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -903,8 +905,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
             waiter.Setup(m => m.Throw(It.IsAny<WaitKey>(), It.IsAny<OperationCanceledException>()))
                 .Callback<WaitKey, Exception>((key, ex) => tcs.SetException(ex));
 
@@ -913,6 +913,10 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
 
             var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task); // hang indefinitely
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
@@ -922,7 +926,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var cancelEx = new OperationCanceledException("canceled");
 
-            using (var testFile = new TestFile())
+            using (var testFile = new TestFile(data))
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -942,10 +946,10 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromFileAsync")]
         [Theory(DisplayName = "UploadFromFileAsync throws wrapped Exception on unexpected transfer connection Exception"), AutoData]
-        public async Task UploadFromFileAsync_Throws_Wrapped_Exception_On_Unexpected_Transfer_Connection_Exception(string username, IPEndPoint endpoint, string filename, int token, int size)
+        public async Task UploadFromFileAsync_Throws_Wrapped_Exception_On_Unexpected_Transfer_Connection_Exception(string username, IPEndPoint endpoint, string filename, int token, byte[] data)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
-            var response = new TransferResponse(token, size);
+            var response = new TransferResponse(token, data.Length);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -955,8 +959,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(tcs.Task);
             waiter.Setup(m => m.Throw(It.IsAny<WaitKey>(), It.IsAny<Exception>()))
                 .Callback<WaitKey, Exception>((key, ex) => tcs.SetException(ex));
 
@@ -965,6 +967,10 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
 
             var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(tcs.Task); // hang indefinitely
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
@@ -974,7 +980,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var thrownEx = new Exception("some exception");
 
-            using (var testFile = new TestFile())
+            using (var testFile = new TestFile(data))
             using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -1008,8 +1014,6 @@ namespace Soulseek.Tests.Unit.Client
                 var waiter = new Mock<IWaiter>();
                 waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.FromResult(response));
-                waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
                 waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
@@ -1018,6 +1022,8 @@ namespace Soulseek.Tests.Unit.Client
                     .Returns(ConnectionState.Connected);
 
                 var transferConn = new Mock<IConnection>();
+                transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
 
                 var connManager = new Mock<IPeerConnectionManager>();
                 connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
@@ -1351,7 +1357,6 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync does not dispose stream given false dispose option flag"), AutoData]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task UploadFromStreamAsync_Does_Not_Dispose_Stream_Given_False_Dispose_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
@@ -1362,8 +1367,6 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
-            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
@@ -1372,6 +1375,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
 
             var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
@@ -1985,6 +1990,8 @@ namespace Soulseek.Tests.Unit.Client
                 var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
 
                 var transferConn = new Mock<IConnection>();
+                transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
 
                 var waiter = new Mock<IWaiter>();
                 waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2025,7 +2032,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromFileAsync")]
         [Theory(DisplayName = "UploadFromFileAsync raises UploadProgressUpdated event on data write"), AutoData]
-        public async Task UploadFromFileAsync_Raises_UploadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        public async Task UploadFromFileAsync_Raises_UploadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size, int progressSize)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -2041,9 +2048,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
             transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
-                .Raises(m => m.DataWritten += null, this, new ConnectionDataEventArgs(1, 1));
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new byte[size]));
+                .Raises(m => m.DataWritten += null, this, new ConnectionDataEventArgs(progressSize, int.MaxValue));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2082,29 +2087,35 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(3, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
+
+                // this one should have been raised by the DataWritten event
+                Assert.Equal(TransferStates.InProgress, events[1].Transfer.State);
+                Assert.Equal(progressSize, events[1].Transfer.BytesTransferred);
+
+                // whether really actually intended or not, this test is expecting that the final progress event
+                // shows the transfer in a terminal state
                 Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[2].Transfer.State);
             }
         }
 
         [Trait("Category", "UploadFromFileAsync")]
-        [Theory(DisplayName = "UploadFromFileAsync invokes ProgressUpdated delegate on data read"), AutoData]
-        public async Task UploadFromFileAsync_Invokes_ProgressUpdated_Delegate_On_Data_Read(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        [Theory(DisplayName = "UploadFromFileAsync invokes ProgressUpdated delegate on data write"), AutoData]
+        public async Task UploadFromFileAsync_Invokes_ProgressUpdated_Delegate_On_Data_Write(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
         {
             using (var testFile = new TestFile(data))
             {
                 var options = new SoulseekClientOptions(messageTimeout: 5);
 
-                var response = new TransferResponse(token, size);
+                var response = new TransferResponse(token, data.Length);
                 var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
-                var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
+                var request = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
 
                 var transferConn = new Mock<IConnection>();
                 transferConn.Setup(m => m.State)
                     .Returns(ConnectionState.Connected);
-                transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(BitConverter.GetBytes(token)))
-                    .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
+                transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(BitConverter.GetBytes(0L));
 
                 var waiter = new Mock<IWaiter>();
                 waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2130,6 +2141,7 @@ namespace Soulseek.Tests.Unit.Client
                 connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                     .Returns(Task.FromResult(transferConn.Object));
 
+                using (var testData = new TestFile(data))
                 using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -2420,7 +2432,7 @@ namespace Soulseek.Tests.Unit.Client
             var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
 
             var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<byte[]>(new NullReferenceException()));
 
             var waiter = new Mock<IWaiter>();
@@ -2816,7 +2828,7 @@ namespace Soulseek.Tests.Unit.Client
             var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
 
             var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new NullReferenceException()));
 
             var waiter = new Mock<IWaiter>();
@@ -3016,6 +3028,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
 
             var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
@@ -3062,6 +3076,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
 
             var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
