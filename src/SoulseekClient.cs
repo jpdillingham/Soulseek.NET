@@ -4299,7 +4299,7 @@ namespace Soulseek
                 Task writeTask;
 
                 // don't try to write to the connection if the peer is re-requesting a file that's already complete
-                if (upload.Size - upload.StartOffset > 0)
+                if (upload.Size.Value - upload.StartOffset > 0)
                 {
                     var tokenBucket = UploadTokenBucket;
 
