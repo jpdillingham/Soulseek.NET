@@ -4271,7 +4271,7 @@ namespace Soulseek
                 catch (Exception ex) when (ex is not OperationCanceledException && ex is not TimeoutException)
                 {
                     Diagnostic.Debug($"Failed to read start offset for upload of {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
-                    throw new ConnectionException($"Failed to read transfer start offset: {ex.Message}", ex);
+                    throw new MessageReadException($"Failed to read transfer start offset: {ex.Message}", ex);
                 }
 
                 if (upload.StartOffset > upload.Size)
@@ -4333,6 +4333,8 @@ namespace Soulseek
                     // this is guaranteed to throw; we control the TCS and we're calling SetException() above
                     await disconnectedTask.ConfigureAwait(false);
                 }
+
+                await writeTask.ConfigureAwait(false);
 
                 // figure out how and when to disconnect the connection. ideally the receiving end disconnects; this way we
                 // know they've gotten all of the data. we can encourage this by attempting to read data, which works well for
