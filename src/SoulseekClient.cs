@@ -3276,8 +3276,7 @@ namespace Soulseek
 
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
-                using var manualCancellationTokenSource = new CancellationTokenSource();
-                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, manualCancellationTokenSource.Token);
+                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var linkedCancellationToken = linkedCancellationTokenSource.Token;
 
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
@@ -4247,8 +4246,7 @@ namespace Soulseek
 
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
-                using var manualCancellationTokenSource = new CancellationTokenSource();
-                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, manualCancellationTokenSource.Token);
+                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var linkedCancellationToken = linkedCancellationTokenSource.Token;
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
