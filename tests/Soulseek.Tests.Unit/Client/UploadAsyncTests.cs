@@ -1381,9 +1381,11 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Null(ex);
 
+                long p;
+
                 var ex2 = Record.Exception(() =>
                 {
-                    var p = stream.Position;
+                    p = stream.Position;
                 });
 
                 Assert.Null(ex2);
