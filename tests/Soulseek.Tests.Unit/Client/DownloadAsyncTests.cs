@@ -1173,7 +1173,7 @@ namespace Soulseek.Tests.Unit.Client
                 // note that the size here is 0 because we can't inject an output stream; the final reported size
                 // comes from the output stream position
                 var e6 = (TransferProgressUpdatedEventArgs)events[6];
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, e6.Transfer.State);
+                Assert.Equal(TransferStates.InProgress, e6.Transfer.State);
                 Assert.Equal(0, e6.Transfer.BytesTransferred);
 
                 // 8: InProgress -> Completed | Succeeded
@@ -2791,9 +2791,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(TransferStates.InProgress, events[1].Transfer.State);
                 Assert.Equal(progressSize, events[1].Transfer.BytesTransferred);
 
-                // whether really actually intended or not, this test is expecting that the final progress event
-                // shows the transfer in a terminal state
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[2].Transfer.State);
+                Assert.Equal(TransferStates.InProgress, events[2].Transfer.State);
             }
         }
 

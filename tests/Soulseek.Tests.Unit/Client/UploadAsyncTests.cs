@@ -2099,9 +2099,104 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(TransferStates.InProgress, events[1].Transfer.State);
                 Assert.Equal(progressSize, events[1].Transfer.BytesTransferred);
 
-                // whether really actually intended or not, this test is expecting that the final progress event
-                // shows the transfer in a terminal state
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[2].Transfer.State);
+                Assert.Equal(TransferStates.InProgress, events[2].Transfer.State);
+            }
+        }
+
+        [Trait("Category", "UploadFromFileAsync")]
+        [Theory(DisplayName = "UploadFromFileAsync raises expected events on success"), AutoData]
+        public async Task UploadFromFileAsync_Raises_Expected_Events_On_Success(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size, int progressSize)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var testData = new TestFile(data))
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                // we need to capture both types of events in the same place so that they are chronological
+                var events = new List<TransferEventArgs>();
+
+                s.TransferStateChanged += (sender, e) =>
+                {
+                    events.Add(e);
+                };
+
+                s.TransferProgressUpdated += (sender, e) =>
+                {
+                    events.Add(e);
+                };
+
+                await s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testData.Path, token, new TransferOptions(maximumLingerTime: 0), null);
+
+                Assert.Equal(7, events.Count);
+
+                // 1: None -> Queued | Locally
+                Assert.Equal(TransferStates.None, ((TransferStateChangedEventArgs)events[0]).PreviousState);
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, ((TransferStateChangedEventArgs)events[0]).Transfer.State);
+
+                // 2: Queued | Locally -> Requested
+                Assert.Equal(TransferStates.Queued | TransferStates.Locally, ((TransferStateChangedEventArgs)events[1]).PreviousState);
+                Assert.Equal(TransferStates.Requested, ((TransferStateChangedEventArgs)events[1]).Transfer.State);
+
+                // 3: Requested -> Initializing
+                Assert.Equal(TransferStates.Requested, ((TransferStateChangedEventArgs)events[2]).PreviousState);
+                Assert.Equal(TransferStates.Initializing, ((TransferStateChangedEventArgs)events[2]).Transfer.State);
+
+                // 4: Initializing -> InProgress
+                Assert.Equal(TransferStates.Initializing, ((TransferStateChangedEventArgs)events[3]).PreviousState);
+                Assert.Equal(TransferStates.InProgress, ((TransferStateChangedEventArgs)events[3]).Transfer.State);
+
+                // 5: Initial progress event is sent immediately after transitioning into InProgress
+                var e4 = (TransferProgressUpdatedEventArgs)events[4];
+                Assert.Equal(TransferStates.InProgress, e4.Transfer.State);
+                Assert.Equal(0, e4.Transfer.BytesTransferred);
+
+                // 6: Final progress event is sent immediately before transitioning into Completed | Succeeded
+                // note that the size here is 0 because we can't inject an output stream; the final reported size
+                // comes from the output stream position
+                var e5 = (TransferProgressUpdatedEventArgs)events[5];
+                Assert.Equal(TransferStates.InProgress, e5.Transfer.State);
+                Assert.Equal(0, e5.Transfer.BytesTransferred);
+
+                // 7: InProgress -> Completed | Succeeded
+                Assert.Equal(TransferStates.InProgress, ((TransferStateChangedEventArgs)events[6]).PreviousState);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, ((TransferStateChangedEventArgs)events[6]).Transfer.State);
             }
         }
 

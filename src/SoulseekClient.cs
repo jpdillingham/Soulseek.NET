@@ -3331,7 +3331,6 @@ namespace Soulseek
                 await readTask.ConfigureAwait(false);
 
                 // update the state 'manually' so the final UpdateProgress() captures the Transfer in the terminal state
-                download.State = TransferStates.Completed | TransferStates.Succeeded;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
@@ -3359,10 +3358,9 @@ namespace Soulseek
             {
                 download.Connection?.Disconnect("Transfer cancelled", ex);
 
-                download.State = TransferStates.Completed | TransferStates.Cancelled;
                 download.Exception = ex;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(download.State);
+                UpdateState(TransferStates.Completed | TransferStates.Cancelled);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3374,10 +3372,9 @@ namespace Soulseek
             {
                 download.Connection?.Disconnect("Transfer timed out", ex);
 
-                download.State = TransferStates.Completed | TransferStates.TimedOut;
                 download.Exception = ex;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(download.State);
+                UpdateState(TransferStates.Completed | TransferStates.TimedOut);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3387,10 +3384,9 @@ namespace Soulseek
             {
                 download.Connection?.Disconnect("Transfer error", ex);
 
-                download.State = TransferStates.Completed | TransferStates.Errored;
                 download.Exception = ex;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(download.State);
+                UpdateState(TransferStates.Completed | TransferStates.Errored);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -4361,7 +4357,6 @@ namespace Soulseek
                     // swallow this specific exception; we're expecting it when the connection closes.
                 }
 
-                upload.State = TransferStates.Completed | TransferStates.Succeeded;
                 UpdateProgress(inputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
@@ -4380,10 +4375,9 @@ namespace Soulseek
             {
                 upload.Connection?.Disconnect("Transfer cancelled", ex);
 
-                upload.State = TransferStates.Completed | TransferStates.Cancelled;
                 upload.Exception = ex;
                 UpdateProgress(inputStream?.Position ?? 0);
-                UpdateState(upload.State);
+                UpdateState(TransferStates.Completed | TransferStates.Cancelled);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -4395,10 +4389,9 @@ namespace Soulseek
             {
                 upload.Connection?.Disconnect("Transfer timed out", ex);
 
-                upload.State = TransferStates.Completed | TransferStates.TimedOut;
                 upload.Exception = ex;
                 UpdateProgress(inputStream?.Position ?? 0);
-                UpdateState(upload.State);
+                UpdateState(TransferStates.Completed | TransferStates.TimedOut);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -4408,10 +4401,9 @@ namespace Soulseek
             {
                 upload.Connection?.Disconnect("Transfer error", ex);
 
-                upload.State = TransferStates.Completed | TransferStates.Errored;
                 upload.Exception = ex;
                 UpdateProgress(inputStream?.Position ?? 0);
-                UpdateState(upload.State);
+                UpdateState(TransferStates.Completed | TransferStates.Errored);
 
                 Diagnostic.Debug(ex.ToString());
 
