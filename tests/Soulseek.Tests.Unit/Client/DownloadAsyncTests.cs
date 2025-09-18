@@ -1173,7 +1173,7 @@ namespace Soulseek.Tests.Unit.Client
                 // note that the size here is 0 because we can't inject an output stream; the final reported size
                 // comes from the output stream position
                 var e6 = (TransferProgressUpdatedEventArgs)events[6];
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, e6.Transfer.State);
+                Assert.Equal(TransferStates.InProgress, e6.Transfer.State);
                 Assert.Equal(0, e6.Transfer.BytesTransferred);
 
                 // 8: InProgress -> Completed | Succeeded
@@ -2261,7 +2261,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
-                Assert.Equal("cancelled", ex.Message);
+                Assert.Equal("Operation cancelled", ex.Message);
 
                 // make sure the read is cancelled (this would hang if not, but still)
                 Assert.True(capturedToken.Value.IsCancellationRequested);
@@ -2734,7 +2734,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToFileAsync raises DownloadProgressUpdated event on data read"), AutoData]
-        public async Task DownloadToFileAsync_Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, string localFilename, int token, int size)
+        public async Task DownloadToFileAsync_Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, string localFilename, int token, int size, int progressSize)
         {
             var options = new SoulseekClientOptions(messageTimeout: 500);
 
@@ -2750,7 +2750,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new byte[size]))
-                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
+                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(progressSize, int.MaxValue));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -2786,11 +2786,12 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(3, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
-                Assert.Equal(TransferStates.InProgress, events[1].Transfer.State);
 
-                // whether really actually intended or not, this test is expecting that the final progress event
-                // shows the transfer in a terminal state
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[2].Transfer.State);
+                // this one should have been raised by the DataRead event
+                Assert.Equal(TransferStates.InProgress, events[1].Transfer.State);
+                Assert.Equal(progressSize, events[1].Transfer.BytesTransferred);
+
+                Assert.Equal(TransferStates.InProgress, events[2].Transfer.State);
             }
         }
 
@@ -2811,8 +2812,7 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(BitConverter.GetBytes(token)))
-                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))

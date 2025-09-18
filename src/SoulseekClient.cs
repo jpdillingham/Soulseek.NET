@@ -3276,8 +3276,7 @@ namespace Soulseek
 
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
-                using var manualCancellationTokenSource = new CancellationTokenSource();
-                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, manualCancellationTokenSource.Token);
+                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var linkedCancellationToken = linkedCancellationTokenSource.Token;
 
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
@@ -3332,7 +3331,6 @@ namespace Soulseek
                 await readTask.ConfigureAwait(false);
 
                 // update the state 'manually' so the final UpdateProgress() captures the Transfer in the terminal state
-                download.State = TransferStates.Completed | TransferStates.Succeeded;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
@@ -3360,23 +3358,23 @@ namespace Soulseek
             {
                 download.Connection?.Disconnect("Transfer cancelled", ex);
 
-                download.State = TransferStates.Completed | TransferStates.Cancelled;
                 download.Exception = ex;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(download.State);
+                UpdateState(TransferStates.Completed | TransferStates.Cancelled);
 
                 Diagnostic.Debug(ex.ToString());
 
-                throw;
+                // cancelled async operations can throw TaskCanceledException, which is a subclass of OperationCanceledException,
+                // but we want to be deterministic, so wrap and re-throw them.
+                throw new OperationCanceledException("Operation cancelled", ex, cancellationToken);
             }
             catch (TimeoutException ex)
             {
                 download.Connection?.Disconnect("Transfer timed out", ex);
 
-                download.State = TransferStates.Completed | TransferStates.TimedOut;
                 download.Exception = ex;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(download.State);
+                UpdateState(TransferStates.Completed | TransferStates.TimedOut);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -3386,10 +3384,9 @@ namespace Soulseek
             {
                 download.Connection?.Disconnect("Transfer error", ex);
 
-                download.State = TransferStates.Completed | TransferStates.Errored;
                 download.Exception = ex;
                 UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
-                UpdateState(download.State);
+                UpdateState(TransferStates.Completed | TransferStates.Errored);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -4234,142 +4231,153 @@ namespace Soulseek
 
                 UpdateState(TransferStates.Initializing);
 
-                var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey, cancellationToken);
-
                 upload.Connection = await PeerConnectionManager
                     .GetTransferConnectionAsync(upload.Username, endpoint, upload.Token, cancellationToken)
                     .ConfigureAwait(false);
 
+                // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
+                // to determine the outcome of the upload.
+                var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
+                var disconnectedTask = disconnectedTaskCancellationSource.Task;
+
+                // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
+                // we'll do that with a cancellation token that we bind to the one that was passed into the method.
+                using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                var linkedCancellationToken = linkedCancellationTokenSource.Token;
+
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
                 upload.Connection.Disconnected += (sender, e) =>
                 {
-                    // this is less than ideal, but because the connection can disconnect at any time this is the definitive way
-                    // to be sure we conclude the transfer in a way that accurately represents what happened.
-                    if (upload.State.HasFlag(TransferStates.Succeeded))
+                    if (e.Exception is OperationCanceledException || e.Exception is TimeoutException)
                     {
-                        Waiter.Complete(upload.WaitKey);
+                        disconnectedTaskCancellationSource.SetException(e.Exception);
+                        return;
                     }
-                    else if (e.Exception is TimeoutException)
-                    {
-                        upload.State = TransferStates.TimedOut;
-                        Waiter.Throw(upload.WaitKey, e.Exception);
-                    }
-                    else if (e.Exception is OperationCanceledException)
-                    {
-                        upload.State = TransferStates.Cancelled;
-                        Waiter.Throw(upload.WaitKey, e.Exception);
-                    }
-                    else
-                    {
-                        Waiter.Throw(upload.WaitKey, new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
-                    }
+
+                    disconnectedTaskCancellationSource.SetException(new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
                 };
 
                 try
                 {
                     var startOffsetBytes = await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
-                    var startOffset = BitConverter.ToInt64(startOffsetBytes, 0);
-
-                    upload.StartOffset = startOffset;
-
-                    if (upload.StartOffset > upload.Size)
-                    {
-                        throw new TransferException($"Requested start offset of {startOffset} bytes exceeds file length of {upload.Size} bytes");
-                    }
-
-                    Diagnostic.Debug($"Resolving input stream for upload of {Path.GetFileName(upload.Filename)} to {username}");
-                    inputStream = await inputStreamFactory(upload.StartOffset).ConfigureAwait(false);
-
-                    if (upload.StartOffset > 0 && options.SeekInputStreamAutomatically)
-                    {
-                        if (!inputStream.CanSeek)
-                        {
-                            throw new TransferException($"Requested non-zero start offset but input stream does not support seeking");
-                        }
-
-                        Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {startOffset} bytes");
-                        inputStream.Seek(startOffset, SeekOrigin.Begin);
-                    }
-
-                    UpdateState(TransferStates.InProgress);
-                    UpdateProgress(startOffset);
-
-                    if (size - startOffset > 0)
-                    {
-                        var tokenBucket = UploadTokenBucket;
-
-                        await upload.Connection.WriteAsync(
-                            length: size - startOffset,
-                            inputStream: inputStream,
-                            governor: async (requestedBytes, cancelToken) =>
-                            {
-                                var bytesGrantedByCaller = await options.Governor(new Transfer(upload), requestedBytes, cancelToken).ConfigureAwait(false);
-                                return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
-                            },
-                            reporter: (attemptedBytes, grantedBytes, actualBytes) =>
-                            {
-                                options.Reporter?.Invoke(new Transfer(upload), attemptedBytes, grantedBytes, actualBytes);
-                                tokenBucket.Return(grantedBytes - actualBytes);
-                            },
-                            cancellationToken: cancellationToken).ConfigureAwait(false);
-                    }
-
-                    upload.State = TransferStates.Succeeded;
-
-                    // figure out how and when to disconnect the connection. ideally the receiving end disconnects; this way we
-                    // know they've gotten all of the data. we can encourage this by attempting to read data, which works well for
-                    // Soulseek NS and Qt, but takes some time with Nicotine+. if the receiving end won't disconnect, wait the
-                    // configured MaximumLingerTime and disconnect on our end. the receiver may not have gotten all the data if it
-                    // comes to this, so linger time shouldn't be less than a couple of seconds.
-                    try
-                    {
-                        var lingerStartTime = DateTime.UtcNow;
-
-                        while (!cancellationToken.IsCancellationRequested)
-                        {
-                            if (lingerStartTime.AddMilliseconds(options.MaximumLingerTime) <= DateTime.UtcNow)
-                            {
-                                upload.Connection.Disconnect("Transfer complete, maximum linger time exceeded");
-                                Diagnostic.Warning($"Transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} forcibly closed after exceeding maximum linger time of {options.MaximumLingerTime}ms.");
-                                break;
-                            }
-
-                            await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
-                            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-                        }
-                    }
-                    catch (ConnectionReadException)
-                    {
-                        // swallow this specific exception; we're expecting it when the connection closes.
-                    }
-
-                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");
+                    upload.StartOffset = BitConverter.ToInt64(startOffsetBytes, 0);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is not OperationCanceledException && ex is not TimeoutException)
                 {
-                    upload.Connection.Disconnect(exception: ex);
+                    Diagnostic.Debug($"Failed to read start offset for upload of {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
+                    throw new MessageReadException($"Failed to read transfer start offset: {ex.Message}", ex);
                 }
 
-                await uploadCompleted.ConfigureAwait(false);
+                if (upload.StartOffset > upload.Size)
+                {
+                    throw new TransferException($"Requested start offset of {upload.StartOffset} bytes exceeds file length of {upload.Size} bytes");
+                }
 
-                upload.State = TransferStates.Completed | upload.State;
+                Diagnostic.Debug($"Resolving input stream for upload of {Path.GetFileName(upload.Filename)} to {username}");
+                inputStream = await inputStreamFactory(upload.StartOffset).ConfigureAwait(false);
+
+                if (upload.StartOffset > 0 && options.SeekInputStreamAutomatically)
+                {
+                    if (!inputStream.CanSeek)
+                    {
+                        throw new TransferException($"Requested non-zero start offset but input stream does not support seeking");
+                    }
+
+                    Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
+                    inputStream.Seek(upload.StartOffset, SeekOrigin.Begin);
+                }
+
+                UpdateState(TransferStates.InProgress);
+                UpdateProgress(upload.StartOffset);
+
+                Task writeTask;
+
+                // don't try to write to the connection if the peer is re-requesting a file that's already complete
+                if (upload.Size.Value - upload.StartOffset > 0)
+                {
+                    var tokenBucket = UploadTokenBucket;
+
+                    writeTask = upload.Connection.WriteAsync(
+                        length: upload.Size.Value - upload.StartOffset,
+                        inputStream: inputStream,
+                        governor: async (requestedBytes, cancelToken) =>
+                        {
+                            var bytesGrantedByCaller = await options.Governor(new Transfer(upload), requestedBytes, cancelToken).ConfigureAwait(false);
+                            return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
+                        },
+                        reporter: (attemptedBytes, grantedBytes, actualBytes) =>
+                        {
+                            options.Reporter?.Invoke(new Transfer(upload), attemptedBytes, grantedBytes, actualBytes);
+                            tokenBucket.Return(grantedBytes - actualBytes);
+                        },
+                        cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    writeTask = Task.CompletedTask;
+                }
+
+                var firstTask = await Task.WhenAny(disconnectedTask, writeTask).ConfigureAwait(false);
+
+                // cancel the losing task
+                linkedCancellationTokenSource.Cancel();
+
+                if (firstTask == disconnectedTask)
+                {
+                    // this is guaranteed to throw; we control the TCS and we're calling SetException() above
+                    await disconnectedTask.ConfigureAwait(false);
+                }
+
+                await writeTask.ConfigureAwait(false);
+
+                // figure out how and when to disconnect the connection. ideally the receiving end disconnects; this way we
+                // know they've gotten all of the data. we can encourage this by attempting to read data, which works well for
+                // Soulseek NS and Qt, but takes some time with Nicotine+. if the receiving end won't disconnect, wait the
+                // configured MaximumLingerTime and disconnect on our end. the receiver may not have gotten all the data if it
+                // comes to this, so linger time shouldn't be less than a couple of seconds.
+                try
+                {
+                    var lingerStartTime = DateTime.UtcNow;
+
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        if (lingerStartTime.AddMilliseconds(options.MaximumLingerTime) <= DateTime.UtcNow)
+                        {
+                            upload.Connection.Disconnect("Transfer complete, maximum linger time exceeded");
+                            Diagnostic.Warning($"Transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} forcibly closed after exceeding maximum linger time of {options.MaximumLingerTime}ms.");
+                            break;
+                        }
+
+                        await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                        await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                catch (ConnectionReadException)
+                {
+                    // swallow this specific exception; we're expecting it when the connection closes.
+                }
+
                 UpdateProgress(inputStream?.Position ?? 0);
-                UpdateState(upload.State);
+                UpdateState(TransferStates.Completed | TransferStates.Succeeded);
+
+                Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");
 
                 return new Transfer(upload);
             }
             catch (TransferRejectedException ex)
             {
-                upload.State = TransferStates.Rejected;
                 upload.Exception = ex;
+                UpdateState(TransferStates.Completed | TransferStates.Rejected);
 
                 throw;
             }
             catch (OperationCanceledException ex)
             {
-                upload.State = TransferStates.Cancelled;
-                upload.Exception = ex;
                 upload.Connection?.Disconnect("Transfer cancelled", ex);
+
+                upload.Exception = ex;
+                UpdateProgress(inputStream?.Position ?? 0);
+                UpdateState(TransferStates.Completed | TransferStates.Cancelled);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -4379,18 +4387,23 @@ namespace Soulseek
             }
             catch (TimeoutException ex)
             {
-                upload.State = TransferStates.TimedOut;
-                upload.Exception = ex;
                 upload.Connection?.Disconnect("Transfer timed out", ex);
 
+                upload.Exception = ex;
+                UpdateProgress(inputStream?.Position ?? 0);
+                UpdateState(TransferStates.Completed | TransferStates.TimedOut);
+
                 Diagnostic.Debug(ex.ToString());
+
                 throw;
             }
             catch (Exception ex)
             {
-                upload.State = TransferStates.Errored;
-                upload.Exception = ex;
                 upload.Connection?.Disconnect("Transfer error", ex);
+
+                upload.Exception = ex;
+                UpdateProgress(inputStream?.Position ?? 0);
+                UpdateState(TransferStates.Completed | TransferStates.Errored);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -4403,9 +4416,6 @@ namespace Soulseek
             }
             finally
             {
-                // clean up the wait in case the code threw before it was awaited.
-                Waiter.Complete(upload.WaitKey);
-
                 // make sure we successfully obtained all permissives before releasing them. some of them may not have been
                 // attempted if the code throws.
                 if (semaphoreAcquired)
@@ -4499,13 +4509,6 @@ namespace Soulseek
                     {
                         Diagnostic.Warning($"Failed to finalize input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                     }
-                }
-
-                if (!upload.State.HasFlag(TransferStates.Completed))
-                {
-                    upload.State = TransferStates.Completed | upload.State;
-                    UpdateProgress(finalStreamPosition);
-                    UpdateState(upload.State);
                 }
 
                 UploadDictionary.TryRemove(upload.Token, out _);
