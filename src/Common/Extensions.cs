@@ -19,13 +19,8 @@ namespace Soulseek
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
-    using System.IO;
-
     using System.Linq;
-    using System.Net.Sockets;
-    using System.Runtime.InteropServices;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
