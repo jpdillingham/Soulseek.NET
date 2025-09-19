@@ -2105,7 +2105,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromFileAsync")]
         [Theory(DisplayName = "UploadFromFileAsync raises expected events on success"), AutoData]
-        public async Task UploadFromFileAsync_Raises_Expected_Events_On_Success(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size, int progressSize)
+        public async Task UploadFromFileAsync_Raises_Expected_Events_On_Success(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
