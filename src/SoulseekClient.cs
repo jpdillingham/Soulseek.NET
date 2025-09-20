@@ -3173,8 +3173,8 @@ namespace Soulseek
                 // concurrent downloads globally. if we hit this limit, downloads will stack up behind it and will be processed in
                 // a first-in-first-out manner.
                 await GlobalDownloadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
                 globalSemaphoreAcquired = true;
+                Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
@@ -4184,15 +4184,15 @@ namespace Soulseek
                 // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload until the
                 // requesting user is ready to receive it
                 await semaphoreWaitTask.ConfigureAwait(false);
-                Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 semaphoreAcquired = true;
+                Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
 
                 // permissive stage 2: acquire an upload slot from the calling code
                 try
                 {
                     await options.SlotAwaiter(new Transfer(upload), cancellationToken).ConfigureAwait(false);
-                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                     uploadSlotAcquired = true;
+                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 }
                 catch (Exception ex) when (!(ex is OperationCanceledException))
                 {
@@ -4204,8 +4204,8 @@ namespace Soulseek
                 // processed in a round-robin-like fashion due to the limit on per-user concurrency. calling code can avoid this
                 // by providing an implementation of AcquireSlot() that won't exceed the maximum concurrent upload limit
                 await GlobalUploadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-                Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 globalSemaphoreAcquired = true;
+                Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
 
                 // all permissives have been given fetch the user endpoint and request that the transfer begins
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
