@@ -3336,7 +3336,14 @@ namespace Soulseek
 
                 Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
 
-                download.Connection.Disconnect("Transfer complete");
+                try
+                {
+                    download.Connection.Disconnect("Transfer complete");
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Encountered error when disconnecting a successful transfer connection: {ex.Message}");
+                }
 
                 return new Transfer(download);
             }
