@@ -3399,56 +3399,91 @@ namespace Soulseek
             }
             finally
             {
-                // clean up the waits in case the code threw before they were awaited.
-                Waiter.Cancel(transferStartRequestedWaitKey);
-
-                if (globalSemaphoreAcquired)
-                {
-                    Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} from {username} released");
-                    GlobalDownloadSemaphore.Release(releaseCount: 1);
-                }
-
-                download.Connection?.Dispose();
-
-                long finalStreamPosition = 0;
-
-                // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
-                // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
-                // set it to zero and let the consumer figure it out
+                /*
+                    do our best to clean up, in descending order of importance. this stuff is all 'nice to have' but shouldn't
+                    leave the client in an inoperable state if it fails; more like we may leak resource handles over time if
+                    we consistently fail to do this
+                */
                 try
                 {
-                    finalStreamPosition = outputStream?.Position ?? 0;
-                }
-                catch (Exception ex)
-                {
-                    Diagnostic.Warning($"Failed to determine final position of output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
-                }
-
-                if (options.DisposeOutputStreamOnCompletion && outputStream != null)
-                {
+                    // clean up the waits in case the code threw before they were awaited.
                     try
                     {
-                        try
-                        {
-                            await outputStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
-                        }
-                        finally
-                        {
-#if NETSTANDARD2_0
-                            outputStream.Dispose();
-#else
-                            await outputStream.DisposeAsync().ConfigureAwait(false);
-#endif
-                        }
+                        Waiter.Cancel(transferStartRequestedWaitKey);
                     }
                     catch (Exception ex)
                     {
-                        Diagnostic.Warning($"Failed to finalize output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
+                        Diagnostic.Warning($"Failed to cancel wait for key {transferStartRequestedWaitKey}: {ex.Message}");
+                    }
+
+                    try
+                    {
+                        download.Connection?.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostic.Warning($"Failed to dispose transfer connection for file {remoteFilename} from user {username}: {ex.Message}");
+                    }
+
+                    long finalStreamPosition = 0;
+
+                    // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
+                    // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
+                    // set it to zero and let the consumer figure it out
+                    try
+                    {
+                        finalStreamPosition = outputStream?.Position ?? 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostic.Warning($"Failed to determine final position of output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
+                    }
+
+                    if (options.DisposeOutputStreamOnCompletion && outputStream != null)
+                    {
+                        try
+                        {
+                            try
+                            {
+                                await outputStream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+                            }
+                            finally
+                            {
+#if NETSTANDARD2_0
+                                outputStream.Dispose();
+#else
+                                await outputStream.DisposeAsync().ConfigureAwait(false);
+#endif
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to finalize output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
+                        }
                     }
                 }
+                finally
+                {
+                    /*
+                        make sure we do all of the absolutely-must-do cleanup; if any of this fails we will leave the
+                        client in an inoperable state over time
+                    */
+                    if (globalSemaphoreAcquired)
+                    {
+                        try
+                        {
+                            GlobalDownloadSemaphore.Release(releaseCount: 1);
+                            Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} from {username} released");
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to release global download semaphore for file {Path.GetFileName(download.Filename)} to {username}: {ex.Message}");
+                        }
+                    }
 
-                DownloadDictionary.TryRemove(download.Token, out _);
-                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+                    DownloadDictionary.TryRemove(download.Token, out _);
+                    UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+                }
             }
         }
 
@@ -4416,103 +4451,136 @@ namespace Soulseek
             }
             finally
             {
-                // make sure we successfully obtained all permissives before releasing them. some of them may not have been
-                // attempted if the code throws.
-                if (semaphoreAcquired)
-                {
-                    Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
-                    semaphore.Release(releaseCount: 1);
-                }
-
-                if (uploadSlotAcquired)
-                {
-                    // give the next thread time to acquire the semaphore. this is extremely sub-optimal, but if there's a waiting
-                    // upload we want the code within AcquireSlot() to be aware of it before we release the slot. 10ms should be
-                    // plenty of time, as this release and the subsequent thread acquiring it should happen within nanoseconds.
-                    await Task.Delay(10, CancellationToken.None).ConfigureAwait(false);
-
-                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
-
-                    try
-                    {
-                        options.SlotReleased?.Invoke(new Transfer(upload));
-                    }
-                    catch (Exception ex)
-                    {
-                        Diagnostic.Warning($"Encountered Exception releasing upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
-                    }
-                }
-
-                if (globalSemaphoreAcquired)
-                {
-                    Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
-                    GlobalUploadSemaphore.Release(releaseCount: 1);
-                }
-
-                upload.Connection?.Dispose();
-
-                if (!upload.State.HasFlag(TransferStates.Succeeded))
-                {
-                    // if the upload failed, try to send a message to the user informing them.
-                    try
-                    {
-                        // fetch the endpoint again, in case it failed or was never fetched because the semaphore wasn't obtained.
-                        // this allows us to send UploadDenied for cancelled queued files
-                        endpoint = await GetUserEndPointAsync(username).ConfigureAwait(false);
-                        var messageConnection = await PeerConnectionManager
-                            .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
-                            .ConfigureAwait(false);
-
-                        // send UploadDenied if we cancelled the transfer. this should prevent the remote client from re-enqueuing
-                        if (upload.State.HasFlag(TransferStates.Cancelled))
-                        {
-                            await messageConnection.WriteAsync(new UploadDenied(remoteFilename, "Cancelled")).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await messageConnection.WriteAsync(new UploadFailed(remoteFilename)).ConfigureAwait(false);
-                        }
-                    }
-                    catch
-                    {
-                        // swallow any exceptions here. the user may be offline, we might fail to connect, we might fail to send
-                        // the message. we don't *need* this to succeed, and there's a good chance that it won't if the user lost
-                        // connectivity, causing the upload to fail in the first place
-                    }
-                }
-
-                long finalStreamPosition = 0;
-
-                // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
-                // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
-                // set it to zero and let the consumer figure it out
+                /*
+                    do our best to clean up, in descending order of importance. this stuff is all 'nice to have' but shouldn't
+                    leave the client in an inoperable state if it fails; more like we may leak resource handles over time if
+                    we consistently fail to do this
+                */
                 try
                 {
-                    finalStreamPosition = inputStream?.Position ?? 0;
-                }
-                catch (Exception ex)
-                {
-                    Diagnostic.Warning($"Failed to determine final position of input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
-                }
-
-                if (options.DisposeInputStreamOnCompletion && inputStream != null)
-                {
                     try
                     {
-#if NETSTANDARD2_0
-                        inputStream.Dispose();
-#else
-                        await inputStream.DisposeAsync().ConfigureAwait(false);
-#endif
+                        upload.Connection?.Dispose();
                     }
                     catch (Exception ex)
                     {
-                        Diagnostic.Warning($"Failed to finalize input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                        Diagnostic.Warning($"Failed to dispose transfer connection for file {remoteFilename} to user {username}: {ex.Message}");
+                    }
+
+                    long finalStreamPosition = 0;
+
+                    // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
+                    // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
+                    // set it to zero and let the consumer figure it out
+                    try
+                    {
+                        finalStreamPosition = inputStream?.Position ?? 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        Diagnostic.Warning($"Failed to determine final position of input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                    }
+
+                    if (options.DisposeInputStreamOnCompletion && inputStream != null)
+                    {
+                        try
+                        {
+#if NETSTANDARD2_0
+                            inputStream.Dispose();
+#else
+                            await inputStream.DisposeAsync().ConfigureAwait(false);
+#endif
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to finalize input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                        }
+                    }
+
+                    if (!upload.State.HasFlag(TransferStates.Succeeded))
+                    {
+                        // if the upload failed, try to send a message to the user informing them.
+                        try
+                        {
+                            // fetch the endpoint again, in case it failed or was never fetched because the semaphore wasn't obtained.
+                            // this allows us to send UploadDenied for cancelled queued files
+                            endpoint = await GetUserEndPointAsync(username).ConfigureAwait(false);
+                            var messageConnection = await PeerConnectionManager
+                                .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
+                                .ConfigureAwait(false);
+
+                            // send UploadDenied if we cancelled the transfer. this should prevent the remote client from re-enqueuing
+                            if (upload.State.HasFlag(TransferStates.Cancelled))
+                            {
+                                await messageConnection.WriteAsync(new UploadDenied(remoteFilename, "Cancelled")).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                await messageConnection.WriteAsync(new UploadFailed(remoteFilename)).ConfigureAwait(false);
+                            }
+                        }
+                        catch
+                        {
+                            // swallow any exceptions here. the user may be offline, we might fail to connect, we might fail to send
+                            // the message. we don't *need* this to succeed, and there's a good chance that it won't if the user lost
+                            // connectivity, causing the upload to fail in the first place
+                        }
                     }
                 }
+                finally
+                {
+                    /*
+                        make sure we do all of the absolutely-must-do cleanup; if any of this fails we will leave the
+                        client in an inoperable state over time
+                    */
+                    if (semaphoreAcquired)
+                    {
+                        try
+                        {
+                            Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
+                            semaphore.Release(releaseCount: 1);
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to release upload semaphore for user {username}: {ex.Message}");
+                        }
+                    }
 
-                UploadDictionary.TryRemove(upload.Token, out _);
-                UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+                    if (uploadSlotAcquired)
+                    {
+                        try
+                        {
+                            // give the next thread time to acquire the semaphore. this is extremely sub-optimal, but if there's a waiting
+                            // upload we want the code within AcquireSlot() to be aware of it before we release the slot. 10ms should be
+                            // plenty of time, as this release and the subsequent thread acquiring it should happen within nanoseconds.
+                            await Task.Delay(10, CancellationToken.None).ConfigureAwait(false);
+
+                            Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
+
+                            options.SlotReleased?.Invoke(new Transfer(upload));
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Encountered Exception releasing upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                        }
+                    }
+
+                    if (globalSemaphoreAcquired)
+                    {
+                        try
+                        {
+                            GlobalUploadSemaphore.Release(releaseCount: 1);
+                            Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to release global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
+                        }
+                    }
+
+                    UploadDictionary.TryRemove(upload.Token, out _);
+                    UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+                }
             }
         }
 
