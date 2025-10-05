@@ -183,13 +183,6 @@ namespace Soulseek.Network
 
         private async Task ReadContinuouslyAsync()
         {
-            if (SoulseekClient.RaiseEventsAsynchronously)
-            {
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("Raising events asynchronously! This is experimental! YMMV!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            }
-
             if (ReadingContinuously)
             {
                 return;
@@ -273,8 +266,19 @@ namespace Soulseek.Network
         {
             await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
 
-            Interlocked.CompareExchange(ref MessageWritten, null, null)?
-                .Invoke(this, new MessageEventArgs(bytes));
+            if (SoulseekClient.RaiseEventsAsynchronously)
+            {
+                Task.Run(() =>
+                {
+                    Interlocked.CompareExchange(ref MessageWritten, null, null)?
+                        .Invoke(this, new MessageEventArgs(bytes));
+                }, cancellationToken).Forget();
+            }
+            else
+            {
+                Interlocked.CompareExchange(ref MessageWritten, null, null)?
+                    .Invoke(this, new MessageEventArgs(bytes));
+            }
         }
     }
 }

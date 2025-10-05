@@ -2650,7 +2650,7 @@ namespace Soulseek
                 throw new ArgumentException("The remote filename must not be a null or empty string, or one consisting only of whitespace", nameof(remoteFilename));
             }
 
-            if (size <= 0)
+            if (size < 0)
             {
                 throw new ArgumentException("The requested size must be greater than or equal to zero", nameof(size));
             }
