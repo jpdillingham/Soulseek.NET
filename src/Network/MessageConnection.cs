@@ -266,8 +266,19 @@ namespace Soulseek.Network
         {
             await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
 
-            Interlocked.CompareExchange(ref MessageWritten, null, null)?
-                .Invoke(this, new MessageEventArgs(bytes));
+            if (SoulseekClient.RaiseEventsAsynchronously)
+            {
+                Task.Run(() =>
+                {
+                    Interlocked.CompareExchange(ref MessageWritten, null, null)?
+                        .Invoke(this, new MessageEventArgs(bytes));
+                }, cancellationToken).Forget();
+            }
+            else
+            {
+                Interlocked.CompareExchange(ref MessageWritten, null, null)?
+                    .Invoke(this, new MessageEventArgs(bytes));
+            }
         }
     }
 }
