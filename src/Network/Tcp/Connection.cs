@@ -639,8 +639,19 @@ namespace Soulseek.Network.Tcp
 
                     reporter?.Invoke(bytesToRead, bytesGranted, bytesRead);
 
-                    Interlocked.CompareExchange(ref DataRead, null, null)?
-                        .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
+                    if (SoulseekClient.RaiseEventsAsynchronously)
+                    {
+                        Task.Run(() =>
+                        {
+                            Interlocked.CompareExchange(ref DataRead, null, null)?
+                                .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
+                        }, cancellationToken).Forget();
+                    }
+                    else
+                    {
+                        Interlocked.CompareExchange(ref DataRead, null, null)?
+                            .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
+                    }
 
                     ResetInactivityTime();
                 }
@@ -740,8 +751,19 @@ namespace Soulseek.Network.Tcp
 
                     reporter?.Invoke(bytesToRead, bytesGranted, bytesRead);
 
-                    Interlocked.CompareExchange(ref DataWritten, null, null)?
-                        .Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
+                    if (SoulseekClient.RaiseEventsAsynchronously)
+                    {
+                        Task.Run(() =>
+                        {
+                            Interlocked.CompareExchange(ref DataWritten, null, null)?
+                                .Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
+                        }, cancellationToken).Forget();
+                    }
+                    else
+                    {
+                        Interlocked.CompareExchange(ref DataWritten, null, null)?
+                            .Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
+                    }
 
                     ResetInactivityTime();
                 }
