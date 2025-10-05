@@ -183,13 +183,6 @@ namespace Soulseek.Network
 
         private async Task ReadContinuouslyAsync()
         {
-            if (SoulseekClient.RaiseEventsAsynchronously)
-            {
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("Raising events asynchronously! This is experimental! YMMV!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            }
-
             if (ReadingContinuously)
             {
                 return;
