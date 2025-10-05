@@ -4250,7 +4250,7 @@ namespace Soulseek
 
                 // prepare a wait for the transfer response
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token), null, cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token), Options.PeerConnectionOptions.InactivityTimeout, cancellationToken);
 
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, size);
