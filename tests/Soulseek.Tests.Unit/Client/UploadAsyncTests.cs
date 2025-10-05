@@ -140,8 +140,25 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Fact(DisplayName = "UploadAsync stream does not throw given zero size")]
+        public async Task UploadAsync_Stream_Does_Not_Throw_Given_Zero_Size()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var zeroSizeArgument = 0;
+                var ex = await Record.ExceptionAsync(() => s.UploadAsync("username", "filename", zeroSizeArgument, (_) => Task.FromResult((Stream)stream)));
+
+                // this only works because the check for connection state comes after the size guard clause
+                // if that moves this test will break and/or not test the size guard
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync stream throws ArgumentException bad size")]
-        [InlineData(0)]
         [InlineData(-1)]
         [InlineData(-12413)]
         public async Task UploadAsync_Stream_Throws_ArgumentException_Given_Bad_Size(long size)
