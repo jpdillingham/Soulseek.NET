@@ -183,6 +183,13 @@ namespace Soulseek.Network
 
         private async Task ReadContinuouslyAsync()
         {
+            if (SoulseekClient.RaiseEventsAsynchronously)
+            {
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("Raising events asynchronously! This is experimental! YMMV!");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            }
+
             if (ReadingContinuously)
             {
                 return;
@@ -193,8 +200,19 @@ namespace Soulseek.Network
 
             void RaiseMessageDataRead(object sender, ConnectionDataEventArgs e)
             {
-                Interlocked.CompareExchange(ref MessageDataRead, null, null)?
-                    .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
+                if (SoulseekClient.RaiseEventsAsynchronously)
+                {
+                    Task.Run(() =>
+                    {
+                        Interlocked.CompareExchange(ref MessageDataRead, null, null)?
+                            .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
+                    }, CancellationToken.None).Forget();
+                }
+                else
+                {
+                    Interlocked.CompareExchange(ref MessageDataRead, null, null)?
+                            .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
+                }
             }
 
             try
@@ -223,8 +241,21 @@ namespace Soulseek.Network
                         message.AddRange(payloadBytes);
 
                         var messageBytes = message.ToArray();
-                        Interlocked.CompareExchange(ref MessageRead, null, null)?
-                            .Invoke(this, new MessageEventArgs(messageBytes));
+
+                        if (SoulseekClient.RaiseEventsAsynchronously)
+                        {
+                            Task.Run(() =>
+                            {
+                                Interlocked.CompareExchange(ref MessageRead, null, null)?
+                                    .Invoke(this, new MessageEventArgs(messageBytes));
+                            }, CancellationToken.None).Forget();
+                        }
+                        else
+                        {
+                            Interlocked.CompareExchange(ref MessageRead, null, null)?
+                                    .Invoke(this, new MessageEventArgs(messageBytes));
+                        }
+
                     }
                     finally
                     {

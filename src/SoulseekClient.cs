@@ -102,6 +102,8 @@ namespace Soulseek
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
+            RaiseEventsAsynchronously = Options.RaiseEventsAsynchronously;
+
             SearchSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentSearches, maxCount: Options.MaximumConcurrentSearches);
 
             GlobalDownloadSemaphore = new SemaphoreSlim(initialCount: Options.MaximumConcurrentDownloads, maxCount: Options.MaximumConcurrentDownloads);
@@ -442,6 +444,11 @@ namespace Soulseek
         /// </summary>
         /// <remarks>Add a user to the server watch list with <see cref="WatchUserAsync(string, CancellationToken?)"/>.</remarks>
         public event EventHandler<UserStatus> UserStatusChanged;
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether to raise events asynchronously.
+        /// </summary>
+        public static bool RaiseEventsAsynchronously { get; set; }
 
         /// <summary>
         ///     Gets the unresolved server address.

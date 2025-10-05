@@ -94,6 +94,7 @@ namespace Soulseek
         /// <param name="placeInQueueResolver">
         ///     The delegate used to resolve the <see cref="int"/> response for an incoming request.
         /// </param>
+        /// <param name="raiseEventsAsynchronously">(Experimental!) Raise events asynchronously to improve parallelism.</param>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="listenPort"/> is not between 1024 and 65535.
         /// </exception>
@@ -131,7 +132,8 @@ namespace Soulseek
             Func<string, IPEndPoint, int, string, Task<IEnumerable<Directory>>> directoryContentsResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownload = null,
-            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null)
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResolver = null,
+            bool raiseEventsAsynchronously = false)
         {
             EnableListener = enableListener;
             ListenIPAddress = listenIPAddress ?? IPAddress.Any;
@@ -203,6 +205,8 @@ namespace Soulseek
             UserInfoResolver = userInfoResolver ?? defaultUserInfoResolver;
             EnqueueDownload = enqueueDownload ?? defaultEnqueueDownload;
             PlaceInQueueResolver = placeInQueueResolver ?? defaultPlaceInQueueResolver;
+
+            RaiseEventsAsynchronously = raiseEventsAsynchronously;
         }
 
         /// <summary>
@@ -375,6 +379,11 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a blank/zeroed response).
         /// </summary>
         public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResolver { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to raise events asynchronously.
+        /// </summary>
+        public bool RaiseEventsAsynchronously { get; }
 
         /// <summary>
         ///     Creates a clone of this instance with the substitutions in the specified <paramref name="patch"/> applied.
