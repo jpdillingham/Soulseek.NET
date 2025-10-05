@@ -641,7 +641,9 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
-            waiter.Setup(m => m.Wait<TransferResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+
+            // simulate a timeout waiting for the remote client to ack the request to start
+            waiter.Setup(m => m.Wait<TransferResponse>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             var conn = new Mock<IMessageConnection>();
@@ -653,7 +655,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(conn.Object));
 
             using (var testFile = new TestFile())
-            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient(options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 

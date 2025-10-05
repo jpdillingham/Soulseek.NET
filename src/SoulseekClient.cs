@@ -3261,11 +3261,13 @@ namespace Soulseek
                     {
                         // if the remote user doesn't initiate a transfer connection, try to initiate one from this end. the
                         // remote client in this scenario is most likely Nicotine+.
-                        Diagnostic.Debug($"Attempting to initiate a second-chance transfer connection to {username} for download of {download.Filename}");
+                        Diagnostic.Warning($"Attempting to initiate a second-chance transfer connection to {username} for download of {download.Filename}");
 
                         download.Connection = await PeerConnectionManager
                             .GetTransferConnectionAsync(username, endpoint, download.RemoteToken.Value, cancellationToken)
                             .ConfigureAwait(false);
+
+                        Diagnostic.Warning($"Successfully established a second-chance transfer connection to {username} for download of {download.Filename}");
                     }
                 }
 
@@ -4250,7 +4252,7 @@ namespace Soulseek
 
                 // prepare a wait for the transfer response
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token), null, cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token), Options.PeerConnectionOptions.InactivityTimeout, cancellationToken);
 
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, size);
