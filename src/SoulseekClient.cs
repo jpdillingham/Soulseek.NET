@@ -3262,7 +3262,6 @@ namespace Soulseek
                     // prepare a wait for the eventual transfer connection
                     var connectionTask = PeerConnectionManager
                         .AwaitTransferConnectionAsync(download.Username, download.Filename, download.RemoteToken.Value, cancellationToken);
-                    Diagnostic.Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
 
                     // initiate the connection
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0), cancellationToken).ConfigureAwait(false);
@@ -3270,6 +3269,7 @@ namespace Soulseek
                     try
                     {
                         download.Connection = await connectionTask.ConfigureAwait(false);
+                        Diagnostic.Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
                     }
                     catch (ConnectionException)
                     {
