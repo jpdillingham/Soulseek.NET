@@ -3185,6 +3185,7 @@ namespace Soulseek
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Fetched peer connection for {Path.GetFileName(download.Filename)} to {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for
                 // the eventual transfer request sent when the peer is ready to send the file. the response message should be
@@ -3194,10 +3195,15 @@ namespace Soulseek
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(transferStartRequestedWaitKey, cancellationToken);
 
                 // request the file
+                Diagnostic.Debug($"Writing transfer request for {Path.GetFileName(download.Filename)} to {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
                 await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, remoteFilename), cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Wrote transfer request for {Path.GetFileName(download.Filename)} to {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
+
                 UpdateState(TransferStates.Requested);
 
+                Diagnostic.Debug($"Waiting for transfer request ACK for {Path.GetFileName(download.Filename)} to {username} (token: {token})");
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
+                Diagnostic.Debug($"Received transfer request ACK for {Path.GetFileName(download.Filename)} to {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
 
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
