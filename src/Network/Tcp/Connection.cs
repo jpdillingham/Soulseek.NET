@@ -781,12 +781,15 @@ namespace Soulseek.Network.Tcp
             }
             finally
             {
-                WriteQueueSemaphore.Release();
-                WriteSemaphore.Release();
-
 #if NETSTANDARD2_1_OR_GREATER
                 System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
 #endif
+
+                if (!Disposed)
+                {
+                    WriteQueueSemaphore.Release();
+                    WriteSemaphore.Release();
+                }
             }
         }
     }
