@@ -3195,13 +3195,11 @@ namespace Soulseek
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(transferStartRequestedWaitKey, cancellationToken);
 
                 // request the file
-                Diagnostic.Debug($"Writing transfer request for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
                 await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, remoteFilename), cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Wrote transfer request for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
 
                 UpdateState(TransferStates.Requested);
 
-                Diagnostic.Debug($"Waiting for transfer request ACK for download of {Path.GetFileName(download.Filename)} from {username} (token: {token})");
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
                 Diagnostic.Debug($"Received transfer request ACK for download of {Path.GetFileName(download.Filename)} from {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
 
@@ -4274,13 +4272,11 @@ namespace Soulseek
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, size);
 
-                Diagnostic.Debug($"Writing transfer request for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
                 await messageConnection.WriteAsync(transferRequest, cancellationToken).ConfigureAwait(false);
                 Diagnostic.Debug($"Wrote transfer request for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
 
                 UpdateState(TransferStates.Requested);
 
-                Diagnostic.Debug($"Waiting for transfer request ACK for upload of {Path.GetFileName(upload.Filename)} to {username} (token: {token})");
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
                 Diagnostic.Debug($"Received transfer request ACK for upload of {Path.GetFileName(upload.Filename)} to {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
 
