@@ -142,7 +142,22 @@ namespace Soulseek
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-            PeerMessageHandler.DownloadFailed += (sender, e) => DownloadFailed?.Invoke(this, e);
+            PeerMessageHandler.DownloadFailed += (sender, e) =>
+            {
+                try
+                {
+                    // assumes controls are in place (as they were at the time of this implementation) to prevent
+                    // duplicate transfers of the same file from the same user
+                    DownloadDictionary.Values
+                        .FirstOrDefault(d => d.Username == e.Username && d.Filename == e.Filename)
+                        ?.RemoteTaskCompletionSource.TrySetException(new TransferException("Transfer reported as failed by the remote client"));
+                }
+                finally
+                {
+                    DownloadFailed?.Invoke(this, e);
+                }
+            };
+
             PeerMessageHandler.DownloadDenied += (sender, e) => DownloadDenied?.Invoke(this, e);
 
             DistributedMessageHandler = distributedMessageHandler ?? new DistributedMessageHandler(this);
@@ -3326,12 +3341,18 @@ namespace Soulseek
                     },
                     cancellationToken: linkedCancellationToken);
 
-                var firstTask = await Task.WhenAny(disconnectedTask, readTask).ConfigureAwait(false);
+                var firstTask = await Task.WhenAny(disconnectedTask, download.RemoteTaskCompletionSource.Task, readTask).ConfigureAwait(false);
 
                 // cancel the losing task
                 linkedCancellationTokenSource.Cancel();
 
-                if (firstTask == disconnectedTask)
+                if (firstTask == download.RemoteTaskCompletionSource.Task)
+                {
+                    // we should only use this to signal an abnormal (unsuccessful) end of the transfer, which
+                    // should set an exception for the task. awaiting it will raise it and enter a catch
+                    await download.RemoteTaskCompletionSource.Task.ConfigureAwait(false);
+                }
+                else if (firstTask == disconnectedTask)
                 {
                     // this is guaranteed to throw; we control the TCS and we're calling SetException() above
                     await disconnectedTask.ConfigureAwait(false);

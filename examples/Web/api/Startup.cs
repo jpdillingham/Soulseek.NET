@@ -277,7 +277,8 @@ namespace WebAPI
                 directoryContentsResolver: DirectoryContentsResponseResolver,
                 enqueueDownload: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
                 searchResponseResolver: SearchResponseResolver,
-                searchResponseCache: searchResponseCache);
+                searchResponseCache: searchResponseCache,
+                raiseEventsAsynchronously: true);
 
             Client = new SoulseekClient(options: clientOptions);
             SharedCounts = (Directories: 0, Files: 0);

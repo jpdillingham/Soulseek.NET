@@ -19,6 +19,8 @@ namespace Soulseek
 {
     using System;
     using System.Net;
+    using System.Threading.Tasks;
+
     using Soulseek.Network.Tcp;
 
     /// <summary>
@@ -195,6 +197,11 @@ namespace Soulseek
         ///     Gets the wait key for the transfer.
         /// </summary>
         public WaitKey WaitKey { get; }
+
+        /// <summary>
+        ///     Gets the task completion source used to end the transfer if/when the remote client reports that it has failed or been rejected.
+        /// </summary>
+        public TaskCompletionSource<bool> RemoteTaskCompletionSource { get; } = new TaskCompletionSource<bool>();
 
         /// <summary>
         ///     Updates the transfer progress.
