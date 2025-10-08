@@ -191,6 +191,7 @@ namespace Soulseek.Network.Tcp
         private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         private SemaphoreSlim WriteSemaphore { get; set; } = new SemaphoreSlim(initialCount: 1, maxCount: 1);
         private SemaphoreSlim WriteQueueSemaphore { get; set; }
+        private bool WriteQueueFull { get; set; }
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
