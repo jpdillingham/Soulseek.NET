@@ -732,8 +732,13 @@ namespace Soulseek.Network.Tcp
 
                 long totalBytesWritten = 0;
 
-                while (!Disposed && totalBytesWritten < length)
+                while (totalBytesWritten < length)
                 {
+                    if (Disposed || State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
+                    {
+                        throw new ConnectionWriteException($"Write aborted after {totalBytesWritten} bytes written; the connection has been or is being {(Disposed ? "disposed" : "disconnected")}");
+                    }
+
                     var bytesRemaining = length - totalBytesWritten;
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining;
 
