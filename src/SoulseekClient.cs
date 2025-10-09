@@ -3154,8 +3154,24 @@ namespace Soulseek
                 download.State = state;
                 var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
                 lastState = state;
-                options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
-                TransferStateChanged?.Invoke(this, e);
+
+                try
+                {
+                    options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke StateChanged delegate for download of {remoteFilename} from {username}: {ex.Message}", ex);
+                }
+
+                try
+                {
+                    TransferStateChanged?.Invoke(this, e);
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke TransferStateChanged event for download of {remoteFilename} from {username}: {ex.Message}", ex);
+                }
             }
 
             void UpdateProgress(long bytesDownloaded)
@@ -3163,8 +3179,24 @@ namespace Soulseek
                 var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
                 var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
-                options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
-                TransferProgressUpdated?.Invoke(this, e);
+
+                try
+                {
+                    options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke StateChanged delegate for download of {remoteFilename} from {username}: {ex.Message}", ex);
+                }
+
+                try
+                {
+                    TransferProgressUpdated?.Invoke(this, e);
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke TransferProgressUpdated event for download of {remoteFilename} from {username}: {ex.Message}", ex);
+                }
             }
 
             var transferStartRequestedWaitKey = new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename);
@@ -4190,8 +4222,24 @@ namespace Soulseek
                 upload.State = state;
                 var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
                 lastState = state;
-                options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
-                TransferStateChanged?.Invoke(this, e);
+
+                try
+                {
+                    options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke StateChanged delegate for upload of {remoteFilename} to {username}: {ex.Message}", ex);
+                }
+
+                try
+                {
+                    TransferStateChanged?.Invoke(this, e);
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke TransferStateChanged event for upload of {remoteFilename} to {username}: {ex.Message}", ex);
+                }
             }
 
             void UpdateProgress(long bytesUploaded)
@@ -4199,8 +4247,24 @@ namespace Soulseek
                 var lastBytes = upload.BytesTransferred;
                 upload.UpdateProgress(bytesUploaded);
                 var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
-                options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
-                TransferProgressUpdated?.Invoke(this, e);
+
+                try
+                {
+                    options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke StateChanged delegate for upload of {remoteFilename} to {username}: {ex.Message}", ex);
+                }
+
+                try
+                {
+                    TransferProgressUpdated?.Invoke(this, e);
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to invoke TransferProgressUpdated event for upload of {remoteFilename} to {username}: {ex.Message}", ex);
+                }
             }
 
             IPEndPoint endpoint = null;
