@@ -53,6 +53,55 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Sets socket timeouts on instantiation"), AutoData]
+        public void Sets_Socket_Timeouts_On_Instantiation(IPEndPoint endpoint, int inactivityTimeout)
+        {
+            var stream = new Mock<INetworkStream>();
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream()).Returns(stream.Object);
+            t.Setup(m => m.Client).Returns(socket);
+
+            var options = new ConnectionOptions(inactivityTimeout: inactivityTimeout + 1); // +1 to avoid 0
+
+            Connection c = null;
+
+            var ex = Record.Exception(() => c = new Connection(endpoint, options, t.Object));
+
+            Assert.Null(ex);
+            Assert.NotNull(c);
+
+            Assert.Equal(inactivityTimeout + 1, socket.SendTimeout);
+            Assert.Equal(inactivityTimeout + 1, socket.ReceiveTimeout);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Sets stream timeouts on instantiation when TcpClient is connected"), AutoData]
+        public void Sets_Stream_Timeouts_On_Instantiation_When_TcpClient_Is_Connected(IPEndPoint endpoint, int inactivityTimeout)
+        {
+            var stream = new Mock<INetworkStream>();
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream()).Returns(stream.Object);
+            t.Setup(m => m.Client).Returns(socket);
+
+            // starting connected should cause the stream to be configured
+            t.Setup(m => m.Connected).Returns(true);
+
+            var options = new ConnectionOptions(inactivityTimeout: inactivityTimeout + 1); // +1 to avoid 0
+
+            Connection c = null;
+
+            var ex = Record.Exception(() => c = new Connection(endpoint, options, t.Object));
+
+            Assert.Null(ex);
+            Assert.NotNull(c);
+
+            stream.VerifySet(m => m.ReadTimeout = inactivityTimeout + 1);
+            stream.VerifySet(m => m.WriteTimeout = inactivityTimeout + 1);
+        }
+
+        [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Type property sets"), AutoData]
         public void Type_Property_Sets(IPEndPoint endpoint)
         {
@@ -103,7 +152,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(true);
 
@@ -122,7 +174,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(true);
 
@@ -167,7 +222,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(inactivityTimeout: 1)))
@@ -281,7 +339,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
@@ -292,6 +353,33 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.Equal(ConnectionState.Connected, c.State);
 
                     t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect sets stream timeouts"), AutoData]
+        public async Task Connect_Sets_Stream_Timeouts(IPEndPoint endpoint, int inactivityTimeout)
+        {
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var s = new Mock<INetworkStream>();
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
+                t.Setup(m => m.Client).Returns(socket);
+
+                var options = new ConnectionOptions(inactivityTimeout: inactivityTimeout + 1);
+
+                using (var c = new Connection(endpoint, options, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(() => c.ConnectAsync());
+
+                    Assert.Null(ex);
+                    Assert.Equal(ConnectionState.Connected, c.State);
+
+                    s.VerifySet(m => m.WriteTimeout = inactivityTimeout + 1);
+                    s.VerifySet(m => m.ReadTimeout = inactivityTimeout + 1);
                 }
             }
         }
@@ -393,7 +481,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
 
                 var proxy = new ProxyOptions("127.0.0.1", 1, "username", "password");
@@ -430,7 +521,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
@@ -455,7 +549,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
@@ -484,7 +581,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(inactivityTimeout: -1)))
@@ -549,7 +649,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(false);
 
@@ -622,7 +725,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var s = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(s.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(true);
 
@@ -642,7 +748,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var stream = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(stream.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(true);
 
@@ -673,7 +782,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             using (var stream = new MemoryStream())
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var networkStream = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(networkStream.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(true);
 
@@ -693,7 +805,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var stream = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(stream.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(true);
 
@@ -714,7 +829,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             using (var stream = new UnReadableWriteableStream())
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
+                var networkStream = new Mock<INetworkStream>();
                 var t = new Mock<ITcpClient>();
+                t.Setup(m => m.GetStream())
+                    .Returns(networkStream.Object);
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.Connected).Returns(true);
 
@@ -775,7 +893,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Write throws if connection is not connected"), AutoData]
         public async Task Write_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
@@ -798,7 +919,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Write from stream throws if connection is not connected"), AutoData]
         public async Task Write_From_Stream_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint, int length, Func<int, CancellationToken, Task<int>> governor)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
 
             using (var stream = new MemoryStream())
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
@@ -1256,7 +1380,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read throws if connection is not connected"), AutoData]
         public async Task Read_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
@@ -1280,7 +1407,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read to stream throws if connection is not connected"), AutoData]
         public async Task Read_To_Stream_Throws_If_Connection_Is_Not_Connected(IPEndPoint endpoint, Func<int, CancellationToken, Task<int>> governor)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
 
             using (var stream = new MemoryStream())
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
@@ -1729,7 +1859,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read does not throw given zero length"), AutoData]
         public async Task Read_Does_Not_Throw_Given_Zero_Length(IPEndPoint endpoint)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
             t.Setup(m => m.Connected).Returns(true);
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
@@ -1749,7 +1882,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read returns empty byte array given zero length"), AutoData]
         public async Task Read_Returns_Empty_Byte_Array_Given_Zero_Length(IPEndPoint endpoint)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
@@ -1771,7 +1907,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [InlineData(-1)]
         public async Task Read_Throws_Given_Zero_Or_Negative_Length(int length)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
+
             var endpoint = new IPEndPoint(IPAddress.None, 0);
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
@@ -1795,7 +1935,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [InlineData(-1)]
         public async Task Read_To_Stream_Throws_Given_Zero_Or_Negative_Length(int length)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
+
             var endpoint = new IPEndPoint(IPAddress.None, 0);
 
             using (var stream = new MemoryStream())
@@ -1818,7 +1962,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read to stream throws given null stream"), AutoData]
         public async Task Read_To_Stream_Throws_Given_Null_Stream(IPEndPoint endpoint, int length)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
@@ -1839,7 +1986,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read to stream throws given unwriteable stream"), AutoData]
         public async Task Read_To_Stream_Throws_Given_Unwriteable_Stream(IPEndPoint endpoint, int length)
         {
+            var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.GetStream())
+                .Returns(s.Object);
 
             using (var stream = new UnReadableWriteableStream())
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))

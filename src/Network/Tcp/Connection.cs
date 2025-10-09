@@ -98,8 +98,8 @@ namespace Soulseek.Network.Tcp
 
                 // these should also call SetSocketOptions on the socket. doing it twice to make sure!
                 // read and write timeouts can cause the client to hang, even if the inactivity timer disconnects
-                Stream.WriteTimeout = options.InactivityTimeout;
-                Stream.ReadTimeout = options.InactivityTimeout;
+                Stream.WriteTimeout = Options.InactivityTimeout;
+                Stream.ReadTimeout = Options.InactivityTimeout;
             }
         }
 
