@@ -43,6 +43,21 @@ namespace Soulseek.Network.Tcp
             NetworkStream = networkStream;
         }
 
+        /// <summary>
+        ///     Gets or sets the write timeout for the <see cref="NetworkStream"/>.
+        /// </summary>
+        public int WriteTimeout
+        {
+            get
+            {
+                return NetworkStream.WriteTimeout;
+            }
+            set
+            {
+                NetworkStream.WriteTimeout = value;
+            }
+        }
+
         private bool Disposed { get; set; }
         private NetworkStream NetworkStream { get; set; }
 

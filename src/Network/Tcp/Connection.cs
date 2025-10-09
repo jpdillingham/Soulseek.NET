@@ -90,6 +90,10 @@ namespace Soulseek.Network.Tcp
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
                 Stream = TcpClient.GetStream();
+
+                // belt and suspenders; make sure writes can't time out
+                Stream.WriteTimeout = options.InactivityTimeout;
+                TcpClient.Client.SendTimeout = options.InactivityTimeout;
             }
         }
 
