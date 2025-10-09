@@ -51,6 +51,10 @@ namespace Soulseek.Network.Tcp
             // is pretty much the only option.
             Options.ConfigureSocket(TcpClient.Client);
 
+            // this should call SetSocketOptions on the socket (Client)
+            TcpClient.Client.ReceiveTimeout = Options.InactivityTimeout;
+            TcpClient.Client.SendTimeout = Options.InactivityTimeout;
+
             WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
 
             if (Options.InactivityTimeout > 0)
@@ -89,11 +93,13 @@ namespace Soulseek.Network.Tcp
                 State = ConnectionState.Connected;
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
+
                 Stream = TcpClient.GetStream();
 
-                // belt and suspenders; make sure writes can't time out
+                // these should also call SetSocketOptions on the socket. doing it twice to make sure!
+                // read and write timeouts can cause the client to hang, even if the inactivity timer disconnects
                 Stream.WriteTimeout = options.InactivityTimeout;
-                TcpClient.Client.SendTimeout = options.InactivityTimeout;
+                Stream.ReadTimeout = options.InactivityTimeout;
             }
         }
 
@@ -284,7 +290,13 @@ namespace Soulseek.Network.Tcp
 
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
+
                 Stream = TcpClient.GetStream();
+
+                // these should also call SetSocketOptions on the socket. doing it twice to make sure!
+                // read and write timeouts can cause the client to hang, even if the inactivity timer disconnects
+                Stream.ReadTimeout = Options.InactivityTimeout;
+                Stream.WriteTimeout = Options.InactivityTimeout;
 
                 ChangeState(ConnectionState.Connected, $"Connected to {IPEndPoint}");
             }
