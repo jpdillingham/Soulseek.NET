@@ -43,6 +43,42 @@ namespace Soulseek.Network.Tcp
             NetworkStream = networkStream;
         }
 
+        /// <summary>
+        ///     Gets or sets the read timeout for the <see cref="NetworkStream"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Uses SetSocketOption under the hood: https://github.com/microsoft/referencesource/blob/main/System/net/System/Net/Sockets/NetworkStream.cs.
+        /// </remarks>
+        public int ReadTimeout
+        {
+            get
+            {
+                return NetworkStream.ReadTimeout;
+            }
+            set
+            {
+                NetworkStream.ReadTimeout = value;
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the write timeout for the <see cref="NetworkStream"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Uses SetSocketOption under the hood: https://github.com/microsoft/referencesource/blob/main/System/net/System/Net/Sockets/NetworkStream.cs.
+        /// </remarks>
+        public int WriteTimeout
+        {
+            get
+            {
+                return NetworkStream.WriteTimeout;
+            }
+            set
+            {
+                NetworkStream.WriteTimeout = value;
+            }
+        }
+
         private bool Disposed { get; set; }
         private NetworkStream NetworkStream { get; set; }
 

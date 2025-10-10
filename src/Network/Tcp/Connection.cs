@@ -51,6 +51,10 @@ namespace Soulseek.Network.Tcp
             // is pretty much the only option.
             Options.ConfigureSocket(TcpClient.Client);
 
+            // this should call SetSocketOptions on the socket (Client)
+            TcpClient.Client.ReceiveTimeout = Options.InactivityTimeout;
+            TcpClient.Client.SendTimeout = Options.InactivityTimeout;
+
             WriteQueueSemaphore = new SemaphoreSlim(Options.WriteQueueSize);
 
             if (Options.InactivityTimeout > 0)
@@ -89,7 +93,13 @@ namespace Soulseek.Network.Tcp
                 State = ConnectionState.Connected;
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
+
                 Stream = TcpClient.GetStream();
+
+                // these should also call SetSocketOptions on the socket. doing it twice to make sure!
+                // read and write timeouts can cause the client to hang, even if the inactivity timer disconnects
+                Stream.WriteTimeout = Options.InactivityTimeout;
+                Stream.ReadTimeout = Options.InactivityTimeout;
             }
         }
 
@@ -191,6 +201,7 @@ namespace Soulseek.Network.Tcp
         private TaskCompletionSource<string> DisconnectTaskCompletionSource { get; } = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         private SemaphoreSlim WriteSemaphore { get; set; } = new SemaphoreSlim(initialCount: 1, maxCount: 1);
         private SemaphoreSlim WriteQueueSemaphore { get; set; }
+        private bool WriteQueueFull { get; set; }
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
@@ -279,7 +290,13 @@ namespace Soulseek.Network.Tcp
 
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
+
                 Stream = TcpClient.GetStream();
+
+                // these should also call SetSocketOptions on the socket. doing it twice to make sure!
+                // read and write timeouts can cause the client to hang, even if the inactivity timer disconnects
+                Stream.ReadTimeout = Options.InactivityTimeout;
+                Stream.WriteTimeout = Options.InactivityTimeout;
 
                 ChangeState(ConnectionState.Connected, $"Connected to {IPEndPoint}");
             }
@@ -698,23 +715,24 @@ namespace Soulseek.Network.Tcp
 
         private async Task WriteInternalAsync(long length, Stream inputStream, Func<int, CancellationToken, Task<int>> governor, Action<int, int, int> reporter, CancellationToken cancellationToken)
         {
-            // in the case of a bad (or failing) connection, it is possible for us to continue to write data, particularly
-            // distributed search requests, to the connection for quite a while before the underlying socket figures out that it
-            // is in a bad state. when this happens memory usage skyrockets. see https://github.com/slskd/slskd/issues/251 for
-            // more information
-            if (WriteQueueSemaphore.CurrentCount == 0)
-            {
-                Disconnect("The write buffer is full");
-                throw new ConnectionWriteDroppedException($"Dropped buffered message to {IPEndPoint}; the write buffer is full");
-            }
-
             // a failure to allocate memory will throw, so we need to do it within the try/catch
             // declare and initialize it here so it's available in the finally block
             byte[] buffer = Array.Empty<byte>();
 
-            // grab a slot on the queue semaphore.  note that this isn't for synchronization, it's to
-            // maintain a count of waiting writes
-            await WriteQueueSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            // in the case of a bad (or failing) connection, it is possible for us to continue to write data, particularly
+            // distributed search requests, to the connection for quite a while before the underlying socket figures out that it
+            // is in a bad state. when this happens memory usage skyrockets. see https://github.com/slskd/slskd/issues/251 for
+            // more information.  note that this isn't for synchronization, it's to maintain a count of waiting writes.
+            if (WriteQueueFull || !await WriteQueueSemaphore.WaitAsync(0, cancellationToken).ConfigureAwait(false))
+            {
+                // note: the semaphore check and this latch are not atomic! it's possible for one thread to fail to get the semaphore,
+                // and for the next to succeed (if one is released in the finally) before we set this to true. if that happens,
+                // *something* below will fail and the exception will bubble out (and if it doesn't throw, it probably got sent)
+                WriteQueueFull = true;
+
+                Disconnect("The write buffer is full");
+                throw new ConnectionWriteDroppedException($"Dropped buffered message to {IPEndPoint}; the write buffer is full");
+            }
 
             // obtain the write semaphore for this connection.  this keeps concurrent writes
             // from interleaving, which will mangle the messages on the receiving end
@@ -732,8 +750,13 @@ namespace Soulseek.Network.Tcp
 
                 long totalBytesWritten = 0;
 
-                while (!Disposed && totalBytesWritten < length)
+                while (totalBytesWritten < length)
                 {
+                    if (Disposed || State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
+                    {
+                        throw new ConnectionWriteException($"Write aborted after {totalBytesWritten} bytes written; the connection has been or is being {(Disposed ? "disposed" : "disconnected")}");
+                    }
+
                     var bytesRemaining = length - totalBytesWritten;
                     var bytesToRead = bytesRemaining >= buffer.Length ? buffer.Length : (int)bytesRemaining;
 
@@ -781,12 +804,15 @@ namespace Soulseek.Network.Tcp
             }
             finally
             {
-                WriteQueueSemaphore.Release();
-                WriteSemaphore.Release();
-
 #if NETSTANDARD2_1_OR_GREATER
                 System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
 #endif
+
+                if (!Disposed)
+                {
+                    WriteQueueSemaphore.Release();
+                    WriteSemaphore.Release();
+                }
             }
         }
     }
