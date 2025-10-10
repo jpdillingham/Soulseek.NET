@@ -3154,7 +3154,6 @@ namespace Soulseek
                 download.State = state;
                 var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
                 lastState = state;
-
                 options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
                 TransferStateChanged?.Invoke(this, e);
             }
@@ -3164,7 +3163,6 @@ namespace Soulseek
                 var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
                 var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
-
                 options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
                 TransferProgressUpdated?.Invoke(this, e);
             }
@@ -4192,7 +4190,6 @@ namespace Soulseek
                 upload.State = state;
                 var e = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
                 lastState = state;
-
                 options.StateChanged?.Invoke((e.PreviousState, e.Transfer));
                 TransferStateChanged?.Invoke(this, e);
             }
@@ -4202,24 +4199,8 @@ namespace Soulseek
                 var lastBytes = upload.BytesTransferred;
                 upload.UpdateProgress(bytesUploaded);
                 var e = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
-
-                try
-                {
-                    options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
-                }
-                catch (Exception ex)
-                {
-                    Diagnostic.Warning($"Failed to invoke StateChanged delegate for upload of {remoteFilename} to {username}: {ex.Message}", ex);
-                }
-
-                try
-                {
-                    TransferProgressUpdated?.Invoke(this, e);
-                }
-                catch (Exception ex)
-                {
-                    Diagnostic.Warning($"Failed to invoke TransferProgressUpdated event for upload of {remoteFilename} to {username}: {ex.Message}", ex);
-                }
+                options.ProgressUpdated?.Invoke((e.PreviousBytesTransferred, e.Transfer));
+                TransferProgressUpdated?.Invoke(this, e);
             }
 
             IPEndPoint endpoint = null;
