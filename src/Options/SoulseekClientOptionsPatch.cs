@@ -135,7 +135,7 @@ namespace Soulseek
 
             ServerConnectionOptions = serverConnectionOptions?.WithoutInactivityTimeout();
             PeerConnectionOptions = peerConnectionOptions;
-            TransferConnectionOptions = transferConnectionOptions?.WithoutInactivityTimeout();
+            TransferConnectionOptions = transferConnectionOptions;
             IncomingConnectionOptions = incomingConnectionOptions;
             DistributedConnectionOptions = distributedConnectionOptions;
 

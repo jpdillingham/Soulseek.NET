@@ -190,7 +190,7 @@ namespace Soulseek
 
             ServerConnectionOptions = (serverConnectionOptions ?? new ConnectionOptions()).WithoutInactivityTimeout();
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
-            TransferConnectionOptions = (transferConnectionOptions ?? new ConnectionOptions()).WithoutInactivityTimeout();
+            TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
             IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
             DistributedConnectionOptions = distributedConnectionOptions ?? new ConnectionOptions();
 
@@ -516,9 +516,9 @@ namespace Soulseek
                 acceptPrivateRoomInvitations: acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
                 minimumDiagnosticLevel: MinimumDiagnosticLevel,
                 startingToken: StartingToken,
-                serverConnectionOptions: (serverConnectionOptions ?? ServerConnectionOptions).WithoutInactivityTimeout(),
+                serverConnectionOptions: serverConnectionOptions ?? ServerConnectionOptions,
                 peerConnectionOptions: peerConnectionOptions ?? PeerConnectionOptions,
-                transferConnectionOptions: (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
+                transferConnectionOptions: transferConnectionOptions ?? TransferConnectionOptions,
                 incomingConnectionOptions: incomingConnectionOptions ?? IncomingConnectionOptions,
                 distributedConnectionOptions: distributedConnectionOptions ?? DistributedConnectionOptions,
                 userEndPointCache: userEndPointCache ?? UserEndPointCache,
