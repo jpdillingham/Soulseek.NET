@@ -246,9 +246,8 @@ namespace Soulseek.Network
                         else
                         {
                             Interlocked.CompareExchange(ref MessageRead, null, null)?
-                                    .Invoke(this, new MessageEventArgs(messageBytes));
+                                .Invoke(this, new MessageEventArgs(messageBytes));
                         }
-
                     }
                     finally
                     {
