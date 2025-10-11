@@ -93,6 +93,32 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "HasWait")]
+        [Fact(DisplayName = "HasWait returns true when waitkey exists")]
+        public void HasWait_Returns_True_When_WaitKey_Exists()
+        {
+            using (var waiter = new Waiter())
+            {
+                var waitKey = new WaitKey("foo");
+
+                waiter.Wait(waitKey);
+
+                Assert.True(waiter.HasWait(waitKey));
+            }
+        }
+
+        [Trait("Category", "HasWait")]
+        [Fact(DisplayName = "HasWait returns false when no waitkey exists")]
+        public void HasWait_Returns_False_When_No_WaitKey_Exists()
+        {
+            using (var waiter = new Waiter())
+            {
+                var waitKey = new WaitKey("foo");
+
+                Assert.False(waiter.HasWait(waitKey));
+            }
+        }
+
         [Trait("Category", "Wait Completion")]
         [Fact(DisplayName = "Complete for missing wait does not throw")]
         public void Complete_For_Missing_Wait_Does_Not_Throw()
