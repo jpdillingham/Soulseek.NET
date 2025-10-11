@@ -99,7 +99,7 @@ namespace Soulseek.Network
                             // either a random client connected and tried to download something without being told it could,
                             // or a client tried to initiate a transfer as a last-ditch effort to "save" an upload
                             Diagnostic.Debug($"Unexpected transfer connection for token {peerInit.Token} from {peerInit.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
-                            transferConnection.Disconnect($"Transfer connection rejected: unknown token");
+                            transferConnection.Disconnect("Transfer connection rejected: unknown token");
                         }
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
