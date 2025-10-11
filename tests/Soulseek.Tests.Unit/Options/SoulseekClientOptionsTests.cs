@@ -135,7 +135,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(transferConnectionOptions.ReadBufferSize, o.TransferConnectionOptions.ReadBufferSize);
             Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
             Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
-            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+            Assert.Equal(transferConnectionOptions.InactivityTimeout, o.TransferConnectionOptions.InactivityTimeout);
 
             Assert.Equal(userEndPointCache.Object, o.UserEndPointCache);
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
@@ -432,7 +432,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(transferConnectionOptions.ReadBufferSize, o.TransferConnectionOptions.ReadBufferSize);
             Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
             Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
-            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+            Assert.Equal(transferConnectionOptions.InactivityTimeout, o.TransferConnectionOptions.InactivityTimeout);
 
             Assert.Equal(userEndPointCache.Object, o.UserEndPointCache);
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
@@ -529,7 +529,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(transferConnectionOptions.ReadBufferSize, o.TransferConnectionOptions.ReadBufferSize);
             Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
             Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
-            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+            Assert.Equal(transferConnectionOptions.InactivityTimeout, o.TransferConnectionOptions.InactivityTimeout);
 
             Assert.Equal(userEndPointCache.Object, o.UserEndPointCache);
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);

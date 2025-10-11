@@ -112,7 +112,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(transferConnectionOptions.ReadBufferSize, o.TransferConnectionOptions.ReadBufferSize);
             Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
             Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
-            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+            Assert.Equal(transferConnectionOptions.InactivityTimeout, o.TransferConnectionOptions.InactivityTimeout);
 
             Assert.Equal(userEndPointCache.Object, o.UserEndPointCache);
             Assert.Equal(searchResponseResolver, o.SearchResponseResolver);
@@ -126,7 +126,7 @@ namespace Soulseek.Tests.Unit.Options
 
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates with given data")]
-        public void Removes_Timeout_On_Server_And_Transfer_Options()
+        public void Removes_Timeout_On_Server_Optons()
         {
             var serverConnectionOptions = new ConnectionOptions();
             var transferConnectionOptions = new ConnectionOptions();
@@ -136,7 +136,20 @@ namespace Soulseek.Tests.Unit.Options
                 transferConnectionOptions: transferConnectionOptions);
 
             Assert.Equal(-1, o.ServerConnectionOptions.InactivityTimeout);
-            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with given data")]
+        public void Does_Not_Remove_Timeout_On_Transfer_Options()
+        {
+            var serverConnectionOptions = new ConnectionOptions();
+            var transferConnectionOptions = new ConnectionOptions();
+
+            var o = new SoulseekClientOptionsPatch(
+                serverConnectionOptions: serverConnectionOptions,
+                transferConnectionOptions: transferConnectionOptions);
+
+            Assert.Equal(transferConnectionOptions.InactivityTimeout, o.TransferConnectionOptions.InactivityTimeout);
         }
 
         [Trait("Category", "Instantiation")]
