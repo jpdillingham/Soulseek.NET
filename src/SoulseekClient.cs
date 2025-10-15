@@ -3126,6 +3126,26 @@ namespace Soulseek
                 Size = size,
             };
 
+            void Info(string message)
+            {
+                Diagnostic.Info(message);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Info, message, null));
+            }
+
+            void Debug(string message, Exception exception = null)
+            {
+                Diagnostic.Debug(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Debug, message, exception));
+            }
+
+            void Warning(string message, Exception exception = null)
+            {
+                Diagnostic.Warning(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Warning, message, exception));
+            }
+
+            Debug($"Download of file {Path.GetFileName(remoteFilename)} from {username} initializing (token: {token})");
+
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
             // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
             // a caller can spam calls and get downloads through concurrently. this check is the last line of defense; if we make
@@ -4161,6 +4181,26 @@ namespace Soulseek
             {
                 Size = size,
             };
+
+            void Info(string message)
+            {
+                Diagnostic.Info(message);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Info, message, null));
+            }
+
+            void Debug(string message, Exception exception = null)
+            {
+                Diagnostic.Debug(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Debug, message, exception));
+            }
+
+            void Warning(string message, Exception exception = null)
+            {
+                Diagnostic.Warning(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Warning, message, exception));
+            }
+
+            Debug($"Upload of file {Path.GetFileName(remoteFilename)} to {username} initializing (token: {token})");
 
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
             // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
