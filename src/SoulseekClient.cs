@@ -162,7 +162,25 @@ namespace Soulseek
                 }
             };
 
-            PeerMessageHandler.DownloadDenied += (sender, e) => DownloadDenied?.Invoke(this, e);
+            PeerMessageHandler.DownloadDenied += (sender, e) =>
+            {
+                try
+                {
+                    var downloads = DownloadDictionary.Values
+                        .Where(d => d.Username == e.Username && d.Filename == e.Filename)
+                        .ToList();
+
+                    foreach (var download in downloads)
+                    {
+                        download.RemoteTaskCompletionSource.TrySetException(new TransferRejectedException("Transfer rejected by the remote client"));
+                        Diagnostic.Debug($"Download of {download.Filename} from {download.Username} rejected by remote client (token: {download.Token})");
+                    }
+                }
+                finally
+                {
+                    DownloadDenied?.Invoke(this, e);
+                }
+            };
 
             DistributedMessageHandler = distributedMessageHandler ?? new DistributedMessageHandler(this);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
