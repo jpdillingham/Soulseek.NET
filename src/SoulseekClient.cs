@@ -146,11 +146,15 @@ namespace Soulseek
             {
                 try
                 {
-                    // assumes controls are in place (as they were at the time of this implementation) to prevent
-                    // duplicate transfers of the same file from the same user
-                    DownloadDictionary.Values
-                        .FirstOrDefault(d => d.Username == e.Username && d.Filename == e.Filename)
-                        ?.RemoteTaskCompletionSource.TrySetException(new TransferException("Transfer reported as failed by the remote client"));
+                    var downloads = DownloadDictionary.Values
+                        .Where(d => d.Username == e.Username && d.Filename == e.Filename)
+                        .ToList();
+
+                    foreach (var download in downloads)
+                    {
+                        download.RemoteTaskCompletionSource.TrySetException(new TransferException("Transfer reported as failed by the remote client"));
+                        Diagnostic.Debug($"Download of {download.Filename} from {download.Username} reported as failed by remote client (token: {download.Token})");
+                    }
                 }
                 finally
                 {
