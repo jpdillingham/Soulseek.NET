@@ -662,6 +662,222 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "DownloadDenied")]
+        [Fact(DisplayName = "Does not throw if no matching download in DownloadDictionary when user sends UploadDenied")]
+        public void Does_Not_Throw_If_No_Matching_Download_When_User_Sends_UploadDenied()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, "otheruser", "otherfile", 1));
+
+                s.SetProperty("DownloadDictionary", downloads);
+
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadDenied += null, new DownloadDeniedEventArgs("user", "file", "msg")));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadDenied")]
+        [Fact(DisplayName = "Sets exception on RemoteTaskCompletionSource when one matching download exists")]
+        public void Sets_Exception_On_RemoteTaskCompletionSource_When_One_Matching_Download_Exists_For_Denied()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var download = new TransferInternal(TransferDirection.Download, "user", "file", 1);
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(1, download);
+
+                s.SetProperty("DownloadDictionary", downloads);
+
+                handlerMock.Raise(m => m.DownloadDenied += null, new DownloadDeniedEventArgs("user", "file", "denied"));
+
+                Assert.True(download.RemoteTaskCompletionSource.Task.IsFaulted);
+                Assert.IsType<TransferRejectedException>(download.RemoteTaskCompletionSource.Task.Exception.InnerException);
+            }
+        }
+
+        [Trait("Category", "DownloadDenied")]
+        [Fact(DisplayName = "Sets exception on both RemoteTaskCompletionSources when two matching downloads exist")]
+        public void Sets_Exception_On_Both_RemoteTaskCompletionSources_When_Two_Matching_Downloads_Exist_For_Denied()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var download1 = new TransferInternal(TransferDirection.Download, "user", "file", 1);
+                var download2 = new TransferInternal(TransferDirection.Download, "user", "file", 2);
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(1, download1);
+                downloads.TryAdd(2, download2);
+
+                s.SetProperty("DownloadDictionary", downloads);
+
+                handlerMock.Raise(m => m.DownloadDenied += null, new DownloadDeniedEventArgs("user", "file", "denied"));
+
+                Assert.True(download1.RemoteTaskCompletionSource.Task.IsFaulted);
+                Assert.IsType<TransferRejectedException>(download1.RemoteTaskCompletionSource.Task.Exception.InnerException);
+
+                Assert.True(download2.RemoteTaskCompletionSource.Task.IsFaulted);
+                Assert.IsType<TransferRejectedException>(download2.RemoteTaskCompletionSource.Task.Exception.InnerException);
+            }
+        }
+
+        [Trait("Category", "DownloadDenied")]
+        [Fact(DisplayName = "Invokes DownloadDenied event handler when exception is thrown in handler logic")]
+        public void Invokes_DownloadDenied_Event_Handler_When_Exception_Is_Thrown_In_Handler_Logic()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+            DownloadDeniedEventArgs capturedArgs = null;
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                // Set a null DownloadDictionary to cause an exception
+                s.SetProperty("DownloadDictionary", null);
+
+                s.DownloadDenied += (sender, e) => capturedArgs = e;
+
+                var expectedArgs = new DownloadDeniedEventArgs("user", "file", "msg");
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadDenied += null, expectedArgs));
+
+                Assert.Null(ex);
+                Assert.NotNull(capturedArgs);
+                Assert.Equal(expectedArgs, capturedArgs);
+            }
+        }
+
+        [Trait("Category", "DownloadDenied")]
+        [Fact(DisplayName = "Generates diagnostic warning containing 'rejected' when exception is thrown in handler logic")]
+        public void Generates_Diagnostic_Warning_Containing_Rejected_When_Exception_Is_Thrown_In_Handler_Logic()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+            var diagnosticMock = new Mock<IDiagnosticFactory>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object, diagnosticFactory: diagnosticMock.Object))
+            {
+                // Set a null DownloadDictionary to cause an exception
+                s.SetProperty("DownloadDictionary", null);
+
+                var expectedArgs = new DownloadDeniedEventArgs("user", "file", "msg");
+                handlerMock.Raise(m => m.DownloadDenied += null, expectedArgs);
+
+                diagnosticMock.Verify(m => m.Warning(It.Is<string>(msg => msg.Contains("rejected")), It.IsAny<Exception>()), Times.Once);
+            }
+        }
+
+        [Trait("Category", "DownloadFailed")]
+        [Fact(DisplayName = "Does not throw if no matching download in DownloadDictionary when user sends UploadFailed")]
+        public void Does_Not_Throw_If_No_Matching_Download_When_User_Sends_UploadFailed()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, "otheruser", "otherfile", 1));
+
+                s.SetProperty("DownloadDictionary", downloads);
+
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadFailed += null, new DownloadFailedEventArgs("user", "file")));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadFailed")]
+        [Fact(DisplayName = "Sets exception on RemoteTaskCompletionSource when one matching download exists")]
+        public void Sets_Exception_On_RemoteTaskCompletionSource_When_One_Matching_Download_Exists()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var download = new TransferInternal(TransferDirection.Download, "user", "file", 1);
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(1, download);
+
+                s.SetProperty("DownloadDictionary", downloads);
+
+                handlerMock.Raise(m => m.DownloadFailed += null, new DownloadFailedEventArgs("user", "file"));
+
+                Assert.True(download.RemoteTaskCompletionSource.Task.IsFaulted);
+                Assert.IsType<TransferException>(download.RemoteTaskCompletionSource.Task.Exception.InnerException);
+            }
+        }
+
+        [Trait("Category", "DownloadFailed")]
+        [Fact(DisplayName = "Sets exception on both RemoteTaskCompletionSources when two matching downloads exist")]
+        public void Sets_Exception_On_Both_RemoteTaskCompletionSources_When_Two_Matching_Downloads_Exist()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                var download1 = new TransferInternal(TransferDirection.Download, "user", "file", 1);
+                var download2 = new TransferInternal(TransferDirection.Download, "user", "file", 2);
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(1, download1);
+                downloads.TryAdd(2, download2);
+
+                s.SetProperty("DownloadDictionary", downloads);
+
+                handlerMock.Raise(m => m.DownloadFailed += null, new DownloadFailedEventArgs("user", "file"));
+
+                Assert.True(download1.RemoteTaskCompletionSource.Task.IsFaulted);
+                Assert.IsType<TransferException>(download1.RemoteTaskCompletionSource.Task.Exception.InnerException);
+
+                Assert.True(download2.RemoteTaskCompletionSource.Task.IsFaulted);
+                Assert.IsType<TransferException>(download2.RemoteTaskCompletionSource.Task.Exception.InnerException);
+            }
+        }
+
+        [Trait("Category", "DownloadFailed")]
+        [Fact(DisplayName = "Invokes DownloadFailed event handler when exception is thrown in handler logic")]
+        public void Invokes_DownloadFailed_Event_Handler_When_Exception_Is_Thrown_In_Handler_Logic()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+            DownloadFailedEventArgs capturedArgs = null;
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            {
+                // Set a null DownloadDictionary to cause an exception
+                s.SetProperty("DownloadDictionary", null);
+
+                s.DownloadFailed += (sender, e) => capturedArgs = e;
+
+                var expectedArgs = new DownloadFailedEventArgs("user", "file");
+                var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadFailed += null, expectedArgs));
+
+                Assert.Null(ex);
+                Assert.NotNull(capturedArgs);
+                Assert.Equal(expectedArgs, capturedArgs);
+            }
+        }
+
+        [Trait("Category", "DownloadFailed")]
+        [Fact(DisplayName = "Generates diagnostic warning containing 'failed' when exception is thrown in handler logic")]
+        public void Generates_Diagnostic_Warning_Containing_Failed_When_Exception_Is_Thrown_In_Handler_Logic()
+        {
+            var handlerMock = new Mock<IPeerMessageHandler>();
+            var diagnosticMock = new Mock<IDiagnosticFactory>();
+
+            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object, diagnosticFactory: diagnosticMock.Object))
+            {
+                // Set a null DownloadDictionary to cause an exception
+                s.SetProperty("DownloadDictionary", null);
+
+                var expectedArgs = new DownloadFailedEventArgs("user", "file");
+                handlerMock.Raise(m => m.DownloadFailed += null, expectedArgs);
+
+                diagnosticMock.Verify(m => m.Warning(It.Is<string>(msg => msg.Contains("failed")), It.IsAny<Exception>()), Times.Once);
+            }
+        }
+
         [Trait("Category", "KickedFromServer")]
         [Fact(DisplayName = "Disconnects when kicked from server")]
         public void Disconnects_When_Kicked_From_Server()
