@@ -144,6 +144,10 @@ namespace Soulseek
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
             PeerMessageHandler.DownloadFailed += (sender, e) =>
             {
+                // this is also handled in PeerMessageHandler, but the logic in there throws a wait, and we're not guaranteed
+                // to be waiting on that specific wait when we get this message. as a precaution to avoid downloads that
+                // get stuck waiting for something to happen while the remote client considers the download dead, try to
+                // fail any download that matches this filename and user (we shouldn't have >1 but stranger things could happen)
                 try
                 {
                     var downloads = DownloadDictionary.Values
@@ -152,9 +156,13 @@ namespace Soulseek
 
                     foreach (var download in downloads)
                     {
-                        download.RemoteTaskCompletionSource.TrySetException(new TransferException("Transfer reported as failed by the remote client"));
+                        download.RemoteTaskCompletionSource.TrySetException(new TransferException($"Download of {download.Filename} reported as failed by {download.Username}"));
                         Diagnostic.Debug($"Download of {download.Filename} from {download.Username} reported as failed by remote client (token: {download.Token})");
                     }
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to mark download(s) failed: {ex.Message}", ex);
                 }
                 finally
                 {
@@ -164,6 +172,8 @@ namespace Soulseek
 
             PeerMessageHandler.DownloadDenied += (sender, e) =>
             {
+                // this is handled in PeerMessageHandler, and we throw a TransferRequest wait in that logic, which is almost
+                // certainly enough for this to work as expected in 100% of cases. this is a precaution to prevent 'stuck' transfers.
                 try
                 {
                     var downloads = DownloadDictionary.Values
@@ -172,9 +182,13 @@ namespace Soulseek
 
                     foreach (var download in downloads)
                     {
-                        download.RemoteTaskCompletionSource.TrySetException(new TransferRejectedException("Transfer rejected by the remote client"));
+                        download.RemoteTaskCompletionSource.TrySetException(new TransferRejectedException(e.Message));
                         Diagnostic.Debug($"Download of {download.Filename} from {download.Username} rejected by remote client (token: {download.Token})");
                     }
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to mark download(s) rejected: {ex.Message}", ex);
                 }
                 finally
                 {
