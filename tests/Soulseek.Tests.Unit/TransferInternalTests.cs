@@ -123,6 +123,71 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "State")]
+        [Fact(DisplayName = "State transition into InProgress sets StartTime")]
+        internal void State_Transition_Into_InProgress_Sets_StartTime()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            Assert.Null(d.StartTime);
+
+            d.State = TransferStates.InProgress;
+
+            Assert.NotNull(d.StartTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "State transition into Completed sets EndTime")]
+        internal void State_Transition_Into_Completed_Sets_EndTime()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+            d.State = TransferStates.InProgress;
+
+            Assert.Null(d.EndTime);
+
+            d.State = TransferStates.Completed | TransferStates.Succeeded;
+
+            Assert.NotNull(d.EndTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "State transition into Completed sets StartTime if transfer never went InProgress")]
+        internal void State_Transition_Into_Completed_Sets_StartTime_If_Transfer_Never_Went_InProgress()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            Assert.Null(d.StartTime);
+
+            d.State = TransferStates.Completed | TransferStates.Succeeded;
+
+            Assert.NotNull(d.EndTime);
+            Assert.NotNull(d.StartTime);
+            Assert.Equal(d.StartTime, d.EndTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "State transition into Completed updates progress")]
+        internal void State_Transition_Into_Completed_Updates_Progress()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0)
+            {
+                Size = 9000,
+            };
+
+            // set BytesTransferred with a 'backdoor' to avoid calling UpdateProgress
+            d.SetProperty(nameof(d.BytesTransferred), 4500);
+
+            // hack in a start time to make the average math produce something greater than 0
+            d.SetProperty(nameof(d.StartTime), DateTime.UtcNow.AddSeconds(-1));
+
+            // ensure average speed has not been set yet
+            Assert.Equal(0, d.AverageSpeed);
+
+            d.State = TransferStates.Completed | TransferStates.Succeeded;
+
+            Assert.True(d.AverageSpeed > 0);
+        }
+
+        [Trait("Category", "State")]
         [Fact(DisplayName = "ElapsedTime returns null if StartTime is null")]
         internal void ElapsedTime_Returns_Null_If_StartTime_Is_Null()
         {
