@@ -90,7 +90,10 @@ namespace Soulseek
         /// <summary>
         ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
-        public DateTime? EndTime { get; private set; }
+        /// <remarks>
+        ///     Should ONLY be set when the State transitions into Completed.
+        /// </remarks>
+        public DateTime? EndTime { get; private set; } = null;
 
         /// <summary>
         ///     Gets or sets the <see cref="Exception"/> that caused the failure of the transfer, if applicable.
@@ -155,6 +158,10 @@ namespace Soulseek
         /// <summary>
         ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
+        /// <remarks>
+        ///     Should ONLY be set when the State transitions into InProgress, or if it transitions into Completed
+        ///     without having first transitioned into InProgress.
+        /// </remarks>
         public DateTime? StartTime { get; private set; }
 
         /// <summary>
@@ -169,17 +176,26 @@ namespace Soulseek
 
             set
             {
-                if (!state.HasFlag(TransferStates.InProgress) && value.HasFlag(TransferStates.InProgress))
+                if (value.HasFlag(TransferStates.InProgress) && !StartTime.HasValue)
                 {
                     StartTime = DateTime.UtcNow;
-                    EndTime = null;
                 }
-                else if (!state.HasFlag(TransferStates.Completed) && value.HasFlag(TransferStates.Completed))
+                else if (value.HasFlag(TransferStates.Completed) && !EndTime.HasValue)
                 {
                     EndTime = DateTime.UtcNow;
+
+                    // in case the transfer never transitioned into InProgress, set StartTime too
+                    StartTime ??= DateTime.UtcNow;
                 }
 
                 state = value;
+
+                // ensure the average is calculated properly when the transfer ends, regardless of whether
+                // an outside caller is calling UpdateProgress (as they should?)
+                if (state.HasFlag(TransferStates.Completed))
+                {
+                    UpdateProgress(BytesTransferred);
+                }
             }
         }
 
