@@ -370,5 +370,46 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(0, d.AverageSpeed);
         }
+
+        [Trait("Category", "UpdateProgress")]
+        [Theory(DisplayName = "UpdateProgress calculates final speed when BytesTransferred equals Size without Completed state"), AutoData]
+        internal void UpdateProgress_Calculates_Final_Speed_When_BytesTransferred_Equals_Size_Without_Completed_State(long size)
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0)
+            {
+                Size = size,
+            };
+
+            d.State = TransferStates.InProgress;
+
+            // force StartTime back 1 second so the math works
+            d.SetProperty(nameof(d.StartTime), DateTime.UtcNow.AddSeconds(-1));
+
+            Assert.Equal(0, d.AverageSpeed);
+
+            d.InvokeMethod("UpdateProgress", 10000L);
+            d.UpdateProgress(10000L);
+
+            Assert.True(d.AverageSpeed > 0);
+        }
+
+        [Trait("Category", "UpdateProgress")]
+        [Fact(DisplayName = "UpdateProgress does not throw if size is null")]
+        internal void UpdateProgress_Does_Not_Throw_If_Size_Is_Null()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            d.State = TransferStates.InProgress;
+
+            // force StartTime back 1 second so the math works
+            d.SetProperty(nameof(d.StartTime), DateTime.UtcNow.AddSeconds(-1));
+
+            Assert.Equal(0, d.AverageSpeed);
+
+            d.InvokeMethod("UpdateProgress", 10000L);
+            d.UpdateProgress(10000L);
+
+            Assert.True(d.AverageSpeed > 0);
+        }
     }
 }
