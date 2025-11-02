@@ -3332,7 +3332,6 @@ namespace Soulseek
                 // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
                 // to determine the outcome of the download.
                 var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
-                var disconnectedTask = disconnectedTaskCancellationSource.Task;
 
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
@@ -3377,21 +3376,26 @@ namespace Soulseek
                     },
                     cancellationToken: linkedCancellationToken);
 
-                var firstTask = await Task.WhenAny(disconnectedTask, download.RemoteTaskCompletionSource.Task, readTask).ConfigureAwait(false);
+                var firstTask = await Task.WhenAny(
+                    readTask, // we successfully read all of the data
+                    disconnectedTaskCancellationSource.Task, // the connection is disconnected
+                    download.RemoteTaskCompletionSource.Task).ConfigureAwait(false);
 
                 // cancel the losing task
                 linkedCancellationTokenSource.Cancel();
 
                 if (firstTask == download.RemoteTaskCompletionSource.Task)
                 {
-                    // we should only use this to signal an abnormal (unsuccessful) end of the transfer, which
-                    // should set an exception for the task. awaiting it will raise it and enter a catch
+                    // the remote client sent either UploadFailed (almost certain) or UploadDenied (not sure if possible);
+                    // and we set either a TransferException (failed) or TransferRejectedException (denied) on this TCS
+                    // in the event handlers above. await to force the exception to bubble up
                     await download.RemoteTaskCompletionSource.Task.ConfigureAwait(false);
                 }
-                else if (firstTask == disconnectedTask)
+                else if (firstTask == disconnectedTaskCancellationSource.Task)
                 {
-                    // this is guaranteed to throw; we control the TCS and we're calling SetException() above
-                    await disconnectedTask.ConfigureAwait(false);
+                    // the logic in the Disconnected handler above was executed, and the transfer connection is dead
+                    // await to force the exception to bubble up
+                    await disconnectedTaskCancellationSource.Task.ConfigureAwait(false);
                 }
 
                 await readTask.ConfigureAwait(false);
@@ -4339,7 +4343,6 @@ namespace Soulseek
                 // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
                 // to determine the outcome of the upload.
                 var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
-                var disconnectedTask = disconnectedTaskCancellationSource.Task;
 
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
@@ -4418,15 +4421,18 @@ namespace Soulseek
                     writeTask = Task.CompletedTask;
                 }
 
-                var firstTask = await Task.WhenAny(disconnectedTask, writeTask).ConfigureAwait(false);
+                var firstTask = await Task.WhenAny(
+                    writeTask,
+                    disconnectedTaskCancellationSource.Task).ConfigureAwait(false);
 
                 // cancel the losing task
                 linkedCancellationTokenSource.Cancel();
 
-                if (firstTask == disconnectedTask)
+                if (firstTask == disconnectedTaskCancellationSource.Task)
                 {
-                    // this is guaranteed to throw; we control the TCS and we're calling SetException() above
-                    await disconnectedTask.ConfigureAwait(false);
+                    // the logic in the Disconnected handler above was executed, and the transfer connection is dead
+                    // await to force the exception to bubble up
+                    await disconnectedTaskCancellationSource.Task.ConfigureAwait(false);
                 }
 
                 await writeTask.ConfigureAwait(false);
