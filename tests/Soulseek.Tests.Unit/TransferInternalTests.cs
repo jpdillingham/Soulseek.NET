@@ -60,6 +60,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(options, d.Options);
             Assert.Equal(0, d.StartOffset);
             Assert.Null(d.Exception);
+            Assert.NotNull(d.RemoteTaskCompletionSource);
         }
 
         [Trait("Category", "Properties")]
@@ -265,6 +266,23 @@ namespace Soulseek.Tests.Unit
             d.SetProperty("Exception", ex);
 
             Assert.Equal(ex, d.Exception);
+        }
+
+        [Trait("Category", "StartOffset")]
+        [Theory(DisplayName = "StartOffset setter sets BytesTransferred and other vars"), AutoData]
+        internal void StartOffset_Setter_Sets_BytesTransferred_And_Other_Vars(long startOffset)
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            Assert.Equal(0, d.StartOffset);
+            Assert.Equal(0, d.BytesTransferred);
+
+            d.StartOffset = startOffset;
+
+            Assert.Equal(startOffset, d.BytesTransferred);
+            Assert.Equal(startOffset, d.GetField<long>("startOffset"));
+            Assert.Equal(startOffset, d.GetField<double>("lastProgressBytes"));
+
         }
 
         [Trait("Category", "UpdateProgress")]
