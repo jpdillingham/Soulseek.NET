@@ -19,6 +19,8 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Net;
+    using System.Threading;
+
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Network.Tcp;
@@ -137,6 +139,24 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "State")]
+        [Fact(DisplayName = "Subsequent state transition into InProgress does not change StartTime")]
+        internal void Subsequent_State_Transition_Into_InProgress_Does_Not_Change_StartTime()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            d.State = TransferStates.InProgress;
+            var first = d.StartTime;
+
+#pragma warning disable S2925 // "Thread.Sleep" should not be used in tests
+            Thread.Sleep(1);
+#pragma warning restore S2925 // "Thread.Sleep" should not be used in tests
+
+            d.State = TransferStates.InProgress;
+
+            Assert.Equal(first, d.StartTime);
+        }
+
+        [Trait("Category", "State")]
         [Fact(DisplayName = "State transition into Completed sets EndTime")]
         internal void State_Transition_Into_Completed_Sets_EndTime()
         {
@@ -148,6 +168,24 @@ namespace Soulseek.Tests.Unit
             d.State = TransferStates.Completed | TransferStates.Succeeded;
 
             Assert.NotNull(d.EndTime);
+        }
+
+        [Trait("Category", "State")]
+        [Fact(DisplayName = "Subsequent state transition into Completed does not change EndTime")]
+        internal void Subsequent_State_Transition_Into_Completed_Does_Not_Change_EndTime()
+        {
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
+
+            d.State = TransferStates.Completed;
+            var first = d.EndTime;
+
+#pragma warning disable S2925 // "Thread.Sleep" should not be used in tests
+            Thread.Sleep(1);
+#pragma warning restore S2925 // "Thread.Sleep" should not be used in tests
+
+            d.State = TransferStates.Completed;
+
+            Assert.Equal(first, d.EndTime);
         }
 
         [Trait("Category", "State")]
