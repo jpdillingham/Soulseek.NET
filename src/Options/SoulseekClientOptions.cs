@@ -108,7 +108,7 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
-            int maximumConcurrentSearches = 10,
+            int maximumConcurrentSearches = 2,
             int maximumConcurrentUploads = 10,
             int maximumUploadSpeed = int.MaxValue,
             int maximumConcurrentDownloads = int.MaxValue,
@@ -190,7 +190,7 @@ namespace Soulseek
 
             ServerConnectionOptions = (serverConnectionOptions ?? new ConnectionOptions()).WithoutInactivityTimeout();
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
-            TransferConnectionOptions = (transferConnectionOptions ?? new ConnectionOptions()).WithoutInactivityTimeout();
+            TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
             IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
             DistributedConnectionOptions = distributedConnectionOptions ?? new ConnectionOptions();
 
@@ -297,7 +297,7 @@ namespace Soulseek
         public int MaximumConcurrentDownloads { get; }
 
         /// <summary>
-        ///     Gets the number of allowed concurrent searches. (Default = 5).
+        ///     Gets the number of allowed concurrent searches. (Default = 2).
         /// </summary>
         public int MaximumConcurrentSearches { get; }
 
@@ -516,9 +516,9 @@ namespace Soulseek
                 acceptPrivateRoomInvitations: acceptPrivateRoomInvitations ?? AcceptPrivateRoomInvitations,
                 minimumDiagnosticLevel: MinimumDiagnosticLevel,
                 startingToken: StartingToken,
-                serverConnectionOptions: (serverConnectionOptions ?? ServerConnectionOptions).WithoutInactivityTimeout(),
+                serverConnectionOptions: serverConnectionOptions ?? ServerConnectionOptions,
                 peerConnectionOptions: peerConnectionOptions ?? PeerConnectionOptions,
-                transferConnectionOptions: (transferConnectionOptions ?? TransferConnectionOptions).WithoutInactivityTimeout(),
+                transferConnectionOptions: transferConnectionOptions ?? TransferConnectionOptions,
                 incomingConnectionOptions: incomingConnectionOptions ?? IncomingConnectionOptions,
                 distributedConnectionOptions: distributedConnectionOptions ?? DistributedConnectionOptions,
                 userEndPointCache: userEndPointCache ?? UserEndPointCache,

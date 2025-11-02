@@ -2701,7 +2701,7 @@ namespace Soulseek
                 throw new ArgumentException("The remote filename must not be a null or empty string, or one consisting only of whitespace", nameof(remoteFilename));
             }
 
-            if (size <= 0)
+            if (size < 0)
             {
                 throw new ArgumentException("The requested size must be greater than or equal to zero", nameof(size));
             }
@@ -3236,6 +3236,7 @@ namespace Soulseek
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Fetched peer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for
                 // the eventual transfer request sent when the peer is ready to send the file. the response message should be
@@ -3246,9 +3247,12 @@ namespace Soulseek
 
                 // request the file
                 await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, remoteFilename), cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Wrote transfer request for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
+
                 UpdateState(TransferStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
+                Diagnostic.Debug($"Received transfer request ACK for download of {Path.GetFileName(download.Filename)} from {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
 
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
@@ -3272,6 +3276,7 @@ namespace Soulseek
                     download.Connection = await PeerConnectionManager
                         .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
+                    Diagnostic.Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
                 }
                 else if (!string.Equals(transferRequestAcknowledgement.Message.TrimEnd('.'), "Queued", StringComparison.OrdinalIgnoreCase))
                 {
@@ -3303,6 +3308,7 @@ namespace Soulseek
                     peerConnection = await PeerConnectionManager
                         .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                         .ConfigureAwait(false);
+                    Diagnostic.Debug($"Fetched peer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
 
                     // prepare a wait for the eventual transfer connection
                     var connectionTask = PeerConnectionManager
@@ -3314,6 +3320,7 @@ namespace Soulseek
                     try
                     {
                         download.Connection = await connectionTask.ConfigureAwait(false);
+                        Diagnostic.Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
                     }
                     catch (ConnectionException)
                     {
@@ -4317,6 +4324,7 @@ namespace Soulseek
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                     .ConfigureAwait(false);
+                Diagnostic.Debug($"Fetched peer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
 
                 // prepare a wait for the transfer response
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
@@ -4324,10 +4332,14 @@ namespace Soulseek
 
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, size);
+
                 await messageConnection.WriteAsync(transferRequest, cancellationToken).ConfigureAwait(false);
+                Diagnostic.Debug($"Wrote transfer request for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
+
                 UpdateState(TransferStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
+                Diagnostic.Debug($"Received transfer request ACK for upload of {Path.GetFileName(upload.Filename)} to {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
 
                 if (!transferRequestAcknowledgement.IsAllowed)
                 {
@@ -4339,6 +4351,7 @@ namespace Soulseek
                 upload.Connection = await PeerConnectionManager
                     .GetTransferConnectionAsync(upload.Username, endpoint, upload.Token, cancellationToken)
                     .ConfigureAwait(false);
+                Diagnostic.Debug($"Fetched transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {upload.Connection.Id}, state: {upload.Connection.State})");
 
                 // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
                 // to determine the outcome of the upload.

@@ -304,10 +304,44 @@ namespace Soulseek.Tests.Unit.Network
             mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(username, token, It.IsAny<IConnection>()))
                 .Returns(Task.FromResult((newTransfer.Object, token)));
 
+            // make it appear as though the wait exists, so the transfer is expected
+            mocks.Waiter.Setup(m => m.HasWait(It.IsAny<WaitKey>())).Returns(true);
+
             handler.HandleConnection(null, mocks.Connection.Object);
 
             var key = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
             mocks.Waiter.Verify(m => m.Complete(key, newTransfer.Object), Times.Once);
+        }
+
+        [Trait("Category", "PeerInit")]
+        [Theory(DisplayName = "Disconnects DirectTransfer on missing wait"), AutoData]
+        public void Disconnects_DirectTransfer_On_Missing_Wait(IPEndPoint endpoint, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(endpoint);
+
+            var message = new PeerInit(username, Constants.ConnectionType.Transfer, token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            var newTransfer = new Mock<IConnection>();
+
+            mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(username, token, It.IsAny<IConnection>()))
+                .Returns(Task.FromResult((newTransfer.Object, token)));
+
+            // make it appear as though the wait does not exist, so the transfer is unexpected
+            mocks.Waiter.Setup(m => m.HasWait(It.IsAny<WaitKey>())).Returns(false);
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var key = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+            mocks.Waiter.Verify(m => m.Complete(key, newTransfer.Object), Times.Never);
+
+            newTransfer.Verify(m => m.Disconnect("Transfer connection rejected: unknown token", null), Times.Once);
         }
 
         [Trait("Category", "PeerInit")]

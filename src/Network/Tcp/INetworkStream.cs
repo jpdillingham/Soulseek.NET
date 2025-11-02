@@ -29,6 +29,16 @@ namespace Soulseek.Network.Tcp
     internal interface INetworkStream : IDisposable
     {
         /// <summary>
+        ///     Gets or sets the read timeout for the stream.
+        /// </summary>
+        int ReadTimeout { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the write timeout for the stream.
+        /// </summary>
+        int WriteTimeout { get; set; }
+
+        /// <summary>
         ///     Closes the <see cref="NetworkStream"/>.
         /// </summary>
         void Close();

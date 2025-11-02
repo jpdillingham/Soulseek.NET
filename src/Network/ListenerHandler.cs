@@ -81,12 +81,26 @@ namespace Soulseek.Network
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
+                        // slightly misleading name; this hands the incoming connection off instead of establishing new
                         var (transferConnection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(
                             peerInit.Username,
                             peerInit.Token,
                             connection).ConfigureAwait(false);
 
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username, remoteToken), transferConnection);
+                        var waitKey = new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username, remoteToken);
+
+                        // check to see if we are expecting this token, and if so complete the wait and start the upload
+                        if (SoulseekClient.Waiter.HasWait(waitKey))
+                        {
+                            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username, remoteToken), transferConnection);
+                        }
+                        else
+                        {
+                            // either a random client connected and tried to download something without being told it could,
+                            // or a client tried to initiate a transfer as a last-ditch effort to "save" an upload
+                            Diagnostic.Debug($"Unexpected transfer connection for token {peerInit.Token} from {peerInit.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                            transferConnection.Disconnect("Transfer connection rejected: unknown token");
+                        }
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {
