@@ -227,26 +227,54 @@ namespace Soulseek
         {
             BytesTransferred = bytesTransferred;
 
-            var ts = DateTime.UtcNow - (lastProgressTime ?? (StartTime ?? DateTime.UtcNow));
+            // that's odd! the transfer hasn't transitioned into InProgress yet. just ignore it..
+            if (!StartTime.HasValue)
+            {
+                return;
+            }
 
-            // only recompute the average speed if enough time has passed since the last computation, and if the transfer is still
-            // in progress. use a moving average to account for ramp-up and variation.
-            if (ts.TotalMilliseconds >= progressUpdateLimit && !State.HasFlag(TransferStates.Completed))
+            // if the state is Completed, we're guaranteed to have both StartTime and EndTime
+            // it's possible that StartTime = EndTime, and if that's the case, substitute 1ms for the duration
+            if (State.HasFlag(TransferStates.Completed))
+            {
+                var duration = Math.Max(1, (EndTime.Value - StartTime.Value).TotalMilliseconds) / 1000d;
+                var totalSpeed = (BytesTransferred - StartOffset) / duration;
+                AverageSpeed = totalSpeed;
+
+                return;
+            }
+
+            // if we've transferred all of the data but not yet transitioned into Completed, we won't have an EndTime
+            // yet, so we'll have to use the current time; the transition to Completed will happen soon!
+            if (Size.HasValue && BytesTransferred >= Size.Value)
+            {
+                var duration = Math.Max(1, ((EndTime ?? DateTime.UtcNow) - StartTime.Value).TotalMilliseconds) / 1000d;
+                var totalSpeed = (BytesTransferred - StartOffset) / duration;
+                AverageSpeed = totalSpeed;
+
+                return;
+            }
+
+            /*
+                for all other updates, we want to use a moving average, and for that to work well we need to throttle
+                it a bit and only update once per second so the math works
+
+                we keep track of the last update, and if it hasn't been at least `progressUpdateLimit` ms since the last
+                update, we'll do nothing.
+
+                this means that AverageSpeed will be zero until at least `progressUpdateLimit` ms after the start of the
+                transfer! and this is why we have special cases above for when the transfer is complete; otherwise very
+                fast transfers will have an average speed of 0.
+            */
+            var ts = DateTime.UtcNow - (lastProgressTime ?? StartTime.Value);
+
+            if (ts.TotalMilliseconds >= progressUpdateLimit)
             {
                 var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
                 lastProgressTime = DateTime.UtcNow;
                 lastProgressBytes = BytesTransferred;
-            }
-
-            // once the transfer is complete, compute the actual average speed from total duration and transfer size
-            if (State.HasFlag(TransferStates.Completed))
-            {
-                var start = StartTime ?? EndTime.Value.AddMilliseconds(-1);
-                var duration = (EndTime.Value - start).TotalMilliseconds / 1000d;
-                var totalSpeed = (BytesTransferred - StartOffset) / duration;
-                AverageSpeed = totalSpeed;
             }
         }
     }
