@@ -153,7 +153,7 @@ namespace Soulseek.Messaging.Handlers
 
                                 try
                                 {
-                                    rawSearchResponse?.Stream?.Dispose();
+                                    rawSearchResponse.Stream.Dispose();
                                 }
                                 catch
                                 {
@@ -193,7 +193,7 @@ namespace Soulseek.Messaging.Handlers
 
                             try
                             {
-                                rawBrowseResponse?.Stream?.Dispose();
+                                rawBrowseResponse.Stream.Dispose();
                             }
                             catch
                             {
