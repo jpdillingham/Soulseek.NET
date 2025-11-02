@@ -20,7 +20,6 @@ namespace Soulseek
     using System;
     using System.Net;
     using System.Threading.Tasks;
-
     using Soulseek.Network.Tcp;
 
     /// <summary>
