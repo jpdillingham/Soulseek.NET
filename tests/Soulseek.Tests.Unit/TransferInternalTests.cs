@@ -320,7 +320,6 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(startOffset, d.BytesTransferred);
             Assert.Equal(startOffset, d.GetField<long>("startOffset"));
             Assert.Equal(startOffset, d.GetField<double>("lastProgressBytes"));
-
         }
 
         [Trait("Category", "UpdateProgress")]
