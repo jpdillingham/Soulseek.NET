@@ -176,16 +176,18 @@ namespace Soulseek
 
             set
             {
+                var time = DateTime.UtcNow;
+
                 if (value.HasFlag(TransferStates.InProgress) && !StartTime.HasValue)
                 {
-                    StartTime = DateTime.UtcNow;
+                    StartTime = time;
                 }
                 else if (value.HasFlag(TransferStates.Completed) && !EndTime.HasValue)
                 {
-                    EndTime = DateTime.UtcNow;
+                    EndTime = time;
 
                     // in case the transfer never transitioned into InProgress, set StartTime too
-                    StartTime ??= DateTime.UtcNow;
+                    StartTime ??= time;
                 }
 
                 state = value;
