@@ -250,7 +250,7 @@ namespace Soulseek
             // yet, so we'll have to use the current time; the transition to Completed will happen soon!
             if (Size.HasValue && BytesTransferred >= Size.Value)
             {
-                var duration = Math.Max(1, ((EndTime ?? DateTime.UtcNow) - StartTime.Value).TotalMilliseconds) / 1000d;
+                var duration = Math.Max(1, (DateTime.UtcNow - StartTime.Value).TotalMilliseconds) / 1000d;
                 var totalSpeed = (BytesTransferred - StartOffset) / duration;
                 AverageSpeed = totalSpeed;
 
