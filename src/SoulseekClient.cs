@@ -142,8 +142,59 @@ namespace Soulseek
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-            PeerMessageHandler.DownloadFailed += (sender, e) => DownloadFailed?.Invoke(this, e);
-            PeerMessageHandler.DownloadDenied += (sender, e) => DownloadDenied?.Invoke(this, e);
+            PeerMessageHandler.DownloadFailed += (sender, e) =>
+            {
+                // this is also handled in PeerMessageHandler, but the logic in there throws a wait, and we're not guaranteed
+                // to be waiting on that specific wait when we get this message. as a precaution to avoid downloads that
+                // get stuck waiting for something to happen while the remote client considers the download dead, try to
+                // fail any download that matches this filename and user (we shouldn't have >1 but stranger things could happen)
+                try
+                {
+                    var downloads = DownloadDictionary.Values
+                        .Where(d => d.Username == e.Username && d.Filename == e.Filename)
+                        .ToList();
+
+                    foreach (var download in downloads)
+                    {
+                        download.RemoteTaskCompletionSource.TrySetException(new TransferException("Download reported as failed by remote client"));
+                        Diagnostic.Debug($"Download of {download.Filename} from {download.Username} reported as failed by remote client (token: {download.Token})");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to mark download(s) failed: {ex.Message}", ex);
+                }
+                finally
+                {
+                    DownloadFailed?.Invoke(this, e);
+                }
+            };
+
+            PeerMessageHandler.DownloadDenied += (sender, e) =>
+            {
+                // this is handled in PeerMessageHandler, and we throw a TransferRequest wait in that logic, which is almost
+                // certainly enough for this to work as expected in 100% of cases. this is a precaution to prevent 'stuck' transfers.
+                try
+                {
+                    var downloads = DownloadDictionary.Values
+                        .Where(d => d.Username == e.Username && d.Filename == e.Filename)
+                        .ToList();
+
+                    foreach (var download in downloads)
+                    {
+                        download.RemoteTaskCompletionSource.TrySetException(new TransferRejectedException(e.Message));
+                        Diagnostic.Debug($"Download of {download.Filename} from {download.Username} rejected by remote client (token: {download.Token})");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Warning($"Failed to mark download(s) rejected: {ex.Message}", ex);
+                }
+                finally
+                {
+                    DownloadDenied?.Invoke(this, e);
+                }
+            };
 
             DistributedMessageHandler = distributedMessageHandler ?? new DistributedMessageHandler(this);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -3288,7 +3339,6 @@ namespace Soulseek
                 // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
                 // to determine the outcome of the download.
                 var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
-                var disconnectedTask = disconnectedTaskCancellationSource.Task;
 
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
@@ -3333,15 +3383,26 @@ namespace Soulseek
                     },
                     cancellationToken: linkedCancellationToken);
 
-                var firstTask = await Task.WhenAny(disconnectedTask, readTask).ConfigureAwait(false);
+                var firstTask = await Task.WhenAny(
+                    readTask, // we successfully read all of the data
+                    disconnectedTaskCancellationSource.Task, // the connection is disconnected
+                    download.RemoteTaskCompletionSource.Task).ConfigureAwait(false);
 
                 // cancel the losing task
                 linkedCancellationTokenSource.Cancel();
 
-                if (firstTask == disconnectedTask)
+                if (firstTask == download.RemoteTaskCompletionSource.Task)
                 {
-                    // this is guaranteed to throw; we control the TCS and we're calling SetException() above
-                    await disconnectedTask.ConfigureAwait(false);
+                    // the remote client sent either UploadFailed (almost certain) or UploadDenied (not sure if possible);
+                    // and we set either a TransferException (failed) or TransferRejectedException (denied) on this TCS
+                    // in the event handlers above. await to force the exception to bubble up
+                    await download.RemoteTaskCompletionSource.Task.ConfigureAwait(false);
+                }
+                else if (firstTask == disconnectedTaskCancellationSource.Task)
+                {
+                    // the logic in the Disconnected handler above was executed, and the transfer connection is dead
+                    // await to force the exception to bubble up
+                    await disconnectedTaskCancellationSource.Task.ConfigureAwait(false);
                 }
 
                 await readTask.ConfigureAwait(false);
@@ -4295,7 +4356,6 @@ namespace Soulseek
                 // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
                 // to determine the outcome of the upload.
                 var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
-                var disconnectedTask = disconnectedTaskCancellationSource.Task;
 
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
@@ -4374,15 +4434,18 @@ namespace Soulseek
                     writeTask = Task.CompletedTask;
                 }
 
-                var firstTask = await Task.WhenAny(disconnectedTask, writeTask).ConfigureAwait(false);
+                var firstTask = await Task.WhenAny(
+                    writeTask,
+                    disconnectedTaskCancellationSource.Task).ConfigureAwait(false);
 
                 // cancel the losing task
                 linkedCancellationTokenSource.Cancel();
 
-                if (firstTask == disconnectedTask)
+                if (firstTask == disconnectedTaskCancellationSource.Task)
                 {
-                    // this is guaranteed to throw; we control the TCS and we're calling SetException() above
-                    await disconnectedTask.ConfigureAwait(false);
+                    // the logic in the Disconnected handler above was executed, and the transfer connection is dead
+                    // await to force the exception to bubble up
+                    await disconnectedTaskCancellationSource.Task.ConfigureAwait(false);
                 }
 
                 await writeTask.ConfigureAwait(false);

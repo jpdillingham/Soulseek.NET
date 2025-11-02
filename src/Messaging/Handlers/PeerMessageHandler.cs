@@ -153,7 +153,7 @@ namespace Soulseek.Messaging.Handlers
 
                                 try
                                 {
-                                    rawSearchResponse?.Stream?.Dispose();
+                                    rawSearchResponse.Stream.Dispose();
                                 }
                                 catch
                                 {
@@ -193,7 +193,7 @@ namespace Soulseek.Messaging.Handlers
 
                             try
                             {
-                                rawBrowseResponse?.Stream?.Dispose();
+                                rawBrowseResponse.Stream.Dispose();
                             }
                             catch
                             {
@@ -324,15 +324,11 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.UploadFailed:
                         var uploadFailedResponse = UploadFailed.FromByteArray(message);
+
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}";
-
-                        var download = SoulseekClient.DownloadDictionary.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
-                        if (download != null)
-                        {
-                            SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename), new TransferException(msg));
-                        }
-
                         Diagnostic.Debug(msg);
+
+                        SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, uploadFailedResponse.Filename), new TransferException(msg));
 
                         DownloadFailed?.Invoke(this, new DownloadFailedEventArgs(connection.Username, uploadFailedResponse.Filename));
                         break;

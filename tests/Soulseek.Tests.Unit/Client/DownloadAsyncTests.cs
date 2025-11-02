@@ -21,7 +21,6 @@ namespace Soulseek.Tests.Unit.Client
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -29,6 +28,7 @@ namespace Soulseek.Tests.Unit.Client
     using Moq;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
@@ -2334,6 +2334,154 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.Equal("Transfer failed: some exception", ex.InnerException.Message);
                 Assert.Equal(thrownEx, ex.InnerException.InnerException);
+
+                // make sure the read is cancelled (this would hang if not, but still)
+                Assert.True(capturedToken.Value.IsCancellationRequested);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync throws wrapped Exception on remote client DownloadFailed message"), AutoData]
+        public async Task DownloadToStreamAsync_Throws_Wrapped_Exception_On_Remote_Client_DownloadFailed_Message(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            // help us hang the read task indefinitely
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            // capture the cancellation token passed to read so we can ensure it is cancelled
+            CancellationToken? capturedToken = default;
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    capturedToken = cancellationToken.GetValueOrDefault();
+                })
+                .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var peerMessageHandler = new Mock<IPeerMessageHandler>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, peerMessageHandler: peerMessageHandler.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, new TransferOptions(), null);
+
+                // Give the download task time to start and reach the point where it's waiting for data
+                await Task.Delay(100);
+
+                // Raise the DownloadFailed event
+                peerMessageHandler.Raise(m => m.DownloadFailed += null, peerMessageHandler.Object, new DownloadFailedEventArgs(username, filename));
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                Assert.NotNull(ex);
+                Assert.IsType<SoulseekClientException>(ex);
+                Assert.Contains("Failed to download file", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.IsType<TransferException>(ex.InnerException);
+                Assert.Equal("Download reported as failed by remote client", ex.InnerException.Message);
+
+                // make sure the read is cancelled (this would hang if not, but still)
+                Assert.True(capturedToken.Value.IsCancellationRequested);
+            }
+        }
+
+        [Trait("Category", "DownloadToFileAsync")]
+        [Theory(DisplayName = "DownloadToStreamAsync throws wrapped Exception on remote client DownloadDenied message"), AutoData]
+        public async Task DownloadToStreamAsync_Throws_Wrapped_Exception_On_Remote_Client_DownloadDenied_Message(string username, IPEndPoint endpoint, string filename, int token, int size, string denialMessage)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size); // allowed, will start download immediately
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            // help us hang the read task indefinitely
+            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            // capture the cancellation token passed to read so we can ensure it is cancelled
+            CancellationToken? capturedToken = default;
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                {
+                    capturedToken = cancellationToken.GetValueOrDefault();
+                })
+                .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            var peerMessageHandler = new Mock<IPeerMessageHandler>();
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient(options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, peerMessageHandler: peerMessageHandler.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var task = s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, new TransferOptions(), null);
+
+                // Give the download task time to start and reach the point where it's waiting for data
+                await Task.Delay(100);
+
+                // Raise the DownloadFailed event
+                peerMessageHandler.Raise(m => m.DownloadDenied += null, peerMessageHandler.Object, new DownloadDeniedEventArgs(username, filename, denialMessage));
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                Assert.NotNull(ex);
+                Assert.IsType<TransferRejectedException>(ex);
+                Assert.Equal(denialMessage, ex.Message);
 
                 // make sure the read is cancelled (this would hang if not, but still)
                 Assert.True(capturedToken.Value.IsCancellationRequested);

@@ -193,55 +193,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Does not throw TransferRequest wait on PeerUploadFailed message with no tracked downloads"), AutoData]
-        public void Does_Not_Throw_TransferRequest_Wait_On_PeerUploadFailed_Message_With_No_Tracked_Downloads(string username, IPEndPoint endpoint, string filename)
-        {
-            var (handler, mocks) = GetFixture(username, endpoint);
-
-            var dict = new ConcurrentDictionary<int, TransferInternal>();
-
-            mocks.Client.Setup(m => m.DownloadDictionary)
-                .Returns(dict);
-
-            mocks.PeerConnection.Setup(m => m.Username)
-                .Returns(username);
-
-            var message = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.UploadFailed)
-                .WriteString(filename)
-                .Build();
-
-            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
-
-            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<TransferException>()), Times.Never);
-        }
-
-        [Trait("Category", "Message")]
-        [Theory(DisplayName = "Does not throw TransferRequest wait on PeerUploadFailed message with untracked download"), AutoData]
-        public void Does_Not_Throw_TransferRequest_Wait_On_PeerUploadFailed_Message_With_No_Untracked_Download(string username, IPEndPoint endpoint, string filename)
-        {
-            var (handler, mocks) = GetFixture(username, endpoint);
-
-            var dict = new ConcurrentDictionary<int, TransferInternal>();
-            dict.TryAdd(0, new TransferInternal(TransferDirection.Download, "not-username", filename, 0));
-
-            mocks.Client.Setup(m => m.DownloadDictionary)
-                .Returns(dict);
-
-            mocks.PeerConnection.Setup(m => m.Username)
-                .Returns(username);
-
-            var message = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.UploadFailed)
-                .WriteString(filename)
-                .Build();
-
-            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
-
-            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<TransferException>()), Times.Never);
-        }
-
-        [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates diagnostic on Exception"), AutoData]
         public void Creates_Diagnostic_On_Exception(string username, IPEndPoint endpoint)
         {
@@ -587,6 +538,70 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(response.ToByteArray())), null), Times.Never);
         }
 
+        [Trait("Category", "SearchRequest")]
+        [Theory(DisplayName = "Writes RawSearchResponse with expected length"), AutoData]
+        public void Writes_RawSearchResponse_With_Expected_Length(string username, IPEndPoint endpoint, int token, string query)
+        {
+            var length = 1234L;
+            var stream = new System.IO.MemoryStream(new byte[length]);
+            var rawResponse = new RawSearchResponse(length, stream);
+
+            var options = new SoulseekClientOptions(
+                searchResponseResolver: (user, tok, searchQuery) => Task.FromResult<SearchResponse>(rawResponse));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchRequest)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection.Verify(
+                m => m.WriteAsync(
+                    It.Is<long>(l => l == length),
+                    It.IsAny<System.IO.Stream>(),
+                    It.IsAny<Func<int, CancellationToken, Task<int>>>(),
+                    It.IsAny<Action<int, int, int>>(),
+                    It.IsAny<CancellationToken?>()),
+                Times.Once);
+        }
+
+        [Trait("Category", "SearchRequest")]
+        [Theory(DisplayName = "Does not throw when disposing RawSearchResponse stream fails"), AutoData]
+        public void Does_Not_Throw_When_Disposing_RawSearchResponse_Stream_Fails(string username, IPEndPoint endpoint, int token, string query)
+        {
+            var length = 1234L;
+            var faultyStream = new FaultyDisposeStream();
+
+            var rawResponse = new RawSearchResponse(length, faultyStream);
+
+            var options = new SoulseekClientOptions(
+                searchResponseResolver: (user, tok, searchQuery) => Task.FromResult<SearchResponse>(rawResponse));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchRequest)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(mocks.PeerConnection.Object, message));
+
+            Assert.Null(ex);
+        }
+
+        private class FaultyDisposeStream : System.IO.MemoryStream
+        {
+            protected override void Dispose(bool disposing)
+            {
+                throw new Exception("Dispose failed");
+            }
+        }
+
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates diagnostic on failed search response resolution"), AutoData]
         public void Creates_Diagnostic_On_Failed_Search_Response_Resolution(string query, string username, int token, bool hasFreeUploadSlot, int uploadSpeed, int queueLength)
@@ -642,6 +657,62 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             mocks.PeerConnection.Verify(
                 m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(response.ToByteArray())), null), Times.Once);
+        }
+
+        [Trait("Category", "BrowseRequest")]
+        [Theory(DisplayName = "Writes RawBrowseResponse with expected length"), AutoData]
+        public void Writes_RawBrowseResponse_With_Expected_Length(string username, IPEndPoint endpoint, int token, string query)
+        {
+            var length = 1234L;
+            var stream = new System.IO.MemoryStream(new byte[length]);
+            var rawResponse = new RawBrowseResponse(length, stream);
+
+            var options = new SoulseekClientOptions(
+                browseResponseResolver: (user, tok) => Task.FromResult<BrowseResponse>(rawResponse));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection.Verify(
+                m => m.WriteAsync(
+                    It.Is<long>(l => l == length),
+                    It.IsAny<System.IO.Stream>(),
+                    It.IsAny<Func<int, CancellationToken, Task<int>>>(),
+                    It.IsAny<Action<int, int, int>>(),
+                    It.IsAny<CancellationToken?>()),
+                Times.Once);
+        }
+
+        [Trait("Category", "BrowseRequest")]
+        [Theory(DisplayName = "Does not throw when disposing RawBrowseResponse stream fails"), AutoData]
+        public void Does_Not_Throw_When_Disposing_RawBrowseResponse_Stream_Fails(string username, IPEndPoint endpoint, int token, string query)
+        {
+            var length = 1234L;
+            var faultyStream = new FaultyDisposeStream();
+
+            var rawResponse = new RawBrowseResponse(length, faultyStream);
+
+            var options = new SoulseekClientOptions(
+                browseResponseResolver: (user, tok) => Task.FromResult<BrowseResponse>(rawResponse));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            var ex = Record.Exception(() => handler.HandleMessageRead(mocks.PeerConnection.Object, message));
+
+            Assert.Null(ex);
         }
 
         [Trait("Category", "Diagnostic")]
