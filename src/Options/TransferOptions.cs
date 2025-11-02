@@ -20,6 +20,7 @@ namespace Soulseek
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Diagnostics;
 
     /// <summary>
     ///     Options for transfer operations.
@@ -47,6 +48,9 @@ namespace Soulseek
         ///     The delegate, accepting the number of bytes attempted, granted, and transferred for each chunk, used to report
         ///     transfer statistics.
         /// </param>
+        /// <param name="diagnostic">
+        ///     The delegate to invoke when a diagnostic message for the transfer is captured.
+        /// </param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
@@ -66,6 +70,7 @@ namespace Soulseek
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
             Action<Transfer, int, int, int> reporter = null,
+            Action<(DateTime timestamp, DiagnosticLevel Level, string Message, Exception exception)> diagnostic = null,
             int maximumLingerTime = 3000,
             bool seekInputStreamAutomatically = true,
             bool disposeInputStreamOnCompletion = true,
@@ -78,11 +83,17 @@ namespace Soulseek
             SlotAwaiter = slotAwaiter ?? defaultSlotAwaiter;
             SlotReleased = slotReleased;
             Reporter = reporter;
+            Diagnostic = diagnostic;
 
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
             MaximumLingerTime = maximumLingerTime;
         }
+
+        /// <summary>
+        ///     Gets the delegate to invoke when a diagnostic message for the transfer is captured.
+        /// </summary>
+        public Action<(DateTime Timestamp, DiagnosticLevel Level, string Message, Exception Exception)> Diagnostic { get; }
 
         /// <summary>
         ///     Gets a value indicating whether input streams should be closed upon transfer completion. (Default = false).
@@ -156,6 +167,7 @@ namespace Soulseek
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 reporter: Reporter,
+                diagnostic: Diagnostic,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
@@ -183,6 +195,7 @@ namespace Soulseek
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 reporter: Reporter,
+                diagnostic: Diagnostic,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
