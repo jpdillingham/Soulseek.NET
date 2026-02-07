@@ -39,7 +39,7 @@ namespace Soulseek
     /// </summary>
     public class SoulseekClient : ISoulseekClient
     {
-        private const string DefaultAddress = "vps.slsknet.org";
+        private const string DefaultAddress = "server.slsknet.org";
         private const int DefaultPort = 2271;
 
         /// <summary>
