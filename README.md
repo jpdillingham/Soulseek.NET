@@ -19,9 +19,14 @@ Install from [NuGet](https://www.nuget.org/packages/Soulseek/).
 ## Connect to a Soulseek server
 
 ```c#
-var client = new SoulseekClient();
+var client = new SoulseekClient(minorVersion: <a unique version for your application>);
 await client.ConnectAsync("Username", "Password");
 ```
+
+### About Minor Versions
+
+Starting with version 9, the `minorVersion` constructor is required.  This version identifies your application on the Soulseek network,
+and provides a way for administrators to understand trafic and behavior patterns.  Choose a unique integer to supply.
 
 ## Search for something
 
