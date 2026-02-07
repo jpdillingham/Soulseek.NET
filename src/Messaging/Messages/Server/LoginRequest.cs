@@ -61,7 +61,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the client version.
         /// </summary>
-        public int Version { get; } = 170;
+        public int Version { get; } = Constants.MajorVersion;
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
