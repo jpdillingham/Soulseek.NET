@@ -27,12 +27,15 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="username">The username.</param>
         /// <param name="password">The password.</param>
-        public LoginRequest(string username, string password)
+        /// <param name="minorVersion">The minor version of the client.</param>
+        public LoginRequest(string username, string password, int minorVersion)
         {
             Username = username;
             Password = password;
 
             Hash = $"{Username}{Password}".ToMD5Hash();
+
+            MinorVersion = minorVersion;
         }
 
         /// <summary>
@@ -43,7 +46,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the minor client version.
         /// </summary>
-        public int MinorVersion { get; } = 100;
+        public int MinorVersion { get; }
 
         /// <summary>
         ///     Gets the password.
