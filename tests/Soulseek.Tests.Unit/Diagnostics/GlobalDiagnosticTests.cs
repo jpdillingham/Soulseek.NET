@@ -32,7 +32,8 @@ namespace Soulseek.Tests.Unit
             // in which these tests can run, test *everything* serially in this one test
             // this is shitty, as is the need for GlobalDiagnostic in the first place
             // but it works and the behavior correct, so ¯\_(ツ)_/¯
-            GlobalDiagnostic.Init(null);
+            // note: force the minimum level to the lowest for all of the tests to work properly
+            GlobalDiagnostic.Init(new DiagnosticFactory(minimumLevel: DiagnosticLevel.Trace, eventHandler: (e) => { }));
 
             var ex = Record.Exception(() =>
             {
@@ -50,6 +51,7 @@ namespace Soulseek.Tests.Unit
             var f = new Mock<IDiagnosticFactory>();
             ex = new Exception();
 
+            // replace the factory with the mocked one
             GlobalDiagnostic.Init(f.Object);
 
             GlobalDiagnostic.Trace("asdf");
