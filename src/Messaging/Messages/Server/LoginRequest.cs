@@ -25,17 +25,17 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="LoginRequest"/> class.
         /// </summary>
+        /// <param name="minorVersion">The minor version of the client.</param>
         /// <param name="username">The username.</param>
         /// <param name="password">The password.</param>
-        /// <param name="minorVersion">The minor version of the client.</param>
-        public LoginRequest(string username, string password, int minorVersion)
+        public LoginRequest(int minorVersion, string username, string password)
         {
+            MinorVersion = minorVersion;
+
             Username = username;
             Password = password;
 
             Hash = $"{Username}{Password}".ToMD5Hash();
-
-            MinorVersion = minorVersion;
         }
 
         /// <summary>

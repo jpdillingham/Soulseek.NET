@@ -45,23 +45,26 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
-        public SoulseekClient()
-            : this(options: new SoulseekClientOptions())
+        /// <param name="minorVersion">The minor version of the client.</param>
+        public SoulseekClient(int minorVersion)
+            : this(minorVersion, options: new SoulseekClientOptions())
         {
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
+        /// <param name="minorVersion">The minor version of the client.</param>
         /// <param name="options">The client options.</param>
-        public SoulseekClient(SoulseekClientOptions options)
-            : this(options, serverConnection: null)
+        public SoulseekClient(int minorVersion, SoulseekClientOptions options)
+            : this(minorVersion, options, serverConnection: null)
         {
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
+        /// <param name="minorVersion">The minor version of the client.</param>
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
@@ -81,6 +84,7 @@ namespace Soulseek
         /// <param name="downloadTokenBucket">The ITokenBucket instance to use for downloads.</param>
 #pragma warning disable S3427 // Method overloads with default parameter values should not overlap
         internal SoulseekClient(
+            int minorVersion,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IConnectionFactory connectionFactory = null,
@@ -99,6 +103,8 @@ namespace Soulseek
             ITokenBucket uploadTokenBucket = null,
             ITokenBucket downloadTokenBucket = null)
         {
+            MinorVersion = minorVersion;
+
 #pragma warning restore S3427 // Method overloads with default parameter values should not overlap
             Options = options ?? new SoulseekClientOptions();
 
@@ -555,6 +561,11 @@ namespace Soulseek
         ///     Gets the name of the currently signed in user.
         /// </summary>
         public virtual string Username { get; private set; }
+
+        /// <summary>
+        ///     Gets the configured minor version of the client.
+        /// </summary>
+        public int MinorVersion { get; private set; }
 
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
@@ -3093,7 +3104,7 @@ namespace Soulseek
                     // users are notified of the login but the listen port is not yet set, resulting in the server reporting a
                     // port of 0 if the notified users attempt to connect (e.g. to re-request uploads). this is still possible,
                     // but much less likely. the server will not accept a listen port command prior to login.
-                    var loginBytes = new LoginRequest(username, password).ToByteArray()
+                    var loginBytes = new LoginRequest(MinorVersion, username, password).ToByteArray()
                         .Concat(new SetListenPortCommand(Options.ListenPort).ToByteArray())
                         .ToArray();
 
