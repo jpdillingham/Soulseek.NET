@@ -3198,6 +3198,26 @@ namespace Soulseek
                 Size = size,
             };
 
+            void Info(string message)
+            {
+                Diagnostic.Info(message);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Info, message, null));
+            }
+
+            void Debug(string message, Exception exception = null)
+            {
+                Diagnostic.Debug(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Debug, message, exception));
+            }
+
+            void Warning(string message, Exception exception = null)
+            {
+                Diagnostic.Warning(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Warning, message, exception));
+            }
+
+            Debug($"Download of file {Path.GetFileName(remoteFilename)} from {username} initializing (token: {token})");
+
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
             // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
             // a caller can spam calls and get downloads through concurrently. this check is the last line of defense; if we make
@@ -3218,6 +3238,8 @@ namespace Soulseek
 
                 throw new DuplicateTransferException($"Duplicate download of {remoteFilename} from {username} aborted");
             }
+
+            Debug($"Download of file {Path.GetFileName(remoteFilename)} from {username} cleared duplicate checks");
 
             var lastState = TransferStates.None;
 
@@ -3251,13 +3273,14 @@ namespace Soulseek
                 // acquire the global download semaphore to ensure we aren't trying to process more than the total allotted
                 // concurrent downloads globally. if we hit this limit, downloads will stack up behind it and will be processed in
                 // a first-in-first-out manner.
+                Debug($"Awaiting global download semaphore for file {Path.GetFileName(download.Filename)} to {username}");
                 await GlobalDownloadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 globalSemaphoreAcquired = true;
-                Diagnostic.Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
+                Debug($"Global download semaphore for file {Path.GetFileName(download.Filename)} to {username} acquired");
 
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
-                Diagnostic.Debug($"Fetched peer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
+                Debug($"Fetched peer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for
                 // the eventual transfer request sent when the peer is ready to send the file. the response message should be
@@ -3268,12 +3291,13 @@ namespace Soulseek
 
                 // request the file
                 await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, remoteFilename), cancellationToken).ConfigureAwait(false);
-                Diagnostic.Debug($"Wrote transfer request for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
+                Debug($"Wrote transfer request for download of {Path.GetFileName(download.Filename)} from {username} (token: {token})");
 
                 UpdateState(TransferStates.Requested);
 
+                Debug($"Awaiting transfer request ACK for download of {Path.GetFileName(download.Filename)} from {username} (token: {token})");
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
-                Diagnostic.Debug($"Received transfer request ACK for download of {Path.GetFileName(download.Filename)} from {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
+                Debug($"Received transfer request ACK for download of {Path.GetFileName(download.Filename)} from {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
 
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
@@ -3297,7 +3321,7 @@ namespace Soulseek
                     download.Connection = await PeerConnectionManager
                         .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
-                    Diagnostic.Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
+                    Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
                 }
                 else if (!string.Equals(transferRequestAcknowledgement.Message.TrimEnd('.'), "Queued", StringComparison.OrdinalIgnoreCase))
                 {
@@ -3309,7 +3333,9 @@ namespace Soulseek
                     UpdateState(TransferStates.Queued | TransferStates.Remotely);
 
                     // wait for the peer to respond that they are ready to start the transfer
+                    Debug($"Awaiting transfer start request for download of {Path.GetFileName(download.Filename)} from {username}");
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
+                    Debug($"Received transfer start request for download of {Path.GetFileName(download.Filename)} from {username}");
 
                     // the size of the remote file may have changed since it was sent in a search or browse response
                     if (download.Size.HasValue && download.Size.Value != transferStartRequest.FileSize)
@@ -3329,7 +3355,7 @@ namespace Soulseek
                     peerConnection = await PeerConnectionManager
                         .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                         .ConfigureAwait(false);
-                    Diagnostic.Debug($"Fetched peer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
+                    Debug($"Fetched peer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {peerConnection.Id}, state: {peerConnection.State})");
 
                     // prepare a wait for the eventual transfer connection
                     var connectionTask = PeerConnectionManager
@@ -3337,11 +3363,13 @@ namespace Soulseek
 
                     // initiate the connection
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0), cancellationToken).ConfigureAwait(false);
+                    Debug($"Wrote transfer response for download of {Path.GetFileName(download.Filename)} from {username} (remote token: {download.RemoteToken.Value})");
 
                     try
                     {
+                        Debug($"Awaiting transfer connection for download of {Path.GetFileName(download.Filename)} from {username}");
                         download.Connection = await connectionTask.ConfigureAwait(false);
-                        Diagnostic.Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
+                        Debug($"Fetched transfer connection for download of {Path.GetFileName(download.Filename)} from {username} (id: {download.Connection.Id}, state: {download.Connection.State})");
                     }
                     catch (ConnectionException)
                     {
@@ -4244,6 +4272,26 @@ namespace Soulseek
                 Size = size,
             };
 
+            void Info(string message)
+            {
+                Diagnostic.Info(message);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Info, message, null));
+            }
+
+            void Debug(string message, Exception exception = null)
+            {
+                Diagnostic.Debug(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Debug, message, exception));
+            }
+
+            void Warning(string message, Exception exception = null)
+            {
+                Diagnostic.Warning(message, exception);
+                options.Diagnostic?.Invoke((DateTime.UtcNow, DiagnosticLevel.Warning, message, exception));
+            }
+
+            Debug($"Upload of file {Path.GetFileName(remoteFilename)} to {username} initializing (token: {token})");
+
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
             // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
             // a caller can spam calls and get transfers through concurrently. this check is the last line of defense; if we make
@@ -4264,6 +4312,8 @@ namespace Soulseek
 
                 throw new DuplicateTransferException($"Duplicate upload of {remoteFilename} to {username} aborted");
             }
+
+            Debug($"Upload of file {Path.GetFileName(remoteFilename)} to {username} cleared duplicate checks");
 
             var lastState = TransferStates.None;
 
@@ -4297,6 +4347,8 @@ namespace Soulseek
 
             try
             {
+                Debug($"Awaiting upload sync root for file {Path.GetFileName(upload.Filename)} to {username}");
+
                 await UploadSemaphoreSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 try
@@ -4316,16 +4368,17 @@ namespace Soulseek
                 // permissive stage 1: acquire the per-user semaphore to ensure we aren't trying to process more than the allotted
                 // concurrent uploads to this user, and ensure that we aren't trying to acquire a slot for an upload until the
                 // requesting user is ready to receive it
+                Debug($"Awaiting upload semaphore for file {Path.GetFileName(upload.Filename)} to {username}");
                 await semaphoreWaitTask.ConfigureAwait(false);
                 semaphoreAcquired = true;
-                Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
+                Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
 
                 // permissive stage 2: acquire an upload slot from the calling code
                 try
                 {
                     await options.SlotAwaiter(new Transfer(upload), cancellationToken).ConfigureAwait(false);
                     uploadSlotAcquired = true;
-                    Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
+                    Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} acquired");
                 }
                 catch (Exception ex) when (!(ex is OperationCanceledException))
                 {
@@ -4338,14 +4391,14 @@ namespace Soulseek
                 // by providing an implementation of AcquireSlot() that won't exceed the maximum concurrent upload limit
                 await GlobalUploadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 globalSemaphoreAcquired = true;
-                Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
+                Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} acquired");
 
                 // all permissives have been given fetch the user endpoint and request that the transfer begins
                 endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                     .ConfigureAwait(false);
-                Diagnostic.Debug($"Fetched peer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
+                Debug($"Fetched peer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
 
                 // prepare a wait for the transfer response
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
@@ -4355,12 +4408,12 @@ namespace Soulseek
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, size);
 
                 await messageConnection.WriteAsync(transferRequest, cancellationToken).ConfigureAwait(false);
-                Diagnostic.Debug($"Wrote transfer request for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
+                Debug($"Wrote transfer request for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {messageConnection.Id}, state: {messageConnection.State})");
 
                 UpdateState(TransferStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
-                Diagnostic.Debug($"Received transfer request ACK for upload of {Path.GetFileName(upload.Filename)} to {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
+                Debug($"Received transfer request ACK for upload of {Path.GetFileName(upload.Filename)} to {username}: allowed: {transferRequestAcknowledgement.IsAllowed}, message: {transferRequestAcknowledgement.Message} (token: {token})");
 
                 if (!transferRequestAcknowledgement.IsAllowed)
                 {
@@ -4372,7 +4425,7 @@ namespace Soulseek
                 upload.Connection = await PeerConnectionManager
                     .GetTransferConnectionAsync(upload.Username, endpoint, upload.Token, cancellationToken)
                     .ConfigureAwait(false);
-                Diagnostic.Debug($"Fetched transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {upload.Connection.Id}, state: {upload.Connection.State})");
+                Debug($"Fetched transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {upload.Connection.Id}, state: {upload.Connection.State})");
 
                 // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
                 // to determine the outcome of the upload.
@@ -4402,7 +4455,7 @@ namespace Soulseek
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException && ex is not TimeoutException)
                 {
-                    Diagnostic.Debug($"Failed to read start offset for upload of {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
+                    Debug($"Failed to read start offset for upload of {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
                     throw new MessageReadException($"Failed to read transfer start offset: {ex.Message}", ex);
                 }
 
@@ -4411,7 +4464,7 @@ namespace Soulseek
                     throw new TransferException($"Requested start offset of {upload.StartOffset} bytes exceeds file length of {upload.Size} bytes");
                 }
 
-                Diagnostic.Debug($"Resolving input stream for upload of {Path.GetFileName(upload.Filename)} to {username}");
+                Debug($"Resolving input stream for upload of {Path.GetFileName(upload.Filename)} to {username}");
                 inputStream = await inputStreamFactory(upload.StartOffset).ConfigureAwait(false);
 
                 if (upload.StartOffset > 0 && options.SeekInputStreamAutomatically)
@@ -4421,7 +4474,7 @@ namespace Soulseek
                         throw new TransferException($"Requested non-zero start offset but input stream does not support seeking");
                     }
 
-                    Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
+                    Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
                     inputStream.Seek(upload.StartOffset, SeekOrigin.Begin);
                 }
 
@@ -4501,7 +4554,7 @@ namespace Soulseek
                 UpdateProgress(inputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
-                Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");
+                Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");
 
                 return new Transfer(upload);
             }
@@ -4509,6 +4562,8 @@ namespace Soulseek
             {
                 upload.Exception = ex;
                 UpdateState(TransferStates.Completed | TransferStates.Rejected);
+
+                Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} failed: Rejected: {ex.Message} (state: {upload.State})");
 
                 throw;
             }
@@ -4520,7 +4575,8 @@ namespace Soulseek
                 UpdateProgress(inputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Cancelled);
 
-                Diagnostic.Debug(ex.ToString());
+                Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} cancelled: {ex.Message} (state: {upload.State})");
+                Debug(ex.ToString());
 
                 // cancelled async operations can throw TaskCanceledException, which is a subclass of OperationCanceledException,
                 // but we want to be deterministic, so wrap and re-throw them.
@@ -4534,7 +4590,8 @@ namespace Soulseek
                 UpdateProgress(inputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.TimedOut);
 
-                Diagnostic.Debug(ex.ToString());
+                Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} timed out: {ex.Message} (state: {upload.State})");
+                Debug(ex.ToString());
 
                 throw;
             }
@@ -4546,17 +4603,21 @@ namespace Soulseek
                 UpdateProgress(inputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Errored);
 
-                Diagnostic.Debug(ex.ToString());
+                Debug(ex.ToString());
 
                 if (ex is UserOfflineException)
                 {
+                    Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} failed: {ex.Message} (state: {upload.State})");
                     throw;
                 }
 
+                Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} failed: {ex.Message} (state: {upload.State})");
                 throw new SoulseekClientException($"Failed to upload file {remoteFilename} to user {username}: {ex.Message}", ex);
             }
             finally
             {
+                Debug($"Upload of {Path.GetFileName(upload.Filename)} to {username} finalizing (state: {upload.State})");
+
                 /*
                     do our best to clean up, in descending order of importance. this stuff is all 'nice to have' but shouldn't
                     leave the client in an inoperable state if it fails; more like we may leak resource handles over time if
@@ -4570,7 +4631,7 @@ namespace Soulseek
                     }
                     catch (Exception ex)
                     {
-                        Diagnostic.Warning($"Failed to dispose transfer connection for file {remoteFilename} to user {username}: {ex.Message}");
+                        Warning($"Failed to dispose transfer connection for file {remoteFilename} to user {username}: {ex.Message}");
                     }
 
                     long finalStreamPosition = 0;
@@ -4584,7 +4645,7 @@ namespace Soulseek
                     }
                     catch (Exception ex)
                     {
-                        Diagnostic.Warning($"Failed to determine final position of input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                        Warning($"Failed to determine final position of input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                     }
 
                     if (options.DisposeInputStreamOnCompletion && inputStream != null)
@@ -4599,7 +4660,7 @@ namespace Soulseek
                         }
                         catch (Exception ex)
                         {
-                            Diagnostic.Warning($"Failed to finalize input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                            Warning($"Failed to finalize input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                         }
                     }
 
@@ -4643,7 +4704,7 @@ namespace Soulseek
                     {
                         try
                         {
-                            Diagnostic.Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
+                            Debug($"Upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
                             semaphore.Release(releaseCount: 1);
                         }
                         catch (Exception ex)
@@ -4661,13 +4722,13 @@ namespace Soulseek
                             // plenty of time, as this release and the subsequent thread acquiring it should happen within nanoseconds.
                             await Task.Delay(10, CancellationToken.None).ConfigureAwait(false);
 
-                            Diagnostic.Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
+                            Debug($"Upload slot for file {Path.GetFileName(upload.Filename)} to {username} released");
 
                             options.SlotReleased?.Invoke(new Transfer(upload));
                         }
                         catch (Exception ex)
                         {
-                            Diagnostic.Warning($"Encountered Exception releasing upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
+                            Warning($"Encountered Exception releasing upload slot for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                         }
                     }
 
@@ -4676,16 +4737,18 @@ namespace Soulseek
                         try
                         {
                             GlobalUploadSemaphore.Release(releaseCount: 1);
-                            Diagnostic.Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
+                            Debug($"Global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username} released");
                         }
                         catch (Exception ex)
                         {
-                            Diagnostic.Warning($"Failed to release global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
+                            Warning($"Failed to release global upload semaphore for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}");
                         }
                     }
 
                     UploadDictionary.TryRemove(upload.Token, out _);
                     UniqueKeyDictionary.TryRemove(uniqueKey, out _);
+
+                    Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} finalized (final state: {upload.State})");
                 }
             }
         }
