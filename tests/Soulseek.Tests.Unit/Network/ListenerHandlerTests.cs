@@ -48,7 +48,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Ensures Diagnostic given null")]
         public void Ensures_Diagnostic_Given_Null()
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 ListenerHandler l = default;
 
@@ -63,7 +63,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
         public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 DiagnosticEventArgs args = default;
 
@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
         public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 ListenerHandler l = new ListenerHandler(client);
 
@@ -481,7 +481,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions)
+                Client = new Mock<SoulseekClient>(9999, clientOptions)
                 {
                     CallBase = true,
                 };

@@ -138,7 +138,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "CanAcceptChildren is false if AcceptDistributedChildren is false")]
         public void CanAcceptChildren_Is_False_If_AcceptDistributedChildren_Is_False()
         {
-            using (var s = new SoulseekClient(new SoulseekClientOptions(
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(
                 acceptDistributedChildren: false,
                 distributedChildLimit: 10)))
             {
@@ -153,7 +153,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "CanAcceptChildren is false if EnableDistributedNetwork is false")]
         public void CanAcceptChildren_Is_False_If_EnableDistributedNEtwork_Is_False()
         {
-            using (var s = new SoulseekClient(new SoulseekClientOptions(
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(
                 enableDistributedNetwork: false,
                 acceptDistributedChildren: true,
                 distributedChildLimit: 10)))
@@ -173,7 +173,7 @@ namespace Soulseek.Tests.Unit.Network
             parent.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            using (var s = new SoulseekClient(new SoulseekClientOptions(
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(
                 acceptDistributedChildren: true,
                 distributedChildLimit: 10)))
             {
@@ -190,7 +190,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "HasParent returns false if parent is null")]
         public void HasParent_Returns_False_If_Parent_Is_Null()
         {
-            using (var s = new SoulseekClient(new SoulseekClientOptions(
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(
                 acceptDistributedChildren: false,
                 distributedChildLimit: 10)))
             {
@@ -209,7 +209,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Disconnected);
 
-            using (var s = new SoulseekClient(new SoulseekClientOptions(
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(
                 acceptDistributedChildren: false,
                 distributedChildLimit: 10)))
             {
@@ -230,7 +230,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            using (var s = new SoulseekClient(new SoulseekClientOptions(
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(
                 acceptDistributedChildren: false,
                 distributedChildLimit: 10)))
             {
@@ -247,7 +247,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
         public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 DiagnosticEventArgs args = default;
 
@@ -267,7 +267,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
         public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             using (var l = new DistributedConnectionManager(client))
             {
                 var diagnostic = l.GetProperty<IDiagnosticFactory>("Diagnostic");
@@ -4025,7 +4025,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions)
+                Client = new Mock<SoulseekClient>(9999, clientOptions)
                 {
                     CallBase = true,
                 };
