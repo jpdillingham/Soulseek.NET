@@ -568,6 +568,11 @@ namespace Soulseek
         public virtual string Username { get; private set; }
 
         /// <summary>
+        ///     Gets the major version of the library.
+        /// </summary>
+        public int MajorVersion { get; } = Constants.MajorVersion;
+
+        /// <summary>
         ///     Gets the configured minor version of the client.
         /// </summary>
         public int MinorVersion { get; private set; }
