@@ -58,7 +58,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task EnqueueDownloadAsync_Stream_Throws_ArgumentException_Given_Bad_Username(string username)
         {
             using (var stream = new MemoryStream())
-            using (var s = new SoulseekClient(minorVersion: 9990))
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.EnqueueDownloadAsync(username, "filename", () => Task.FromResult((Stream)stream)));
 
