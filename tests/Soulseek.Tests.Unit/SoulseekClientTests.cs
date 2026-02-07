@@ -35,6 +35,27 @@ namespace Soulseek.Tests.Unit
     public class SoulseekClientTests
     {
         [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with with given minor version")]
+        public void Instantiates_With_Given_MinorVersion()
+        {
+            using (var s = new SoulseekClient(minorVersion: 420))
+            {
+                Assert.Equal(420, s.MinorVersion);
+                Assert.Equal(170, s.MajorVersion);
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if minor version is too low")]
+        public void Throws_If_Minor_Version_Is_Too_Low()
+        {
+            var ex = Record.Exception(() => new SoulseekClient(minorVersion: 42));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates with with given options")]
         public void Instantiates_With_Given_Options()
         {
