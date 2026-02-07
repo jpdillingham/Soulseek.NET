@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Ensures Diagnostic given null")]
         public void Ensures_Diagnostic_Given_Null()
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 PeerConnectionManager c = default;
 
@@ -2941,7 +2941,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Diagnostic raises DiagnosticGenerated")]
         internal void Diagnostic_Raises_DiagnosticGenerated()
         {
-            using (var client = new SoulseekClient())
+            using (var client = new SoulseekClient(minorVersion: 9999))
             using (var manager = new PeerConnectionManager(client))
             {
                 bool fired = false;
@@ -2958,7 +2958,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Diagnostic does not throw if DiagnosticGenerated not subscribed")]
         internal void Diagnostic_Does_Not_Throw_If_DiagnosticGenerated_Not_Subscribed()
         {
-            using (var client = new SoulseekClient())
+            using (var client = new SoulseekClient(minorVersion: 9999))
             using (var manager = new PeerConnectionManager(client))
             {
                 var diag = manager.GetProperty<IDiagnosticFactory>("Diagnostic");
@@ -3007,7 +3007,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions)
+                Client = new Mock<SoulseekClient>(9999, clientOptions)
                 {
                     CallBase = true,
                 };

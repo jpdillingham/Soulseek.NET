@@ -35,12 +35,33 @@ namespace Soulseek.Tests.Unit
     public class SoulseekClientTests
     {
         [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with with given minor version")]
+        public void Instantiates_With_Given_MinorVersion()
+        {
+            using (var s = new SoulseekClient(minorVersion: 420))
+            {
+                Assert.Equal(420, s.MinorVersion);
+                Assert.Equal(170, s.MajorVersion);
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if minor version is too low")]
+        public void Throws_If_Minor_Version_Is_Too_Low()
+        {
+            var ex = Record.Exception(() => new SoulseekClient(minorVersion: 42));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates with with given options")]
         public void Instantiates_With_Given_Options()
         {
             var options = new SoulseekClientOptions();
 
-            using (var s = new SoulseekClient(options))
+            using (var s = new SoulseekClient(minorVersion: 9999, options))
             {
                 Assert.Equal(options, s.Options);
             }
@@ -52,7 +73,7 @@ namespace Soulseek.Tests.Unit
         {
             SoulseekClient s = null;
 
-            var ex = Record.Exception(() => s = new SoulseekClient());
+            var ex = Record.Exception(() => s = new SoulseekClient(minorVersion: 9999));
 
             Assert.Null(ex);
             Assert.NotNull(s);
@@ -62,7 +83,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "State is Disconnected initially")]
         public void State_Is_Disconnected_Initially()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
             }
@@ -72,7 +93,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Username is null initially")]
         public void Username_Is_Null_Initially()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 Assert.Null(s.Username);
             }
@@ -82,7 +103,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "IPEndPoint is null initially")]
         public void IPEndPoint_Is_Null_Initially()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 Assert.Null(s.IPEndPoint);
                 Assert.Null(s.IPAddress);
@@ -94,7 +115,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "ServerInfo is not null, but contains nulls initially")]
         public void ServerInfo_Is_Not_Null_But_Contains_Nulls_Initially()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 Assert.NotNull(s.ServerInfo);
                 Assert.Null(s.ServerInfo.ParentMinSpeed);
@@ -107,7 +128,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Port returns IPEndPoint port if not null"), AutoData]
         public void Port_Returns_IPEndPoint_Port_If_Not_Null(IPAddress ip, int port)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("IPEndPoint", new IPEndPoint(ip, port));
 
@@ -119,7 +140,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "IPAddress returns IPEndPoint address if not null"), AutoData]
         public void IPAddress_Returns_IPEndPoint_Address_If_Not_Null(IPAddress ip, int port)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("IPEndPoint", new IPEndPoint(ip, port));
 
@@ -131,7 +152,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Uploads returns UploadDictionary snapshot"), AutoData]
         internal void Uploads_Returns_UploadDictionary_Snapshot(string one, string two)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.TryAdd(1, new TransferInternal(TransferDirection.Upload, one, one, 1));
@@ -156,7 +177,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Downloads returns DownloadsDictionary snapshot"), AutoData]
         internal void Downloads_Returns_DownloadsDictionary_Snapshot(string one, string two)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var dict = new ConcurrentDictionary<int, TransferInternal>();
                 dict.TryAdd(1, new TransferInternal(TransferDirection.Download, one, one, 1));
@@ -181,7 +202,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Disconnect handler disconnects")]
         public void Disconnect_Handler_Disconnects()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 s.InvokeMethod("ServerConnection_Disconnected", null, new ConnectionDisconnectedEventArgs(string.Empty));
@@ -194,7 +215,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Disconnect sets state to Disconnected")]
         public void Disconnect_Disconnects()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -213,7 +234,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => events.Add(e);
 
@@ -236,7 +257,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => fired = true;
 
@@ -259,7 +280,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => fired = true;
 
@@ -282,7 +303,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => message = e.Message;
 
@@ -305,7 +326,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => message = e.Message;
 
@@ -329,7 +350,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => message = e.Message;
 
@@ -350,7 +371,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -378,7 +399,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -404,7 +425,7 @@ namespace Soulseek.Tests.Unit
 
             var p = new Mock<IPeerConnectionManager>();
 
-            using (var s = new SoulseekClient(serverConnection: c.Object, peerConnectionManager: p.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object, peerConnectionManager: p.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -430,7 +451,7 @@ namespace Soulseek.Tests.Unit
                 var searches = new ConcurrentDictionary<int, SearchInternal>();
                 searches.TryAdd(1, search);
 
-                using (var s = new SoulseekClient(serverConnection: c.Object, peerConnectionManager: p.Object))
+                using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: c.Object, peerConnectionManager: p.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected);
                     s.SetProperty("Searches", searches);
@@ -451,7 +472,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Disposes without exception")]
         public void Disposes_Without_Exception()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = Record.Exception(() => s.Dispose());
 
@@ -463,7 +484,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Finalizes without exception")]
         public void Finalizes_Without_Exception()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = Record.Exception(() => s.InvokeMethod("Finalize"));
 
@@ -475,7 +496,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "ChangeState does not throw if StateChange is unsubscribed")]
         public void ChangeState_Does_Not_Throw_If_StateChange_Is_Unsubscribed()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty, null));
 
@@ -489,7 +510,7 @@ namespace Soulseek.Tests.Unit
         {
             var diagnostic = new Mock<IDiagnosticFactory>();
 
-            using (var s = new SoulseekClient(diagnosticFactory: diagnostic.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, diagnosticFactory: diagnostic.Object))
             {
                 s.InvokeMethod("ChangeState", SoulseekClientStates.Disconnected, message, exception);
             }
@@ -503,7 +524,7 @@ namespace Soulseek.Tests.Unit
         {
             var diagnostic = new Mock<IDiagnosticFactory>();
 
-            using (var s = new SoulseekClient(diagnosticFactory: diagnostic.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, diagnosticFactory: diagnostic.Object))
             {
                 s.InvokeMethod("ChangeState", SoulseekClientStates.Disconnected, null, null);
             }
@@ -515,7 +536,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "ChangeState fires Disconnected event when transitioning to Disconnected"), AutoData]
         public void ChangeState_Fires_Disconnected_Event_When_Transitioning_To_Disconnected(string message, Exception exception)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 SoulseekClientDisconnectedEventArgs args = null;
                 s.Disconnected += (sender, e) => args = e;
@@ -533,7 +554,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "ChangeState fires Connected event when transitioning to Connected")]
         public void ChangeState_Fires_Connected_Event_When_Transitioning_To_Connected()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 bool fired = false;
                 s.Connected += (sender, e) => fired = true;
@@ -549,7 +570,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "ChangeState fires LoggedIn event when transitioning to LoggedIn")]
         public void ChangeState_Fires_LoggedIn_Event_When_Transitioning_To_LoggedIn()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 bool fired = false;
                 s.LoggedIn += (sender, e) => fired = true;
@@ -569,7 +590,7 @@ namespace Soulseek.Tests.Unit
             f.Setup(m => m.NextToken())
                 .Returns(token);
 
-            using (var s = new SoulseekClient(tokenFactory: f.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, tokenFactory: f.Object))
             {
                 var t = s.GetNextToken();
 
@@ -585,7 +606,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 bool fired = false;
                 s.KickedFromServer += (sender, args) => fired = true;
@@ -602,7 +623,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 DownloadFailedEventArgs args = null;
                 s.DownloadFailed += (sender, e) => args = e;
@@ -621,7 +642,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadFailed += null, new DownloadFailedEventArgs("user", "file")));
 
@@ -635,7 +656,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 DownloadDeniedEventArgs args = null;
                 s.DownloadDenied += (sender, e) => args = e;
@@ -654,7 +675,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var ex = Record.Exception(() => handlerMock.Raise(m => m.DownloadDenied += null, new DownloadDeniedEventArgs("user", "file", "msg")));
 
@@ -668,7 +689,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var downloads = new ConcurrentDictionary<int, TransferInternal>();
                 downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, "otheruser", "otherfile", 1));
@@ -687,7 +708,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var download = new TransferInternal(TransferDirection.Download, "user", "file", 1);
                 var downloads = new ConcurrentDictionary<int, TransferInternal>();
@@ -708,7 +729,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var download1 = new TransferInternal(TransferDirection.Download, "user", "file", 1);
                 var download2 = new TransferInternal(TransferDirection.Download, "user", "file", 2);
@@ -735,7 +756,7 @@ namespace Soulseek.Tests.Unit
             var handlerMock = new Mock<IPeerMessageHandler>();
             DownloadDeniedEventArgs capturedArgs = null;
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 // Set a null DownloadDictionary to cause an exception
                 s.SetProperty("DownloadDictionary", null);
@@ -758,7 +779,7 @@ namespace Soulseek.Tests.Unit
             var handlerMock = new Mock<IPeerMessageHandler>();
             var diagnosticMock = new Mock<IDiagnosticFactory>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object, diagnosticFactory: diagnosticMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object, diagnosticFactory: diagnosticMock.Object))
             {
                 // Set a null DownloadDictionary to cause an exception
                 s.SetProperty("DownloadDictionary", null);
@@ -776,7 +797,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var downloads = new ConcurrentDictionary<int, TransferInternal>();
                 downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, "otheruser", "otherfile", 1));
@@ -795,7 +816,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var download = new TransferInternal(TransferDirection.Download, "user", "file", 1);
                 var downloads = new ConcurrentDictionary<int, TransferInternal>();
@@ -816,7 +837,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IPeerMessageHandler>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 var download1 = new TransferInternal(TransferDirection.Download, "user", "file", 1);
                 var download2 = new TransferInternal(TransferDirection.Download, "user", "file", 2);
@@ -843,7 +864,7 @@ namespace Soulseek.Tests.Unit
             var handlerMock = new Mock<IPeerMessageHandler>();
             DownloadFailedEventArgs capturedArgs = null;
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object))
             {
                 // Set a null DownloadDictionary to cause an exception
                 s.SetProperty("DownloadDictionary", null);
@@ -866,7 +887,7 @@ namespace Soulseek.Tests.Unit
             var handlerMock = new Mock<IPeerMessageHandler>();
             var diagnosticMock = new Mock<IDiagnosticFactory>();
 
-            using (var s = new SoulseekClient(peerMessageHandler: handlerMock.Object, diagnosticFactory: diagnosticMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: handlerMock.Object, diagnosticFactory: diagnosticMock.Object))
             {
                 // Set a null DownloadDictionary to cause an exception
                 s.SetProperty("DownloadDictionary", null);
@@ -884,7 +905,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 SoulseekClientDisconnectedEventArgs e = null;
@@ -902,7 +923,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 string args = default;
                 s.GlobalMessageReceived += (sender, e) => args = e;
@@ -920,7 +941,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 var ex = Record.Exception(() => handlerMock.Raise(m => m.GlobalMessageReceived += null, this, msg));
 
@@ -934,7 +955,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 ServerInfo args = default;
                 s.ServerInfoReceived += (sender, e) => args = e;
@@ -955,7 +976,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 var ex = Record.Exception(() => handlerMock.Raise(m => m.ServerInfoReceived += null, this, new ServerInfo()));
 
@@ -970,7 +991,7 @@ namespace Soulseek.Tests.Unit
             var handlerMock = new Mock<IServerMessageHandler>();
             var args = new MessageEventArgs(new byte[4]);
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 s.InvokeMethod("ServerConnection_MessageRead", this, args);
             }
@@ -985,7 +1006,7 @@ namespace Soulseek.Tests.Unit
             var handlerMock = new Mock<IServerMessageHandler>();
             var args = new MessageEventArgs(new byte[4]);
 
-            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: handlerMock.Object))
             {
                 s.InvokeMethod("ServerConnection_MessageWritten", this, args);
             }
@@ -1003,7 +1024,7 @@ namespace Soulseek.Tests.Unit
             object raiser = null;
             DiagnosticEventArgs raisedArgs = null;
 
-            using (var s = new SoulseekClient(listenerHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, listenerHandler: mock.Object))
             {
                 s.DiagnosticGenerated += (sender, args) =>
                 {
@@ -1028,7 +1049,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IListenerHandler>();
             var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
 
-            using (var s = new SoulseekClient(listenerHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, listenerHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
@@ -1046,7 +1067,7 @@ namespace Soulseek.Tests.Unit
             object raiser = null;
             DiagnosticEventArgs raisedArgs = null;
 
-            using (var s = new SoulseekClient(peerMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: mock.Object))
             {
                 s.DiagnosticGenerated += (sender, args) =>
                 {
@@ -1071,7 +1092,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IPeerMessageHandler>();
             var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
 
-            using (var s = new SoulseekClient(peerMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
@@ -1089,7 +1110,7 @@ namespace Soulseek.Tests.Unit
             object raiser = null;
             DiagnosticEventArgs raisedArgs = null;
 
-            using (var s = new SoulseekClient(distributedMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedMessageHandler: mock.Object))
             {
                 s.DiagnosticGenerated += (sender, args) =>
                 {
@@ -1114,7 +1135,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedMessageHandler>();
             var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
 
-            using (var s = new SoulseekClient(distributedMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
@@ -1132,7 +1153,7 @@ namespace Soulseek.Tests.Unit
             object raiser = null;
             DiagnosticEventArgs raisedArgs = null;
 
-            using (var s = new SoulseekClient(peerConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerConnectionManager: mock.Object))
             {
                 s.DiagnosticGenerated += (sender, args) =>
                 {
@@ -1157,7 +1178,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IPeerConnectionManager>();
             var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
 
-            using (var s = new SoulseekClient(peerConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, peerConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
@@ -1175,7 +1196,7 @@ namespace Soulseek.Tests.Unit
             object raiser = null;
             DiagnosticEventArgs raisedArgs = null;
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 s.DiagnosticGenerated += (sender, args) =>
                 {
@@ -1200,7 +1221,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedConnectionManager>();
             var expectedArgs = new DiagnosticEventArgs(DiagnosticLevel.Info, "foo");
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
@@ -1216,7 +1237,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new UserStatus(username, presense, privileged);
             UserStatus actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.UserStatusChanged += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.UserStatusChanged += null, mock.Object, expectedArgs);
@@ -1233,7 +1254,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new UserStatus(username, presense, privileged);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.UserStatusChanged += null, mock.Object, expectedArgs));
 
@@ -1249,7 +1270,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new UserStatistics(username, averageSpeed, uploadCount, fileCount, directoryCount);
             UserStatistics actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.UserStatisticsChanged += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.UserStatisticsChanged += null, mock.Object, expectedArgs);
@@ -1266,7 +1287,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new UserStatistics(username, averageSpeed, uploadCount, fileCount, directoryCount);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.UserStatisticsChanged += null, mock.Object, expectedArgs));
 
@@ -1280,7 +1301,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 bool fired = false;
 
@@ -1297,7 +1318,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DistributedNetworkReset += null, mock.Object, EventArgs.Empty));
 
@@ -1311,7 +1332,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 bool fired = false;
 
@@ -1328,7 +1349,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.StateChanged += null, mock.Object, new DistributedNetworkInfo(0, 1, "root", true, 1, true, null, default, true)));
 
@@ -1344,7 +1365,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new PrivateMessageReceivedEventArgs(id, timestamp, username, message, isAdmin);
             PrivateMessageReceivedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivateMessageReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivateMessageReceived += null, mock.Object, expectedArgs);
@@ -1361,7 +1382,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new PrivateMessageReceivedEventArgs(id, timestamp, username, message, isAdmin);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivateMessageReceived += null, mock.Object, expectedArgs));
 
@@ -1377,7 +1398,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = usernames.ToList().AsReadOnly();
             IReadOnlyCollection<string> actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivilegedUserListReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivilegedUserListReceived += null, mock.Object, expectedArgs);
@@ -1395,7 +1416,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = usernames.ToList().AsReadOnly();
             IReadOnlyCollection<string> actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.ExcludedSearchPhrasesReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.ExcludedSearchPhrasesReceived += null, mock.Object, expectedArgs);
@@ -1412,7 +1433,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = usernames.ToList().AsReadOnly();
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivilegedUserListReceived += null, mock.Object, expectedArgs));
 
@@ -1427,7 +1448,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = usernames.ToList().AsReadOnly();
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.ExcludedSearchPhrasesReceived += null, mock.Object, expectedArgs));
 
@@ -1443,7 +1464,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new PrivilegeNotificationReceivedEventArgs(username, id);
             PrivilegeNotificationReceivedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivilegeNotificationReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivilegeNotificationReceived += null, mock.Object, expectedArgs);
@@ -1460,7 +1481,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new PrivilegeNotificationReceivedEventArgs(username, id);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivilegeNotificationReceived += null, mock.Object, expectedArgs));
 
@@ -1476,7 +1497,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new UserCannotConnectEventArgs(token, username);
             UserCannotConnectEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.UserCannotConnect += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.UserCannotConnect += null, mock.Object, expectedArgs);
@@ -1493,7 +1514,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new UserCannotConnectEventArgs(token, username);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.UserCannotConnect += null, mock.Object, expectedArgs));
 
@@ -1509,7 +1530,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new RoomMessageReceivedEventArgs(roomName, username, message);
             RoomMessageReceivedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.RoomMessageReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.RoomMessageReceived += null, mock.Object, expectedArgs);
@@ -1526,7 +1547,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomMessageReceivedEventArgs(roomName, username, message);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RoomMessageReceived += null, mock.Object, expectedArgs));
 
@@ -1542,7 +1563,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new RoomTickerAddedEventArgs(roomName, new RoomTicker(username, message));
             RoomTickerAddedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.RoomTickerAdded += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.RoomTickerAdded += null, mock.Object, expectedArgs);
@@ -1559,7 +1580,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomTickerAddedEventArgs(roomName, new RoomTicker(username, message));
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RoomTickerAdded += null, mock.Object, expectedArgs));
 
@@ -1575,7 +1596,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new RoomTickerRemovedEventArgs(roomName, username);
             RoomTickerRemovedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.RoomTickerRemoved += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.RoomTickerRemoved += null, mock.Object, expectedArgs);
@@ -1592,7 +1613,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomTickerRemovedEventArgs(roomName, username);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RoomTickerRemoved += null, mock.Object, expectedArgs));
 
@@ -1608,7 +1629,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new RoomTickerListReceivedEventArgs(roomName, tickers);
             RoomTickerListReceivedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.RoomTickerListReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.RoomTickerListReceived += null, mock.Object, expectedArgs);
@@ -1625,7 +1646,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomTickerListReceivedEventArgs(roomName, tickers);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RoomTickerListReceived += null, mock.Object, expectedArgs));
 
@@ -1641,7 +1662,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new PublicChatMessageReceivedEventArgs(roomName, username, message);
             PublicChatMessageReceivedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PublicChatMessageReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PublicChatMessageReceived += null, mock.Object, expectedArgs);
@@ -1658,7 +1679,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new PublicChatMessageReceivedEventArgs(roomName, username, message);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PublicChatMessageReceived += null, mock.Object, expectedArgs));
 
@@ -1674,7 +1695,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new RoomJoinedEventArgs(roomName, username, userData);
             RoomJoinedEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.RoomJoined += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.RoomJoined += null, mock.Object, expectedArgs);
@@ -1691,7 +1712,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomJoinedEventArgs(roomName, username, userData);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RoomJoined += null, mock.Object, expectedArgs));
 
@@ -1707,7 +1728,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new RoomLeftEventArgs(roomName, username);
             RoomLeftEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.RoomLeft += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.RoomLeft += null, mock.Object, expectedArgs);
@@ -1724,7 +1745,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new RoomLeftEventArgs(roomName, username);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RoomLeft += null, mock.Object, expectedArgs));
 
@@ -1740,7 +1761,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = rooms;
             RoomList actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.RoomListReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.RoomListReceived += null, mock.Object, expectedArgs);
@@ -1757,7 +1778,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = rooms;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RoomListReceived += null, mock.Object, expectedArgs));
 
@@ -1773,7 +1794,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = room;
             string actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivateRoomMembershipAdded += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivateRoomMembershipAdded += null, mock.Object, expectedArgs);
@@ -1790,7 +1811,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = room;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivateRoomMembershipAdded += null, mock.Object, expectedArgs));
 
@@ -1806,7 +1827,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = room;
             string actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivateRoomMembershipRemoved += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivateRoomMembershipRemoved += null, mock.Object, expectedArgs);
@@ -1823,7 +1844,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = room;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivateRoomMembershipRemoved += null, mock.Object, expectedArgs));
 
@@ -1839,7 +1860,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = room;
             string actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivateRoomModerationAdded += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivateRoomModerationAdded += null, mock.Object, expectedArgs);
@@ -1856,7 +1877,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = room;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivateRoomModerationAdded += null, mock.Object, expectedArgs));
 
@@ -1872,7 +1893,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = room;
             string actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivateRoomModerationRemoved += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivateRoomModerationRemoved += null, mock.Object, expectedArgs);
@@ -1889,7 +1910,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = room;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivateRoomModerationRemoved += null, mock.Object, expectedArgs));
 
@@ -1905,7 +1926,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = info;
             RoomInfo actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivateRoomUserListReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivateRoomUserListReceived += null, mock.Object, expectedArgs);
@@ -1922,7 +1943,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = info;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivateRoomUserListReceived += null, mock.Object, expectedArgs));
 
@@ -1938,7 +1959,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = info;
             RoomInfo actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.PrivateRoomModeratedUserListReceived += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.PrivateRoomModeratedUserListReceived += null, mock.Object, expectedArgs);
@@ -1955,7 +1976,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = info;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PrivateRoomModeratedUserListReceived += null, mock.Object, expectedArgs));
 
@@ -1970,7 +1991,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedConnectionManager>();
             var fired = false;
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 s.PromotedToDistributedBranchRoot += (sender, args) => fired = true;
                 mock.Raise(m => m.PromotedToBranchRoot += null, mock.Object, EventArgs.Empty);
@@ -1985,7 +2006,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.PromotedToBranchRoot += null, mock.Object, EventArgs.Empty));
 
@@ -2000,7 +2021,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedConnectionManager>();
             var fired = false;
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 s.DemotedFromDistributedBranchRoot += (sender, args) => fired = true;
                 mock.Raise(m => m.DemotedFromBranchRoot += null, mock.Object, EventArgs.Empty);
@@ -2015,7 +2036,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DemotedFromBranchRoot += null, mock.Object, EventArgs.Empty));
 
@@ -2030,7 +2051,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedConnectionManager>();
             DistributedParentEventArgs actual = default;
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 s.DistributedParentAdopted += (sender, e) => actual = e;
                 mock.Raise(m => m.ParentAdopted += null, mock.Object, args);
@@ -2045,7 +2066,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.ParentAdopted += null, mock.Object, args));
 
@@ -2060,7 +2081,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedConnectionManager>();
             DistributedParentEventArgs actual = default;
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 s.DistributedParentDisconnected += (sender, e) => actual = e;
                 mock.Raise(m => m.ParentDisconnected += null, mock.Object, args);
@@ -2075,7 +2096,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.ParentDisconnected += null, mock.Object, args));
 
@@ -2090,7 +2111,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedConnectionManager>();
             DistributedChildEventArgs actual = default;
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 s.DistributedChildAdded += (sender, e) => actual = e;
                 mock.Raise(m => m.ChildAdded += null, mock.Object, args);
@@ -2105,7 +2126,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.ChildAdded += null, mock.Object, args));
 
@@ -2120,7 +2141,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IDistributedConnectionManager>();
             DistributedChildEventArgs actual = default;
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 s.DistributedChildDisconnected += (sender, e) => actual = e;
                 mock.Raise(m => m.ChildDisconnected += null, mock.Object, args);
@@ -2135,7 +2156,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<IDistributedConnectionManager>();
 
-            using (var s = new SoulseekClient(distributedConnectionManager: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.ChildDisconnected += null, mock.Object, args));
 
@@ -2151,7 +2172,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new DiagnosticEventArgs(level, message);
             DiagnosticEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 s.DiagnosticGenerated += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
@@ -2168,7 +2189,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<IServerMessageHandler>();
             var expectedArgs = new DiagnosticEventArgs(level, message);
 
-            using (var s = new SoulseekClient(serverMessageHandler: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverMessageHandler: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
@@ -2183,7 +2204,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<ISearchResponder>();
             SearchRequestEventArgs actual = default;
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 s.SearchRequestReceived += (sender, e) => actual = e;
                 mock.Raise(m => m.RequestReceived += null, mock.Object, args);
@@ -2198,7 +2219,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<ISearchResponder>();
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.RequestReceived += null, mock.Object, args));
 
@@ -2213,7 +2234,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<ISearchResponder>();
             SearchRequestResponseEventArgs actual = default;
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 s.SearchResponseDelivered += (sender, e) => actual = e;
                 mock.Raise(m => m.ResponseDelivered += null, mock.Object, args);
@@ -2228,7 +2249,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<ISearchResponder>();
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.ResponseDelivered += null, mock.Object, args));
 
@@ -2243,7 +2264,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<ISearchResponder>();
             SearchRequestResponseEventArgs actual = default;
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 s.SearchResponseDeliveryFailed += (sender, e) => actual = e;
                 mock.Raise(m => m.ResponseDeliveryFailed += null, mock.Object, args);
@@ -2258,7 +2279,7 @@ namespace Soulseek.Tests.Unit
         {
             var mock = new Mock<ISearchResponder>();
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.ResponseDeliveryFailed += null, mock.Object, args));
 
@@ -2274,7 +2295,7 @@ namespace Soulseek.Tests.Unit
             var expectedArgs = new DiagnosticEventArgs(level, message);
             DiagnosticEventArgs actualArgs = null;
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 s.DiagnosticGenerated += (sender, args) => actualArgs = args;
                 mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs);
@@ -2291,7 +2312,7 @@ namespace Soulseek.Tests.Unit
             var mock = new Mock<ISearchResponder>();
             var expectedArgs = new DiagnosticEventArgs(level, message);
 
-            using (var s = new SoulseekClient(searchResponder: mock.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, searchResponder: mock.Object))
             {
                 var ex = Record.Exception(() => mock.Raise(m => m.DiagnosticGenerated += null, mock.Object, expectedArgs));
 
@@ -2303,7 +2324,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Diagnostic does not throw if event not bound"), AutoData]
         public void Diagnostic_Does_Not_Throw_If_Event_Not_Bound(string message)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 DiagnosticFactory d = s.GetProperty<DiagnosticFactory>("Diagnostic");
 
@@ -2319,7 +2340,7 @@ namespace Soulseek.Tests.Unit
         {
             string actualMessage = null;
 
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.DiagnosticGenerated += (sender, m) => actualMessage = m.Message;
                 DiagnosticFactory d = s.GetProperty<DiagnosticFactory>("Diagnostic");
@@ -2356,7 +2377,7 @@ namespace Soulseek.Tests.Unit
             dcm.Setup(m => m.Children).Returns(children.AsReadOnly());
             dcm.Setup(m => m.AverageBroadcastLatency).Returns(averageBroadcastLatency);
 
-            using (var s = new SoulseekClient(distributedConnectionManager: dcm.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: dcm.Object))
             {
                 var info = s.DistributedNetwork;
 
@@ -2391,7 +2412,7 @@ namespace Soulseek.Tests.Unit
             dcm.Setup(m => m.HasParent).Returns(null);
             dcm.Setup(m => m.Children).Returns<IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)>>(null);
 
-            using (var s = new SoulseekClient(distributedConnectionManager: dcm.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, distributedConnectionManager: dcm.Object))
             {
                 var ex = Record.Exception(() => s.DistributedNetwork);
 

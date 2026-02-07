@@ -641,6 +641,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(
+                minorVersion: 9999,
                 distributedConnectionManager: mocks.DistributedConnectionManager.Object,
                 connectionFactory: mocks.ConnectionFactory.Object,
                 serverConnection: mocks.ServerConnection.Object,

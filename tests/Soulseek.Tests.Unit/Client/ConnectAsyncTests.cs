@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(null, null)]
         public async Task Throws_ArgumentException_On_Bad_Credentials(string username, string password)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
 
@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "Address throws AddressException on bad address"), AutoData]
         public async Task Address_Throws_ArgumentException_On_Bad_Address(string address)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1, "u", "p"));
 
@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var port = Mocks.Port;
 
-            using (var s = new SoulseekClient(new SoulseekClientOptions(enableListener: true, listenPort: port)))
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(enableListener: true, listenPort: port)))
             {
                 Listener listener = null;
 
@@ -98,7 +98,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(65536)]
         public async Task Address_Throws_ArgumentException_On_Bad_Port(int port)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port, "u", "p"));
 
@@ -120,7 +120,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(" ", 1, "user", "pass")]
         public async Task Address_Throws_ArgumentException_On_Bad_Input(string address, int port, string username, string password)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, port, username, password));
 
@@ -133,7 +133,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "Throws InvalidOperationException if connected"), AutoData]
         public async Task Throws_InvalidOperationException_When_Already_Connected(string username, string password)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -318,7 +318,7 @@ namespace Soulseek.Tests.Unit.Client
 
             mocks.ServerConnection.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()));
 
-            var expectedBytes = new LoginRequest(username, password).ToByteArray()
+            var expectedBytes = new LoginRequest(minorVersion: 9999, username, password).ToByteArray()
                 .Concat(new SetListenPortCommand(client.Options.ListenPort).ToByteArray())
                 .ToArray();
 
@@ -376,7 +376,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             SoulseekClientStateChangedEventArgs args = null;
 
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.StateChanged += (sender, e) => args = e;
 
@@ -393,7 +393,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
 
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.StateChanged += (sender, e) => fired = true;
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -592,6 +592,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var mocks = new Mocks();
             var client = new SoulseekClient(
+                minorVersion: 9999,
                 distributedConnectionManager: mocks.DistributedConnectionManager.Object,
                 connectionFactory: mocks.ConnectionFactory.Object,
                 waiter: mocks.Waiter.Object,
