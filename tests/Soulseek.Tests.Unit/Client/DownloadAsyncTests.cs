@@ -2407,7 +2407,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
                 Assert.Contains("Failed to download file", ex.Message, StringComparison.InvariantCultureIgnoreCase);
-                Assert.IsType<TransferException>(ex.InnerException);
+                Assert.IsType<TransferReportedFailedException>(ex.InnerException);
                 Assert.Equal("Download reported as failed by remote client", ex.InnerException.Message);
 
                 // make sure the read is cancelled (this would hang if not, but still)

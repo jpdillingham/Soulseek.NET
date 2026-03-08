@@ -167,7 +167,7 @@ namespace Soulseek
 
                     foreach (var download in downloads)
                     {
-                        download.RemoteTaskCompletionSource.TrySetException(new TransferException("Download reported as failed by remote client"));
+                        download.RemoteTaskCompletionSource.TrySetException(new TransferReportedFailedException("Download reported as failed by remote client"));
                         Diagnostic.Debug($"Download of {download.Filename} from {download.Username} reported as failed by remote client (token: {download.Token})");
                     }
                 }

@@ -169,7 +169,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Throws TransferRequest wait on PeerUploadFailed message"), AutoData]
-        public void Throws_TransferRequest_Wait_On_PeerUploadFailed_Message(string username, IPEndPoint endpoint, string filename)
+        public void Throws_TransferReRequest_Wait_On_PeerUploadFailed_Message(string username, IPEndPoint endpoint, string filename)
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<TransferException>()), Times.Once);
+            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<TransferReportedFailedException>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
