@@ -570,8 +570,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "HandleEmbeddedMessage")]
-        [Theory(DisplayName = "HandleEmbeddedMessage broadcasts search request unchanged"), AutoData]
-        public void HandleEmbeddedMessage_Broadcasts_Search_Request_Unchanged(string username, int token, string query)
+        [Theory(DisplayName = "HandleEmbeddedMessage broadcasts unwrapped search request"), AutoData]
+        public void HandleEmbeddedMessage_Broadcasts_Unwrapped_Search_Request(string username, int token, string query)
         {
             var (handler, mocks) = GetFixture();
 
@@ -584,9 +584,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(query)
                 .Build();
 
+            var expected = EmbeddedMessage.FromByteArray(message).DistributedMessage;
+
             handler.HandleEmbeddedMessage(message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(expected, It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "HandleEmbeddedMessage")]
