@@ -325,10 +325,9 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Peer.UploadFailed:
                         var uploadFailedResponse = UploadFailed.FromByteArray(message);
 
-                        var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}";
-                        Diagnostic.Debug(msg);
+                        Diagnostic.Debug($"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}");
 
-                        SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, uploadFailedResponse.Filename), new TransferException(msg));
+                        SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, uploadFailedResponse.Filename), new TransferReportedFailedException("Download reported as failed by remote client"));
 
                         DownloadFailed?.Invoke(this, new DownloadFailedEventArgs(connection.Username, uploadFailedResponse.Filename));
                         break;
