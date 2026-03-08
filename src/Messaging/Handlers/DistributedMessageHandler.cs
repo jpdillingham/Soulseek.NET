@@ -163,6 +163,9 @@ namespace Soulseek.Messaging.Handlers
                             // convert this message to a normal DistributedSearchRequest before forwarding.  this functionality is based
                             // on the observation that branch roots send embedded messages to children, while parents that are not a branch root
                             // send a plain SearchRequest/3.
+                            // since this was originally written we've learned that when we receive embedded messages from a parent, it is in error.
+                            // branch roots are intended to 'unwrap' the message and forward only the wrapped message to peers. when we get one of these,
+                            // it is from older clients that either have a bug, or misunderstood the intent. this includes slskd prior to this commit.
                             case MessageCode.Distributed.SearchRequest:
                                 var embeddedSearchRequest = DistributedSearchRequest.FromByteArray(embeddedMessage.DistributedMessage);
 
@@ -274,7 +277,10 @@ namespace Soulseek.Messaging.Handlers
 
                         var searchRequest = DistributedSearchRequest.FromByteArray(distributedMessage);
 
-                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).ConfigureAwait(false);
+                        // *always* unwrap the received message and distribute only the wrapped message to children
+                        // in the past some clients (including slskd, prior to this commit) were incorrectly forwarding the
+                        // distributed message to children, who would then unwrap it properly.
+                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(distributedMessage).ConfigureAwait(false);
 
                         await SoulseekClient.SearchResponder.TryRespondAsync(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
