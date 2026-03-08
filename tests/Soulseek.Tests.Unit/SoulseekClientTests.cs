@@ -827,7 +827,7 @@ namespace Soulseek.Tests.Unit
                 handlerMock.Raise(m => m.DownloadFailed += null, new DownloadFailedEventArgs("user", "file"));
 
                 Assert.True(download.RemoteTaskCompletionSource.Task.IsFaulted);
-                Assert.IsType<TransferException>(download.RemoteTaskCompletionSource.Task.Exception.InnerException);
+                Assert.IsType<TransferReportedFailedException>(download.RemoteTaskCompletionSource.Task.Exception.InnerException);
             }
         }
 
@@ -850,10 +850,10 @@ namespace Soulseek.Tests.Unit
                 handlerMock.Raise(m => m.DownloadFailed += null, new DownloadFailedEventArgs("user", "file"));
 
                 Assert.True(download1.RemoteTaskCompletionSource.Task.IsFaulted);
-                Assert.IsType<TransferException>(download1.RemoteTaskCompletionSource.Task.Exception.InnerException);
+                Assert.IsType<TransferReportedFailedException>(download1.RemoteTaskCompletionSource.Task.Exception.InnerException);
 
                 Assert.True(download2.RemoteTaskCompletionSource.Task.IsFaulted);
-                Assert.IsType<TransferException>(download2.RemoteTaskCompletionSource.Task.Exception.InnerException);
+                Assert.IsType<TransferReportedFailedException>(download2.RemoteTaskCompletionSource.Task.Exception.InnerException);
             }
         }
 
