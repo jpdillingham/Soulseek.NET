@@ -3429,10 +3429,10 @@ namespace Soulseek
                 await readTask.ConfigureAwait(false);
 
                 // update the state 'manually' so the final UpdateProgress() captures the Transfer in the terminal state
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
-                Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
+                Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
 
                 download.Connection.Disconnect("Transfer complete");
 
@@ -3457,7 +3457,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer cancelled", ex);
 
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Cancelled);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3471,7 +3471,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer timed out", ex);
 
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.TimedOut);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3483,7 +3483,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer error", ex);
 
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Errored);
 
                 Diagnostic.Debug(ex.ToString());
