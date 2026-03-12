@@ -53,6 +53,9 @@ namespace Soulseek
         /// <param name="seekInputStreamAutomatically">
         ///     A value indicating whether the input stream should be automatically seeked to the desired start offset, if one is specified.
         /// </param>
+        /// <param name="seekOutputStreamAutomatically">
+        ///     A value indicating whether the output stream should be automatically seeked to the desired start offset, if one is specified.
+        /// </param>
         /// <param name="disposeInputStreamOnCompletion">
         ///     A value indicating whether the input stream should be closed upon transfer completion.
         /// </param>
@@ -68,10 +71,12 @@ namespace Soulseek
             Action<Transfer, int, int, int> reporter = null,
             int maximumLingerTime = 3000,
             bool seekInputStreamAutomatically = true,
+            bool seekOutputStreamAutomatically = true,
             bool disposeInputStreamOnCompletion = true,
             bool disposeOutputStreamOnCompletion = true)
         {
             SeekInputStreamAutomatically = seekInputStreamAutomatically;
+            SeekOutputStreamAutomatically = seekOutputStreamAutomatically;
             DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
@@ -124,6 +129,12 @@ namespace Soulseek
         public bool SeekInputStreamAutomatically { get; }
 
         /// <summary>
+        ///     Gets a value indicating whether the output stream should be automatically seeked to the desired start offset, if
+        ///     one is specified.
+        /// </summary>
+        public bool SeekOutputStreamAutomatically { get; }
+
+        /// <summary>
         ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
         public Func<Transfer, CancellationToken, Task> SlotAwaiter { get; }
@@ -158,6 +169,7 @@ namespace Soulseek
                 reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
+                seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
         }
@@ -185,6 +197,7 @@ namespace Soulseek
                 reporter: Reporter,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
+                seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);
         }
