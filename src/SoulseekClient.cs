@@ -4418,10 +4418,10 @@ namespace Soulseek
                 {
                     if (!inputStream.CanSeek)
                     {
-                        throw new TransferException($"Requested non-zero start offset but input stream does not support seeking");
+                        throw new TransferStreamException($"Requested non-zero start offset but input stream does not support seeking");
                     }
 
-                    Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
+                    Diagnostic.Debug($"Seeking input stream for upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
                     inputStream.Seek(upload.StartOffset, SeekOrigin.Begin);
                 }
 
