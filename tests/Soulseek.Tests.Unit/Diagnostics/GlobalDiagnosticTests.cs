@@ -22,6 +22,7 @@ namespace Soulseek.Tests.Unit
     using Soulseek.Diagnostics;
     using Xunit;
 
+    [Collection(nameof(GlobalDiagnosticTests))]
     public class GlobalDiagnosticTests
     {
         [Trait("Category", "GlobalDiagnostic")]
