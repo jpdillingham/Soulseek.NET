@@ -3463,7 +3463,7 @@ namespace Soulseek
                 await readTask.ConfigureAwait(false);
 
                 // update the state 'manually' so the final UpdateProgress() captures the Transfer in the terminal state
-                UpdateProgress(outputStream?.Position ?? 0);
+                UpdateProgress(outputStream.Position);
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
                 Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
@@ -4532,7 +4532,7 @@ namespace Soulseek
                     // swallow this specific exception; we're expecting it when the connection closes.
                 }
 
-                UpdateProgress(inputStream?.Position ?? 0);
+                UpdateProgress(inputStream.Position);
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
                 Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");
