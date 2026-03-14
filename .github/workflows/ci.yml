@@ -68,13 +68,17 @@ jobs:
             -p:CoverletOutput="../coverage.json" \
             -p:Include="[Soulseek]*" \
             tests/Soulseek.Tests.Unit
-          dotnet test --verbosity minimal --no-build --configuration Release --blame \
-            -p:CollectCoverage=true \
-            -p:MergeWith="../coverage.json" \
-            -p:CoverletOutput="../opencover.xml" \
-            -p:CoverletOutputFormat=opencover \
-            -p:Include="[Soulseek]*" \
-            tests/Soulseek.Tests.Integration
+          # --------------------------
+          # integration tests temporarily(?) disabled to prevent GHA from connecting to the remote soulseek server,
+          # risking my account. eventually i'll boot the soulfind docker container and run the integration tests against it
+          # --------------------------
+          # dotnet test --verbosity minimal --no-build --configuration Release --blame \
+          #   -p:CollectCoverage=true \
+          #   -p:MergeWith="../coverage.json" \
+          #   -p:CoverletOutput="../opencover.xml" \
+          #   -p:CoverletOutputFormat=opencover \
+          #   -p:Include="[Soulseek]*" \
+          #   tests/Soulseek.Tests.Integration
 
       - name: SonarCloud end
         run: dotnet-sonarscanner end /d:sonar.login="${{ secrets.TOKEN_SONARCLOUD }}"
