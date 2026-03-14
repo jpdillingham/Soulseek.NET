@@ -59,6 +59,9 @@ jobs:
           dotnet build --no-restore --no-incremental --configuration Release
 
       - name: Test
+        env:
+          SLSK_INTEGRATION_USERNAME: ${{ secrets.SLSK_INTEGRATION_USERNAME }}
+          SLSK_INTEGRATION_PASSWORD: ${{ secrets.SLSK_INTEGRATION_PASSWORD }}
         run: |
           dotnet test --verbosity minimal --no-build --configuration Release --blame \
             -p:CollectCoverage=true \
