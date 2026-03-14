@@ -3410,7 +3410,7 @@ namespace Soulseek
                         throw new TransferStreamException($"Requested non-zero start offset but output stream does not support seeking");
                     }
 
-                    Diagnostic.Debug($"Seeking input stream for download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {download.StartOffset} bytes");
+                    Diagnostic.Debug($"Seeking output stream for download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {download.StartOffset} bytes");
                     outputStream.Seek(download.StartOffset, SeekOrigin.Begin);
                 }
 
