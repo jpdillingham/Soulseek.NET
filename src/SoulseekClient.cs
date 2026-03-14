@@ -3366,6 +3366,18 @@ namespace Soulseek
                 using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var linkedCancellationToken = linkedCancellationTokenSource.Token;
 
+                /*
+                    report `BytesTransferred` as Starting offset + sum of bytes read via read loop, which is "safe" to do because
+                    the `DataRead` event is fired after the read logic has written the bytes to the output stream, and the `CurrentLength`
+                    is a fair representation of how much data has actually been moved successfully.
+
+                    this will cause issues, though, in cases where we are supplied a stream that's not positioned correctly at the specified
+                    StartOffset. updates outside of this handler will potentially write different values because we have to rely on the
+                    position of the output stream in those cases.
+
+                    for this reason we must check that start offset = stream position and throw if not, after we obtain
+                    the output stream.
+                */
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
@@ -3380,8 +3392,30 @@ namespace Soulseek
 
                 outputStream = await outputStreamFactory().ConfigureAwait(false);
 
-                Diagnostic.Debug($"Seeking download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {startOffset} bytes");
-                var startOffsetBytes = BitConverter.GetBytes(startOffset);
+                /*
+                    see the documentation above for the `DataRead` event handler for rationale
+
+                    tl;dr, we have to use the stream position to determine how much data has been successfully written to the output stream
+                    if the caller gives us a stream that can't be positioned and they haven't explicitly told us to bypass
+                    the seek, throw and abort; progress math will be incorrect and it'll look like a bug
+
+                    anyone that sets SeekOutputStreamAutomatically to false and passes a stream positioned at anything
+                    other than the starting offset should expect the final status update to report an incorrect number,
+                    and they must compensate on their side
+                */
+                if (download.StartOffset > 0 && options.SeekOutputStreamAutomatically)
+                {
+                    if (!outputStream.CanSeek)
+                    {
+                        throw new TransferStreamException($"Requested non-zero start offset but output stream does not support seeking");
+                    }
+
+                    Diagnostic.Debug($"Seeking output stream for download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {download.StartOffset} bytes");
+                    outputStream.Seek(download.StartOffset, SeekOrigin.Begin);
+                }
+
+                Diagnostic.Debug($"Seeking download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {download.StartOffset} bytes");
+                var startOffsetBytes = BitConverter.GetBytes(download.StartOffset);
                 await download.Connection.WriteAsync(startOffsetBytes, linkedCancellationToken).ConfigureAwait(false);
 
                 UpdateState(TransferStates.InProgress);
@@ -3390,7 +3424,7 @@ namespace Soulseek
                 var tokenBucket = DownloadTokenBucket;
 
                 var readTask = download.Connection.ReadAsync(
-                    length: download.Size.Value - startOffset,
+                    length: download.Size.Value - download.StartOffset,
                     outputStream: outputStream,
                     governor: async (requestedBytes, cancelToken) =>
                     {
@@ -3429,10 +3463,10 @@ namespace Soulseek
                 await readTask.ConfigureAwait(false);
 
                 // update the state 'manually' so the final UpdateProgress() captures the Transfer in the terminal state
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream.Position);
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
-                Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
+                Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
 
                 download.Connection.Disconnect("Transfer complete");
 
@@ -3457,7 +3491,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer cancelled", ex);
 
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Cancelled);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3471,7 +3505,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer timed out", ex);
 
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.TimedOut);
 
                 Diagnostic.Debug(ex.ToString());
@@ -3483,7 +3517,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer error", ex);
 
                 download.Exception = ex;
-                UpdateProgress(download.StartOffset + (outputStream?.Position ?? 0));
+                UpdateProgress(outputStream?.Position ?? 0);
                 UpdateState(TransferStates.Completed | TransferStates.Errored);
 
                 Diagnostic.Debug(ex.ToString());
@@ -4418,10 +4452,10 @@ namespace Soulseek
                 {
                     if (!inputStream.CanSeek)
                     {
-                        throw new TransferException($"Requested non-zero start offset but input stream does not support seeking");
+                        throw new TransferStreamException($"Requested non-zero start offset but input stream does not support seeking");
                     }
 
-                    Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
+                    Diagnostic.Debug($"Seeking input stream for upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {upload.StartOffset} bytes");
                     inputStream.Seek(upload.StartOffset, SeekOrigin.Begin);
                 }
 
@@ -4498,7 +4532,7 @@ namespace Soulseek
                     // swallow this specific exception; we're expecting it when the connection closes.
                 }
 
-                UpdateProgress(inputStream?.Position ?? 0);
+                UpdateProgress(inputStream.Position);
                 UpdateState(TransferStates.Completed | TransferStates.Succeeded);
 
                 Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} to {username} complete ({inputStream.Position} of {upload.Size} bytes).");

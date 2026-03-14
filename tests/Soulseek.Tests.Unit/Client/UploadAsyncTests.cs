@@ -1638,10 +1638,10 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
-                Assert.IsType<TransferException>(ex.InnerException);
+                Assert.IsType<TransferStreamException>(ex.InnerException);
             }
 
-            transferConn.Verify(m => m.Disconnect(It.IsAny<string>(), It.Is<TransferException>(ex => ex.Message.ContainsInsensitive("input stream does not support seeking"))), Times.Once);
+            transferConn.Verify(m => m.Disconnect(It.IsAny<string>(), It.Is<TransferStreamException>(ex => ex.Message.ContainsInsensitive("input stream does not support seeking"))), Times.Once);
         }
 
         [Trait("Category", "UploadFromStreamAsync")]
