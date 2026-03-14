@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Install dotnet-sonarscanner
+        run: dotnet tool install --global dotnet-sonarscanner --version 5.4.1
+
+      - name: Set Sonar options
+        id: sonar-options
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "options=/d:sonar.pullrequest.base=${{ github.base_ref }} /d:sonar.pullrequest.branch=${{ github.head_ref }} /d:sonar.pullrequest.key=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "options=/d:sonar.branch.name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: SonarCloud begin
+        run: |
+          dotnet-sonarscanner begin \
+            /key:"jpdillingham_Soulseek.NET" \
+            /o:jpdillingham-github \
+            ${{ steps.sonar-options.outputs.options }} \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.github.repository="jpdillingham/Soulseek.NET" \
+            /d:sonar.exclusions="**/*examples*/**" \
+            /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml" \
+            /d:sonar.login="${{ secrets.TOKEN_SONARCLOUD }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: |
+          dotnet restore
+          dotnet build --no-restore --no-incremental --configuration Release
+
+      - name: Test
+        run: |
+          dotnet test --verbosity minimal --no-build --configuration Release --blame \
+            -p:CollectCoverage=true \
+            -p:CoverletOutput="../coverage.json" \
+            -p:Include="[Soulseek]*" \
+            tests/Soulseek.Tests.Unit
+          dotnet test --verbosity minimal --no-build --configuration Release --blame \
+            -p:CollectCoverage=true \
+            -p:MergeWith="../coverage.json" \
+            -p:CoverletOutput="../opencover.xml" \
+            -p:CoverletOutputFormat=opencover \
+            -p:Include="[Soulseek]*" \
+            tests/Soulseek.Tests.Integration
+
+      - name: SonarCloud end
+        run: dotnet-sonarscanner end /d:sonar.login="${{ secrets.TOKEN_SONARCLOUD }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: codecov/codecov-action@v4
+        with:
+          files: tests/opencover.xml
+          token: ${{ secrets.TOKEN_CODECOV_SOULSEEKNET }}
