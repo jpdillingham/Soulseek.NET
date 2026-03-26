@@ -49,7 +49,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Throws if minor version is too low")]
         public void Throws_If_Minor_Version_Is_Too_Low()
         {
-            var ex = Record.Exception(() => new SoulseekClient(minorVersion: 42));
+            var ex = Record.Exception(() => new SoulseekClient(minorVersion: 100));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
