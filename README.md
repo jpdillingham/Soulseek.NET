@@ -50,22 +50,7 @@ int UploadSpeed
 string Username
 ```
 
-`File` has a number of properties; you'll need for `Filename` and `Size` for downloading.
-
-## Download a file
-
-```c#
-byte[] file = await Client.DownloadAsync(username: "some username", filename: "some fully qualified filename", size: 42);
-```
-
-OR (ideally)
-
-```c#
-var fs = new FileStream("c:\downloads\local filename", FileMode.Create);
-await Client.DownloadAsync(username: "some username", filename: "some fully qualified filename", outputStream: fs, size: 42);
-```
-
-Note: Download to a stream where possible to reduce memory overhead.
+`File` has a number of properties; you'll need `Filename` and `Size` to enqueue a transfer.
 
 # Documentation
 
