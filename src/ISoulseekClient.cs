@@ -1261,6 +1261,15 @@ namespace Soulseek
         Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously informs the server of the user's liked and disliked interests.
+        /// </summary>
+        /// <param name="likes">A collection of liked interests.</param>
+        /// <param name="dislikes">A collection of disliked interests.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task SetInterestsAsync(IEnumerable<string> likes, IEnumerable<string> dislikes, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously starts receiving public chat messages.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
