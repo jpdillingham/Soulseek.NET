@@ -33,7 +33,7 @@ I appreciate everyone's cooperation and commitment to ensuring the long term hea
 
 ## References
 
-* [Nicotine+ (most up to date)](https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md)
+* [Nicotine+ (most up to date)](https://nicotine-plus.org/doc/SLSKPROTOCOL.html)
 * [SoulseekProtocol - Museek+](https://www.museek-plus.org/wiki/SoulseekProtocol)
 * [Soulseek Protocol Documentation (mirrored)](https://htmlpreview.github.io/?https://github.com/jpdillingham/Soulseek.NET/blob/master/docs/Soulseek%20Protocol%20Documentation.html)
 
