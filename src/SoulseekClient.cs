@@ -103,7 +103,7 @@ namespace Soulseek
             ITokenBucket uploadTokenBucket = null,
             ITokenBucket downloadTokenBucket = null)
         {
-            if (minorVersion < 100)
+            if (minorVersion <= 100)
             {
                 throw new ArgumentOutOfRangeException(nameof(minorVersion), "The minor version must be greater than 100");
             }
