@@ -700,13 +700,13 @@ provision of these Additional Terms is intended to be severable and that no
 provision is dependent upon the validity or enforceability of any other.
 
   Compliance with these Additional Terms, to the extent they constitute valid
-conditions under Section 7 of the AGPLv3, is a material condition of the
+conditions under Section 7 of the GPLv3, is a material condition of the
 License grant.  Any use, modification, or conveyance of the Program, or any
 instance of Covered Software, without adherence to these Additional Terms is a
 violation of the License and is subject to the termination and reinstatement
 provisions of Section 8.
 
-1. Disclaimer of Endorsement and Limitation of Liability (Sections 7(a) and 7(f))
+  1. Disclaimer of Endorsement and Limitation of Liability (Sections 7(a) and 7(f))
 
   Pursuant to Sections 7(a) and 7(f), the original author(s) of the Program
 do not condone, endorse, or support the unauthorized sharing of copyrighted
@@ -735,13 +735,13 @@ directly impose on said author(s).  This indemnification obligation is limited
 to liability arising directly from such contractual assumptions and does not
 extend to liability arising from the original author(s)' own acts or omissions.
 
-2. Preservation of Notices and License (Section 7(b))
+  2. Preservation of Notices and License (Section 7(b))
 
   Pursuant to Section 7(b), the following requirements apply to the
 preservation of legal notices:
 
   a) Interface Notices: You must not remove, obscure, or modify any
-  "Appropriate Legal Notices" (as defined in Section 0 of the AGPLv3) or
+  "Appropriate Legal Notices" (as defined in Section 0 of the GPLv3) or
   attribution notices displayed in any user interface, including terminal
   startup output and web-based dashboards.  Such notices must remain
   prominently visible.
@@ -770,10 +770,10 @@ preservation of legal notices:
   through a package repository, registry, or software distribution platform
   (including operating system repositories and language-specific registries)
   must identify the work as licensed under the GNU General Public License v3.0
-  ("GPLv3") or, if the Covered Software is itself licensed under the GNU Affero
-  General Public License v3.0 ("AGPLv3"), under that license, include a link to
-  the Corresponding Source, and include a link to the full text of this License
-  and these Additional Terms.
+  ("GPLv3"), or the GNU Affero General Public License v3.0 ("AGPLv3") if the
+  Covered Software is itself licensed under the AGPLv3; must include a link to
+  the Corresponding Source; and must include a link to the full text of this
+  License and these Additional Terms.
 
   f) Container Metadata: Any conveyance of the Program or any Covered Software
   in the form of a container image must include the following OCI image
