@@ -735,7 +735,7 @@ directly impose on said author(s).  This indemnification obligation is limited
 to liability arising directly from such contractual assumptions and does not
 extend to liability arising from the original author(s)' own acts or omissions.
 
-  2. Preservation of Notices and License (Section 7(b))
+2. Preservation of Notices and License (Section 7(b))
 
   Pursuant to Section 7(b), the following requirements apply to the
 preservation of legal notices:
@@ -743,11 +743,11 @@ preservation of legal notices:
   a) Interface Notices: You must not remove, obscure, or modify any
   "Appropriate Legal Notices" (as defined in Section 0 of the AGPLv3) or
   attribution notices displayed in any user interface, including terminal
-  startup output and web-based dashboards.  Such notices must remain prominently
-  visible.
+  startup output and web-based dashboards.  Such notices must remain
+  prominently visible.
 
   b) Documentation: Any README, NOTICE, or equivalent documentation included
-  with the Program or a Modified Version must preserve all existing license
+  with the Program or any Covered Software must preserve all existing license
   notices, attribution statements, and references to these Additional Terms
   without modification, except as expressly required by these Additional Terms.
 
@@ -757,26 +757,30 @@ preservation of legal notices:
   statements, license identifiers, and references to these Additional Terms
   contained in file headers.
 
-  d) Distribution Artifacts: Any conveyance of the Program or a Modified
-  Version in object code or executable form (including archive files, installer
-  packages, or other distribution formats) must be accompanied by the full text
-  of this License and these Additional Terms.  This text must be placed in a
-  file named LICENSE in the root directory and, if different, the directory
-  containing the object code or executable.  The LICENSE file must contain the
-  complete and unmodified text of this License and these Additional Terms.
+  d) Distribution Artifacts: Any conveyance of the Program or any Covered
+  Software in object code or executable form (including archive files,
+  installer packages, or other distribution formats) must be accompanied by the
+  full text of this License and these Additional Terms.  This text must be
+  placed in a file named LICENSE in the root directory and, if different, the
+  directory containing the object code or executable.  The LICENSE file must
+  contain the complete and unmodified text of this License and these Additional
+  Terms.
 
-  e) Package Registries: Any conveyance through a package repository, registry,
-  or software distribution platform (including operating system repositories
-  and language-specific registries) must identify the work as licensed under
-  the GNU Affero General Public License v3.0 ("AGPLv3"), include a link to the
-  Corresponding Source, and include a link to the full text of this License and
-  these Additional Terms.
+  e) Package Registries: Any conveyance of the Program or any Covered Software
+  through a package repository, registry, or software distribution platform
+  (including operating system repositories and language-specific registries)
+  must identify the work as licensed under the GNU General Public License v3.0
+  ("GPLv3") or, if the Covered Software is itself licensed under the GNU Affero
+  General Public License v3.0 ("AGPLv3"), under that license, include a link to
+  the Corresponding Source, and include a link to the full text of this License
+  and these Additional Terms.
 
-  f) Container Metadata: Any conveyance of the Program or a Modified Version in
-  the form of a container image must include the following OCI image annotations
-  or equivalent metadata supported by the registry:
+  f) Container Metadata: Any conveyance of the Program or any Covered Software
+  in the form of a container image must include the following OCI image
+  annotations or equivalent metadata supported by the registry:
 
-    i) org.opencontainers.image.licenses must be set to "AGPL-3.0-only";
+    i) org.opencontainers.image.licenses must be set to "GPL-3.0-only" or,
+    where the Covered Software is licensed under the AGPLv3, "AGPL-3.0-only";
 
     ii) org.opencontainers.image.source must be set to the URL of the source
     code repository for the version contained in the image.
