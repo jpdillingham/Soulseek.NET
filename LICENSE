@@ -706,28 +706,29 @@ instance of Covered Software, without adherence to these Additional Terms is a
 violation of the License and is subject to the termination and reinstatement
 provisions of Section 8.
 
-  1. Disclaimer of Endorsement and Limitation of Liability (Sections 7(a) and 7(f))
+1. Disclaimer of Endorsement and Limitation of Liability (Sections 7(a) and 7(f))
 
-  Pursuant to Sections 7(a) and 7(f), the original author(s) of the Program do
-not condone, endorse, or support the unauthorized sharing of copyrighted works
-or the transmission of any unlawful or illicit materials, whether through the
-Program or any Modified Version.
+  Pursuant to Sections 7(a) and 7(f), the original author(s) of the Program
+do not condone, endorse, or support the unauthorized sharing of copyrighted
+works or the transmission of any unlawful or illicit materials, whether through
+the Program or any Covered Software.
 
-  Users and modifiers are solely responsible for ensuring that their use,
-modification, distribution, or promotion of the Program or any Modified Version
-complies with all applicable laws, third-party rights, and the rules of any
-network to which the software connects.
+  Users, modifiers, and integrators are solely responsible for ensuring that
+their use, modification, distribution, or promotion of the Program or any
+Covered Software complies with all applicable laws, third-party rights, and the
+rules of any network to which the software connects.
 
   In no event shall the original author(s) of the Program be held liable for
-any legal consequences, damages, or claims arising from: (i) any user's or
-modifier's use of the Program or any Modified Version in a manner that
-infringes third-party rights or violates applicable law; or (ii) the creation,
-distribution, promotion, or marketing of any Modified Version, including any
-Modified Version that facilitates or is associated with copyright infringement
-or unlawful activity.  All responsibility for a Modified Version rests solely
-with the person or entity that created, distributed, or promoted it.
+any legal consequences, damages, or claims arising from: (i) any user's,
+modifier's, or integrator's use of the Program or any Covered Software in a
+manner that infringes third-party rights or violates applicable law; or (ii)
+the creation, distribution, promotion, or marketing of any Covered Software,
+including any Covered Software that facilitates or is associated with copyright
+infringement or unlawful activity.  All responsibility for Covered Software
+rests solely with the person or entity that created, distributed, promoted, or
+incorporated it.
 
-  Pursuant to Section 7(f), any party that conveys a Modified Version with
+  Pursuant to Section 7(f), any party that conveys Covered Software with
 contractual assumptions of liability to its recipients must indemnify the
 original author(s) for any liability that those contractual assumptions
 directly impose on said author(s).  This indemnification obligation is limited
