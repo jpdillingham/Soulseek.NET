@@ -679,15 +679,17 @@ Public License instead of this License.  But first, please read
                             ADDITIONAL TERMS
 
   The following Additional Terms are supplemental conditions of this License
-pursuant to Section 7 of the GNU Affero General Public License v3.0 ("AGPLv3").
+pursuant to Section 7 of the GNU General Public License v3.0 ("GPLv3").
 
   As used in these Additional Terms: "the Program" refers to the original
-copyrightable work licensed under this License, "Modified Version" refers
-to any work based on the Program, and "original author(s)" refers to the
-copyright holder(s) of the unmodified Program.
+copyrightable work licensed under this License; "Modified Version" refers to
+any work based on the Program; "Covered Software" refers to the Program, any
+Modified Version thereof, and any software that incorporates the Program or any
+portion thereof, whether or not modified; and "original author(s)" refers to
+the copyright holder(s) of the unmodified Program.
 
-  These Additional Terms attach to the Program and every Modified Version,
-and must be included with any such conveyance.
+  These Additional Terms attach to the Program and every instance of Covered
+Software, and must be included with any such conveyance.
 
   If any provision is found unenforceable or invalid, it shall be interpreted
 to the minimum extent necessary to make it enforceable; if that is not
@@ -698,11 +700,11 @@ provision of these Additional Terms is intended to be severable and that no
 provision is dependent upon the validity or enforceability of any other.
 
   Compliance with these Additional Terms, to the extent they constitute valid
-conditions under Section 7 of the AGPLv3, is a material condition of the License
-grant.  Any modification or conveyance of the Program, or any Modified Version
-thereof, without adherence to these Additional Terms is a violation of the
-License and is subject to the termination and reinstatement provisions of
-Section 8.
+conditions under Section 7 of the AGPLv3, is a material condition of the
+License grant.  Any use, modification, or conveyance of the Program, or any
+instance of Covered Software, without adherence to these Additional Terms is a
+violation of the License and is subject to the termination and reinstatement
+provisions of Section 8.
 
   1. Disclaimer of Endorsement and Limitation of Liability (Sections 7(a) and 7(f))
 
