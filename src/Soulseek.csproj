@@ -32,12 +32,12 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>9.1.0</Version>
+    <Version>10.0.0</Version>
     <Authors>JP Dillingham</Authors>
     <Product>Soulseek.NET</Product>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
     <PackageLicense>https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE</PackageLicense>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <Description>A .NET Standard client library for the Soulseek network.</Description>
     <Copyright>Copyright (c) JP Dillingham</Copyright>
     <RepositoryUrl>https://github.com/jpdillingham/Soulseek.NET</RepositoryUrl>
