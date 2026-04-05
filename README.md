@@ -39,7 +39,7 @@ Applications using this library are required, as a condition of the [LICENSE](ht
 
 ## References
 
-* [Nicotine+ (most up to date)](https://github.com/nicotine-plus/nicotine-plus/blob/master/doc/SLSKPROTOCOL.md)
+* [Nicotine+ (most up to date)](https://nicotine-plus.org/doc/SLSKPROTOCOL.html)
 * [SoulseekProtocol - Museek+](https://www.museek-plus.org/wiki/SoulseekProtocol)
 * [Soulseek Protocol Documentation (mirrored)](https://htmlpreview.github.io/?https://github.com/jpdillingham/Soulseek.NET/blob/master/docs/Soulseek%20Protocol%20Documentation.html)
 
