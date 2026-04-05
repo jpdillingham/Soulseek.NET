@@ -29,6 +29,12 @@ This list of phrases is delivered in the event `ExcludedSearchPhrassReceived`, a
 
 I appreciate everyone's cooperation and commitment to ensuring the long term health of the Soulseek network.
 
+# Reserved Minor Version Ranges
+
+Applications using this library are required, as a condition of the [LICENSE](https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE), to use a unique minor version number when logging in to the Soulseek network.  To aid in avoidance of versions used by other applications, a list of reserved version ranges and their associated applications are included below.
+
+* 760-7699999: [slskd](https://github.com/slskd/slskd)
+
 # See also
 
 ## References
