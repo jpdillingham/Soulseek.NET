@@ -220,6 +220,10 @@ namespace Soulseek
 
             try
             {
+                ReaderWriterLock.EnterReadLock();
+
+                try
+                {
 
                     // apply individual file filter, if one was provided
                     var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
@@ -238,8 +242,11 @@ namespace Soulseek
                 Interlocked.Add(ref fileCount, response.FileCount);
                 Interlocked.Add(ref lockedFileCount, response.LockedFileCount);
 
-                ResponseReceived?.Invoke(response);
-                SearchTimeoutTimer.Reset();
+                }
+                finally
+                {
+                    ReaderWriterLock.ExitReadLock();
+                }
 
                 if (responseCount >= Options.ResponseLimit)
                 {
