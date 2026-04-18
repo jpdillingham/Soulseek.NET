@@ -218,13 +218,8 @@ namespace Soulseek
                     return;
                 }
 
-                if (Options.FilterResponses)
-                {
-                    // apply custom filter, if one was provided
-                    if (!(Options.ResponseFilter?.Invoke(response) ?? true))
-                    {
-                        return;
-                    }
+            try
+            {
 
                     // apply individual file filter, if one was provided
                     var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
@@ -254,6 +249,10 @@ namespace Soulseek
                 {
                     Complete(SearchStates.FileLimitReached);
                 }
+            }
+            catch (ObjectDisposedException)
+            {
+                // noop; response arrived too late and we don't care
             }
         }
 
