@@ -211,12 +211,15 @@ namespace Soulseek
         /// <param name="response">The response to add.</param>
         public void TryAddResponse(SearchResponse response)
         {
-            if (!Disposed && State.HasFlag(SearchStates.InProgress) && response.Token == Token)
+            if (response.Token != Token)
             {
-                if (!ResponseMeetsOptionCriteria(response))
-                {
-                    return;
-                }
+                throw new DataMisalignedException($"Search for '{Query}' with token {Token} received response with search token {response.Token}");
+            }
+
+            if (Disposed)
+            {
+                return;
+            }
 
             try
             {
@@ -224,24 +227,43 @@ namespace Soulseek
 
                 try
                 {
-
-                    // apply individual file filter, if one was provided
-                    var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-                    var filteredLockedFiles = response.LockedFiles.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-
-                    response = new SearchResponse(response, filteredFiles, filteredLockedFiles);
-
-                    // ensure the filtered file count still meets the response criteria
-                    if (response.FileCount + response.LockedFileCount < Options.MinimumResponseFileCount)
+                    if (!State.HasFlag(SearchStates.InProgress))
                     {
                         return;
                     }
-                }
 
-                Interlocked.Increment(ref responseCount);
-                Interlocked.Add(ref fileCount, response.FileCount);
-                Interlocked.Add(ref lockedFileCount, response.LockedFileCount);
+                    if (!ResponseMeetsOptionCriteria(response))
+                    {
+                        return;
+                    }
 
+                    if (Options.FilterResponses)
+                    {
+                        // apply custom filter, if one was provided
+                        if (!(Options.ResponseFilter?.Invoke(response) ?? true))
+                        {
+                            return;
+                        }
+
+                        // apply individual file filter, if one was provided
+                        var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+                        var filteredLockedFiles = response.LockedFiles.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+
+                        response = new SearchResponse(response, filteredFiles, filteredLockedFiles);
+
+                        // ensure the filtered file count still meets the response criteria
+                        if (response.FileCount + response.LockedFileCount < Options.MinimumResponseFileCount)
+                        {
+                            return;
+                        }
+                    }
+
+                    Interlocked.Increment(ref responseCount);
+                    Interlocked.Add(ref fileCount, response.FileCount);
+                    Interlocked.Add(ref lockedFileCount, response.LockedFileCount);
+
+                    ResponseReceived?.Invoke(response);
+                    SearchTimeoutTimer.Reset();
                 }
                 finally
                 {
