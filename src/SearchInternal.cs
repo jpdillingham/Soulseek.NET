@@ -118,8 +118,18 @@ namespace Soulseek
         /// </summary>
         public void Cancel()
         {
+            ReaderWriterLock.EnterWriteLock();
+
+            try
+            {
                 SearchTimeoutTimer.Stop();
                 State = SearchStates.Completed | SearchStates.Cancelled;
+                TaskCompletionSource.TrySetException(new OperationCanceledException());
+            }
+            finally
+            {
+                ReaderWriterLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -128,9 +138,18 @@ namespace Soulseek
         /// <param name="state">The terminal state of the search.</param>
         public void Complete(SearchStates state)
         {
-            SearchTimeoutTimer.Stop();
-            State = SearchStates.Completed | state;
-            TaskCompletionSource.TrySetResult(0);
+            ReaderWriterLock.EnterWriteLock();
+
+            try
+            {
+                SearchTimeoutTimer.Stop();
+                State = SearchStates.Completed | state;
+                TaskCompletionSource.TrySetResult(0);
+            }
+            finally
+            {
+                ReaderWriterLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -166,13 +185,22 @@ namespace Soulseek
         /// <param name="state">The state to which the Search is to be set.</param>
         public void SetState(SearchStates state)
         {
-            var previousState = State;
-            State = state;
+            ReaderWriterLock.EnterWriteLock();
 
-            // ensure the timeout timer is reset only one time, immediately after the search request is sent to the server.
-            if (previousState != SearchStates.InProgress && State == SearchStates.InProgress)
+            try
             {
-                SearchTimeoutTimer.Reset();
+                var previousState = State;
+                State = state;
+
+                // ensure the timeout timer is reset only one time, immediately after the search request is sent to the server.
+                if (previousState != SearchStates.InProgress && State == SearchStates.InProgress)
+                {
+                    SearchTimeoutTimer.Reset();
+                }
+            }
+            finally
+            {
+                ReaderWriterLock.ExitWriteLock();
             }
         }
 
