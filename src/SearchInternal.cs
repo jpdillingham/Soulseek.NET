@@ -111,13 +111,25 @@ namespace Soulseek
         private bool Disposed { get; set; } = false;
         private SystemTimer SearchTimeoutTimer { get; set; }
         private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private ReaderWriterLockSlim ReaderWriterLock { get; } = new ReaderWriterLockSlim();
 
         /// <summary>
         ///     Cancels the search.
         /// </summary>
         public void Cancel()
         {
-            TaskCompletionSource.TrySetException(new OperationCanceledException());
+            ReaderWriterLock.EnterWriteLock();
+
+            try
+            {
+                SearchTimeoutTimer.Stop();
+                State = SearchStates.Completed | SearchStates.Cancelled;
+                TaskCompletionSource.TrySetException(new OperationCanceledException());
+            }
+            finally
+            {
+                ReaderWriterLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -126,9 +138,18 @@ namespace Soulseek
         /// <param name="state">The terminal state of the search.</param>
         public void Complete(SearchStates state)
         {
-            SearchTimeoutTimer.Stop();
-            State = SearchStates.Completed | state;
-            TaskCompletionSource.TrySetResult(0);
+            ReaderWriterLock.EnterWriteLock();
+
+            try
+            {
+                SearchTimeoutTimer.Stop();
+                State = SearchStates.Completed | state;
+                TaskCompletionSource.TrySetResult(0);
+            }
+            finally
+            {
+                ReaderWriterLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -151,6 +172,7 @@ namespace Soulseek
                 if (disposing)
                 {
                     SearchTimeoutTimer.Dispose();
+                    ReaderWriterLock.Dispose();
                 }
 
                 Disposed = true;
@@ -163,13 +185,22 @@ namespace Soulseek
         /// <param name="state">The state to which the Search is to be set.</param>
         public void SetState(SearchStates state)
         {
-            var previousState = State;
-            State = state;
+            ReaderWriterLock.EnterWriteLock();
 
-            // ensure the timeout timer is reset only one time, immediately after the search request is sent to the server.
-            if (previousState != SearchStates.InProgress && State == SearchStates.InProgress)
+            try
             {
-                SearchTimeoutTimer.Reset();
+                var previousState = State;
+                State = state;
+
+                // ensure the timeout timer is reset only one time, immediately after the search request is sent to the server.
+                if (previousState != SearchStates.InProgress && State == SearchStates.InProgress)
+                {
+                    SearchTimeoutTimer.Reset();
+                }
+            }
+            finally
+            {
+                ReaderWriterLock.ExitWriteLock();
             }
         }
 
@@ -180,40 +211,64 @@ namespace Soulseek
         /// <param name="response">The response to add.</param>
         public void TryAddResponse(SearchResponse response)
         {
-            if (!Disposed && State.HasFlag(SearchStates.InProgress) && response.Token == Token)
+            if (response.Token != Token)
             {
-                if (!ResponseMeetsOptionCriteria(response))
-                {
-                    return;
-                }
+                throw new DataMisalignedException($"Search for '{Query}' with token {Token} received response with search token {response.Token}");
+            }
 
-                if (Options.FilterResponses)
+            if (Disposed)
+            {
+                return;
+            }
+
+            try
+            {
+                ReaderWriterLock.EnterReadLock();
+
+                try
                 {
-                    // apply custom filter, if one was provided
-                    if (!(Options.ResponseFilter?.Invoke(response) ?? true))
+                    if (!State.HasFlag(SearchStates.InProgress))
                     {
                         return;
                     }
 
-                    // apply individual file filter, if one was provided
-                    var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-                    var filteredLockedFiles = response.LockedFiles.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-
-                    response = new SearchResponse(response, filteredFiles, filteredLockedFiles);
-
-                    // ensure the filtered file count still meets the response criteria
-                    if (response.FileCount + response.LockedFileCount < Options.MinimumResponseFileCount)
+                    if (!ResponseMeetsOptionCriteria(response))
                     {
                         return;
                     }
+
+                    if (Options.FilterResponses)
+                    {
+                        // apply custom filter, if one was provided
+                        if (!(Options.ResponseFilter?.Invoke(response) ?? true))
+                        {
+                            return;
+                        }
+
+                        // apply individual file filter, if one was provided
+                        var filteredFiles = response.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+                        var filteredLockedFiles = response.LockedFiles.Where(f => Options.FileFilter?.Invoke(f) ?? true);
+
+                        response = new SearchResponse(response, filteredFiles, filteredLockedFiles);
+
+                        // ensure the filtered file count still meets the response criteria
+                        if (response.FileCount + response.LockedFileCount < Options.MinimumResponseFileCount)
+                        {
+                            return;
+                        }
+                    }
+
+                    Interlocked.Increment(ref responseCount);
+                    Interlocked.Add(ref fileCount, response.FileCount);
+                    Interlocked.Add(ref lockedFileCount, response.LockedFileCount);
+
+                    ResponseReceived?.Invoke(response);
+                    SearchTimeoutTimer.Reset();
                 }
-
-                Interlocked.Increment(ref responseCount);
-                Interlocked.Add(ref fileCount, response.FileCount);
-                Interlocked.Add(ref lockedFileCount, response.LockedFileCount);
-
-                ResponseReceived?.Invoke(response);
-                SearchTimeoutTimer.Reset();
+                finally
+                {
+                    ReaderWriterLock.ExitReadLock();
+                }
 
                 if (responseCount >= Options.ResponseLimit)
                 {
@@ -223,6 +278,10 @@ namespace Soulseek
                 {
                     Complete(SearchStates.FileLimitReached);
                 }
+            }
+            catch (ObjectDisposedException)
+            {
+                // noop; response arrived too late and we don't care
             }
         }
 
