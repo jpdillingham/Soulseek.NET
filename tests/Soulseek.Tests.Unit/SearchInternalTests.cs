@@ -75,6 +75,20 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Complete")]
+        [Fact(DisplayName = "Complete is idempotent")]
+        public void Complete_Is_Idempotent()
+        {
+            var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 42);
+            s.Complete(SearchStates.TimedOut);
+
+            var ex = Record.Exception(() => s.Complete(SearchStates.TimedOut));
+
+            Assert.Null(ex);
+
+            s.Dispose();
+        }
+
+        [Trait("Category", "Complete")]
         [Fact(DisplayName = "Complete sets state")]
         public void Complete_Sets_State()
         {
@@ -597,6 +611,40 @@ namespace Soulseek.Tests.Unit
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
+        [Trait("Category", "Cancel")]
+        [Fact(DisplayName = "Cancel is idempotent")]
+        public void Cancel_Is_Idempotent()
+        {
+            using (var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 1))
+            {
+                s.Cancel();
+
+                var ex = Record.Exception(() => s.Cancel());
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Cancel")]
+        [Fact(DisplayName = "Cancel sets state to Cancelled and stops the timer")]
+        public void Cancel_Sets_State_And_Stops_Timer()
+        {
+            using (var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 1))
+            {
+                s.SetState(SearchStates.InProgress);
+
+                var timer = s.GetProperty<System.Timers.Timer>("SearchTimeoutTimer");
+
+                Assert.True(timer.Enabled);
+
+                s.Cancel();
+
+                Assert.True(s.State.HasFlag(SearchStates.Completed));
+                Assert.True(s.State.HasFlag(SearchStates.Cancelled));
+                Assert.False(timer.Enabled);
             }
         }
 
