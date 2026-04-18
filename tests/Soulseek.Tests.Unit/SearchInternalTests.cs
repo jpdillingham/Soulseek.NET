@@ -62,6 +62,18 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Dispose is idempotent")]
+        public void Dispose_Is_Idempotent()
+        {
+            var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 42);
+            s.Dispose();
+
+            var ex = Record.Exception(() => s.Dispose());
+
+            Assert.Null(ex);
+        }
+
         [Trait("Category", "Complete")]
         [Fact(DisplayName = "Complete sets state")]
         public void Complete_Sets_State()
@@ -168,17 +180,20 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "TryAddResponse")]
-        [Fact(DisplayName = "TryAddResponse ignores response when token does not match")]
+        [Fact(DisplayName = "TryAddResponse throws DataMisalignedException when token does not match")]
         public void TryAddResponse_Ignores_Response_When_Token_Does_Not_Match()
         {
             var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 42);
             s.SetState(SearchStates.InProgress);
 
-            s.TryAddResponse(new SearchResponse("bar", 24, true, 1, 1, null));
+            var ex = Record.Exception(() => s.TryAddResponse(new SearchResponse("bar", 24, true, 1, 1, null)));
 
             var invoked = false;
             s.ResponseReceived = (r) => invoked = true;
 
+            Assert.NotNull(ex);
+            Assert.IsType<DataMisalignedException>(ex);
+            Assert.Contains($"with token {42} received response with search token {24}", ex.Message);
             Assert.False(invoked);
 
             s.Dispose();
@@ -294,6 +309,40 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(username, response.Username);
             Assert.Equal(file.Filename, files[0].Filename);
             Assert.Equal(file.Size, files[0].Size);
+
+            s.Dispose();
+        }
+
+        [Trait("Category", "TryAddResponse")]
+        [Fact(DisplayName = "TryAddResponse returns without invoking handler when disposed")]
+        public void TryAddResponse_Returns_When_Disposed()
+        {
+            var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 42);
+            s.SetState(SearchStates.InProgress);
+
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            s.Dispose();
+
+            var ex = Record.Exception(() => s.TryAddResponse(new SearchResponse("bar", 42, true, 1, 1, null)));
+
+            Assert.Null(ex);
+            Assert.False(invoked);
+        }
+
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse swallows ObjectDisposedException thrown from body"), AutoData]
+        public void TryAddResponse_Swallows_ObjectDisposedException_Thrown_From_Body(string username, int token, File file)
+        {
+            var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, token);
+            s.SetState(SearchStates.InProgress);
+
+            s.ResponseReceived = (r) => throw new ObjectDisposedException("test");
+
+            var ex = Record.Exception(() => s.TryAddResponse(new SearchResponse(username, token, true, 1, 1, new List<File>() { file })));
+
+            Assert.Null(ex);
 
             s.Dispose();
         }
@@ -551,6 +600,43 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "WaitForCompletion")]
+        [Fact(DisplayName = "WaitForCompletion returns when Complete is called")]
+        public async Task WaitForCompletion_Returns_When_Complete_Is_Called()
+        {
+            using (var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 42))
+            {
+                s.SetState(SearchStates.InProgress);
+
+                var task = s.WaitForCompletion(CancellationToken.None);
+                s.Complete(SearchStates.TimedOut);
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                Assert.Null(ex);
+                Assert.True(s.State.HasFlag(SearchStates.Completed));
+            }
+        }
+
+        [Trait("Category", "WaitForCompletion")]
+        [Fact(DisplayName = "WaitForCompletion throws when CancellationToken is cancelled")]
+        public async Task WaitForCompletion_Throws_When_CancellationToken_Is_Cancelled()
+        {
+            using (var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 42))
+            using (var cts = new CancellationTokenSource())
+            {
+                s.SetState(SearchStates.InProgress);
+
+                var task = s.WaitForCompletion(cts.Token);
+                await cts.CancelAsync();
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
         [Trait("Category", "Timer")]
         [Fact(DisplayName = "Timer is disabled initially")]
         public void Timer_Disabled_Initially()
@@ -584,6 +670,35 @@ namespace Soulseek.Tests.Unit
                 s.SetState(SearchStates.InProgress);
 
                 Assert.True(timer.Enabled);
+            }
+        }
+
+        [Trait("Category", "Timer")]
+        [Fact(DisplayName = "Timer does not reset when already InProgress")]
+        public void Timer_Does_Not_Reset_When_Already_InProgress()
+        {
+            using (var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 1))
+            {
+                s.SetState(SearchStates.InProgress);
+
+                var ex = Record.Exception(() => s.SetState(SearchStates.InProgress));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Timer")]
+        [Fact(DisplayName = "Timer elapsed completes search with TimedOut")]
+        public async Task Timer_Elapsed_Completes_Search_With_TimedOut()
+        {
+            using (var s = new SearchInternal(new SearchQuery("foo"), SearchScope.Network, 1, new SearchOptions(searchTimeout: 50)))
+            {
+                s.SetState(SearchStates.InProgress);
+
+                await s.WaitForCompletion(CancellationToken.None);
+
+                Assert.True(s.State.HasFlag(SearchStates.Completed));
+                Assert.True(s.State.HasFlag(SearchStates.TimedOut));
             }
         }
 
