@@ -118,7 +118,8 @@ namespace Soulseek
         /// </summary>
         public void Cancel()
         {
-            TaskCompletionSource.TrySetException(new OperationCanceledException());
+                SearchTimeoutTimer.Stop();
+                State = SearchStates.Completed | SearchStates.Cancelled;
         }
 
         /// <summary>
