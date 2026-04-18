@@ -111,6 +111,7 @@ namespace Soulseek
         private bool Disposed { get; set; } = false;
         private SystemTimer SearchTimeoutTimer { get; set; }
         private TaskCompletionSource<int> TaskCompletionSource { get; } = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        private ReaderWriterLockSlim ReaderWriterLock { get; } = new ReaderWriterLockSlim();
 
         /// <summary>
         ///     Cancels the search.
@@ -151,6 +152,7 @@ namespace Soulseek
                 if (disposing)
                 {
                     SearchTimeoutTimer.Dispose();
+                    ReaderWriterLock.Dispose();
                 }
 
                 Disposed = true;
