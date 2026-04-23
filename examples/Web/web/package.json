@@ -12,7 +12,7 @@
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^2.0.4",
     "signalr": "^2.4.1",
-    "uuid": "^8.3.0"
+    "uuid": "^14.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
