@@ -34,6 +34,7 @@ I appreciate everyone's cooperation and commitment to ensuring the long term hea
 Applications using this library are required, as a condition of the [LICENSE](https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE), to use a unique minor version number when logging in to the Soulseek network.  To aid in avoidance of versions used by other applications, a list of reserved version ranges and their associated applications are included below.
 
 * 760-7699999: [slskd](https://github.com/slskd/slskd)
+* 7700000-7709999: [slskdN](https://github.com/snapetech/slskdn)
 
 # See also
 
