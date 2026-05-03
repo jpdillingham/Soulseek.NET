@@ -23,6 +23,13 @@
 
 namespace Soulseek
 {
+    using Soulseek.Diagnostics;
+    using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
+    using Soulseek.Messaging.Messages;
+    using Soulseek.Messaging.Messages.Server;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -33,12 +40,6 @@ namespace Soulseek
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Diagnostics;
-    using Soulseek.Messaging;
-    using Soulseek.Messaging.Handlers;
-    using Soulseek.Messaging.Messages;
-    using Soulseek.Network;
-    using Soulseek.Network.Tcp;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -2484,6 +2485,58 @@ namespace Soulseek
                 throw new SoulseekClientException($"Failed to set shared counts to {directories} directories and {files} files: {ex.Message}", ex);
             }
         }
+
+
+
+        /// <summary>
+        ///     Asynchronously informs the server of the user's <paramref name="likes"/> and <paramref name="dislikes"/>.
+        /// </summary>
+        /// <param name="likes">A collection of liked interests.</param>
+        /// <param name="dislikes">A collection of disliked interests.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task SetInterestsAsync(IEnumerable<string> likes, IEnumerable<string> dislikes, CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set interests; currently {State}.");
+            }
+
+            var token = cancellationToken ?? CancellationToken.None;
+
+            try
+            {
+                if (likes != null)
+                {
+                    foreach (var like in likes)
+                    {
+                        if (string.IsNullOrWhiteSpace(like)) continue;
+
+                        await ServerConnection.WriteAsync(new InterestAddCommand(like), token).ConfigureAwait(false);
+                    }
+                }
+
+                if (dislikes != null)
+                {
+                    foreach (var dislike in dislikes)
+                    {
+                        if (string.IsNullOrWhiteSpace(dislike)) continue;
+
+                        await ServerConnection.WriteAsync(new HatedInterestAddCommand(dislike), token).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to set interests: {ex.Message}", ex);
+            }
+        }
+
+
 
         /// <summary>
         ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
