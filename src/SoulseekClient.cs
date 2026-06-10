@@ -271,8 +271,8 @@ namespace Soulseek
             ServerMessageHandler.KickedFromServer += (sender, e) =>
             {
                 Diagnostic.Info($"Kicked from server.");
-                Disconnect("Kicked from server", new KickedFromServerException());
                 KickedFromServer?.Invoke(this, e);
+                Disconnect("Kicked from server", new KickedFromServerException());
             };
         }
 
