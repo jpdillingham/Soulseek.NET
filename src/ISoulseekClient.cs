@@ -108,6 +108,12 @@ namespace Soulseek
         event EventHandler<string> GlobalMessageReceived;
 
         /// <summary>
+        ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
+        ///     the same credentials.
+        /// </summary>
+        public event EventHandler KickedFromServer;
+
+        /// <summary>
         ///     Occurs when the client is logged in.
         /// </summary>
         event EventHandler LoggedIn;
@@ -287,6 +293,16 @@ namespace Soulseek
         ///     Gets the resolved server endpoint.
         /// </summary>
         IPEndPoint IPEndPoint { get; }
+
+        /// <summary>
+        ///     Gets the major version of the library.
+        /// </summary>
+        int MajorVersion { get; }
+
+        /// <summary>
+        ///     Gets the configured minor version of the client.
+        /// </summary>
+        int MinorVersion { get; }
 
         /// <summary>
         ///     Gets the client options.
