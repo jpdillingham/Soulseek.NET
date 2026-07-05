@@ -24,10 +24,13 @@
 namespace Soulseek.Network
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
@@ -263,23 +266,36 @@ namespace Soulseek.Network
 
                         DataRead += RaiseMessageDataRead;
 
-                        var payloadBytes = await ReadAsync(length - CodeLength, CancellationToken.None).ConfigureAwait(false);
-                        message.AddRange(payloadBytes);
-
-                        var messageBytes = message.ToArray();
-
-                        if (SoulseekClient.RaiseEventsAsynchronously)
+                        // if a message stream 'hook' has been installed via InstallMessageStreamHook, stream the remainder
+                        // of the message to the provided stream. the caller will be notified that the read is complete
+                        // via MessageRead -> PeerMessageHandler.HandleMessageRead -> regular message handling
+                        // the caller must avoid trying to use the browse response, since it would have been streamed instead of passed
+                        if (BitConverter.ToInt32(codeBytes) == (int)MessageCode.Peer.BrowseResponse
+                            && MessageHandlingOverrideRegistrations.TryGetValue((int)MessageCode.Peer.BrowseResponse, out var queue)
+                            && queue.TryDequeue(out var entry))
                         {
-                            Task.Run(() =>
-                            {
-                                Interlocked.CompareExchange(ref MessageRead, null, null)?
-                                    .Invoke(this, new MessageEventArgs(messageBytes));
-                            }, CancellationToken.None).Forget();
+                            await ReadAsync(length - CodeLength, entry.Stream, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+                            entry.Callback();
                         }
                         else
                         {
-                            Interlocked.CompareExchange(ref MessageRead, null, null)?
-                                .Invoke(this, new MessageEventArgs(messageBytes));
+                            var payloadBytes = await ReadAsync(length - CodeLength, CancellationToken.None).ConfigureAwait(false);
+                            message.AddRange(payloadBytes);
+                            var messageBytes = message.ToArray();
+
+                            if (SoulseekClient.RaiseEventsAsynchronously)
+                            {
+                                Task.Run(() =>
+                                {
+                                    Interlocked.CompareExchange(ref MessageRead, null, null)?
+                                        .Invoke(this, new MessageEventArgs(messageBytes));
+                                }, CancellationToken.None).Forget();
+                            }
+                            else
+                            {
+                                Interlocked.CompareExchange(ref MessageRead, null, null)?
+                                    .Invoke(this, new MessageEventArgs(messageBytes));
+                            }
                         }
                     }
                     finally
