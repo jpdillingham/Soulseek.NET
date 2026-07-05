@@ -34,11 +34,11 @@ dotnet-sonarscanner begin \
     /d:sonar.github.repository="jpdillingham/Soulseek.NET" \
     /d:sonar.exclusions="**/*examples*/**" \
     /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml" \
-    /d:sonar.login="${TOKEN_SONARCLOUD}" \
+    /d:sonar.token="${TOKEN_SONARCLOUD}"
 
 . "${dir}/build"
 . "${dir}/test"
 
-dotnet-sonarscanner end /d:sonar.login="${TOKEN_SONARCLOUD}"
+dotnet-sonarscanner end /d:sonar.token="${TOKEN_SONARCLOUD}"
 
 bash <(curl -s https://codecov.io/bash) -f tests/opencover.xml -t ${TOKEN_CODECOV_SOULSEEKNET}
