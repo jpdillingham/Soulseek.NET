@@ -140,6 +140,33 @@ namespace Soulseek.Network
         /// </summary>
         public string Username { get; } = string.Empty;
 
+        private ConcurrentDictionary<int, ConcurrentQueue<(Stream Stream, Action Callback)>> MessageHandlingOverrideRegistrations { get; } = new ConcurrentDictionary<int, ConcurrentQueue<(Stream Stream, Action Callback)>>();
+
+        /// <summary>
+        ///     Registers an override for handling of the specified <paramref name="messageCode"/>, which will divert the
+        ///     received data packets to the specified <paramref name="stream"/> instead of the attached message handler,
+        ///     and will invoke the specified <paramref name="callback"/> when the message has been fully recieved.
+        /// </summary>
+        /// <remarks>
+        ///     Registrations are added to a FIFO queue internally, and messages will be streamed to handlers in the order
+        ///     they are registered and received. There is no way to guarantee that the remote client will respond in
+        ///     chronological order, so avoid using this for messages that are variable in this way (e.g. search responses).
+        /// </remarks>
+        /// <param name="messageCode">The message code of the message for which to override handling.</param>
+        /// <param name="stream">The stream to write the message data to.</param>
+        /// <param name="callback">The callback to invoke when the message has been fully received.</param>
+        public void RegisterMessageHandlingOverride(int messageCode, Stream stream, Action callback)
+        {
+            MessageHandlingOverrideRegistrations.AddOrUpdate(
+                key: messageCode,
+                addValue: new ConcurrentQueue<(Stream Stream, Action Callback)>(new[] { (stream, callback) }),
+                updateValueFactory: (k, v) =>
+                {
+                    v.Enqueue((stream, callback));
+                    return v;
+                });
+        }
+
         /// <summary>
         ///     Begins the internal continuous read loop, if it has not yet started.
         /// </summary>
