@@ -418,7 +418,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
-        public Task ReadAsync(long length, Stream outputStream, Func<int, CancellationToken, Task<int>> governor, Action<int, int, int> reporter = null, CancellationToken? cancellationToken = null)
+        public Task ReadAsync(long length, Stream outputStream, Func<int, CancellationToken, Task<int>> governor = null, Action<int, int, int> reporter = null, CancellationToken? cancellationToken = null)
         {
             if (length < 0)
             {
