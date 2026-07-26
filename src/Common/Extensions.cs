@@ -57,21 +57,17 @@ namespace Soulseek
         /// <summary>
         ///     Continue a task and swallow any Exceptions.
         /// </summary>
+        /// <remarks>
+        ///     The continuation touches the Task <see cref="Task.Exception"/> (if one exists)
+        ///     to avoid an <see cref="TaskScheduler.UnobservedTaskException"/>.
+        /// </remarks>
         /// <param name="task">The task to continue.</param>
-        public static void Forget(this Task task)
+        /// <param name="options">Optional continuation options.</param>
+        public static void Forget(this Task task, TaskContinuationOptions? options = null)
         {
-            task.ContinueWith(t => { }, TaskContinuationOptions.RunContinuationsAsynchronously);
-        }
-
-        /// <summary>
-        ///     Continue a task and report an Exception if one is raised.
-        /// </summary>
-        /// <typeparam name="T">The type of Exception to throw.</typeparam>
-        /// <param name="task">The task to continue.</param>
-        public static void ForgetButThrowWhenFaulted<T>(this Task task)
-            where T : Exception
-        {
-            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
+            task.ContinueWith(
+                continuationFunction: t => _ = t.Exception, // this is a no-op, but it marks the Exception as having been observed so it won't throw
+                continuationOptions: TaskContinuationOptions.OnlyOnFaulted | (options ?? TaskContinuationOptions.RunContinuationsAsynchronously));
         }
 
         /// <summary>
