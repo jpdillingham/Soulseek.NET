@@ -74,7 +74,10 @@ namespace Soulseek.Network
                 // if Username is empty, this is a server connection. begin reading continuously, and throw on exception.
                 if (IsServerConnection)
                 {
-                    Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
+                    Task.Run(() => ReadContinuouslyAsync())
+                        .ContinueWith(
+                            continuationAction: t => throw new ConnectionException(t.Exception.Message, t.Exception),
+                            continuationOptions: TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
                 }
                 else
                 {
