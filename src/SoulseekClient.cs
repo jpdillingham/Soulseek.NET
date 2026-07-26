@@ -3444,6 +3444,11 @@ namespace Soulseek
                     },
                     cancellationToken: linkedCancellationToken);
 
+                // ensure the losing tasks don't raise an unbserved exception by attaching a continuation that will observe them with Forget()
+                readTask.Forget();
+                disconnectedTaskCancellationSource.Task.Forget();
+                download.RemoteTaskCompletionSource.Task.Forget();
+
                 var firstTask = await Task.WhenAny(
                     readTask, // we successfully read all of the data
                     disconnectedTaskCancellationSource.Task, // the connection is disconnected
@@ -4494,6 +4499,10 @@ namespace Soulseek
                 {
                     writeTask = Task.CompletedTask;
                 }
+
+                // ensure the losing tasks don't raise an unbserved exception by attaching a continuation that will observe them with Forget()
+                writeTask.Forget();
+                disconnectedTaskCancellationSource.Task.Forget();
 
                 var firstTask = await Task.WhenAny(
                     writeTask,
