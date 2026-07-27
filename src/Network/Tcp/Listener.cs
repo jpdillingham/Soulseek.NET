@@ -28,6 +28,7 @@ namespace Soulseek.Network.Tcp
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
+    using Soulseek.Diagnostics;
 
     /// <summary>
     ///     Listens for client connections for TCP network services.
@@ -106,14 +107,21 @@ namespace Soulseek.Network.Tcp
         {
             while (Listening)
             {
-                var client = await TcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
-
-                Task.Run(() =>
+                try
                 {
-                    var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
-                    var eventArgs = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
-                    Accepted?.Invoke(this, eventArgs);
-                }).Forget();
+                    var client = await TcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
+
+                    Task.Run(() =>
+                    {
+                        var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
+                        var eventArgs = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
+                        Accepted?.Invoke(this, eventArgs);
+                    }).Forget();
+                }
+                catch (Exception ex)
+                {
+                    GlobalDiagnostic.Warning($"Listener failed to accept a TCP connection: {ex.Message}.  This is abnormal, and if it persists, restart the application.", ex);
+                }
             }
         }
     }
