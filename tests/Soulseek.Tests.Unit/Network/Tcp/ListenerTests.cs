@@ -19,9 +19,14 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using System;
     using System.Net;
+    using System.Net.Sockets;
+    using System.Threading.Tasks;
+    using Moq;
+    using Soulseek.Diagnostics;
     using Soulseek.Network.Tcp;
     using Xunit;
 
+    [Collection(nameof(GlobalDiagnosticTests))]
     public class ListenerTests
     {
         private static readonly Random RNG = new Random();
@@ -81,6 +86,56 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             Assert.True(first);
             Assert.False(l.Listening);
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop continues if AcceptTcpClientAsync throws")]
+        public async Task Accept_Loop_Continues_If_AcceptTcpClientAsync_Throws()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ThrowsAsync(new SocketException());
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            await Task.Delay(200);
+
+            l.Stop();
+
+            // if the exception thrown by AcceptTcpClientAsync() escaped the loop, it would only ever be called once
+            tcpListener.Verify(m => m.AcceptTcpClientAsync(), Times.AtLeast(2));
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop continues if the accepted connection dispatch throws")]
+        public async Task Accept_Loop_Continues_If_Accepted_Dispatch_Throws()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var tcpListener = new Mock<ITcpListener>();
+
+            // an unconnected TcpClient throws when its RemoteEndPoint is accessed; this happens inside the
+            // fire-and-forget Task.Run() used to dispatch the Accepted event, not in the loop's try/catch
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ReturnsAsync(() => new TcpClient());
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            await Task.Delay(200);
+
+            l.Stop();
+
+            // if the exception thrown while dispatching the accepted connection escaped and killed the loop,
+            // AcceptTcpClientAsync() would only ever be called once
+            tcpListener.Verify(m => m.AcceptTcpClientAsync(), Times.AtLeast(2));
         }
     }
 }
