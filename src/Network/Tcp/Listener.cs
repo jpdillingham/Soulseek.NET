@@ -63,6 +63,16 @@ namespace Soulseek.Network.Tcp
         public event EventHandler<IConnection> Accepted;
 
         /// <summary>
+        ///     Occurs when the listener has started listening.
+        /// </summary>
+        public event EventHandler Started;
+
+        /// <summary>
+        ///     Occurs when the listener has stopped listening.
+        /// </summary>
+        public event EventHandler Stopped;
+
+        /// <summary>
         ///     Gets the options used when creating new <see cref="IConnection"/> instances.
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; }
@@ -82,6 +92,7 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         public int Port { get; }
 
+        private object SyncRoot { get; } = new object();
         private ITcpListener TcpListener { get; set; }
 
         /// <summary>
@@ -89,9 +100,28 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         public void Start()
         {
-            TcpListener.Start();
-            Listening = true;
-            Task.Run(() => ListenContinuouslyAsync()).Forget();
+            lock (SyncRoot)
+            {
+                if (Listening)
+                {
+                    return;
+                }
+
+                try
+                {
+                    TcpListener.Start();
+                    Listening = true;
+                    Task.Run(() => ListenContinuouslyAsync()).Forget();
+                }
+                catch (Exception)
+                {
+                    Listening = false;
+                    TcpListener.Stop(); // unblocks AcceptTcpClientAsync()
+                    throw;
+                }
+            }
+
+            Started?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -99,8 +129,18 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         public void Stop()
         {
-            TcpListener.Stop();
-            Listening = false;
+            lock (SyncRoot)
+            {
+                if (!Listening)
+                {
+                    return;
+                }
+
+                Listening = false;
+                TcpListener.Stop(); // unblocks AcceptTcpClientAsync()
+            }
+
+            Stopped?.Invoke(this, EventArgs.Empty);
         }
 
         private async Task ListenContinuouslyAsync()
@@ -109,18 +149,30 @@ namespace Soulseek.Network.Tcp
             {
                 try
                 {
+                    /*
+                        throws if:
+
+                        * the accept() call offloaded to the OS errors for whatever reason (exhaustion, other side hung up)
+                        * the accept() call is being awaited and the Stop() method is invoked (the BCL cleans this up in the socket's finalizer)
+                          in addition to purging any connections that may have been waiting to be accepted
+                        * the Stop() method was invoked prior to this method's invocation (the underlying Socket has been disposed/nulled)
+                    */
                     var client = await TcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
 
                     Task.Run(() =>
                     {
                         var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
-                        var eventArgs = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
-                        Accepted?.Invoke(this, eventArgs);
+                        var connection = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
+                        Accepted?.Invoke(this, connection);
                     }).Forget();
                 }
                 catch (Exception ex)
                 {
-                    GlobalDiagnostic.Warning($"Listener failed to accept a TCP connection: {ex.Message}.  This is abnormal, and if it persists, restart the application.", ex);
+                    if (Listening)
+                    {
+                        GlobalDiagnostic.Warning($"Listener failed to accept a TCP connection: {ex.Message}.  This is abnormal, and if it persists, restart the application.", ex);
+                        await Task.Delay(100).ConfigureAwait(false);
+                    }
                 }
             }
         }
