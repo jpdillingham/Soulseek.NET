@@ -20,13 +20,12 @@ namespace Soulseek.Tests.Unit.Network.Tcp
     using System;
     using System.Net;
     using System.Net.Sockets;
+    using System.Threading;
     using System.Threading.Tasks;
     using Moq;
-    using Soulseek.Diagnostics;
     using Soulseek.Network.Tcp;
     using Xunit;
 
-    [Collection(nameof(GlobalDiagnosticTests))]
     public class ListenerTests
     {
         private static readonly Random RNG = new Random();
@@ -136,6 +135,117 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             // if the exception thrown while dispatching the accepted connection escaped and killed the loop,
             // AcceptTcpClientAsync() would only ever be called once
             tcpListener.Verify(m => m.AcceptTcpClientAsync(), Times.AtLeast(2));
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop continues if AcceptTcpClientAsync throws a non-socket exception")]
+        public async Task Accept_Loop_Continues_If_AcceptTcpClientAsync_Throws_Non_Socket_Exception()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var tcpListener = new Mock<ITcpListener>();
+
+            // the catch block should be broad enough to handle any exception, not just SocketException
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ThrowsAsync(new InvalidOperationException("boom"));
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            await Task.Delay(200);
+
+            l.Stop();
+
+            tcpListener.Verify(m => m.AcceptTcpClientAsync(), Times.AtLeast(2));
+        }
+
+        [Trait("Category", "Stop")]
+        [Fact(DisplayName = "Stop halts the accept loop")]
+        public async Task Stop_Halts_The_Accept_Loop()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ThrowsAsync(new SocketException());
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            await Task.Delay(200);
+
+            l.Stop();
+
+            // give any in-flight iteration a chance to finish and the loop to observe Listening == false
+            await Task.Delay(200);
+
+            var countAfterStop = tcpListener.Invocations.Count;
+
+            await Task.Delay(200);
+
+            // no further calls should occur once the loop has actually exited
+            Assert.Equal(countAfterStop, tcpListener.Invocations.Count);
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop raises Accepted with the accepted connection")]
+        public async Task Accept_Loop_Raises_Accepted_With_Accepted_Connection()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            // a real, connected loopback pair is required here; an unconnected TcpClient throws
+            // when its RemoteEndPoint is accessed, so a mock TcpClient won't do
+            var serverListener = new TcpListener(IPAddress.Loopback, 0);
+            serverListener.Start();
+            var serverPort = ((IPEndPoint)serverListener.LocalEndpoint).Port;
+
+            using (var client = new TcpClient())
+            {
+                var connectTask = client.ConnectAsync(IPAddress.Loopback, serverPort);
+                var acceptedClient = await serverListener.AcceptTcpClientAsync();
+                await connectTask;
+
+                serverListener.Stop();
+
+                var callCount = 0;
+
+                var tcpListener = new Mock<ITcpListener>();
+                tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                    .Returns(() =>
+                    {
+                        // hand back the real connection once, then fail fast on every subsequent call so the
+                        // loop spins harmlessly (and quickly) until Stop() is called
+                        if (Interlocked.Increment(ref callCount) == 1)
+                        {
+                            return Task.FromResult(acceptedClient);
+                        }
+
+                        return Task.FromException<TcpClient>(new ObjectDisposedException(nameof(TcpListener)));
+                    });
+
+                var tcs = new TaskCompletionSource<IConnection>();
+
+                var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+                l.Accepted += (sender, connection) => tcs.TrySetResult(connection);
+
+                l.Start();
+
+                var completed = await Task.WhenAny(tcs.Task, Task.Delay(2000));
+
+                l.Stop();
+
+                Assert.Same(tcs.Task, completed);
+
+                var raised = await tcs.Task;
+
+                Assert.NotNull(raised);
+                Assert.Equal(((IPEndPoint)acceptedClient.Client.RemoteEndPoint).Address, raised.IPEndPoint.Address);
+            }
         }
     }
 }
