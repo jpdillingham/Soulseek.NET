@@ -33,6 +33,11 @@ namespace Soulseek.Network.Tcp
     internal interface ITcpListener
     {
         /// <summary>
+        ///     Gets the underlying <see cref="Socket"/> used by the listener.
+        /// </summary>
+        public Socket Server { get; }
+
+        /// <summary>
         ///     Accepts a pending connection request as an asynchronous operation.
         /// </summary>
         /// <returns>The operation context, including the new connection client.</returns>
@@ -54,8 +59,10 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Starts listening for incoming connection requests.
         /// </summary>
+        /// <param name="backlog">The maximum number of pending connections the OS will queue for this listener.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when a negative backlog value is provided.</exception>
         /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
-        void Start();
+        void Start(int backlog = (int)SocketOptionName.MaxConnections);
 
         /// <summary>
         ///     Closes the listener.

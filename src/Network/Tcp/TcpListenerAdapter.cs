@@ -48,6 +48,11 @@ namespace Soulseek.Network.Tcp
             TcpListener = tcpListener ?? new TcpListener(IPAddress.Parse("0.0.0.0"), 1);
         }
 
+        /// <summary>
+        ///     Gets the underlying <see cref="Socket"/> used by the listener.
+        /// </summary>
+        public Socket Server => TcpListener.Server;
+
         private TcpListener TcpListener { get; set; }
 
         /// <summary>
@@ -78,10 +83,12 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Starts listening for incoming connection requests.
         /// </summary>
+        /// <param name="backlog">The maximum number of pending connections the OS will queue for this listener.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when a negative backlog value is provided.</exception>
         /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
-        public void Start()
+        public void Start(int backlog = (int)SocketOptionName.MaxConnections)
         {
-            TcpListener.Start();
+            TcpListener.Start(backlog);
         }
 
         /// <summary>
