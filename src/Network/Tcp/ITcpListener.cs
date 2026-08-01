@@ -33,11 +33,6 @@ namespace Soulseek.Network.Tcp
     internal interface ITcpListener
     {
         /// <summary>
-        ///     Gets the underlying <see cref="Socket"/> used by the listener.
-        /// </summary>
-        public Socket Server { get; }
-
-        /// <summary>
         ///     Accepts a pending connection request as an asynchronous operation.
         /// </summary>
         /// <returns>The operation context, including the new connection client.</returns>

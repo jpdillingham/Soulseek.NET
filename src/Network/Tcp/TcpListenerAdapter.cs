@@ -48,11 +48,6 @@ namespace Soulseek.Network.Tcp
             TcpListener = tcpListener ?? new TcpListener(IPAddress.Parse("0.0.0.0"), 1);
         }
 
-        /// <summary>
-        ///     Gets the underlying <see cref="Socket"/> used by the listener.
-        /// </summary>
-        public Socket Server => TcpListener.Server;
-
         private TcpListener TcpListener { get; set; }
 
         /// <summary>
