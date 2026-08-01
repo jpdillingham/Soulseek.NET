@@ -28,7 +28,6 @@ namespace Soulseek.Network.Tcp
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
-    using Soulseek.Diagnostics;
 
     /// <summary>
     ///     Listens for client connections for TCP network services.
@@ -99,6 +98,8 @@ namespace Soulseek.Network.Tcp
 
         private object SyncRoot { get; } = new object();
         private ITcpListener TcpListener { get; set; }
+        private long MaxConsecutiveErrors { get; } = 100;
+        private long ConsecutiveErrors { get; set; } // overflows after ~29 billion years
 
         /// <summary>
         ///     Starts the listener.
@@ -164,6 +165,8 @@ namespace Soulseek.Network.Tcp
                     */
                     var client = await TcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
 
+                    ConsecutiveErrors = 0; // reset on success
+
                     Task.Run(() =>
                     {
                         var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
@@ -173,10 +176,32 @@ namespace Soulseek.Network.Tcp
                 }
                 catch (Exception ex)
                 {
-                    if (Listening)
+                    // if Listening has dropped, Stop() was called and we should exit. the exception isn't interesting here
+                    // because Stop() will cause any waiting AcceptTcpClientAsync() call to throw when it's called
+                    if (!Listening)
                     {
-                        GlobalDiagnostic.Warning($"Listener failed to accept a TCP connection: {ex.Message}.  This is abnormal, and if it persists, restart the application.", ex);
-                        await Task.Delay(100).ConfigureAwait(false);
+                        return;
+                    }
+
+                    ConsecutiveErrors++;
+
+                    try
+                    {
+                        Error?.Invoke(this, ex);
+                    }
+                    finally
+                    {
+                        /*
+                            if AcceptTcpClientAsync() threw because of a non-transient issue, allowing the loop to come
+                            back around and call it immediately will put this in a continuous, fast loop and peg the CPU.
+                            once we have hit our MaxConsecutiveErrors, begin waiting a generous amount of time before looping again.
+                            this spares the pegged CPU while also allowing the listener to recover automatically if/when whatever
+                            condition that's causing the exceptions is resolved (outside of the application)
+                        */
+                        if (ConsecutiveErrors > MaxConsecutiveErrors)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                        }
                     }
                 }
             }
