@@ -98,7 +98,7 @@ namespace Soulseek.Network.Tcp
 
         private object SyncRoot { get; } = new object();
         private ITcpListener TcpListener { get; set; }
-        private long MaxConsecutiveErrors { get; } = 100;
+        private long MaxConsecutiveErrors { get; } = 20;
         private long ConsecutiveErrors { get; set; } // overflows after ~29 billion years
 
         /// <summary>
