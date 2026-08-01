@@ -63,6 +63,11 @@ namespace Soulseek.Network.Tcp
         public event EventHandler<IConnection> Accepted;
 
         /// <summary>
+        ///     Occurs when the listener encounters an exception while accepting a connection.
+        /// </summary>
+        public event EventHandler<Exception> Error;
+
+        /// <summary>
         ///     Occurs when the listener has started listening.
         /// </summary>
         public event EventHandler Started;
