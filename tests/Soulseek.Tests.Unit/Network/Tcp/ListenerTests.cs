@@ -18,6 +18,7 @@
 namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using System;
+    using System.Diagnostics;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading;
@@ -525,6 +526,296 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 Assert.NotNull(raised);
                 Assert.Equal(((IPEndPoint)acceptedClient.Client.RemoteEndPoint).Address, raised.IPEndPoint.Address);
+            }
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop exits when Listening transitions to false between iterations")]
+        public async Task Accept_Loop_Exits_When_Listening_Transitions_To_False_Between_Iterations()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var (acceptedClient, connectingClient, _) = await CreateConnectedClientPairAsync();
+
+            using (connectingClient)
+            using (acceptedClient)
+            {
+                var tcpListener = new Mock<ITcpListener>();
+
+                var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+                // the accept succeeds (no exception), so the loop should return to the top, observe that
+                // Listening has gone false, and exit via the while condition rather than via the catch block
+                tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                    .Callback(() => l.SetProperty("Listening", false))
+                    .ReturnsAsync(acceptedClient);
+
+                l.SetProperty("Listening", true);
+
+                var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+                var completed = await Task.WhenAny(task, Task.Delay(2000));
+                Assert.Same(task, completed);
+                await task;
+
+                tcpListener.Verify(m => m.AcceptTcpClientAsync(), Times.Once);
+            }
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop does not raise Error when a pending accept throws after Listening has stopped")]
+        public async Task Accept_Loop_Does_Not_Raise_Error_When_A_Pending_Accept_Throws_After_Listening_Has_Stopped()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var acceptTcs = new TaskCompletionSource<TcpClient>();
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .Returns(acceptTcs.Task);
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+            l.SetProperty("Listening", true);
+
+            var errorRaised = false;
+            l.Error += (sender, ex) => errorRaised = true;
+
+            var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+            // simulate Stop() having been called while AcceptTcpClientAsync() was still pending; Stop()
+            // itself would cause that pending call to throw, so replicate that directly via the tcs
+            l.SetProperty("Listening", false);
+            acceptTcs.TrySetException(new ObjectDisposedException(nameof(TcpListener)));
+
+            var completed = await Task.WhenAny(task, Task.Delay(2000));
+            Assert.Same(task, completed);
+            await task; // should not throw; the exception is expected and swallowed
+
+            Assert.False(errorRaised);
+            Assert.Equal(0, l.GetProperty<long>("ConsecutiveErrors"));
+            tcpListener.Verify(m => m.AcceptTcpClientAsync(), Times.Once);
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop raises Error for exceptions encountered while still listening")]
+        public async Task Accept_Loop_Raises_Error_For_Exceptions_Encountered_While_Still_Listening()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var thrown = new InvalidOperationException("boom");
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ThrowsAsync(thrown);
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+            l.SetProperty("Listening", true);
+
+            Exception raised = null;
+            l.Error += (sender, ex) =>
+            {
+                raised = ex;
+                l.SetProperty("Listening", false); // stop the loop once the failure has been reported
+            };
+
+            var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+            var completed = await Task.WhenAny(task, Task.Delay(2000));
+            Assert.Same(task, completed);
+            await task;
+
+            Assert.Same(thrown, raised);
+            Assert.Equal(1, l.GetProperty<long>("ConsecutiveErrors"));
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop disposes the client and rethrows when the accepted client's endpoint can't be resolved")]
+        public async Task Accept_Loop_Disposes_The_Client_And_Rethrows_When_The_Endpoint_Cannot_Be_Resolved()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var client = new DisposeTrackingTcpClient
+            {
+                // forces a NullReferenceException when the loop dereferences client.Client.RemoteEndPoint,
+                // so the exception is thrown before "connection" is ever assigned in ListenContinuouslyAsync
+                Client = null,
+            };
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ReturnsAsync(client);
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+            l.SetProperty("Listening", true);
+
+            Exception raised = null;
+            l.Error += (sender, ex) =>
+            {
+                raised = ex;
+                l.SetProperty("Listening", false); // stop the loop after the first (and only) iteration
+            };
+
+            var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+            var completed = await Task.WhenAny(task, Task.Delay(2000));
+            Assert.Same(task, completed);
+            await task;
+
+            Assert.True(client.Disposed);
+            Assert.IsType<NullReferenceException>(raised);
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop delays one second once consecutive errors reach the maximum")]
+        public async Task Accept_Loop_Delays_One_Second_Once_Consecutive_Errors_Reach_The_Maximum()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var tcpListener = new Mock<ITcpListener>();
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            var max = l.GetProperty<long>("MaxConsecutiveErrors");
+
+            var callCount = 0L;
+            var stopwatch = Stopwatch.StartNew();
+            var elapsedAtMax = -1L;
+            var elapsedAfterMax = -1L;
+
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .Returns(() =>
+                {
+                    var count = Interlocked.Increment(ref callCount);
+
+                    if (count == max)
+                    {
+                        elapsedAtMax = stopwatch.ElapsedMilliseconds;
+                    }
+                    else if (count == max + 1)
+                    {
+                        elapsedAfterMax = stopwatch.ElapsedMilliseconds;
+
+                        // stop the loop; this call's exception will hit the early-return path instead of looping again
+                        l.SetProperty("Listening", false);
+                    }
+
+                    return Task.FromException<TcpClient>(new SocketException());
+                });
+
+            l.SetProperty("Listening", true);
+
+            var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+            var completed = await Task.WhenAny(task, Task.Delay(5000));
+            Assert.Same(task, completed);
+            await task;
+
+            Assert.True(elapsedAtMax >= 0 && elapsedAtMax < 500, $"expected the first {max} failures to run back-to-back without delay, but they took {elapsedAtMax}ms");
+            Assert.True(elapsedAfterMax - elapsedAtMax >= 900, $"expected a ~1 second delay after the {max}th consecutive failure, but only {elapsedAfterMax - elapsedAtMax}ms elapsed");
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop resets the consecutive error count after a successful accept")]
+        public async Task Accept_Loop_Resets_The_Consecutive_Error_Count_After_A_Successful_Accept()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var (acceptedClient, connectingClient, _) = await CreateConnectedClientPairAsync();
+
+            using (connectingClient)
+            using (acceptedClient)
+            {
+                var callCount = 0;
+
+                var tcpListener = new Mock<ITcpListener>();
+                var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+                tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                    .Returns(() =>
+                    {
+                        var count = Interlocked.Increment(ref callCount);
+
+                        if (count <= 2)
+                        {
+                            return Task.FromException<TcpClient>(new SocketException());
+                        }
+
+                        // stop the loop once the successful accept has been fully processed
+                        l.SetProperty("Listening", false);
+                        return Task.FromResult(acceptedClient);
+                    });
+
+                l.SetProperty("Listening", true);
+
+                var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+                var completed = await Task.WhenAny(task, Task.Delay(2000));
+                Assert.Same(task, completed);
+                await task;
+
+                Assert.Equal(0, l.GetProperty<long>("ConsecutiveErrors"));
+            }
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop does not throw when the Error handler throws")]
+        public async Task Accept_Loop_Does_Not_Throw_When_The_Error_Handler_Throws()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ThrowsAsync(new SocketException());
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+            l.SetProperty("Listening", true);
+
+            l.Error += (sender, err) =>
+            {
+                l.SetProperty("Listening", false); // stop the loop before the handler throws
+                throw new Exception("handler boom");
+            };
+
+            var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+            var completed = await Task.WhenAny(task, Task.Delay(2000));
+            Assert.Same(task, completed);
+
+            var ex = await Record.ExceptionAsync(() => task);
+
+            Assert.Null(ex);
+        }
+
+        private static async Task<(TcpClient AcceptedClient, TcpClient ConnectingClient, TcpListener ServerListener)> CreateConnectedClientPairAsync()
+        {
+            var serverListener = new TcpListener(IPAddress.Loopback, 0);
+            serverListener.Start();
+            var serverPort = ((IPEndPoint)serverListener.LocalEndpoint).Port;
+
+            var connectingClient = new TcpClient();
+            var connectTask = connectingClient.ConnectAsync(IPAddress.Loopback, serverPort);
+            var acceptedClient = await serverListener.AcceptTcpClientAsync();
+            await connectTask;
+
+            serverListener.Stop();
+
+            return (acceptedClient, connectingClient, serverListener);
+        }
+
+        private sealed class DisposeTrackingTcpClient : TcpClient
+        {
+            public bool Disposed { get; private set; }
+
+            protected override void Dispose(bool disposing)
+            {
+                Disposed = true;
+                base.Dispose(disposing);
             }
         }
     }
