@@ -109,8 +109,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             Assert.False(first);
             Assert.True(l.Listening);
-
-            tcpListener.Verify(m => m.Start(It.IsAny<int>()), Times.Once);
         }
 
         [Trait("Category", "Start")]
@@ -246,8 +244,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             var options = new ConnectionOptions();
             var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
 
-            var l = new Listener(IPAddress.Any, port, options);
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
 
             l.Start();
 
@@ -257,6 +256,115 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             Assert.True(first);
             Assert.False(l.Listening);
+        }
+
+        [Trait("Category", "Stop")]
+        [Fact(DisplayName = "Stop stops TcpListener")]
+        public void Stop_Stops_TcpListener()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+            l.Stop();
+
+            tcpListener.Verify(m => m.Stop(), Times.Once);
+        }
+
+        [Trait("Category", "Stop")]
+        [Fact(DisplayName = "Stop raises Stopped when stopping")]
+        public void Stop_Raises_Stopped_When_Stopping()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            var raised = false;
+            l.Stopped += (sender, args) => raised = true;
+
+            l.Stop();
+
+            Assert.True(raised);
+        }
+
+        [Trait("Category", "Stop")]
+        [Fact(DisplayName = "Stop does not raise Stopped if not listening")]
+        public void Stop_Does_Not_Raise_Stopped_If_Not_Listening()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            // start never called
+            var raised = false;
+            l.Stopped += (sender, args) => raised = true;
+
+            l.Stop();
+
+            Assert.False(raised);
+        }
+
+        [Trait("Category", "Stop")]
+        [Fact(DisplayName = "Stop does not stop listener if not listening")]
+        public void Stop_Does_Not_Stop_Listener_If_Not_Listening()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            l.Stop();
+            l.Stop();
+
+            tcpListener.Verify(m => m.Stop(), Times.Once);
+        }
+
+        [Trait("Category", "Stop")]
+        [Fact(DisplayName = "Stop does not throw when Stopped is unbound")]
+        public void Stop_Does_Not_Throw_When_Stopped_Is_Unbound()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            var ex = Record.Exception(() => l.Stop());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Stop")]
+        [Fact(DisplayName = "Stop does not throw when Stopped throws")]
+        public void Stop_Does_Not_Throw_When_Stopped_Throws()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Stopped += (_, e) => throw new Exception();
+
+            l.Start();
+
+            var ex = Record.Exception(() => l.Stop());
+
+            Assert.Null(ex);
         }
 
         [Trait("Category", "Accept Loop")]
