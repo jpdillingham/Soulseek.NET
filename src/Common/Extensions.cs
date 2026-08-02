@@ -124,5 +124,23 @@ namespace Soulseek
 
             return sBuilder.ToString();
         }
+
+        /// <summary>
+        ///     Safely disposes an <see cref="IDisposable"/> instance.
+        /// </summary>
+        /// <param name="obj">The IDisposable instance to dispose.</param>
+        /// <returns>A value indicating whether the disposal succeeded.</returns>
+        public static bool TryDispose(this IDisposable obj)
+        {
+            try
+            {
+                obj.Dispose();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
