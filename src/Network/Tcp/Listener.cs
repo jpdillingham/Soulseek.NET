@@ -165,14 +165,26 @@ namespace Soulseek.Network.Tcp
                     */
                     var client = await TcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
 
-                    ConsecutiveErrors = 0; // reset on success
+                    Connection connection = default;
 
-                    Task.Run(() =>
+                    try
                     {
                         var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
-                        var connection = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
-                        Accepted?.Invoke(this, connection);
-                    }).Forget();
+                        connection = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
+
+                        ConsecutiveErrors = 0; // reset on success
+
+                        _ = Task
+                            .Run(() => Accepted?.Invoke(this, connection))
+                            .ContinueWith(task => _ = task.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.RunContinuationsAsynchronously);
+                    }
+                    catch
+                    {
+                        client?.TryDispose();
+                        connection?.TryDispose();
+
+                        throw;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -189,6 +201,10 @@ namespace Soulseek.Network.Tcp
                     {
                         Error?.Invoke(this, ex);
                     }
+                    catch
+                    {
+                        // noop
+                    }
                     finally
                     {
                         /*
@@ -198,7 +214,7 @@ namespace Soulseek.Network.Tcp
                             this spares the pegged CPU while also allowing the listener to recover automatically if/when whatever
                             condition that's causing the exceptions is resolved (outside of the application)
                         */
-                        if (ConsecutiveErrors > MaxConsecutiveErrors)
+                        if (ConsecutiveErrors >= MaxConsecutiveErrors)
                         {
                             await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                         }
