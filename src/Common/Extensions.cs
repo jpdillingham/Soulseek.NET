@@ -66,7 +66,7 @@ namespace Soulseek
         public static void Forget(this Task task, TaskContinuationOptions? options = null)
         {
             task.ContinueWith(
-                continuationFunction: t => _ = t.Exception, // this is a no-op, but it marks the Exception as having been observed so it won't throw
+                continuationAction: t => _ = t.Exception, // this is a no-op, but it marks the Exception as having been observed so it won't throw
                 continuationOptions: TaskContinuationOptions.OnlyOnFaulted | (options ?? TaskContinuationOptions.RunContinuationsAsynchronously));
         }
 
