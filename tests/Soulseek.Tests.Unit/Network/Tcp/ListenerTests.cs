@@ -1,4 +1,4 @@
-﻿// <copyright file="ListenerTests.cs" company="JP Dillingham">
+// <copyright file="ListenerTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -49,6 +49,46 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             Assert.Equal(options, l.ConnectionOptions);
 
             Assert.False(l.Listening);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Uses default ConnectionOptions if none supplied")]
+        public void Uses_Default_ConnectionOptions_If_None_Supplied()
+        {
+            var port = GetPort();
+
+            var l = new Listener(IPAddress.Any, port, connectionOptions: null);
+
+            Assert.NotNull(l.ConnectionOptions);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Uses supplied TcpListener")]
+        public void Uses_Supplied_TcpListener()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var listener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener: listener.Object);
+
+            var val = l.GetProperty<ITcpListener>("TcpListener");
+
+            Assert.Equal(listener.Object, val);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Creates TcpListener if none supplied")]
+        public void Creates_TcpListener_If_None_Supplied()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var l = new Listener(IPAddress.Any, port, options);
+
+            var val = l.GetProperty<ITcpListener>("TcpListener");
+
+            Assert.NotNull(val);
         }
 
         [Trait("Category", "Start")]
