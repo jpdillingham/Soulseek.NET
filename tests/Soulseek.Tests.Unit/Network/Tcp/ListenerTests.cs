@@ -41,8 +41,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             var options = new ConnectionOptions();
             var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
 
-            var l = new Listener(IPAddress.Any, port, options);
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
 
             Assert.Equal(IPAddress.Any, l.IPAddress);
             Assert.Equal(port, l.Port);
@@ -56,8 +57,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         public void Uses_Default_ConnectionOptions_If_None_Supplied()
         {
             var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
 
-            var l = new Listener(IPAddress.Any, port, connectionOptions: null);
+            var l = new Listener(IPAddress.Any, port, connectionOptions: null, tcpListener.Object);
 
             Assert.NotNull(l.ConnectionOptions);
         }
@@ -97,8 +99,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         {
             var options = new ConnectionOptions();
             var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
 
-            var l = new Listener(IPAddress.Any, port, options);
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
 
             var first = l.Listening;
 
@@ -106,6 +109,135 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             Assert.False(first);
             Assert.True(l.Listening);
+
+            tcpListener.Verify(m => m.Start(It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start starts TcpListener")]
+        public void Start_Starts_TcpListner()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            tcpListener.Verify(m => m.Start(It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start raises Started when starting")]
+        public void Start_Raises_Started_When_Starting()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            var raised = false;
+            l.Started += (sender, args) => raised = true;
+
+            l.Start();
+
+            Assert.True(raised);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start does not raise Started if already listening")]
+        public void Start_Does_Not_Raise_Started_If_Already_Listening()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            var raised = false;
+            l.Started += (sender, args) => raised = true;
+
+            l.Start();
+
+            Assert.False(raised);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start does not start listener if already listening")]
+        public void Start_Does_Not_Start_Listener_If_Already_Listening()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+            l.Start();
+
+            tcpListener.Verify(m => m.Start(It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start does not throw when Started is unbound")]
+        public void Start_Does_Not_Throw_When_Started_Is_Unbound()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            var ex = Record.Exception(() => l.Start());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start does not throw when Started throws")]
+        public void Start_Does_Not_Throw_When_Started_Throws()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Started += (_, e) => throw new Exception();
+
+            var ex = Record.Exception(() => l.Start());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start stops the listener if an exception is encountered")]
+        public void Start_Stops_The_Listener_If_An_Exception_Is_Encountered()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.Start(It.IsAny<int>()))
+                .Throws(new SocketException());
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            var startedRaised = false;
+            l.Started += (sender, args) => startedRaised = true;
+
+            var ex = Record.Exception(() => l.Start());
+
+            Assert.NotNull(ex);
+            Assert.False(l.Listening);
+            Assert.False(startedRaised);
+
+            // Stop() is invoked to unblock any pending AcceptTcpClientAsync() call, even though Start() never succeeded
+            tcpListener.Verify(m => m.Stop(), Times.Once);
         }
 
         [Trait("Category", "Stop")]
