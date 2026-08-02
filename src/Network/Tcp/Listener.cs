@@ -24,7 +24,6 @@
 namespace Soulseek.Network.Tcp
 {
     using System;
-    using System.Diagnostics.CodeAnalysis;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -38,7 +37,6 @@ namespace Soulseek.Network.Tcp
     ///     bunch of hoops need to be jumped through to handle TcpClients coming from the listener not connected/without an
     ///     endpoint, both of which will and SHOULD throw exceptions and die.
     /// </remarks>
-    [ExcludeFromCodeCoverage]
     internal sealed class Listener : IListener
     {
         /// <summary>
@@ -127,7 +125,14 @@ namespace Soulseek.Network.Tcp
                 }
             }
 
-            Started?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                Started?.Invoke(this, EventArgs.Empty);
+            }
+            catch
+            {
+                // noop
+            }
         }
 
         /// <summary>
@@ -146,7 +151,14 @@ namespace Soulseek.Network.Tcp
                 TcpListener.Stop(); // unblocks AcceptTcpClientAsync()
             }
 
-            Stopped?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                Stopped?.Invoke(this, EventArgs.Empty);
+            }
+            catch
+            {
+                // noop
+            }
         }
 
         private async Task ListenContinuouslyAsync()
