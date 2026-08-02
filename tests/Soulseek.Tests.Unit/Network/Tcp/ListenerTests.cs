@@ -441,7 +441,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             tcpListener.Verify(m => m.AcceptTcpClientAsync(), Times.AtLeast(2));
         }
 
-        [Trait("Category", "Stop")]
+        [Trait("Category", "Accept Loop")]
         [Fact(DisplayName = "Stop halts the accept loop")]
         public async Task Stop_Halts_The_Accept_Loop()
         {
