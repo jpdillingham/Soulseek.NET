@@ -638,12 +638,11 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             var options = new ConnectionOptions();
             var port = GetPort();
 
-            var client = new DisposeTrackingTcpClient
-            {
-                // forces a NullReferenceException when the loop dereferences client.Client.RemoteEndPoint,
-                // so the exception is thrown before "connection" is ever assigned in ListenContinuouslyAsync
-                Client = null,
-            };
+            var client = new DisposeTrackingTcpClient();
+
+            // dispose the underlying socket directly so client.Client.RemoteEndPoint throws ObjectDisposedException
+            // this happens before "connection" is ever assigned in ListenContinuouslyAsync, so connection stays unset
+            client.Client.Dispose();
 
             var tcpListener = new Mock<ITcpListener>();
             tcpListener.Setup(m => m.AcceptTcpClientAsync())
@@ -666,7 +665,43 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             await task;
 
             Assert.True(client.Disposed);
-            Assert.IsType<NullReferenceException>(raised);
+            Assert.IsType<ObjectDisposedException>(raised);
+        }
+
+        [Trait("Category", "Accept Loop")]
+        [Fact(DisplayName = "Accept loop disposes the client and connection and rethrows when the accepted client never finished connecting")]
+        public async Task Accept_Loop_Disposes_The_Client_And_Connection_And_Rethrows_When_The_Accepted_Client_Never_Finished_Connecting()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+
+            // a freshly-constructed, never-connected TcpClient: client.Client.RemoteEndPoint resolves to null
+            // (rather than throwing) for a live-but-unconnected socket, so the endpoint cast succeeds and
+            // Connection construction completes, but with TcpClient.Connected == false the whole way through
+            var client = new DisposeTrackingTcpClient();
+
+            var tcpListener = new Mock<ITcpListener>();
+            tcpListener.Setup(m => m.AcceptTcpClientAsync())
+                .ReturnsAsync(client);
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+            l.SetProperty("Listening", true);
+
+            Exception raised = null;
+            l.Error += (sender, ex) =>
+            {
+                raised = ex;
+                l.SetProperty("Listening", false); // stop the loop after the first (and only) iteration
+            };
+
+            var task = l.InvokeMethod<Task>("ListenContinuouslyAsync");
+
+            var completed = await Task.WhenAny(task, Task.Delay(2000));
+            Assert.Same(task, completed);
+            await task;
+
+            Assert.True(client.Disposed);
+            Assert.IsType<ConnectionException>(raised);
         }
 
         [Trait("Category", "Accept Loop")]

@@ -184,6 +184,13 @@ namespace Soulseek.Network.Tcp
                         var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
                         connection = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
 
+                        if (connection.State != ConnectionState.Connected)
+                        {
+                            // the remote client disconnected between the OS accepting the socket and construction of
+                            // the Connection instance completing; treat this the same as any other accept failure
+                            throw new ConnectionException($"Failed to establish a connection to {endPoint}: the remote client disconnected before the connection could be accepted");
+                        }
+
                         ConsecutiveErrors = 0; // reset on success
 
                         _ = Task
