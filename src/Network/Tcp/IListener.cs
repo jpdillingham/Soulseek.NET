@@ -42,16 +42,6 @@ namespace Soulseek.Network.Tcp
         event EventHandler<Exception> Error;
 
         /// <summary>
-        ///     Occurs when the listener has started listening.
-        /// </summary>
-        event EventHandler Started;
-
-        /// <summary>
-        ///     Occurs when the listener has stopped listening.
-        /// </summary>
-        event EventHandler Stopped;
-
-        /// <summary>
         ///     Gets the options used when creating new <see cref="IConnection"/> instances.
         /// </summary>
         ConnectionOptions ConnectionOptions { get; }

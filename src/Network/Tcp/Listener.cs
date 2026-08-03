@@ -65,16 +65,6 @@ namespace Soulseek.Network.Tcp
         public event EventHandler<Exception> Error;
 
         /// <summary>
-        ///     Occurs when the listener has started listening.
-        /// </summary>
-        public event EventHandler Started;
-
-        /// <summary>
-        ///     Occurs when the listener has stopped listening.
-        /// </summary>
-        public event EventHandler Stopped;
-
-        /// <summary>
         ///     Gets the options used when creating new <see cref="IConnection"/> instances.
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; }
@@ -124,15 +114,6 @@ namespace Soulseek.Network.Tcp
                     throw;
                 }
             }
-
-            try
-            {
-                Started?.Invoke(this, EventArgs.Empty);
-            }
-            catch
-            {
-                // noop
-            }
         }
 
         /// <summary>
@@ -149,15 +130,6 @@ namespace Soulseek.Network.Tcp
 
                 Listening = false;
                 TcpListener.Stop(); // unblocks AcceptTcpClientAsync()
-            }
-
-            try
-            {
-                Stopped?.Invoke(this, EventArgs.Empty);
-            }
-            catch
-            {
-                // noop
             }
         }
 
