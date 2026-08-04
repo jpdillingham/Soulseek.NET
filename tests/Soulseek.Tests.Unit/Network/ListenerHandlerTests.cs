@@ -107,6 +107,25 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on error"), AutoData]
+        public void Creates_Diagnostic_On_Error(IPEndPoint endpoint, string message)
+        {
+            var (handler, mocks) = GetFixture(endpoint);
+
+            mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()));
+
+            var exception = new Exception(message);
+
+            handler.HandleError(null, exception);
+
+            mocks.Diagnostic.Verify(
+                m => m.Warning(
+                    It.Is<string>(s => s.Contains("Failed to establish an incoming connection", StringComparison.InvariantCultureIgnoreCase) && s.Contains(message, StringComparison.InvariantCultureIgnoreCase)),
+                    exception),
+                Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on unknown connection"), AutoData]
         public void Creates_Diagnostic_On_Unknown_Connection(IPEndPoint endpoint)
         {

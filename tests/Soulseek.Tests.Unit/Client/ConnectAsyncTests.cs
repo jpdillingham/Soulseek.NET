@@ -93,6 +93,25 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Assigns a handler to Listener.Error when EnableListener is true"), AutoData]
+        public async Task Assigns_A_Handler_To_Listener_Error_When_EnableListener_Is_True(string username, string password)
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(enableListener: true, listenPort: Mocks.Port));
+
+            using (client)
+            {
+                await client.ConnectAsync(username, password);
+
+                Assert.NotNull(client.Listener);
+
+                var raisedException = new Exception("error raised for test");
+                client.Listener.RaiseEvent(typeof(Listener), "Error", raisedException);
+
+                mocks.ListenerHandler.Verify(m => m.HandleError(client.Listener, raisedException), Times.Once);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Address throws ArgumentOutOfRangeException on bad port")]
         [InlineData(-1)]
         [InlineData(65536)]
@@ -596,6 +615,7 @@ namespace Soulseek.Tests.Unit.Client
                 distributedConnectionManager: mocks.DistributedConnectionManager.Object,
                 connectionFactory: mocks.ConnectionFactory.Object,
                 waiter: mocks.Waiter.Object,
+                listenerHandler: mocks.ListenerHandler.Object,
                 options: clientOptions ?? new SoulseekClientOptions(enableListener: false));
 
             return (client, mocks);
@@ -631,6 +651,7 @@ namespace Soulseek.Tests.Unit.Client
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public Mock<IConnectionFactory> ConnectionFactory { get; }
             public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; }
+            public Mock<IListenerHandler> ListenerHandler { get; } = new Mock<IListenerHandler>();
         }
     }
 }
