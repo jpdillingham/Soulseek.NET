@@ -157,5 +157,15 @@ namespace Soulseek.Network
                 connection.Dispose();
             }
         }
+
+        /// <summary>
+        ///     Handle <see cref="IListener.Error"/> events.
+        /// </summary>
+        /// <param name="sender">The originating <see cref="IListener"/> instance.</param>
+        /// <param name="exception">The Exception associated with the error.</param>
+        public void HandleError(object sender, Exception exception)
+        {
+            Diagnostic.Warning($"Failed to establish an incoming connection: {exception.Message}", exception);
+        }
     }
 }

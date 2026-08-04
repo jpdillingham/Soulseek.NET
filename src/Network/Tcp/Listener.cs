@@ -160,7 +160,7 @@ namespace Soulseek.Network.Tcp
                         {
                             // the remote client disconnected between the OS accepting the socket and construction of
                             // the Connection instance completing; treat this the same as any other accept failure
-                            throw new ConnectionException($"Failed to establish a connection to {endPoint}: the remote client disconnected before the connection could be accepted");
+                            throw new ConnectionException($"The remote client disconnected before the connection could be accepted");
                         }
 
                         ConsecutiveErrors = 0; // reset on success
