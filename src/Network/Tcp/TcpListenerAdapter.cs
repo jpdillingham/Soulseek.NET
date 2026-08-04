@@ -78,10 +78,12 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Starts listening for incoming connection requests.
         /// </summary>
+        /// <param name="backlog">The maximum number of pending connections the OS will queue for this listener.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when a negative backlog value is provided.</exception>
         /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
-        public void Start()
+        public void Start(int backlog = (int)SocketOptionName.MaxConnections)
         {
-            TcpListener.Start();
+            TcpListener.Start(backlog);
         }
 
         /// <summary>

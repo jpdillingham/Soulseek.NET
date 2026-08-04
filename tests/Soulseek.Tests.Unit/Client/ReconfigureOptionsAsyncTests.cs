@@ -317,6 +317,31 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Assigns a handler to Listener.Error when a new listener is created")]
+        public async Task Assigns_A_Handler_To_Listener_Error_When_A_New_Listener_Is_Created()
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(listenPort: Mocks.Port));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(true);
+
+            var patch = new SoulseekClientOptionsPatch(listenPort: Mocks.Port);
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.NotNull(client.Listener);
+
+                var raisedException = new Exception("error raised for test");
+                client.Listener.RaiseEvent(typeof(Listener), "Error", raisedException);
+
+                mocks.ListenerHandler.Verify(m => m.HandleError(client.Listener, raisedException), Times.Once);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
         [Fact(DisplayName = "Reconfigures listener if ListenIPAddress changed")]
         public async Task Reconfigures_Listener_If_ListenIPAddress_Changed()
         {
@@ -646,6 +671,7 @@ namespace Soulseek.Tests.Unit.Client
                 connectionFactory: mocks.ConnectionFactory.Object,
                 serverConnection: mocks.ServerConnection.Object,
                 listener: mocks.Listener.Object,
+                listenerHandler: mocks.ListenerHandler.Object,
                 uploadTokenBucket: mocks.UploadTokenBucket.Object,
                 downloadTokenBucket: mocks.DownloadTokenBucket.Object,
                 options: clientOptions ?? new SoulseekClientOptions(enableListener: false));
@@ -679,6 +705,7 @@ namespace Soulseek.Tests.Unit.Client
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IConnectionFactory> ConnectionFactory { get; }
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
+            public Mock<IListenerHandler> ListenerHandler { get; } = new Mock<IListenerHandler>();
             public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; }
             public Mock<ITokenBucket> UploadTokenBucket { get; } = new Mock<ITokenBucket>();
             public Mock<ITokenBucket> DownloadTokenBucket { get; } = new Mock<ITokenBucket>();

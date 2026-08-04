@@ -3093,6 +3093,7 @@ namespace Soulseek
                     {
                         Listener = new Listener(Options.ListenIPAddress, Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
+                        Listener.Error += ListenerHandler.HandleError;
                         Listener.Start();
                     }
 
@@ -3995,6 +3996,7 @@ namespace Soulseek
                     {
                         Listener = new Listener(Options.ListenIPAddress, Options.ListenPort, Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
+                        Listener.Error += ListenerHandler.HandleError;
                         Listener.Start();
                     }
                 }

@@ -23,6 +23,7 @@
 
 namespace Soulseek.Network
 {
+    using System;
     using Soulseek.Diagnostics;
     using Soulseek.Network.Tcp;
 
@@ -37,5 +38,12 @@ namespace Soulseek.Network
         /// <param name="sender">The originating <see cref="IListener"/> instance.</param>
         /// <param name="connection">The accepted connection.</param>
         void HandleConnection(object sender, IConnection connection);
+
+        /// <summary>
+        ///     Handle <see cref="IListener.Error"/> events.
+        /// </summary>
+        /// <param name="sender">The originating <see cref="IListener"/> instance.</param>
+        /// <param name="exception">The Exception associated with the error.</param>
+        void HandleError(object sender, Exception exception);
     }
 }
