@@ -3094,7 +3094,7 @@ namespace Soulseek
                         Listener = new Listener(Options.ListenIPAddress, Options.ListenPort, connectionOptions: Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
                         Listener.Error += ListenerHandler.HandleError;
-                        Listener.Start();
+                        Listener.Start(Options.ListenBacklog);
                     }
 
                     ServerConnection = ConnectionFactory.GetServerConnection(
@@ -3997,7 +3997,7 @@ namespace Soulseek
                         Listener = new Listener(Options.ListenIPAddress, Options.ListenPort, Options.IncomingConnectionOptions);
                         Listener.Accepted += ListenerHandler.HandleConnection;
                         Listener.Error += ListenerHandler.HandleError;
-                        Listener.Start();
+                        Listener.Start(Options.ListenBacklog);
                     }
                 }
 
