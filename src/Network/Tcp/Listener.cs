@@ -65,6 +65,11 @@ namespace Soulseek.Network.Tcp
         public event EventHandler<Exception> Error;
 
         /// <summary>
+        ///     Gets the backlog with which the listener was most recently started.
+        /// </summary>
+        public int Backlog { get; private set; }
+
+        /// <summary>
         ///     Gets the options used when creating new <see cref="IConnection"/> instances.
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; }
@@ -105,6 +110,7 @@ namespace Soulseek.Network.Tcp
                 try
                 {
                     TcpListener.Start(backlog);
+                    Backlog = backlog;
                     Listening = true;
                     Task.Run(() => ListenContinuouslyAsync()).Forget();
                 }

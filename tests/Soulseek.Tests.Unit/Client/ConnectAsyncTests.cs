@@ -481,6 +481,23 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Starts listener with the configured ListenBacklog on success"), AutoData]
+        public async Task Starts_Listener_With_The_Configured_ListenBacklog_On_Success(string user, string password)
+        {
+            var port = Mocks.Port;
+            var backlog = new Random().Next(128, int.MaxValue);
+            var (client, _) = GetFixture(new SoulseekClientOptions(listenPort: port, listenBacklog: backlog));
+
+            using (client)
+            {
+                await client.ConnectAsync(user, password);
+
+                Assert.NotNull(client.Listener);
+                Assert.Equal(backlog, client.Listener.Backlog);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Sets listen port on success"), AutoData]
         public async Task Sets_Listen_Port_On_Success(string user, string password)
         {

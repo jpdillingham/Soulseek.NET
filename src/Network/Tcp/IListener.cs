@@ -43,6 +43,11 @@ namespace Soulseek.Network.Tcp
         event EventHandler<Exception> Error;
 
         /// <summary>
+        ///     Gets the backlog with which the listener was most recently started.
+        /// </summary>
+        int Backlog { get; }
+
+        /// <summary>
         ///     Gets the options used when creating new <see cref="IConnection"/> instances.
         /// </summary>
         ConnectionOptions ConnectionOptions { get; }

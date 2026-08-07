@@ -128,6 +128,53 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start passes the given backlog to the TcpListener")]
+        public void Start_Passes_The_Given_Backlog_To_The_TcpListener()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+            var backlog = new Random().Next(128, int.MaxValue);
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start(backlog);
+
+            tcpListener.Verify(m => m.Start(backlog), Times.Once);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start sets Backlog to the given value")]
+        public void Start_Sets_Backlog_To_The_Given_Value()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+            var backlog = new Random().Next(128, int.MaxValue);
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start(backlog);
+
+            Assert.Equal(backlog, l.Backlog);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start defaults Backlog to SocketOptionName.MaxConnections if not given")]
+        public void Start_Defaults_Backlog_To_MaxConnections_If_Not_Given()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            Assert.Equal((int)SocketOptionName.MaxConnections, l.Backlog);
+        }
+
+        [Trait("Category", "Start")]
         [Fact(DisplayName = "Start does not start listener if already listening")]
         public void Start_Does_Not_Start_Listener_If_Already_Listening()
         {
