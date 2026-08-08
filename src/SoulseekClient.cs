@@ -3977,9 +3977,10 @@ namespace Soulseek
                 var enableListenerChanged = patch.EnableListener.HasValue && patch.EnableListener.Value != Options.EnableListener;
                 var listenAddressChanged = patch.ListenIPAddress != null && !patch.ListenIPAddress.Equals(Options.ListenIPAddress);
                 var listenPortChanged = patch.ListenPort.HasValue && patch.ListenPort.Value != Options.ListenPort;
+                var listenBacklogChanged = patch.ListenBacklog.HasValue && patch.ListenBacklog.Value != Options.ListenBacklog;
                 var incomingConnectionOptionsChanged = patch.IncomingConnectionOptions != null && patch.IncomingConnectionOptions != Options.IncomingConnectionOptions;
 
-                if (enableListenerChanged || listenAddressChanged || listenPortChanged || incomingConnectionOptionsChanged)
+                if (enableListenerChanged || listenAddressChanged || listenPortChanged || listenBacklogChanged || incomingConnectionOptionsChanged)
                 {
                     var wasListening = Listener?.Listening ?? false;
 
@@ -3990,6 +3991,7 @@ namespace Soulseek
                         enableListener: patch.EnableListener,
                         listenIPAddress: patch.ListenIPAddress,
                         listenPort: patch.ListenPort,
+                        listenBacklog: patch.ListenBacklog,
                         incomingConnectionOptions: patch.IncomingConnectionOptions);
 
                     if (wasListening && Options.EnableListener)
