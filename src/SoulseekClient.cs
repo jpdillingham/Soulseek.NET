@@ -4504,7 +4504,7 @@ namespace Soulseek
                     writeTask = Task.CompletedTask;
                 }
 
-                // ensure the losing tasks don't raise an unbserved exception by attaching a continuation that will observe them with Forget()
+                // ensure the losing tasks don't raise an unobserved exception by attaching a continuation that will observe them with Forget()
                 writeTask.Forget();
                 disconnectedTaskCancellationSource.Task.Forget();
 
@@ -4543,9 +4543,15 @@ namespace Soulseek
                         }
 
                         // sometimes attempting this read will block instead of throwing immediately; in those cases we
-                        // need to make sure it doesn't block until the connection is closed due to inactivity
+                        // need to make sure it doesn't block until the connection is closed due to inactivity by racing
+                        // it against a Task.Delay()
+                        var readTask = upload.Connection.ReadAsync(1, cancellationToken);
+
+                        // ensure the read doesn't raise an unobserved exception if the Delay wins the race
+                        readTask.Forget();
+
                         await (await Task.WhenAny(
-                            upload.Connection.ReadAsync(1, cancellationToken),
+                            readTask,
                             Task.Delay(lingerDeadline - DateTime.UtcNow, cancellationToken)).ConfigureAwait(false)).ConfigureAwait(false);
 
                         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
