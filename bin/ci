@@ -2,6 +2,25 @@
 set -e
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+required_vars=(
+    TOKEN_SONARCLOUD
+    TOKEN_CODECOV_SOULSEEKNET
+    SLSK_INTEGRATION_USERNAME
+    SLSK_INTEGRATION_PASSWORD
+)
+
+missing_vars=()
+for var in "${required_vars[@]}"; do
+    if [ -z "${!var}" ]; then
+        missing_vars+=("${var}")
+    fi
+done
+
+if [ ${#missing_vars[@]} -ne 0 ]; then
+    echo "Missing required environment variable(s): ${missing_vars[*]}"
+    exit 1
+fi
+
 # get the current git branch and set options for a non-PR analysis
 branch=$(git rev-parse --abbrev-ref HEAD)
 options="/d:sonar.branch.name="${branch}""
