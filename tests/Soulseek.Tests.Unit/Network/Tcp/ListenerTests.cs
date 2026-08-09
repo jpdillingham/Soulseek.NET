@@ -155,7 +155,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
             l.Start();
 
-            tcpListener.Verify(m => m.Start(int.MaxValue), Times.Once);
+            tcpListener.Verify(m => m.Start((int)SocketOptionName.MaxConnections), Times.Once);
         }
 
         [Trait("Category", "Start")]
