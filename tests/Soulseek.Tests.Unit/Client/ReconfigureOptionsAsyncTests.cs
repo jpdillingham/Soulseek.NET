@@ -317,6 +317,50 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Reconfigures listener if ListenBacklog changed")]
+        public async Task Reconfigures_Listener_If_ListenBacklog_Changed()
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(listenPort: Mocks.Port, listenBacklog: 128));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(true);
+
+            var patch = new SoulseekClientOptionsPatch(listenBacklog: 129);
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.Equal(patch.ListenBacklog, client.Options.ListenBacklog);
+
+                mocks.Listener.Verify(m => m.Start(129), Times.Once);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
+        [Fact(DisplayName = "Does not reconfigure listener if ListenBacklog unchanged")]
+        public async Task Does_Not_Reconfigure_Listener_If_ListenBacklog_Unchanged()
+        {
+            var (client, mocks) = GetFixture(new SoulseekClientOptions(listenPort: Mocks.Port, listenBacklog: 128));
+
+            mocks.Listener.Setup(m => m.Listening).Returns(true);
+
+            var patch = new SoulseekClientOptionsPatch(listenBacklog: 128);
+
+            using (client)
+            {
+                client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                await client.ReconfigureOptionsAsync(patch);
+
+                Assert.Equal(mocks.Listener.Object, client.Listener);
+
+                mocks.Listener.Verify(m => m.Start(It.IsAny<int>()), Times.Never);
+            }
+        }
+
+        [Trait("Category", "ReconfigureOptions")]
         [Fact(DisplayName = "Assigns a handler to Listener.Error when a new listener is created")]
         public async Task Assigns_A_Handler_To_Listener_Error_When_A_New_Listener_Is_Created()
         {
@@ -513,6 +557,7 @@ namespace Soulseek.Tests.Unit.Client
             var (client, _) = GetFixture(new SoulseekClientOptions(
                 enableListener: false,
                 listenPort: Mocks.Port,
+                listenBacklog: 128,
                 enableDistributedNetwork: false,
                 acceptDistributedChildren: false,
                 distributedChildLimit: 5,
@@ -539,6 +584,7 @@ namespace Soulseek.Tests.Unit.Client
             var patch = new SoulseekClientOptionsPatch(
                 enableListener: true,
                 listenPort: Mocks.Port,
+                listenBacklog: 129,
                 enableDistributedNetwork: true,
                 acceptDistributedChildren: true,
                 distributedChildLimit: 10,
@@ -568,6 +614,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(patch.EnableListener, client.Options.EnableListener);
                 Assert.Equal(patch.ListenPort, client.Options.ListenPort);
+                Assert.Equal(patch.ListenBacklog, client.Options.ListenBacklog);
                 Assert.Equal(patch.EnableDistributedNetwork, client.Options.EnableDistributedNetwork);
                 Assert.Equal(patch.AcceptDistributedChildren, client.Options.AcceptDistributedChildren);
                 Assert.Equal(patch.DistributedChildLimit, client.Options.DistributedChildLimit);
