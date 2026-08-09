@@ -92,7 +92,8 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Starts the listener.
         /// </summary>
-        public void Start()
+        /// <param name="backlog">The maximum number of pending connections the OS will queue for this listener.</param>
+        public void Start(int backlog = (int)SocketOptionName.MaxConnections)
         {
             lock (SyncRoot)
             {
@@ -103,7 +104,7 @@ namespace Soulseek.Network.Tcp
 
                 try
                 {
-                    TcpListener.Start();
+                    TcpListener.Start(backlog);
                     Listening = true;
                     Task.Run(() => ListenContinuouslyAsync()).Forget();
                 }

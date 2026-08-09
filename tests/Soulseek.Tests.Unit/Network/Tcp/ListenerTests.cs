@@ -1,4 +1,4 @@
-// <copyright file="ListenerTests.cs" company="JP Dillingham">
+﻿// <copyright file="ListenerTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -125,6 +125,37 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             l.Start();
 
             tcpListener.Verify(m => m.Start(It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start passes the given backlog to the TcpListener")]
+        public void Start_Passes_The_Given_Backlog_To_The_TcpListener()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+            var backlog = new Random().Next(128, int.MaxValue);
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start(backlog);
+
+            tcpListener.Verify(m => m.Start(backlog), Times.Once);
+        }
+
+        [Trait("Category", "Start")]
+        [Fact(DisplayName = "Start defaults Backlog to SocketOptionName.MaxConnections if not given")]
+        public void Start_Defaults_Backlog_To_MaxConnections_If_Not_Given()
+        {
+            var options = new ConnectionOptions();
+            var port = GetPort();
+            var tcpListener = new Mock<ITcpListener>();
+
+            var l = new Listener(IPAddress.Any, port, options, tcpListener.Object);
+
+            l.Start();
+
+            tcpListener.Verify(m => m.Start((int)SocketOptionName.MaxConnections), Times.Once);
         }
 
         [Trait("Category", "Start")]

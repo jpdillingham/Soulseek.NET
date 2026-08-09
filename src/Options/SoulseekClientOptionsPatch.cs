@@ -40,6 +40,7 @@ namespace Soulseek
         /// <param name="enableListener">A value indicating whether to listen for incoming connections.</param>
         /// <param name="listenIPAddress">The IP address on which to listen for incoming connections.</param>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
+        /// <param name="listenBacklog">The maximum size of the listener backlog.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
@@ -88,6 +89,7 @@ namespace Soulseek
             bool? enableListener = null,
             IPAddress listenIPAddress = null,
             int? listenPort = null,
+            int? listenBacklog = null,
             bool? enableDistributedNetwork = null,
             bool? acceptDistributedChildren = null,
             int? distributedChildLimit = null,
@@ -119,6 +121,13 @@ namespace Soulseek
             if (ListenPort < 1024 || ListenPort > IPEndPoint.MaxPort)
             {
                 throw new ArgumentOutOfRangeException(nameof(listenPort), "Must be between 1024 and 65535");
+            }
+
+            ListenBacklog = listenBacklog;
+
+            if (ListenBacklog.HasValue && ListenBacklog.Value < 128)
+            {
+                throw new ArgumentOutOfRangeException(nameof(listenBacklog), $"Must be greater than or equal to 128");
             }
 
             EnableDistributedNetwork = enableDistributedNetwork;
@@ -226,6 +235,11 @@ namespace Soulseek
         ///     Gets the options for incoming connections.
         /// </summary>
         public ConnectionOptions IncomingConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the maximum size of the listener backlog. (Default = null = Operating System maximum).
+        /// </summary>
+        public int? ListenBacklog { get; }
 
         /// <summary>
         ///     Gets the IP address on which to listen for incoming connections. (Default = IPAddress.Any/"0.0.0.0").
