@@ -4531,20 +4531,23 @@ namespace Soulseek
                 // comes to this, so linger time shouldn't be less than a couple of seconds.
                 try
                 {
-                    var lingerStartTime = DateTime.UtcNow;
-                    using var lingerCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(options.MaximumLingerTime));
-                    using var linkedLingerCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lingerCancellationTokenSource.Token);
+                    var lingerDeadline = DateTime.UtcNow.AddMilliseconds(options.MaximumLingerTime);
 
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        if (lingerStartTime.AddMilliseconds(options.MaximumLingerTime) <= DateTime.UtcNow)
+                        if (lingerDeadline <= DateTime.UtcNow)
                         {
                             upload.Connection.Disconnect("Transfer complete, maximum linger time exceeded");
                             Diagnostic.Warning($"Transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} forcibly closed after exceeding maximum linger time of {options.MaximumLingerTime}ms.");
                             break;
                         }
 
-                        await upload.Connection.ReadAsync(1, linkedLingerCancellationTokenSource.Token).ConfigureAwait(false);
+                        // sometimes attempting this read will block instead of throwing immediately; in those cases we
+                        // need to make sure it doesn't block until the connection is closed due to inactivity
+                        await (await Task.WhenAny(
+                            upload.Connection.ReadAsync(1, cancellationToken),
+                            Task.Delay(lingerDeadline - DateTime.UtcNow, cancellationToken)).ConfigureAwait(false)).ConfigureAwait(false);
+
                         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
                     }
                 }
