@@ -29,6 +29,8 @@ jobs:
         env:
           TOKEN_SONARCLOUD: ${{ secrets.TOKEN_SONARCLOUD }}
           TOKEN_CODECOV_SOULSEEKNET: ${{ secrets.TOKEN_CODECOV_SOULSEEKNET }}
+          SLSK_INTEGRATION_USERNAME: ${{ secrets.SLSK_INTEGRATION_USERNAME }}
+          SLSK_INTEGRATION_PASSWORD: ${{ secrets.SLSK_INTEGRATION_PASSWORD }}
         run: |
           export PATH="$HOME/.dotnet/tools:$PATH"
           bash ./bin/ci
