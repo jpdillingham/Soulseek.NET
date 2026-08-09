@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dotnet-sonarscanner
+        run: dotnet tool install --global dotnet-sonarscanner --version 11.2.1
+
+      - name: Run CI
+        env:
+          TOKEN_SONARCLOUD: ${{ secrets.TOKEN_SONARCLOUD }}
+          TOKEN_CODECOV_SOULSEEKNET: ${{ secrets.TOKEN_CODECOV_SOULSEEKNET }}
+          SLSK_INTEGRATION_USERNAME: ${{ secrets.SLSK_INTEGRATION_USERNAME }}
+          SLSK_INTEGRATION_PASSWORD: ${{ secrets.SLSK_INTEGRATION_PASSWORD }}
+        run: |
+          export PATH="$HOME/.dotnet/tools:$PATH"
+          bash ./bin/ci

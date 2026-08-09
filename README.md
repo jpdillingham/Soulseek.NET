@@ -4,7 +4,7 @@
 [![Semantic Versioning](https://img.shields.io/badge/semver-2.0.0-3D9FE0.svg)](https://semver.org/)
 [![license](https://img.shields.io/github/license/jpdillingham/Soulseek.NET.svg)](https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE)
 
-[![CircleCI](https://circleci.com/gh/jpdillingham/Soulseek.NET/tree/master.svg?style=shield)](https://circleci.com/gh/jpdillingham/Soulseek.NET/tree/master)
+[![build](https://github.com/jpdillingham/Soulseek.NET/actions/workflows/build.yml/badge.svg)](https://github.com/jpdillingham/Soulseek.NET/actions/workflows/build.yml)
 [![codecov](https://codecov.io/gh/jpdillingham/Soulseek.NET/branch/master/graph/badge.svg)](https://codecov.io/gh/jpdillingham/Soulseek.NET)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=jpdillingham_Soulseek.NET&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=jpdillingham_Soulseek.NET)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=jpdillingham_Soulseek.NET&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=jpdillingham_Soulseek.NET)
