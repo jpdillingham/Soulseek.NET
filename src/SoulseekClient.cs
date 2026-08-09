@@ -4532,6 +4532,8 @@ namespace Soulseek
                 try
                 {
                     var lingerStartTime = DateTime.UtcNow;
+                    using var lingerCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(options.MaximumLingerTime));
+                    using var linkedLingerCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lingerCancellationTokenSource.Token);
 
                     while (!cancellationToken.IsCancellationRequested)
                     {
@@ -4542,7 +4544,7 @@ namespace Soulseek
                             break;
                         }
 
-                        await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                        await upload.Connection.ReadAsync(1, linkedLingerCancellationTokenSource.Token).ConfigureAwait(false);
                         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
                     }
                 }
