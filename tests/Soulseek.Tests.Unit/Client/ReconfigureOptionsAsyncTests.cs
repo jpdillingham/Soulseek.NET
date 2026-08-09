@@ -329,12 +329,12 @@ namespace Soulseek.Tests.Unit.Client
             using (client)
             {
                 client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                var ogListener = client.Listener;
 
                 await client.ReconfigureOptionsAsync(patch);
 
                 Assert.Equal(patch.ListenBacklog, client.Options.ListenBacklog);
-
-                mocks.Listener.Verify(m => m.Start(129), Times.Once);
+                Assert.NotEqual(ogListener, client.Listener);
             }
         }
 
