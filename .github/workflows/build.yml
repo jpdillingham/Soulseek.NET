@@ -28,9 +28,15 @@ jobs:
       - name: Run CI
         env:
           TOKEN_SONARCLOUD: ${{ secrets.TOKEN_SONARCLOUD }}
-          TOKEN_CODECOV_SOULSEEKNET: ${{ secrets.TOKEN_CODECOV_SOULSEEKNET }}
           SLSK_INTEGRATION_USERNAME: ${{ secrets.SLSK_INTEGRATION_USERNAME }}
           SLSK_INTEGRATION_PASSWORD: ${{ secrets.SLSK_INTEGRATION_PASSWORD }}
         run: |
           export PATH="$HOME/.dotnet/tools:$PATH"
           bash ./bin/ci
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.TOKEN_CODECOV_SOULSEEKNET }}
+          files: tests/opencover.xml
+          fail_ci_if_error: true
