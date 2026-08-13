@@ -4409,14 +4409,14 @@ namespace Soulseek
                     .ConfigureAwait(false);
                 Diagnostic.Debug($"Fetched transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {upload.Connection.Id}, state: {upload.Connection.State})");
 
-                // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
-                // to determine the outcome of the upload.
-                var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
-
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
                 using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var linkedCancellationToken = linkedCancellationTokenSource.Token;
+
+                // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
+                // to determine the outcome of the upload.
+                var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(linkedCancellationToken);
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
                 upload.Connection.Disconnected += (sender, e) =>
@@ -4483,7 +4483,7 @@ namespace Soulseek
                             options.Reporter?.Invoke(new Transfer(upload), attemptedBytes, grantedBytes, actualBytes);
                             tokenBucket.Return(grantedBytes - actualBytes);
                         },
-                        cancellationToken: cancellationToken);
+                        cancellationToken: linkedCancellationToken);
                 }
                 else
                 {
