@@ -1,5 +1,49 @@
 #!/bin/bash
 set -e
 
-dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:CoverletOutput="../coverage.json" tests/Soulseek.Tests.Unit -p:Include="[Soulseek]*"
-dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:MergeWith="../coverage.json" -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.Tests.Integration -p:Include="[Soulseek]*"
+run_unit=true
+run_integration=true
+
+while test $# -gt 0; do
+  case "$1" in
+    -h|--help)
+      echo 'options:'
+      echo '-h, --help              show help'
+      echo '--all                   run unit and integration tests (default)'
+      echo '--unit-only             run only unit tests'
+      echo '--integration-only      run only integration tests'
+      exit 0
+      ;;
+    --all)
+      shift
+      ;;
+    --unit-only)
+      run_integration=false
+      shift
+      ;;
+    --integration-only)
+      run_unit=false
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [ "$run_unit" == false ] && [ "$run_integration" == false ]; then
+  echo '--unit-only and --integration-only are mutually exclusive'
+  exit 1
+fi
+
+if [ "$run_unit" == true ]; then
+  dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:CoverletOutput="../coverage.json" tests/Soulseek.Tests.Unit -p:Include="[Soulseek]*"
+fi
+
+if [ "$run_integration" == true ]; then
+  if [ "$run_unit" == true ]; then
+    dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:MergeWith="../coverage.json" -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.Tests.Integration -p:Include="[Soulseek]*"
+  else
+    dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.Tests.Integration -p:Include="[Soulseek]*"
+  fi
+fi
