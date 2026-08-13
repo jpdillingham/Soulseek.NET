@@ -3569,20 +3569,6 @@ namespace Soulseek
                         Diagnostic.Warning($"Failed to dispose transfer connection for file {remoteFilename} from user {username}: {ex.Message}");
                     }
 
-                    long finalStreamPosition = 0;
-
-                    // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
-                    // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
-                    // set it to zero and let the consumer figure it out
-                    try
-                    {
-                        finalStreamPosition = outputStream?.Position ?? 0;
-                    }
-                    catch (Exception ex)
-                    {
-                        Diagnostic.Warning($"Failed to determine final position of output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
-                    }
-
                     if (options.DisposeOutputStreamOnCompletion && outputStream != null)
                     {
                         try
@@ -4624,20 +4610,6 @@ namespace Soulseek
                     catch (Exception ex)
                     {
                         Diagnostic.Warning($"Failed to dispose transfer connection for file {remoteFilename} to user {username}: {ex.Message}");
-                    }
-
-                    long finalStreamPosition = 0;
-
-                    // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
-                    // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
-                    // set it to zero and let the consumer figure it out
-                    try
-                    {
-                        finalStreamPosition = inputStream?.Position ?? 0;
-                    }
-                    catch (Exception ex)
-                    {
-                        Diagnostic.Warning($"Failed to determine final position of input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
                     }
 
                     if (options.DisposeInputStreamOnCompletion && inputStream != null)
