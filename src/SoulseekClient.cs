@@ -3206,7 +3206,7 @@ namespace Soulseek
             };
 
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
-            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
+            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe,
             // a caller can spam calls and get downloads through concurrently. this check is the last line of defense; if we make
             // it past here this unique combination is "locked" until the transfer is complete (as long as we remove it in the finally block!)
             var uniqueKey = $"{TransferDirection.Download}:{username}:{remoteFilename}";
@@ -3460,7 +3460,7 @@ namespace Soulseek
 
                 if (firstTask == download.RemoteTaskCompletionSource.Task)
                 {
-                    // the remote client sent either UploadFailed (almost certain) or UploadDenied (not sure if possible);
+                    // the remote client sent either UploadFailed (almost certain) or UploadDenied (not sure if possible),
                     // and we set either a TransferException (failed) or TransferRejectedException (denied) on this TCS
                     // in the event handlers above. await to force the exception to bubble up
                     await download.RemoteTaskCompletionSource.Task.ConfigureAwait(false);
@@ -4294,7 +4294,7 @@ namespace Soulseek
             };
 
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
-            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
+            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe,
             // a caller can spam calls and get transfers through concurrently. this check is the last line of defense; if we make
             // it past here this unique combination is "locked" until the transfer is complete (as long as we remove it in the finally block!)
             var uniqueKey = $"{TransferDirection.Upload}:{username}:{remoteFilename}";
