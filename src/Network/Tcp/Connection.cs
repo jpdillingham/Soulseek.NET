@@ -724,7 +724,7 @@ namespace Soulseek.Network.Tcp
         {
             // a failure to allocate memory will throw, so we need to do it within the try/catch
             // declare and initialize it here so it's available in the finally block
-            byte[] buffer = Array.Empty<byte>();
+            byte[] buffer = default;
 
             // in the case of a bad (or failing) connection, it is possible for us to continue to write data, particularly
             // distributed search requests, to the connection for quite a while before the underlying socket figures out that it
