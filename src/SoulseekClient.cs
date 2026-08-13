@@ -4635,7 +4635,7 @@ namespace Soulseek
                         {
                             // fetch the endpoint again, in case it failed or was never fetched because the semaphore wasn't obtained.
                             // this allows us to send UploadDenied for cancelled queued files
-                            endpoint = await GetUserEndPointAsync(username).ConfigureAwait(false);
+                            endpoint = await GetUserEndPointAsync(username, CancellationToken.None).ConfigureAwait(false);
                             var messageConnection = await PeerConnectionManager
                                 .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                                 .ConfigureAwait(false);
@@ -4643,11 +4643,11 @@ namespace Soulseek
                             // send UploadDenied if we cancelled the transfer. this should prevent the remote client from re-enqueuing
                             if (upload.State.HasFlag(TransferStates.Cancelled))
                             {
-                                await messageConnection.WriteAsync(new UploadDenied(remoteFilename, "Cancelled")).ConfigureAwait(false);
+                                await messageConnection.WriteAsync(new UploadDenied(remoteFilename, "Cancelled"), CancellationToken.None).ConfigureAwait(false);
                             }
                             else
                             {
-                                await messageConnection.WriteAsync(new UploadFailed(remoteFilename)).ConfigureAwait(false);
+                                await messageConnection.WriteAsync(new UploadFailed(remoteFilename), CancellationToken.None).ConfigureAwait(false);
                             }
                         }
                         catch
