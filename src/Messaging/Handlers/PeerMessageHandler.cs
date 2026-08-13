@@ -159,7 +159,11 @@ namespace Soulseek.Messaging.Handlers
 
                                 try
                                 {
+#if NETSTANDARD2_0
                                     rawSearchResponse.Stream.Dispose();
+#else
+                                    await rawSearchResponse.Stream.DisposeAsync().ConfigureAwait(false);
+#endif
                                 }
                                 catch
                                 {
@@ -199,7 +203,11 @@ namespace Soulseek.Messaging.Handlers
 
                             try
                             {
+#if NETSTANDARD2_0
                                 rawBrowseResponse.Stream.Dispose();
+#else
+                                await rawBrowseResponse.Stream.DisposeAsync().ConfigureAwait(false);
+#endif
                             }
                             catch
                             {

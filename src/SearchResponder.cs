@@ -180,7 +180,14 @@ namespace Soulseek
 
                     try
                     {
+#if NETSTANDARD2_0
                         rawSearchResponse?.Stream?.Dispose();
+#else
+                        if (rawSearchResponse?.Stream is not null)
+                        {
+                            await rawSearchResponse.Stream.DisposeAsync().ConfigureAwait(false);
+                        }
+#endif
                     }
                     catch
                     {
