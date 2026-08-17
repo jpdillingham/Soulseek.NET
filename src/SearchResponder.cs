@@ -135,10 +135,13 @@ namespace Soulseek
             }
 
             // return early if we've been given a response with no files (SearchResponse)
-            // or a null or empty stream (RawSearchResponse)
-            if (searchResponse is RawSearchResponse s && (s.Length == 0 || s.Stream is null || !s.Stream.CanRead))
+            // or a null, empty, or unreadable stream (RawSearchResponse)
+            if (searchResponse is RawSearchResponse rawResponse)
             {
-                return false;
+                if (rawResponse.Length == 0 || rawResponse.Stream is null || !rawResponse.Stream.CanRead)
+                {
+                    return false;
+                }
             }
             else if (searchResponse.FileCount + searchResponse.LockedFileCount <= 0)
             {
