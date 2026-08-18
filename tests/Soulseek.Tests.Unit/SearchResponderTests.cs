@@ -281,6 +281,55 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false if RawSearchResponse stream is null"), AutoData]
+        public async Task TryRespondAsync_Returns_False_If_RawSearchResponse_Stream_Is_Null(string username, int token, string query)
+        {
+            var rawResponse = new RawSearchResponse(42, null);
+
+            var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(rawResponse)));
+
+            var responded = await responder.TryRespondAsync(username, token, query);
+
+            Assert.False(responded);
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false if RawSearchResponse stream is not readable"), AutoData]
+        public async Task TryRespondAsync_Returns_False_If_RawSearchResponse_Stream_Is_Not_Readable(string username, int token, string query)
+        {
+            using (var stream = new UnreadableStream(new byte[] { 1, 2, 3 }))
+            {
+                var rawResponse = new RawSearchResponse(stream.Length, stream);
+
+                Assert.False(rawResponse.Stream.CanRead);
+
+                var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(rawResponse)));
+
+                var responded = await responder.TryRespondAsync(username, token, query);
+
+                Assert.False(responded);
+            }
+        }
+
+        [Trait("Category", "TryRespondAsync")]
+        [Theory(DisplayName = "TryRespondAsync returns false if RawSearchResponse length is zero"), AutoData]
+        public async Task TryRespondAsync_Returns_False_If_RawSearchResponse_Length_Is_Zero(string username, int token, string query)
+        {
+            using (var stream = new System.IO.MemoryStream(new byte[] { 1, 2, 3 }))
+            {
+                var rawResponse = new RawSearchResponse(0, stream);
+
+                Assert.True(rawResponse.Stream.CanRead);
+
+                var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(rawResponse)));
+
+                var responded = await responder.TryRespondAsync(username, token, query);
+
+                Assert.False(responded);
+            }
+        }
+
+        [Trait("Category", "TryRespondAsync")]
         [Theory(DisplayName = "TryRespondAsync raises RequestReceived"), AutoData]
         public async Task TryRespondAsync_Raises_RequestReceived(string username, int token, string query)
         {
@@ -921,6 +970,16 @@ namespace Soulseek.Tests.Unit
             {
                 throw new Exception("Dispose failed");
             }
+        }
+
+        private class UnreadableStream : System.IO.MemoryStream
+        {
+            public UnreadableStream(byte[] buffer)
+                : base(buffer)
+            {
+            }
+
+            public override bool CanRead => false;
         }
 
         private static (SearchResponder SearchResponder, Mocks Mocks) GetFixture(SoulseekClientOptions options = null)
