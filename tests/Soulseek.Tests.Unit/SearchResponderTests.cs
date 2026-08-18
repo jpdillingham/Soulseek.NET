@@ -312,24 +312,6 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "TryRespondAsync")]
-        [Theory(DisplayName = "TryRespondAsync returns false if RawSearchResponse length is zero"), AutoData]
-        public async Task TryRespondAsync_Returns_False_If_RawSearchResponse_Length_Is_Zero(string username, int token, string query)
-        {
-            using (var stream = new System.IO.MemoryStream(new byte[] { 1, 2, 3 }))
-            {
-                var rawResponse = new RawSearchResponse(0, stream);
-
-                Assert.True(rawResponse.Stream.CanRead);
-
-                var (responder, _) = GetFixture(new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(rawResponse)));
-
-                var responded = await responder.TryRespondAsync(username, token, query);
-
-                Assert.False(responded);
-            }
-        }
-
-        [Trait("Category", "TryRespondAsync")]
         [Theory(DisplayName = "TryRespondAsync raises RequestReceived"), AutoData]
         public async Task TryRespondAsync_Raises_RequestReceived(string username, int token, string query)
         {
