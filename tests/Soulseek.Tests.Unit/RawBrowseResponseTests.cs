@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var stream = new UnreadableStream(Array.Empty<byte>()))
             {
-                var ex = Record.Exception(() => new RawSearchResponse(length, stream));
+                var ex = Record.Exception(() => new RawBrowseResponse(length, stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
