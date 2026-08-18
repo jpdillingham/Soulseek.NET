@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit
                 var ex = Record.Exception(() => new RawSearchResponse(length, stream));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ArgumentNullException>(ex);
+                Assert.IsType<ArgumentException>(ex);
             }
         }
 
