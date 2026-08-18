@@ -129,7 +129,12 @@ namespace Soulseek
                 return false;
             }
 
-            if (searchResponse == null || searchResponse.FileCount + searchResponse.LockedFileCount <= 0)
+            if (searchResponse == null)
+            {
+                return false;
+            }
+
+            if (searchResponse is not RawSearchResponse && searchResponse.FileCount + searchResponse.LockedFileCount <= 0)
             {
                 return false;
             }
