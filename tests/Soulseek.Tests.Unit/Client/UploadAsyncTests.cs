@@ -1197,6 +1197,65 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        [Trait("Category", "UploadFromFileAsync")]
+        [Theory(DisplayName = "UploadFromFileAsync disconnects after MaximumLingerTime when trailing read blocks instead of throwing"), AutoData]
+        public async Task UploadFromFileAsync_Disconnects_After_MaximumLingerTime_When_Trailing_Read_Blocks(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            using (var testFile = new TestFile())
+            {
+                // give the (mocked, and therefore inert) transfer connection a very long inactivity timeout so it's
+                // clear that the disconnect in this test is driven by MaximumLingerTime, not some other timeout
+                var options = new SoulseekClientOptions(messageTimeout: 5, transferConnectionOptions: new ConnectionOptions(inactivityTimeout: int.MaxValue));
+
+                var response = new TransferResponse(token, size);
+                var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+                var waiter = new Mock<IWaiter>();
+                waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(response));
+                waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.State)
+                    .Returns(ConnectionState.Connected);
+
+                var transferConn = new Mock<IConnection>();
+                transferConn.Setup(m => m.ReadAsync(It.Is<long>(l => l == 8), It.IsAny<CancellationToken?>()))
+                    .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
+
+                // simulate a trailing read that blocks rather than immediately returning or failing. this task is never
+                // completed, so the only way the loop can proceed is by racing it against the delay
+                var readForeverTcs = new TaskCompletionSource<byte[]>();
+                transferConn.Setup(m => m.ReadAsync(It.Is<long>(l => l == 1), It.IsAny<CancellationToken?>()))
+                    .Returns(readForeverTcs.Task);
+
+                var connManager = new Mock<IPeerConnectionManager>();
+                connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(conn.Object));
+                connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(transferConn.Object));
+
+                var txOptions = new TransferOptions(maximumLingerTime: 200);
+
+                using (var s = new SoulseekClient(minorVersion: 9999, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, txOptions, null));
+
+                    Assert.Null(ex);
+                }
+
+                // the blocked read is only attempted once; the loop must not retry it while it is still pending
+                transferConn.Verify(m => m.ReadAsync(It.Is<long>(l => l == 1), It.IsAny<CancellationToken?>()), Times.Once);
+
+                // the connection is forcibly disconnected once MaximumLingerTime elapses, rather than waiting on the
+                // blocked read indefinitely
+                transferConn.Verify(m => m.Disconnect(It.Is<string>(msg => msg.ContainsInsensitive("maximum linger time")), null), Times.Once);
+            }
+        }
+
         [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync throws DuplicateTransferException when failing to insert UniqueKeyDictionary"), AutoData]
         public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_Unique_Key_Add_Fails(string username, string filename, int token)

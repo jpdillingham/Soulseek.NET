@@ -55,6 +55,11 @@ namespace Soulseek
                 throw new ArgumentNullException(nameof(stream), "The specified input stream is null");
             }
 
+            if (!stream.CanRead)
+            {
+                throw new ArgumentException("The specified input stream can not be read", nameof(stream));
+            }
+
             Length = length;
             Stream = stream;
         }

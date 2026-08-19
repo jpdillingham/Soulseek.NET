@@ -4490,7 +4490,7 @@ namespace Soulseek
                     writeTask = Task.CompletedTask;
                 }
 
-                // ensure the losing tasks don't raise an unbserved exception by attaching a continuation that will observe them with Forget()
+                // ensure the losing tasks don't raise an unobserved exception by attaching a continuation that will observe them with Forget()
                 writeTask.Forget();
                 disconnectedTaskCancellationSource.Task.Forget();
 
@@ -4517,18 +4517,29 @@ namespace Soulseek
                 // comes to this, so linger time shouldn't be less than a couple of seconds.
                 try
                 {
-                    var lingerStartTime = DateTime.UtcNow;
+                    var lingerDeadline = DateTime.UtcNow.AddMilliseconds(options.MaximumLingerTime);
 
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        if (lingerStartTime.AddMilliseconds(options.MaximumLingerTime) <= DateTime.UtcNow)
+                        if (lingerDeadline <= DateTime.UtcNow)
                         {
                             upload.Connection.Disconnect("Transfer complete, maximum linger time exceeded");
                             Diagnostic.Warning($"Transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} forcibly closed after exceeding maximum linger time of {options.MaximumLingerTime}ms.");
                             break;
                         }
 
-                        await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                        // sometimes attempting this read will block instead of throwing immediately; in those cases we
+                        // need to make sure it doesn't block until the connection is closed due to inactivity by racing
+                        // it against a Task.Delay()
+                        var readTask = upload.Connection.ReadAsync(1, cancellationToken);
+
+                        // ensure the read doesn't raise an unobserved exception if the Delay wins the race
+                        readTask.Forget();
+
+                        await (await Task.WhenAny(
+                            readTask,
+                            Task.Delay(lingerDeadline - DateTime.UtcNow, cancellationToken)).ConfigureAwait(false)).ConfigureAwait(false);
+
                         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
                     }
                 }
