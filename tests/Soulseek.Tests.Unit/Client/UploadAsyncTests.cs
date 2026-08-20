@@ -1256,6 +1256,65 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        [Trait("Category", "UploadFromFileAsync")]
+        [Theory(DisplayName = "UploadFromFileAsync throws OperationCanceledException when cancelled during linger"), AutoData]
+        public async Task UploadFromFileAsync_Throws_OperationCanceledException_When_Cancelled_During_Linger(string username, IPEndPoint endpoint, string filename, int token, int size)
+        {
+            using (var testFile = new TestFile())
+            using (var cts = new CancellationTokenSource())
+            {
+                var options = new SoulseekClientOptions(messageTimeout: 5, transferConnectionOptions: new ConnectionOptions(inactivityTimeout: int.MaxValue));
+
+                var response = new TransferResponse(token, size);
+                var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+                var waiter = new Mock<IWaiter>();
+                waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(response));
+                waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.State)
+                    .Returns(ConnectionState.Connected);
+
+                var transferConn = new Mock<IConnection>();
+                transferConn.Setup(m => m.ReadAsync(It.Is<long>(l => l == 8), It.IsAny<CancellationToken?>()))
+                    .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
+
+                // simulate a trailing read that blocks rather than immediately returning or failing, and request
+                // cancellation of the caller's token the moment it's attempted, so the linger loop's race between the
+                // read and the Task.Delay() is deterministically won by cancellation rather than relying on a timer
+                var readForeverTcs = new TaskCompletionSource<byte[]>();
+                transferConn.Setup(m => m.ReadAsync(It.Is<long>(l => l == 1), It.IsAny<CancellationToken?>()))
+                    .Callback(() => cts.Cancel())
+                    .Returns(readForeverTcs.Task);
+
+                var connManager = new Mock<IPeerConnectionManager>();
+                connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(conn.Object));
+                connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromResult(transferConn.Object));
+
+                // a long linger time ensures the cancellation, and not the linger deadline, is what ends the loop
+                var txOptions = new TransferOptions(maximumLingerTime: 30000);
+
+                using (var s = new SoulseekClient(minorVersion: 9999, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromFileAsync", username, filename, testFile.Path, token, txOptions, cts.Token));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<OperationCanceledException>(ex);
+                }
+
+                // the connection must not be forcibly disconnected due to exceeding the linger time; cancellation should
+                // win the race well before the 30 second linger deadline is reached
+                transferConn.Verify(m => m.Disconnect(It.Is<string>(msg => msg.ContainsInsensitive("maximum linger time")), null), Times.Never);
+            }
+        }
+
         [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync throws DuplicateTransferException when failing to insert UniqueKeyDictionary"), AutoData]
         public async Task UploadFromStreamAsync_Throws_DuplicateTransferException_If_Unique_Key_Add_Fails(string username, string filename, int token)
