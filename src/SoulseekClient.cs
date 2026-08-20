@@ -4557,9 +4557,14 @@ namespace Soulseek
                         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
                     }
                 }
-                catch (ConnectionReadException)
+                catch (OperationCanceledException)
                 {
-                    // swallow this specific exception; we're expecting it when the connection closes.
+                    // caller (of UploadAsync) requested cancellation; we have to throw to cancel even if we were lingering
+                    throw;
+                }
+                catch (Exception ex) when (ex is TimeoutException || ex is ConnectionReadException)
+                {
+                    // noop; either a timeout or a read exception was thrown, which is what we were waiting for
                 }
 
                 UpdateProgress(inputStream.Position);
