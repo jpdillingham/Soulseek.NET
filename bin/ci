@@ -55,6 +55,6 @@ dotnet-sonarscanner begin \
     /d:sonar.token="${TOKEN_SONARCLOUD}"
 
 . "${dir}/build"
-. "${dir}/test"
+. "${dir}/test" --all --no-build
 
 dotnet-sonarscanner end /d:sonar.token="${TOKEN_SONARCLOUD}"
