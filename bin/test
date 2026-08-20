@@ -3,6 +3,7 @@ set -e
 
 run_unit=true
 run_integration=true
+extra_args=()
 
 while test $# -gt 0; do
   case "$1" in
@@ -12,6 +13,7 @@ while test $# -gt 0; do
       echo '--all                   run unit and integration tests (default)'
       echo '--unit-only             run only unit tests'
       echo '--integration-only      run only integration tests'
+      echo 'any other arguments are passed through to dotnet test'
       exit 0
       ;;
     --all)
@@ -26,7 +28,8 @@ while test $# -gt 0; do
       shift
       ;;
     *)
-      break
+      extra_args+=("$1")
+      shift
       ;;
   esac
 done
@@ -37,13 +40,14 @@ if [ "$run_unit" == false ] && [ "$run_integration" == false ]; then
 fi
 
 if [ "$run_unit" == true ]; then
-  dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:CoverletOutput="../coverage.json" tests/Soulseek.Tests.Unit -p:Include="[Soulseek]*"
+  dotnet test --verbosity minimal --configuration Release --blame -p:CollectCoverage=true -p:CoverletOutput="../coverage.json" tests/Soulseek.Tests.Unit -p:Include="[Soulseek]*" "${extra_args[@]}"
 fi
 
 if [ "$run_integration" == true ]; then
+  # coverlet output needs to be merged if both unit and integration are run
   if [ "$run_unit" == true ]; then
-    dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:MergeWith="../coverage.json" -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.Tests.Integration -p:Include="[Soulseek]*"
+    dotnet test --verbosity minimal --configuration Release --blame -p:CollectCoverage=true -p:MergeWith="../coverage.json" -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.Tests.Integration -p:Include="[Soulseek]*" "${extra_args[@]}"
   else
-    dotnet test --verbosity minimal --no-build --configuration Release --blame -p:CollectCoverage=true -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.Tests.Integration -p:Include="[Soulseek]*"
+    dotnet test --verbosity minimal --configuration Release --blame -p:CollectCoverage=true -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.Tests.Integration -p:Include="[Soulseek]*" "${extra_args[@]}"
   fi
 fi
