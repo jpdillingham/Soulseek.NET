@@ -30,7 +30,7 @@ namespace Soulseek
     /// <summary>
     ///     Implements the 'token bucket' or 'leaky bucket' rate limiting algorithm.
     /// </summary>
-    internal sealed class TokenBucket : ITokenBucket, IDisposable
+    internal sealed class TokenBucket : ITokenBucket
     {
         private TaskCompletionSource<bool> waitForReset = new TaskCompletionSource<bool>();
 

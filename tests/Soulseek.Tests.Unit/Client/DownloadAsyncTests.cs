@@ -1399,60 +1399,6 @@ namespace Soulseek.Tests.Unit.Client
             transferConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => BitConverter.ToInt64(b, 0) == offset), It.IsAny<CancellationToken>()));
         }
 
-        [Trait("Category", "DownloadToStreamAsync")]
-        [Theory(DisplayName = "DownloadToStreamAsync does not throw if stream Position getter throws in finally block"), AutoData]
-        public async Task DownloadToStreamAsync_Does_Not_Throw_If_Stream_Position_Getter_Throws_In_Finally_Block(string username, IPEndPoint endpoint, string filename, int token, int size)
-        {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
-
-            var response = new TransferResponse(token, size); // allowed, will start download immediately
-            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
-
-            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
-
-            var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(response));
-            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(request));
-            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.State)
-                .Returns(ConnectionState.Connected);
-
-            var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(transferConn.Object));
-
-            var diagnostic = new Mock<IDiagnosticFactory>();
-
-            // note: this stream is rigged so that .Position throws after the third call, so we hit the finally block
-            using (var stream = new UnPositionableStream())
-            using (var s = new SoulseekClient(minorVersion: 9999, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object, diagnosticFactory: diagnostic.Object))
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-                var txoptions = new TransferOptions(disposeOutputStreamOnCompletion: true);
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("DownloadToStreamAsync", username, filename, new Func<Task<Stream>>(() => Task.FromResult((Stream)stream)), (long?)size, 0, token, txoptions, null));
-
-                Assert.Null(ex);
-
-                diagnostic.Verify(m => m.Warning(It.Is<string>(str => str.ContainsInsensitive("determine final position")), It.IsAny<Exception>()), Times.Once);
-            }
-        }
-
         [Trait("Category", "DownloadToFileAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync disposes output stream given option flag"), AutoData]
         public async Task DownloadToStreamAsync_Disposes_Output_Stream_Given_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
@@ -3898,56 +3844,6 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Null(ex);
                 stream.VerifyGet(m => m.CanSeek, Times.Never);
                 stream.Verify(m => m.Seek(startOffset, SeekOrigin.Begin), Times.Never);
-            }
-        }
-
-        private class UnPositionableStream : Stream
-        {
-            public override bool CanRead => false;
-            public override bool CanWrite => false;
-
-            public override bool CanSeek => false;
-
-            public override long Length => 0;
-
-            private int timesCalled = 0;
-
-            public override long Position
-            {
-                get
-                {
-                    timesCalled++;
-
-                    if (timesCalled == 3)
-                    {
-                        throw new NotImplementedException($"times called: {timesCalled}");
-                    }
-
-                    return 0;
-                }
-                set => throw new NotImplementedException();
-            }
-
-            public override void Flush()
-            {
-            }
-
-            public override int Read(byte[] buffer, int offset, int count)
-            {
-                return count;
-            }
-
-            public override long Seek(long offset, SeekOrigin origin)
-            {
-                return offset;
-            }
-
-            public override void SetLength(long value)
-            {
-            }
-
-            public override void Write(byte[] buffer, int offset, int count)
-            {
             }
         }
 

@@ -412,7 +412,7 @@ namespace Soulseek.Network
                 {
                     Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
 
-                    (ParentConnection, ParentBranchLevel, ParentBranchRoot) = successfulConnections.First();
+                    (ParentConnection, ParentBranchLevel, ParentBranchRoot) = successfulConnections[0];
                     Diagnostic.Debug($"Selected {ParentConnection.Username} as the best connection; branch root: {ParentBranchRoot}, branch level: {ParentBranchLevel}");
 
                     ParentConnection.Disconnected += ParentConnection_Disconnected;
