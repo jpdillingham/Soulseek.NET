@@ -3206,7 +3206,7 @@ namespace Soulseek
             };
 
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
-            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
+            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe,
             // a caller can spam calls and get downloads through concurrently. this check is the last line of defense; if we make
             // it past here this unique combination is "locked" until the transfer is complete (as long as we remove it in the finally block!)
             var uniqueKey = $"{TransferDirection.Download}:{username}:{remoteFilename}";
@@ -3460,7 +3460,7 @@ namespace Soulseek
 
                 if (firstTask == download.RemoteTaskCompletionSource.Task)
                 {
-                    // the remote client sent either UploadFailed (almost certain) or UploadDenied (not sure if possible);
+                    // the remote client sent either UploadFailed (almost certain) or UploadDenied (not sure if possible),
                     // and we set either a TransferException (failed) or TransferRejectedException (denied) on this TCS
                     // in the event handlers above. await to force the exception to bubble up
                     await download.RemoteTaskCompletionSource.Task.ConfigureAwait(false);
@@ -3567,20 +3567,6 @@ namespace Soulseek
                     catch (Exception ex)
                     {
                         Diagnostic.Warning($"Failed to dispose transfer connection for file {remoteFilename} from user {username}: {ex.Message}");
-                    }
-
-                    long finalStreamPosition = 0;
-
-                    // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
-                    // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
-                    // set it to zero and let the consumer figure it out
-                    try
-                    {
-                        finalStreamPosition = outputStream?.Position ?? 0;
-                    }
-                    catch (Exception ex)
-                    {
-                        Diagnostic.Warning($"Failed to determine final position of output stream for file {Path.GetFileName(download.Filename)} from {username}: {ex.Message}", ex);
                     }
 
                     if (options.DisposeOutputStreamOnCompletion && outputStream != null)
@@ -4294,7 +4280,7 @@ namespace Soulseek
             };
 
             // we can't allow more than one concurrent transfer for the same file from the same user. we're already checking for this
-            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe;
+            // in the public-scoped methods, by checking the contents of the Download/UploadDictionary, but that's not thread safe,
             // a caller can spam calls and get transfers through concurrently. this check is the last line of defense; if we make
             // it past here this unique combination is "locked" until the transfer is complete (as long as we remove it in the finally block!)
             var uniqueKey = $"{TransferDirection.Upload}:{username}:{remoteFilename}";
@@ -4423,14 +4409,14 @@ namespace Soulseek
                     .ConfigureAwait(false);
                 Diagnostic.Debug($"Fetched transfer connection for upload of {Path.GetFileName(upload.Filename)} to {username} (id: {upload.Connection.Id}, state: {upload.Connection.State})");
 
-                // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
-                // to determine the outcome of the upload.
-                var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(cancellationToken);
-
                 // once we have a 'winner' of the task race, we want to stop the loser as quickly as possible.
                 // we'll do that with a cancellation token that we bind to the one that was passed into the method.
                 using var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var linkedCancellationToken = linkedCancellationTokenSource.Token;
+
+                // create a task completion source that represents the disconnect of the transfer connection. this is one of two tasks that will 'race'
+                // to determine the outcome of the upload.
+                var disconnectedTaskCancellationSource = new TaskCompletionSource<Exception>(linkedCancellationToken);
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
                 upload.Connection.Disconnected += (sender, e) =>
@@ -4497,7 +4483,7 @@ namespace Soulseek
                             options.Reporter?.Invoke(new Transfer(upload), attemptedBytes, grantedBytes, actualBytes);
                             tokenBucket.Return(grantedBytes - actualBytes);
                         },
-                        cancellationToken: cancellationToken);
+                        cancellationToken: linkedCancellationToken);
                 }
                 else
                 {
@@ -4557,9 +4543,14 @@ namespace Soulseek
                         await Task.Delay(100, cancellationToken).ConfigureAwait(false);
                     }
                 }
-                catch (ConnectionReadException)
+                catch (OperationCanceledException)
                 {
-                    // swallow this specific exception; we're expecting it when the connection closes.
+                    // caller (of UploadAsync) requested cancellation; we have to throw to cancel even if we were lingering
+                    throw;
+                }
+                catch (Exception ex) when (ex is TimeoutException || ex is ConnectionReadException)
+                {
+                    // noop; either a timeout or a read exception was thrown, which is what we were waiting for
                 }
 
                 UpdateProgress(inputStream.Position);
@@ -4637,20 +4628,6 @@ namespace Soulseek
                         Diagnostic.Warning($"Failed to dispose transfer connection for file {remoteFilename} to user {username}: {ex.Message}");
                     }
 
-                    long finalStreamPosition = 0;
-
-                    // attempt to get the actual final position of the stream for accurate record keeping. if something goes wrong,
-                    // which can happen depending on the stream type (e.g. FileStream.Position can throw if the file is closed),
-                    // set it to zero and let the consumer figure it out
-                    try
-                    {
-                        finalStreamPosition = inputStream?.Position ?? 0;
-                    }
-                    catch (Exception ex)
-                    {
-                        Diagnostic.Warning($"Failed to determine final position of input stream for file {Path.GetFileName(upload.Filename)} to {username}: {ex.Message}", ex);
-                    }
-
                     if (options.DisposeInputStreamOnCompletion && inputStream != null)
                     {
                         try
@@ -4674,7 +4651,7 @@ namespace Soulseek
                         {
                             // fetch the endpoint again, in case it failed or was never fetched because the semaphore wasn't obtained.
                             // this allows us to send UploadDenied for cancelled queued files
-                            endpoint = await GetUserEndPointAsync(username).ConfigureAwait(false);
+                            endpoint = await GetUserEndPointAsync(username, CancellationToken.None).ConfigureAwait(false);
                             var messageConnection = await PeerConnectionManager
                                 .GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None)
                                 .ConfigureAwait(false);
@@ -4682,11 +4659,11 @@ namespace Soulseek
                             // send UploadDenied if we cancelled the transfer. this should prevent the remote client from re-enqueuing
                             if (upload.State.HasFlag(TransferStates.Cancelled))
                             {
-                                await messageConnection.WriteAsync(new UploadDenied(remoteFilename, "Cancelled")).ConfigureAwait(false);
+                                await messageConnection.WriteAsync(new UploadDenied(remoteFilename, "Cancelled"), CancellationToken.None).ConfigureAwait(false);
                             }
                             else
                             {
-                                await messageConnection.WriteAsync(new UploadFailed(remoteFilename)).ConfigureAwait(false);
+                                await messageConnection.WriteAsync(new UploadFailed(remoteFilename), CancellationToken.None).ConfigureAwait(false);
                             }
                         }
                         catch

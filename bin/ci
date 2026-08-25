@@ -4,7 +4,6 @@ dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 required_vars=(
     TOKEN_SONARCLOUD
-    TOKEN_CODECOV_SOULSEEKNET
     SLSK_INTEGRATION_USERNAME
     SLSK_INTEGRATION_PASSWORD
 )
@@ -56,8 +55,6 @@ dotnet-sonarscanner begin \
     /d:sonar.token="${TOKEN_SONARCLOUD}"
 
 . "${dir}/build"
-. "${dir}/test"
+. "${dir}/test" --all --no-build
 
 dotnet-sonarscanner end /d:sonar.token="${TOKEN_SONARCLOUD}"
-
-bash <(curl -s https://codecov.io/bash) -f tests/opencover.xml -t ${TOKEN_CODECOV_SOULSEEKNET}

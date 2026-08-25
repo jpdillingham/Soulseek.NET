@@ -112,7 +112,11 @@ namespace Soulseek
         /// <returns>The MD5 hash of the input string.</returns>
         public static string ToMD5Hash(this string str)
         {
+#pragma warning disable S4790 // Weak hashing algorithms should not be used
+
             using MD5 md5Hash = MD5.Create();
+#pragma warning restore S4790 // Weak hashing algorithms should not be used
+
             byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(str));
 
             StringBuilder sBuilder = new StringBuilder();

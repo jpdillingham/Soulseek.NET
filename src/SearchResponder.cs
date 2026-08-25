@@ -185,7 +185,11 @@ namespace Soulseek
 
                     try
                     {
-                        rawSearchResponse?.Stream?.Dispose();
+#if NETSTANDARD2_0
+                        rawSearchResponse.Stream.Dispose();
+#else
+                        await rawSearchResponse.Stream.DisposeAsync().ConfigureAwait(false);
+#endif
                     }
                     catch
                     {

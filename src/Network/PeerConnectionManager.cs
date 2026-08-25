@@ -681,6 +681,8 @@ namespace Soulseek.Network
             return MessageConnectionDictionary.TryRemove(username, out _);
         }
 
+        private static void MessageConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
+
         private void Dispose(bool disposing)
         {
             if (!Disposed)
@@ -843,8 +845,6 @@ namespace Soulseek.Network
             TryRemoveMessageConnectionRecord(connection);
             connection.Dispose();
         }
-
-        private void MessageConnectionProvisional_Disconnected(object sender, ConnectionDisconnectedEventArgs e) => ((IMessageConnection)sender).Dispose();
 
         private void TryRemoveMessageConnectionRecord(IMessageConnection connection)
         {
