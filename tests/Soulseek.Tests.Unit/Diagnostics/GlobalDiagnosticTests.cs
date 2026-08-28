@@ -40,7 +40,16 @@ namespace Soulseek.Tests.Unit
         {
             GlobalDiagnostic.Init(null);
 
-            var ex = Record.Exception(() => GlobalDiagnostic.Info("test"));
+            var ex = Record.Exception(() =>
+            {
+                GlobalDiagnostic.Trace("test");
+                GlobalDiagnostic.Trace("test", new Exception("test"));
+                GlobalDiagnostic.Debug("test");
+                GlobalDiagnostic.Debug("test", new Exception("test"));
+                GlobalDiagnostic.Info("test");
+                GlobalDiagnostic.Warning("test");
+                GlobalDiagnostic.Warning("test", new Exception("test"));
+            });
 
             Assert.Null(ex);
         }
