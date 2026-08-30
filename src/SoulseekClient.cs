@@ -23,13 +23,6 @@
 
 namespace Soulseek
 {
-    using Soulseek.Diagnostics;
-    using Soulseek.Messaging;
-    using Soulseek.Messaging.Handlers;
-    using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Messages.Server;
-    using Soulseek.Network;
-    using Soulseek.Network.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -40,6 +33,12 @@ namespace Soulseek
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Diagnostics;
+    using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
+    using Soulseek.Messaging.Messages;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
