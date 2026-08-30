@@ -4636,7 +4636,7 @@ namespace Soulseek
                         governor: async (requestedBytes, cancelToken) =>
                         {
                             var bytesGrantedByCaller = await options.Governor(new Transfer(upload), requestedBytes, cancelToken).ConfigureAwait(false);
-                            return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancellationToken).ConfigureAwait(false);
+                            return await tokenBucket.GetAsync(Math.Min(requestedBytes, bytesGrantedByCaller), cancelToken).ConfigureAwait(false);
                         },
                         reporter: (attemptedBytes, grantedBytes, actualBytes) =>
                         {
