@@ -350,12 +350,12 @@ namespace Soulseek.Messaging
             /// <summary>
             ///     51
             /// </summary>
-            InterestAdd = 51,
+            LikedInterestAdd = 51,
 
             /// <summary>
             ///     52
             /// </summary>
-            InterestRemove = 52,
+            LikedInterestRemove = 52,
 
             /// <summary>
             ///     54
