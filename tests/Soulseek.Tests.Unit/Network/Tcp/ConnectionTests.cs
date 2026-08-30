@@ -509,7 +509,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                             It.IsAny<int>(),
                             proxy.Username,
                             proxy.Password,
-                            It.IsAny<CancellationToken?>()),
+                            It.IsAny<CancellationToken>()),
                         Times.Once);
                 }
             }

@@ -464,11 +464,9 @@ namespace Soulseek.Network
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken cancellationToken = default)
         {
-            cancellationToken ??= CancellationToken.None;
-
-            static async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
+            static async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken cancellationToken)
             {
                 IMessageConnection connection = default;
 
@@ -740,14 +738,14 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public async Task UpdateStatusAsync(CancellationToken? cancellationToken = null)
+        public async Task UpdateStatusAsync(CancellationToken cancellationToken = default)
         {
             if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
             {
                 return;
             }
 
-            await StatusSyncRoot.WaitAsync(cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+            await StatusSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {

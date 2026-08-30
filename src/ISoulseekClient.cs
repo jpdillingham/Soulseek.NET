@@ -266,7 +266,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
-        /// <remarks>Add a user to the server watch list with <see cref="WatchUserAsync(string, CancellationToken?)"/>.</remarks>
+        /// <remarks>Add a user to the server watch list with <see cref="WatchUserAsync(string, CancellationToken)"/>.</remarks>
         event EventHandler<UserStatus> UserStatusChanged;
 
         /// <summary>
@@ -345,7 +345,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null);
+        Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously sends a privilege notification acknowledgement for the specified <paramref name="privilegeNotificationId"/>.
@@ -360,7 +360,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken? cancellationToken = null);
+        Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the list of members in the specified private <paramref name="roomName"/>.
@@ -376,7 +376,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task AddPrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null);
+        Task AddPrivateRoomMemberAsync(string roomName, string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the list of moderators in the specified private <paramref name="roomName"/>.
@@ -392,7 +392,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task AddPrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null);
+        Task AddPrivateRoomModeratorAsync(string roomName, string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -414,7 +414,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<BrowseResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
+        Task<BrowseResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously changes the password for the currently logged in user.
@@ -429,7 +429,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null);
+        Task ChangePasswordAsync(string password, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously connects the client to the default server and logs in using the specified
@@ -449,7 +449,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null);
+        Task ConnectAsync(string username, string password, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously connects the client to the specified server <paramref name="address"/> and <paramref name="port"/>
@@ -478,7 +478,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task ConnectAsync(string address, int port, string username, string password, CancellationToken? cancellationToken = null);
+        Task ConnectAsync(string address, int port, string username, string password, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously establishes and caches a connection to the specified <paramref name="username"/>. If a connection
@@ -498,7 +498,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task ConnectToUserAsync(string username, bool invalidateCache = false, CancellationToken? cancellationToken = null);
+        Task ConnectToUserAsync(string username, bool invalidateCache = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Disconnects the client from the server.
@@ -558,7 +558,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="remoteFilename"/> from the specified
@@ -605,7 +605,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously removes the currently logged in user from the list of members in the specified private <paramref name="roomName"/>.
@@ -620,7 +620,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task DropPrivateRoomMembershipAsync(string roomName, CancellationToken? cancellationToken = null);
+        Task DropPrivateRoomMembershipAsync(string roomName, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously removes the currently logged in user from the ownership of the specified private <paramref name="roomName"/>.
@@ -635,7 +635,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task DropPrivateRoomOwnershipAsync(string roomName, CancellationToken? cancellationToken = null);
+        Task DropPrivateRoomOwnershipAsync(string roomName, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     <para>
@@ -649,7 +649,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, string, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, string, long?, long, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -696,7 +696,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     <para>
@@ -706,7 +706,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long?, long, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -753,7 +753,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     <para>
@@ -763,7 +763,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, string, int?, TransferOptions, CancellationToken?)"/>, but returns the
+        ///         <see cref="UploadAsync(string, string, string, int?, TransferOptions, CancellationToken)"/>, but returns the
         ///         upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
@@ -792,7 +792,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     <para>
@@ -802,7 +802,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, long, Func{long, Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="UploadAsync(string, string, long, Func{long, Task{Stream}}, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
@@ -833,7 +833,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.
@@ -852,7 +852,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<Directory>> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<Directory>> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the
@@ -871,7 +871,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null);
+        Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Gets the next token for use in client operations.
@@ -893,7 +893,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<int> GetPrivilegesAsync(CancellationToken? cancellationToken = null);
+        Task<int> GetPrivilegesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the list of chat rooms on the server.
@@ -904,7 +904,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<RoomList> GetRoomListAsync(CancellationToken? cancellationToken = null);
+        Task<RoomList> GetRoomListAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.
@@ -920,7 +920,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserEndPointException">Thrown when an exception is encountered during the operation.</exception>
-        Task<IPEndPoint> GetUserEndPointAsync(string username, CancellationToken? cancellationToken = null);
+        Task<IPEndPoint> GetUserEndPointAsync(string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.
@@ -936,7 +936,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserInfo> GetUserInfoAsync(string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the status of the privileges of the specified <paramref name="username"/>.
@@ -951,7 +951,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<bool> GetUserPrivilegedAsync(string username, CancellationToken? cancellationToken = null);
+        Task<bool> GetUserPrivilegedAsync(string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches statistics for the specified <paramref name="username"/>.
@@ -971,7 +971,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserStatistics> GetUserStatisticsAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserStatistics> GetUserStatisticsAsync(string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
@@ -987,7 +987,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserStatus> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserStatus> GetUserStatusAsync(string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously grants the specified <paramref name="username"/> the specified number of days
@@ -1030,7 +1030,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task GrantUserPrivilegesAsync(string username, int days, CancellationToken? cancellationToken = null);
+        Task GrantUserPrivilegesAsync(string username, int days, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
@@ -1049,7 +1049,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken? cancellationToken = null);
+        Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously leaves the chat room with the specified <paramref name="roomName"/>.
@@ -1066,7 +1066,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null);
+        Task LeaveRoomAsync(string roomName, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously pings the server to check connectivity.
@@ -1078,7 +1078,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<long> PingServerAsync(CancellationToken? cancellationToken = null);
+        Task<long> PingServerAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously applies the specified <paramref name="patch"/> to the client options.
@@ -1110,7 +1110,7 @@ namespace Soulseek
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="ListenException">Thrown when binding a listener to the specified address and/or port fails.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null);
+        Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously removes the specified <paramref name="username"/> from the list of members in the specified private <paramref name="roomName"/>.
@@ -1126,7 +1126,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task RemovePrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null);
+        Task RemovePrivateRoomMemberAsync(string roomName, string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously removes the specified <paramref name="username"/> from the list of moderators in the specified
@@ -1143,7 +1143,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task RemovePrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null);
+        Task RemovePrivateRoomModeratorAsync(string roomName, string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously searches for the specified <paramref name="query"/> using the specified unique
@@ -1164,7 +1164,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously searches for the specified <paramref name="query"/> using the specified unique
@@ -1189,7 +1189,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseHandler, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseHandler, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
@@ -1205,7 +1205,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
+        Task SendPrivateMessageAsync(string username, string message, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously sends the specified chat room <paramref name="message"/> to the specified <paramref name="roomName"/>.
@@ -1221,7 +1221,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null);
+        Task SendRoomMessageAsync(string roomName, string message, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously informs the server of the most recently completed upload transfer <paramref name="speed"/>.
@@ -1236,7 +1236,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task SendUploadSpeedAsync(int speed, CancellationToken? cancellationToken = null);
+        Task SendUploadSpeedAsync(int speed, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously sets a chat room ticker containing the specified <paramref name="message"/> in the specified <paramref name="roomName"/>.
@@ -1252,7 +1252,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetRoomTickerAsync(string roomName, string message, CancellationToken? cancellationToken = null);
+        Task SetRoomTickerAsync(string roomName, string message, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
@@ -1268,7 +1268,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null);
+        Task SetSharedCountsAsync(int directories, int files, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
@@ -1280,7 +1280,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null);
+        Task SetStatusAsync(UserPresence status, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously starts receiving public chat messages.
@@ -1291,7 +1291,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task StartPublicChatAsync(CancellationToken? cancellationToken = null);
+        Task StartPublicChatAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously stops receiving public chat messages.
@@ -1302,7 +1302,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task StopPublicChatAsync(CancellationToken? cancellationToken = null);
+        Task StopPublicChatAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously removes the specified <paramref name="username"/> from the server watch list for the current session.
@@ -1321,7 +1321,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task UnwatchUserAsync(string username, CancellationToken? cancellationToken = null);
+        Task UnwatchUserAsync(string username, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the specified
@@ -1353,7 +1353,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> UploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> UploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="remoteFilename"/> from the <see cref="Stream"/> created by
@@ -1387,7 +1387,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
@@ -1407,6 +1407,6 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserData> WatchUserAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserData> WatchUserAsync(string username, CancellationToken cancellationToken = default);
     }
 }
