@@ -1,4 +1,4 @@
-﻿// <copyright file="HatedInterestAddCommand.cs" company="JP Dillingham">
+﻿// <copyright file="HatedInterestRemoveCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -26,21 +26,21 @@ namespace Soulseek.Messaging.Messages.Server
     using Soulseek.Messaging;
 
     /// <summary>
-    ///     Adds a hated interest to the user's profile on the server.
+    ///     Removes a hated interest from the user's profile on the server.
     /// </summary>
-    internal class HatedInterestAddCommand : IOutgoingMessage
+    internal class HatedInterestRemoveCommand : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="HatedInterestAddCommand"/> class.
+        ///     Initializes a new instance of the <see cref="HatedInterestRemoveCommand"/> class.
         /// </summary>
-        /// <param name="interest">The hated interest to add.</param>
-        public HatedInterestAddCommand(string interest)
+        /// <param name="interest">The hated interest to remove.</param>
+        public HatedInterestRemoveCommand(string interest)
         {
             Interest = interest;
         }
 
         /// <summary>
-        ///     Gets the hated interest to add.
+        ///     Gets the hated interest to remove.
         /// </summary>
         public string Interest { get; }
 
@@ -51,7 +51,7 @@ namespace Soulseek.Messaging.Messages.Server
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.HatedInterestAdd)
+                .WriteCode(MessageCode.Server.HatedInterestRemove)
                 .WriteString(Interest)
                 .Build();
         }
