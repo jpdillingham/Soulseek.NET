@@ -26,7 +26,7 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Messaging;
 
     /// <summary>
-    ///     Adds a hated interest to the user's profile on the server.
+    ///     Adds an interest to the user's list of hated interests.
     /// </summary>
     internal class HatedInterestAddCommand : IOutgoingMessage
     {

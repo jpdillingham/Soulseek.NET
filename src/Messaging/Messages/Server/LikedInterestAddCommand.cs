@@ -26,7 +26,7 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Messaging;
 
     /// <summary>
-    ///     Adds a liked interest to the user's profile on the server.
+    ///     Adds an interest to the user's list of liked interests.
     /// </summary>
     internal class LikedInterestAddCommand : IOutgoingMessage
     {

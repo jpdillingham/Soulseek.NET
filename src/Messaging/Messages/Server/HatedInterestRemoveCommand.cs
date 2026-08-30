@@ -26,7 +26,7 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Messaging;
 
     /// <summary>
-    ///     Removes a hated interest from the user's profile on the server.
+    ///     Removes an interest from the user's list of hated interests.
     /// </summary>
     internal class HatedInterestRemoveCommand : IOutgoingMessage
     {

@@ -26,7 +26,7 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Messaging;
 
     /// <summary>
-    ///     Removes a liked interest from the user's profile on the server.
+    ///     Removes an interest from the user's list of liked interests.
     /// </summary>
     internal class LikedInterestRemoveCommand : IOutgoingMessage
     {
