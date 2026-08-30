@@ -21,7 +21,7 @@
 //     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
 
-namespace Soulseek.Messaging.Messages.Server
+namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Messaging;
 
