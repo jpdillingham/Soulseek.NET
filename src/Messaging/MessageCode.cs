@@ -673,11 +673,6 @@ namespace Soulseek.Messaging
             CannotConnect = 1001,
 
             /// <summary>
-            ///     1002
-            /// </summary>
-            CannotCreateRoom = 1002,
-
-            /// <summary>
             ///     1003
             /// </summary>
             CannotJoinRoom = 1003,
