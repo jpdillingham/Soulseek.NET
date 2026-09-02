@@ -21,10 +21,8 @@
 //     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
 
-namespace Soulseek
+namespace Soulseek.Messaging.Messages
 {
-    using Soulseek.Messaging;
-
     /// <summary>
     ///     The response to a user info request.
     /// </summary>
