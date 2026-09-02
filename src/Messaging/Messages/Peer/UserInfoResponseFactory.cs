@@ -57,6 +57,11 @@ namespace Soulseek.Messaging.Messages
             var queueLength = reader.ReadInteger();
             var hasFreeUploadSlot = reader.ReadByte() > 0;
 
+            if (SoulseekClient.ReportUnreadMessageData && reader.HasMoreData)
+            {
+                Diagnostics.GlobalDiagnostic.Warning($"Message reader for {nameof(MessageCode.Peer.InfoResponse)} finalized with {reader.Remaining} unread bytes");
+            }
+
             return new UserInfo(description, uploadSlots, queueLength, hasFreeUploadSlot, picture);
         }
 
