@@ -833,6 +833,11 @@ namespace Soulseek
             return BrowseInternalAsync(username, options, cancellationToken ?? CancellationToken.None);
         }
 
+        public async Task BrowseAsync(string username, Action<Directory, bool> directoryHandler, BrowseOptions options = null, CancellationToken cancellationToken = default)
+        {
+            // todo: implement me!
+        }
+
         /// <summary>
         ///     Asynchronously changes the password for the currently logged in user.
         /// </summary>

@@ -446,6 +446,8 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<BrowseResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
 
+        Task<BrowseResponse> BrowseAsync(string username, Action<Directory, bool> directoryHandler, BrowseOptions options = null, CancellationToken? cancellationToken = null);
+
         /// <summary>
         ///     Asynchronously changes the password for the currently logged in user.
         /// </summary>
