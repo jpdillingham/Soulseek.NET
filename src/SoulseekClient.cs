@@ -519,6 +519,11 @@ namespace Soulseek
         public static bool RaiseEventsAsynchronously { get; set; }
 
         /// <summary>
+        ///     Gets or sets a value indicating whether to report unread message data as a diagnostic warning.
+        /// </summary>
+        public static bool ReportUnreadMessageData { get; set; }
+
+        /// <summary>
         ///     Gets the unresolved server address.
         /// </summary>
         public string Address { get; private set; }
