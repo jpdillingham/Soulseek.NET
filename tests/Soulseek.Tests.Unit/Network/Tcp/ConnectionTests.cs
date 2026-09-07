@@ -516,6 +516,83 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect through proxy cancels pending CONNECT response reads when the given token is cancelled")]
+        [InlineData(new byte[] { })] // stall on the 4 byte connection response
+        [InlineData(new byte[] { 0x05, 0x00, 0x00, 0x01 })] // stall on the 4 byte IPv4 bound address
+        [InlineData(new byte[] { 0x05, 0x00, 0x00, 0x03 })] // stall on the 1 byte bound domain length
+        [InlineData(new byte[] { 0x05, 0x00, 0x00, 0x03, 0x04 })] // stall on the 4 byte bound domain
+        [InlineData(new byte[] { 0x05, 0x00, 0x00, 0x04 })] // stall on the 16 byte IPv6 bound address
+        [InlineData(new byte[] { 0x05, 0x00, 0x00, 0x01, 0x7F, 0x00, 0x00, 0x01 })] // stall on the 2 byte bound port
+        public async Task Connect_Through_Proxy_Cancels_Pending_Connect_Response_Reads(byte[] partialResponse)
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+
+            var proxyPort = ((IPEndPoint)listener.LocalEndpoint).Port;
+            var partialResponseSent = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            using (var proxyCancellationTokenSource = new CancellationTokenSource())
+            {
+                // a proxy that completes the SOCKS 5 handshake, sends a partial (or empty) CONNECT response, then stalls
+                var proxy = Task.Run(async () =>
+                {
+                    using (var server = await listener.AcceptTcpClientAsync())
+                    {
+                        var stream = server.GetStream();
+                        var buffer = new byte[1024];
+
+                        await stream.ReadAsync(buffer, 0, 3); // auth greeting
+                        await stream.WriteAsync(new byte[] { 0x05, 0x00 }, 0, 2); // anonymous auth accepted
+
+                        await stream.ReadAsync(buffer, 0, 10); // connect request
+
+                        if (partialResponse.Length > 0)
+                        {
+                            await stream.WriteAsync(partialResponse, 0, partialResponse.Length);
+                        }
+
+                        partialResponseSent.SetResult(true);
+
+                        await Task.Delay(Timeout.Infinite, proxyCancellationTokenSource.Token);
+                    }
+                });
+
+                try
+                {
+                    using (var cancellationTokenSource = new CancellationTokenSource())
+                    using (var adapter = new TcpClientAdapter())
+                    {
+                        var connect = adapter.ConnectThroughProxyAsync(IPAddress.Loopback, proxyPort, IPAddress.Loopback, 1, cancellationToken: cancellationTokenSource.Token);
+
+                        // wait for the proxy to stall, give the adapter a moment to consume what was sent and block on the
+                        // next read, then cancel
+                        await partialResponseSent.Task;
+                        await Task.Delay(500);
+
+                        await cancellationTokenSource.CancelAsync();
+
+                        // the read must be released by the cancellation; if the token isn't passed to it, this never completes
+                        var completed = await Task.WhenAny(connect, Task.Delay(10000));
+
+                        Assert.Same(connect, completed);
+
+                        var ex = await Record.ExceptionAsync(() => connect);
+
+                        Assert.NotNull(ex);
+                        Assert.IsType<ProxyException>(ex);
+                    }
+                }
+                finally
+                {
+                    await proxyCancellationTokenSource.CancelAsync();
+                    listener.Stop();
+
+                    await Record.ExceptionAsync(() => proxy);
+                }
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect raises Connected event"), AutoData]
         public async Task Connect_Raises_Connected_Event(IPEndPoint endpoint)
         {
@@ -1269,6 +1346,99 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     await c.WriteAsync(32, stream, (ct, size) => Task.FromResult(int.MaxValue));
 
                     s.Verify(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write from stream throws ConnectionWriteException if disconnected mid write")]
+        [InlineData(nameof(ConnectionState.Disconnecting))]
+        [InlineData(nameof(ConnectionState.Disconnected))]
+        public async Task Write_From_Stream_Throws_ConnectionWriteException_If_Disconnected_Mid_Write(string stateName)
+        {
+            // ConnectionState is internal, so it can't be the parameter type of a public test method
+            var state = (ConnectionState)Enum.Parse(typeof(ConnectionState), stateName);
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.CompletedTask);
+
+            var t = new Mock<ITcpClient>();
+
+            var data = new byte[32];
+
+            using (var stream = new MemoryStream(data))
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(writeBufferSize: 16)))
+                {
+                    // the connection is checked at the top of each iteration of the write loop, so disconnecting from the
+                    // governor during the first iteration aborts the write at the beginning of the second
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(32, stream, (size, token) =>
+                    {
+                        c.SetProperty("State", state);
+                        return Task.FromResult(int.MaxValue);
+                    }));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionWriteException>(ex);
+
+                    var inner = Assert.IsType<ConnectionWriteException>(ex.InnerException);
+
+                    Assert.Contains("Write aborted after 16 bytes written", inner.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains("is being disconnected", inner.Message, StringComparison.InvariantCultureIgnoreCase);
+
+                    // the first half of the payload was written before the connection dropped
+                    s.Verify(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write from stream throws ConnectionWriteException if disposed mid write"), AutoData]
+        public async Task Write_From_Stream_Throws_ConnectionWriteException_If_Disposed_Mid_Write(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.CompletedTask);
+
+            var t = new Mock<ITcpClient>();
+
+            var data = new byte[32];
+
+            using (var stream = new MemoryStream(data))
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object, options: new ConnectionOptions(writeBufferSize: 16)))
+                {
+                    var ex = await Record.ExceptionAsync(() => c.WriteAsync(32, stream, (size, token) =>
+                    {
+                        c.SetProperty("Disposed", true);
+                        return Task.FromResult(int.MaxValue);
+                    }));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionWriteException>(ex);
+
+                    var inner = Assert.IsType<ConnectionWriteException>(ex.InnerException);
+
+                    Assert.Contains("Write aborted after 16 bytes written", inner.Message, StringComparison.InvariantCultureIgnoreCase);
+                    Assert.Contains("has been or is being disposed", inner.Message, StringComparison.InvariantCultureIgnoreCase);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<CancellationToken>()), Times.Once);
+
+                    // hand the connection back to the using block in a state it can actually dispose
+                    c.SetProperty("Disposed", false);
                 }
             }
         }
