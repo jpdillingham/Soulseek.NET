@@ -24,10 +24,13 @@
 namespace Soulseek.Network
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
@@ -143,6 +146,33 @@ namespace Soulseek.Network
         /// </summary>
         public string Username { get; } = string.Empty;
 
+        private ConcurrentDictionary<int, ConcurrentQueue<(Stream Stream, Action Callback)>> MessageHandlingOverrideRegistrations { get; } = new ConcurrentDictionary<int, ConcurrentQueue<(Stream Stream, Action Callback)>>();
+
+        /// <summary>
+        ///     Registers an override for handling of the specified <paramref name="messageCode"/>, which will divert the
+        ///     received data packets to the specified <paramref name="stream"/> instead of the attached message handler,
+        ///     and will invoke the specified <paramref name="callback"/> when the message has been fully recieved.
+        /// </summary>
+        /// <remarks>
+        ///     Registrations are added to a FIFO queue internally, and messages will be streamed to handlers in the order
+        ///     they are registered and received. There is no way to guarantee that the remote client will respond in
+        ///     chronological order, so avoid using this for messages that are variable in this way (e.g. search responses).
+        /// </remarks>
+        /// <param name="messageCode">The message code of the message for which to override handling.</param>
+        /// <param name="stream">The stream to write the message data to.</param>
+        /// <param name="callback">The callback to invoke when the message has been fully received.</param>
+        public void RegisterMessageHandlingOverride(int messageCode, Stream stream, Action callback)
+        {
+            MessageHandlingOverrideRegistrations.AddOrUpdate(
+                key: messageCode,
+                addValue: new ConcurrentQueue<(Stream Stream, Action Callback)>(new[] { (stream, callback) }),
+                updateValueFactory: (k, v) =>
+                {
+                    v.Enqueue((stream, callback));
+                    return v;
+                });
+        }
+
         /// <summary>
         ///     Begins the internal continuous read loop, if it has not yet started.
         /// </summary>
@@ -239,23 +269,36 @@ namespace Soulseek.Network
 
                         DataRead += RaiseMessageDataRead;
 
-                        var payloadBytes = await ReadAsync(length - CodeLength, CancellationToken.None).ConfigureAwait(false);
-                        message.AddRange(payloadBytes);
-
-                        var messageBytes = message.ToArray();
-
-                        if (SoulseekClient.RaiseEventsAsynchronously)
+                        // if a message stream 'hook' has been installed via InstallMessageStreamHook, stream the remainder
+                        // of the message to the provided stream. the caller will be notified that the read is complete
+                        // via MessageRead -> PeerMessageHandler.HandleMessageRead -> regular message handling
+                        // the caller must avoid trying to use the browse response, since it would have been streamed instead of passed
+                        if (BitConverter.ToInt32(codeBytes) == (int)MessageCode.Peer.BrowseResponse
+                            && MessageHandlingOverrideRegistrations.TryGetValue((int)MessageCode.Peer.BrowseResponse, out var queue)
+                            && queue.TryDequeue(out var entry))
                         {
-                            Task.Run(() =>
-                            {
-                                Interlocked.CompareExchange(ref MessageRead, null, null)?
-                                    .Invoke(this, new MessageEventArgs(messageBytes));
-                            }, CancellationToken.None).Forget();
+                            await ReadAsync(length - CodeLength, entry.Stream, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+                            entry.Callback();
                         }
                         else
                         {
-                            Interlocked.CompareExchange(ref MessageRead, null, null)?
-                                .Invoke(this, new MessageEventArgs(messageBytes));
+                            var payloadBytes = await ReadAsync(length - CodeLength, CancellationToken.None).ConfigureAwait(false);
+                            message.AddRange(payloadBytes);
+                            var messageBytes = message.ToArray();
+
+                            if (SoulseekClient.RaiseEventsAsynchronously)
+                            {
+                                Task.Run(() =>
+                                {
+                                    Interlocked.CompareExchange(ref MessageRead, null, null)?
+                                        .Invoke(this, new MessageEventArgs(messageBytes));
+                                }, CancellationToken.None).Forget();
+                            }
+                            else
+                            {
+                                Interlocked.CompareExchange(ref MessageRead, null, null)?
+                                    .Invoke(this, new MessageEventArgs(messageBytes));
+                            }
                         }
                     }
                     finally
