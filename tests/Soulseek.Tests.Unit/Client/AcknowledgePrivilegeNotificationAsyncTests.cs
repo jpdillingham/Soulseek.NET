@@ -88,6 +88,24 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync does not throw when connected and logging in")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Does_Not_Throw_When_Connected_And_Logging_In()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggingIn);
+
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivilegeNotificationAsync(1));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
         [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws SoulseekClientException when write throws")]
         public async Task AcknowledgePrivilegeNotificationAsync_Throws_SoulseekClientException_When_Write_Throws()
         {
