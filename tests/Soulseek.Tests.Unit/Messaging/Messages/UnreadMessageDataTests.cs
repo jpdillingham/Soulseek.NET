@@ -3125,7 +3125,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PersonalRecommendationsResponse_FromByteArray_Reports_Unread_Data_When_Reporting_Is_Enabled()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
                 .WriteInteger(0) // recommendation count
                 .WriteInteger(0) // unrecommendation count
                 .WriteInteger(0) // extra, unread data
@@ -3142,7 +3142,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PersonalRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_There_Is_None()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
                 .WriteInteger(0) // recommendation count
                 .WriteInteger(0) // unrecommendation count
                 .Build();
@@ -3157,7 +3157,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PersonalRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_Reporting_Is_Disabled()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
                 .WriteInteger(0) // recommendation count
                 .WriteInteger(0) // unrecommendation count
                 .WriteInteger(0) // extra, unread data

@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
                 .WriteInteger(1)
                 .Build();
 
@@ -83,7 +83,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
         {
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
                 .WriteInteger(recommendations.Count);
 
             recommendations.ForEach(recommendation =>
@@ -113,7 +113,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_Given_Negative_Counts(string unrecommendation, int count)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
                 .WriteInteger(0)
                 .WriteInteger(1)
                 .WriteString(unrecommendation)
@@ -131,7 +131,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Empty_Lists_Given_No_Recommendations()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
                 .WriteInteger(0)
                 .WriteInteger(0)
                 .Build();

@@ -770,7 +770,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.Server.GetRecommendations, code);
+            Assert.Equal(MessageCode.Server.GetPersonalRecommendations, code);
         }
 
         [Trait("Category", "ToByteArray")]
@@ -808,7 +808,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.Server.GetItemRecommendations, code);
+            Assert.Equal(MessageCode.Server.GetInterestRecommendations, code);
             Assert.Equal(interest, reader.ReadString());
         }
 
@@ -847,7 +847,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.Server.GetItemSimilarUsers, code);
+            Assert.Equal(MessageCode.Server.GetInterestSimilarUsers, code);
             Assert.Equal(interest, reader.ReadString());
         }
 
