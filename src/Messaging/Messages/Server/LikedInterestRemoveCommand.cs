@@ -1,4 +1,4 @@
-﻿// <copyright file="DistributedPingRequest.cs" company="JP Dillingham">
+﻿// <copyright file="LikedInterestRemoveCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -23,40 +23,26 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using Soulseek.Messaging;
+
     /// <summary>
-    ///     A distributed ping request.
+    ///     Removes an interest from the user's list of liked interests.
     /// </summary>
-    internal sealed class DistributedPingRequest : IIncomingMessage, IOutgoingMessage
+    internal class LikedInterestRemoveCommand : IOutgoingMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DistributedPingRequest"/> class.
+        ///     Initializes a new instance of the <see cref="LikedInterestRemoveCommand"/> class.
         /// </summary>
-        public DistributedPingRequest()
+        /// <param name="interest">The liked interest to remove.</param>
+        public LikedInterestRemoveCommand(string interest)
         {
+            Interest = interest;
         }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="DistributedPingRequest"/> from the specified <paramref name="bytes"/>.
+        ///     Gets the liked interest to remove.
         /// </summary>
-        /// <param name="bytes">The byte array from which to parse.</param>
-        /// <returns>The parsed instance.</returns>
-        public static DistributedPingRequest FromByteArray(byte[] bytes)
-        {
-            var reader = new MessageReader<MessageCode.Distributed>(bytes);
-            var code = reader.ReadCode();
-
-            if (code != MessageCode.Distributed.Ping)
-            {
-                throw new MessageException($"Message Code mismatch creating {nameof(DistributedPingRequest)} (expected: {(int)MessageCode.Distributed.Ping}, received: {(int)code})");
-            }
-
-            if (SoulseekClient.ReportUnreadMessageData && reader.HasMoreData)
-            {
-                Diagnostics.GlobalDiagnostic.Warning($"Message reader for {nameof(MessageCode.Distributed.Ping)} finalized with {reader.Remaining} unread bytes");
-            }
-
-            return new DistributedPingRequest();
-        }
+        public string Interest { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -65,7 +51,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.Ping)
+                .WriteCode(MessageCode.Server.LikedInterestRemove)
+                .WriteString(Interest)
                 .Build();
         }
     }
