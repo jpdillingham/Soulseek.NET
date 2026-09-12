@@ -1,4 +1,4 @@
-﻿// <copyright file="SendAcknowledgePrivateMessageAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="AcknowledgePrivateMessageAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Network.Tcp;
     using Xunit;
 
-    public class SendAcknowledgePrivateMessageAsyncTests
+    public class AcknowledgePrivateMessageAsyncTests
     {
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws ArgumentException when ID is less than 0")]
