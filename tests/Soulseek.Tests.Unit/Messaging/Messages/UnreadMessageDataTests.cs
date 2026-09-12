@@ -3070,6 +3070,300 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Empty(warnings);
         }
 
+        // GlobalRecommendationsResponse
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "GlobalRecommendationsResponse FromByteArray reports unread data when reporting is enabled")]
+        public void GlobalRecommendationsResponse_FromByteArray_Reports_Unread_Data_When_Reporting_Is_Enabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetGlobalRecommendations)
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // unrecommendation count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => GlobalRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Single(warnings);
+            Assert.Contains("unread bytes", warnings[0]);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "GlobalRecommendationsResponse FromByteArray does not report unread data when there is none")]
+        public void GlobalRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_There_Is_None()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetGlobalRecommendations)
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // unrecommendation count
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => GlobalRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "GlobalRecommendationsResponse FromByteArray does not report unread data when reporting is disabled")]
+        public void GlobalRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_Reporting_Is_Disabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetGlobalRecommendations)
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // unrecommendation count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: false, () => GlobalRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        // PersonalRecommendationsResponse
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "PersonalRecommendationsResponse FromByteArray reports unread data when reporting is enabled")]
+        public void PersonalRecommendationsResponse_FromByteArray_Reports_Unread_Data_When_Reporting_Is_Enabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // unrecommendation count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => PersonalRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Single(warnings);
+            Assert.Contains("unread bytes", warnings[0]);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "PersonalRecommendationsResponse FromByteArray does not report unread data when there is none")]
+        public void PersonalRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_There_Is_None()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // unrecommendation count
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => PersonalRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "PersonalRecommendationsResponse FromByteArray does not report unread data when reporting is disabled")]
+        public void PersonalRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_Reporting_Is_Disabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetRecommendations)
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // unrecommendation count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: false, () => PersonalRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        // InterestRecommendationsResponse
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "InterestRecommendationsResponse FromByteArray reports unread data when reporting is enabled")]
+        public void InterestRecommendationsResponse_FromByteArray_Reports_Unread_Data_When_Reporting_Is_Enabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestRecommendations)
+                .WriteString("interest")
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => InterestRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Single(warnings);
+            Assert.Contains("unread bytes", warnings[0]);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "InterestRecommendationsResponse FromByteArray does not report unread data when there is none")]
+        public void InterestRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_There_Is_None()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestRecommendations)
+                .WriteString("interest")
+                .WriteInteger(0) // recommendation count
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => InterestRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "InterestRecommendationsResponse FromByteArray does not report unread data when reporting is disabled")]
+        public void InterestRecommendationsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_Reporting_Is_Disabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestRecommendations)
+                .WriteString("interest")
+                .WriteInteger(0) // recommendation count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: false, () => InterestRecommendationsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        // PersonalSimilarUsersResponse
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "PersonalSimilarUsersResponse FromByteArray reports unread data when reporting is enabled")]
+        public void PersonalSimilarUsersResponse_FromByteArray_Reports_Unread_Data_When_Reporting_Is_Enabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetPersonalSimilarUsers)
+                .WriteInteger(0) // user count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => PersonalSimilarUsersResponse.FromByteArray(msg));
+
+            Assert.Single(warnings);
+            Assert.Contains("unread bytes", warnings[0]);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "PersonalSimilarUsersResponse FromByteArray does not report unread data when there is none")]
+        public void PersonalSimilarUsersResponse_FromByteArray_Does_Not_Report_Unread_Data_When_There_Is_None()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetPersonalSimilarUsers)
+                .WriteInteger(0) // user count
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => PersonalSimilarUsersResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "PersonalSimilarUsersResponse FromByteArray does not report unread data when reporting is disabled")]
+        public void PersonalSimilarUsersResponse_FromByteArray_Does_Not_Report_Unread_Data_When_Reporting_Is_Disabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetPersonalSimilarUsers)
+                .WriteInteger(0) // user count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: false, () => PersonalSimilarUsersResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        // InterestSimilarUsersResponse
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "InterestSimilarUsersResponse FromByteArray reports unread data when reporting is enabled")]
+        public void InterestSimilarUsersResponse_FromByteArray_Reports_Unread_Data_When_Reporting_Is_Enabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestSimilarUsers)
+                .WriteString("interest")
+                .WriteInteger(0) // user count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => InterestSimilarUsersResponse.FromByteArray(msg));
+
+            Assert.Single(warnings);
+            Assert.Contains("unread bytes", warnings[0]);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "InterestSimilarUsersResponse FromByteArray does not report unread data when there is none")]
+        public void InterestSimilarUsersResponse_FromByteArray_Does_Not_Report_Unread_Data_When_There_Is_None()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestSimilarUsers)
+                .WriteString("interest")
+                .WriteInteger(0) // user count
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => InterestSimilarUsersResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "InterestSimilarUsersResponse FromByteArray does not report unread data when reporting is disabled")]
+        public void InterestSimilarUsersResponse_FromByteArray_Does_Not_Report_Unread_Data_When_Reporting_Is_Disabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestSimilarUsers)
+                .WriteString("interest")
+                .WriteInteger(0) // user count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: false, () => InterestSimilarUsersResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        // UserInterestsResponse
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "UserInterestsResponse FromByteArray reports unread data when reporting is enabled")]
+        public void UserInterestsResponse_FromByteArray_Reports_Unread_Data_When_Reporting_Is_Enabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetUserInterests)
+                .WriteString("username")
+                .WriteInteger(0) // like count
+                .WriteInteger(0) // hate count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => UserInterestsResponse.FromByteArray(msg));
+
+            Assert.Single(warnings);
+            Assert.Contains("unread bytes", warnings[0]);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "UserInterestsResponse FromByteArray does not report unread data when there is none")]
+        public void UserInterestsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_There_Is_None()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetUserInterests)
+                .WriteString("username")
+                .WriteInteger(0) // like count
+                .WriteInteger(0) // hate count
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: true, () => UserInterestsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
+        [Trait("Category", "ReportUnreadMessageData")]
+        [Fact(DisplayName = "UserInterestsResponse FromByteArray does not report unread data when reporting is disabled")]
+        public void UserInterestsResponse_FromByteArray_Does_Not_Report_Unread_Data_When_Reporting_Is_Disabled()
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetUserInterests)
+                .WriteString("username")
+                .WriteInteger(0) // like count
+                .WriteInteger(0) // hate count
+                .WriteInteger(0) // extra, unread data
+                .Build();
+
+            var warnings = Capture(reportUnreadMessageData: false, () => UserInterestsResponse.FromByteArray(msg));
+
+            Assert.Empty(warnings);
+        }
+
         /// <summary>
         ///     Invokes the given <paramref name="parse"/> action with <see cref="SoulseekClient.ReportUnreadMessageData"/>
         ///     set to the given <paramref name="reportUnreadMessageData"/> value, and returns the diagnostic warnings
