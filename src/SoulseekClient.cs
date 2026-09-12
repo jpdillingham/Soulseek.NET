@@ -630,7 +630,7 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="privateMessageId"/> is less than zero.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected and either or logged in or in the process of logging in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
@@ -641,7 +641,7 @@ namespace Soulseek
                 throw new ArgumentException("The private message ID must be greater than zero", nameof(privateMessageId));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || (!State.HasFlag(SoulseekClientStates.LoggingIn) && !State.HasFlag(SoulseekClientStates.LoggedIn)))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge private messages (currently: {State})");
             }
@@ -658,7 +658,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.
         /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected and either or logged in or in the process of logging in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
@@ -669,7 +669,7 @@ namespace Soulseek
                 throw new ArgumentException("The privilege notification ID must be greater than zero", nameof(privilegeNotificationId));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || (!State.HasFlag(SoulseekClientStates.LoggingIn) && !State.HasFlag(SoulseekClientStates.LoggedIn)))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge privilege notifications (currently: {State})");
             }
