@@ -673,15 +673,18 @@ namespace Soulseek.Network
 
             while (!MessageConnectionDictionary.IsEmpty)
             {
-                if (MessageConnectionDictionary.TryRemove(MessageConnectionDictionary.Keys.First(), out var connection))
+                foreach (var key in MessageConnectionDictionary.Keys)
                 {
-                    try
+                    if (MessageConnectionDictionary.TryRemove(key, out var connection))
                     {
-                        (await connection.Value.ConfigureAwait(false))?.Dispose();
-                    }
-                    catch
-                    {
-                        // noop
+                        try
+                        {
+                            (await connection.Value.ConfigureAwait(false))?.Dispose();
+                        }
+                        catch
+                        {
+                            // noop
+                        }
                     }
                 }
             }
