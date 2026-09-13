@@ -209,6 +209,7 @@ namespace Soulseek.Network
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
+        private bool Disposing { get; set; }
         private bool Enabled => SoulseekClient.Options.EnableDistributedNetwork;
         private string LastStatus { get; set; }
         private DateTime LastStatusTimestamp { get; set; }
@@ -237,6 +238,11 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddOrUpdateChildConnectionAsync(string username, IConnection incomingConnection)
         {
+            if (Disposing || Disposed)
+            {
+                throw new ObjectDisposedException(nameof(DistributedConnectionManager));
+            }
+
             var c = incomingConnection;
 
             if (!CanAcceptChildren)
@@ -548,6 +554,11 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task GetOrAddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
+            if (Disposing || Disposed)
+            {
+                throw new ObjectDisposedException(nameof(DistributedConnectionManager));
+            }
+
             bool cached = true;
             var r = connectToPeerResponse;
 
@@ -829,6 +840,8 @@ namespace Soulseek.Network
             {
                 if (disposing)
                 {
+                    Disposing = true;
+
                     WatchdogTimer.Dispose();
                     StatusDebounceTimer.Dispose();
 
