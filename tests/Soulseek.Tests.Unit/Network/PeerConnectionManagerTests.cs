@@ -90,6 +90,119 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddOrUpdateMessageConnectionAsync throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task AddOrUpdateMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var incomingConn = GetConnectionMock(endpoint);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddOrUpdateMessageConnectionAsync throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task AddOrUpdateMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing_And_Disposed(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var incomingConn = GetConnectionMock(endpoint);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Throws_ObjectDisposedException_If_Disposing(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Throws_ObjectDisposedException_If_Disposing_And_Disposed(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing(string username, IPEndPoint endpoint, int solicitationToken)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, endpoint, solicitationToken, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing_And_Disposed(string username, IPEndPoint endpoint, int solicitationToken)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, endpoint, solicitationToken, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
         [Trait("Category", "RemoveAndDisposeAll")]
         [Fact(DisplayName = "RemoveAndDisposeAll removes and disposes all")]
         public void RemoveAndDisposeAll_Removes_And_Disposes_All()
