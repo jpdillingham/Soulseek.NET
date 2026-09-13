@@ -293,6 +293,76 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddOrUpdateChildConnectionAsync throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task AddOrUpdateChildConnectionAsync_Throws_ObjectDisposedException_If_Disposing(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddOrUpdateChildConnectionAsync throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task AddOrUpdateChildConnectionAsync_Throws_ObjectDisposedException_If_Disposing_And_Disposed(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddChildConnectionAsync throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task GetOrAddChildConnectionAsync_Throws_ObjectDisposedException_If_Disposing(ConnectToPeerResponse ctpr)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddChildConnectionAsync throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task GetOrAddChildConnectionAsync_Throws_ObjectDisposedException_If_Disposing_And_Disposed(ConnectToPeerResponse ctpr)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddChildConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
         [Trait("Category", "PromoteToBranchRoot")]
         [Fact(DisplayName = "PromoteToBranchRoot promotes to branch root")]
         public void PromoteToBranchRoot_Promotes_To_Branch_Root()
