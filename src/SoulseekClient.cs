@@ -1075,10 +1075,6 @@ namespace Soulseek
         ///         appended. Otherwise, it is overwritten.
         ///     </para>
         /// </summary>
-        /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
         /// <param name="localFilename">The fully qualified filename of the destination file.</param>
@@ -1099,7 +1095,8 @@ namespace Soulseek
         ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -1115,7 +1112,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1179,10 +1176,6 @@ namespace Soulseek
         ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
         ///     <paramref name="cancellationToken"/> to the <see cref="Stream"/> created by the specified <paramref name="outputStreamFactory"/>.
         /// </summary>
-        /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
         /// <param name="outputStreamFactory">A delegate used to create the stream to which to write the file contents.</param>
@@ -1200,7 +1193,8 @@ namespace Soulseek
         ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the specified <paramref name="outputStreamFactory"/> is null.
@@ -1219,7 +1213,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1346,19 +1340,13 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, string, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, string, long, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
         /// <remarks>
-        ///     <para>
-        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///         without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        ///     </para>
-        ///     <para>
-        ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
-        ///         and will not continue until the number of active downloads has decreased below the limit.
-        ///     </para>
+        ///     The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
+        ///     and will not continue until the number of active downloads has decreased below the limit.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
@@ -1377,7 +1365,8 @@ namespace Soulseek
         ///     <paramref name="localFilename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -1393,7 +1382,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1433,19 +1422,13 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long?, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long, long, int?, TransferOptions, CancellationToken?)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
         /// <remarks>
-        ///     <para>
-        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///         without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        ///     </para>
-        ///     <para>
-        ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
-        ///         and will not continue until the number of active downloads has decreased below the limit.
-        ///     </para>
+        ///     The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
+        ///     and will not continue until the number of active downloads has decreased below the limit.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
@@ -1461,7 +1444,8 @@ namespace Soulseek
         ///     of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the specified <paramref name="outputStreamFactory"/> is null.
@@ -1480,7 +1464,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
