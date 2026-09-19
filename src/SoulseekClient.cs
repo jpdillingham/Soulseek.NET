@@ -1129,7 +1129,7 @@ namespace Soulseek
                 throw new ArgumentException("The local filename must not be a null or empty string, or one consisting only of whitespace", nameof(localFilename));
             }
 
-            if (size.HasValue && size.Value < 0)
+            if (size < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
             }
@@ -1139,9 +1139,9 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
             }
 
-            if (startOffset > 0 && !size.HasValue)
+            if (startOffset > size)
             {
-                throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset exceeds the size of the file");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1225,7 +1225,7 @@ namespace Soulseek
                 throw new ArgumentException("The remote filename must not be a null or empty string, or one consisting only of whitespace", nameof(remoteFilename));
             }
 
-            if (size.HasValue && size.Value < 0)
+            if (size < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
             }
@@ -1235,9 +1235,9 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
             }
 
-            if (startOffset > 0 && !size.HasValue)
+            if (startOffset > size)
             {
-                throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset exceeds the size of the file");
             }
 
             if (outputStreamFactory == null)
