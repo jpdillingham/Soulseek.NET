@@ -190,7 +190,8 @@ namespace Soulseek
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
-                disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
+                disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion,
+                negotiateDownloadFileSize: NegotiateDownloadFileSize);
         }
 
         /// <summary>
@@ -218,7 +219,8 @@ namespace Soulseek
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
-                disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);
+                disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion,
+                negotiateDownloadFileSize: NegotiateDownloadFileSize);
         }
     }
 }
