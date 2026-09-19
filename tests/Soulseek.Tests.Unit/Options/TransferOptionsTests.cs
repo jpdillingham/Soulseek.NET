@@ -93,6 +93,7 @@ namespace Soulseek.Tests.Unit.Options
             bool seekInput,
             bool disposeInput,
             bool disposeOutput,
+            bool negotiateDownloadFileSize,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged,
             int maximumLingerTime,
@@ -109,7 +110,8 @@ namespace Soulseek.Tests.Unit.Options
                 maximumLingerTime: maximumLingerTime,
                 seekInputStreamAutomatically: seekInput,
                 disposeInputStreamOnCompletion: disposeInput,
-                disposeOutputStreamOnCompletion: disposeOutput);
+                disposeOutputStreamOnCompletion: disposeOutput,
+                negotiateDownloadFileSize: negotiateDownloadFileSize);
 
             var o = n.WithAdditionalStateChanged(null);
 
@@ -121,6 +123,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
+            Assert.Equal(negotiateDownloadFileSize, o.NegotiateDownloadFileSize);
 
             Assert.NotEqual(stateChanged, o.StateChanged);
         }
@@ -161,6 +164,7 @@ namespace Soulseek.Tests.Unit.Options
             bool seekInput,
             bool disposeInput,
             bool disposeOutput,
+            bool negotiateDownloadFileSize,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged,
             int maximumLingerTime,
@@ -177,7 +181,8 @@ namespace Soulseek.Tests.Unit.Options
                 maximumLingerTime: maximumLingerTime,
                 seekInputStreamAutomatically: seekInput,
                 disposeInputStreamOnCompletion: disposeInput,
-                disposeOutputStreamOnCompletion: disposeOutput);
+                disposeOutputStreamOnCompletion: disposeOutput,
+                negotiateDownloadFileSize: negotiateDownloadFileSize);
 
             var o = n.WithDisposalOptions();
 
@@ -190,6 +195,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(seekInput, o.SeekInputStreamAutomatically);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
+            Assert.Equal(negotiateDownloadFileSize, o.NegotiateDownloadFileSize);
         }
 
         [Trait("Category", "WithDisposalOptions")]
@@ -198,6 +204,7 @@ namespace Soulseek.Tests.Unit.Options
             bool seekInput,
             bool disposeInput,
             bool disposeOutput,
+            bool negotiateDownloadFileSize,
             Func<Transfer, int, CancellationToken, Task<int>> governor,
             Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged,
             int maximumLingerTime,
@@ -214,7 +221,8 @@ namespace Soulseek.Tests.Unit.Options
                 maximumLingerTime: maximumLingerTime,
                 seekInputStreamAutomatically: seekInput,
                 disposeInputStreamOnCompletion: !disposeInput,
-                disposeOutputStreamOnCompletion: !disposeOutput);
+                disposeOutputStreamOnCompletion: !disposeOutput,
+                negotiateDownloadFileSize: negotiateDownloadFileSize);
 
             var o = n.WithDisposalOptions(
                 disposeInputStreamOnCompletion: disposeInput,
@@ -229,6 +237,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(seekInput, o.SeekInputStreamAutomatically);
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
+            Assert.Equal(negotiateDownloadFileSize, o.NegotiateDownloadFileSize);
         }
     }
 }
