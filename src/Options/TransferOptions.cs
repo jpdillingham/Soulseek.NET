@@ -68,6 +68,10 @@ namespace Soulseek
         /// <param name="disposeOutputStreamOnCompletion">
         ///     A value indicating whether the output stream should be closed upon transfer completion.
         /// </param>
+        /// <param name="negotiateDownloadFileSize">
+        ///     A value indicating whether the size of downloads should be negotiated with the remote client, or if the
+        ///     transfer should fail if the remote size differs from the local size.
+        /// </param>
         public TransferOptions(
             Func<Transfer, int, CancellationToken, Task<int>> governor = null,
             Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged = null,
@@ -79,7 +83,8 @@ namespace Soulseek
             bool seekInputStreamAutomatically = true,
             bool seekOutputStreamAutomatically = true,
             bool disposeInputStreamOnCompletion = true,
-            bool disposeOutputStreamOnCompletion = true)
+            bool disposeOutputStreamOnCompletion = true,
+            bool negotiateDownloadFileSize = true)
         {
             SeekInputStreamAutomatically = seekInputStreamAutomatically;
             SeekOutputStreamAutomatically = seekOutputStreamAutomatically;
@@ -93,6 +98,8 @@ namespace Soulseek
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
             MaximumLingerTime = maximumLingerTime;
+
+            NegotiateDownloadFileSize = negotiateDownloadFileSize;
         }
 
         /// <summary>
@@ -116,6 +123,12 @@ namespace Soulseek
         ///     transfer. (Default = 3000).
         /// </summary>
         public int MaximumLingerTime { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether the size of downloads should be negotiated with the remote client, or if the
+        ///     transfer should fail if the remote size differs from the local size.
+        /// </summary>
+        public bool NegotiateDownloadFileSize { get; }
 
         /// <summary>
         ///     Gets the delegate to invoke when the transfer receives data. (Default = no action).
