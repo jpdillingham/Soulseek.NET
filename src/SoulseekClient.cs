@@ -3417,23 +3417,21 @@ namespace Soulseek
                     {
                         if (options.SizeMismatchResolver is not null)
                         {
-                            long resolvedSize;
-
                             try
                             {
-                                resolvedSize = options.SizeMismatchResolver(new Transfer(download), transferRequestAcknowledgement.FileSize);
+                                var resolvedSize = options.SizeMismatchResolver(new Transfer(download), transferRequestAcknowledgement.FileSize);
+
+                                if (resolvedSize < 0 || resolvedSize < download.StartOffset)
+                                {
+                                    throw new ArgumentOutOfRangeException(nameof(size), "Resolved transfer size out of range; must be greater than or equal to zero and greater than or equal to the requested start offset");
+                                }
+
+                                download.Size = resolvedSize;
                             }
                             catch (Exception ex)
                             {
                                 throw new TransferSizeMismatchException($"Transfer aborted: encountered exception while resolving a size mismatch between the expected size of {download.Size} and the remote size of {transferRequestAcknowledgement.FileSize}: {ex.Message}", download.Size, transferRequestAcknowledgement.FileSize, ex);
                             }
-
-                            if (resolvedSize < 0 || resolvedSize < download.StartOffset)
-                            {
-                                throw new TransferSizeMismatchException($"Transfer aborted: the size {resolvedSize} returned by size mismatch resolution is invalid; it must be greater than or equal to zero and greater than or equal to the start offset of {download.StartOffset}", download.Size, transferRequestAcknowledgement.FileSize);
-                            }
-
-                            download.Size = resolvedSize;
                         }
                         else if (transferRequestAcknowledgement.FileSize == 0 && download.Size >= int.MaxValue)
                         {
@@ -3476,23 +3474,21 @@ namespace Soulseek
                     {
                         if (options.SizeMismatchResolver is not null)
                         {
-                            long resolvedSize;
-
                             try
                             {
-                                resolvedSize = options.SizeMismatchResolver(new Transfer(download), transferStartRequest.FileSize);
+                                var resolvedSize = options.SizeMismatchResolver(new Transfer(download), transferStartRequest.FileSize);
+
+                                if (resolvedSize < 0 || resolvedSize < download.StartOffset)
+                                {
+                                    throw new ArgumentOutOfRangeException(nameof(size), "Resolved transfer size out of range; must be greater than or equal to zero and greater than or equal to the requested start offset");
+                                }
+
+                                download.Size = resolvedSize;
                             }
                             catch (Exception ex)
                             {
                                 throw new TransferSizeMismatchException($"Transfer aborted: encountered exception while resolving a size mismatch between the expected size of {download.Size} and the remote size of {transferStartRequest.FileSize}: {ex.Message}", download.Size, transferStartRequest.FileSize, ex);
                             }
-
-                            if (resolvedSize < 0 || resolvedSize < download.StartOffset)
-                            {
-                                throw new TransferSizeMismatchException($"Transfer aborted: the size {resolvedSize} returned by size mismatch resolution is invalid; it must be greater than or equal to zero and greater than or equal to the start offset of {download.StartOffset}", download.Size, transferStartRequest.FileSize);
-                            }
-
-                            download.Size = resolvedSize;
                         }
                         else if (transferStartRequest.FileSize == 0 && download.Size >= int.MaxValue)
                         {
