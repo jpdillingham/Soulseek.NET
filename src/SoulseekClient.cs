@@ -1075,10 +1075,6 @@ namespace Soulseek
         ///         appended. Otherwise, it is overwritten.
         ///     </para>
         /// </summary>
-        /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
         /// <param name="localFilename">The fully qualified filename of the destination file.</param>
@@ -1099,7 +1095,8 @@ namespace Soulseek
         ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -1115,7 +1112,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1132,7 +1129,7 @@ namespace Soulseek
                 throw new ArgumentException("The local filename must not be a null or empty string, or one consisting only of whitespace", nameof(localFilename));
             }
 
-            if (size.HasValue && size.Value < 0)
+            if (size < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
             }
@@ -1142,9 +1139,9 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
             }
 
-            if (startOffset > 0 && !size.HasValue)
+            if (startOffset > size)
             {
-                throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset exceeds the size of the file");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1179,10 +1176,6 @@ namespace Soulseek
         ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified
         ///     <paramref name="cancellationToken"/> to the <see cref="Stream"/> created by the specified <paramref name="outputStreamFactory"/>.
         /// </summary>
-        /// <remarks>
-        ///     If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated without
-        ///     specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
         /// <param name="outputStreamFactory">A delegate used to create the stream to which to write the file contents.</param>
@@ -1200,7 +1193,8 @@ namespace Soulseek
         ///     Thrown when <paramref name="startOffset"/> is greater than zero but <paramref name="size"/> is not specified.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the specified <paramref name="outputStreamFactory"/> is null.
@@ -1219,7 +1213,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1231,7 +1225,7 @@ namespace Soulseek
                 throw new ArgumentException("The remote filename must not be a null or empty string, or one consisting only of whitespace", nameof(remoteFilename));
             }
 
-            if (size.HasValue && size.Value < 0)
+            if (size < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(size), "The size, if supplied, must be greater than or equal to zero");
             }
@@ -1241,9 +1235,9 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
             }
 
-            if (startOffset > 0 && !size.HasValue)
+            if (startOffset > size)
             {
-                throw new ArgumentNullException(nameof(size), "The size must be specified if the start offset is not zero");
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset exceeds the size of the file");
             }
 
             if (outputStreamFactory == null)
@@ -1346,19 +1340,13 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, string, long?, long, int?, TransferOptions, CancellationToken)"/>,
+        ///         <see cref="DownloadAsync(string, string, string, long, long, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
         /// <remarks>
-        ///     <para>
-        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///         without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        ///     </para>
-        ///     <para>
-        ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
-        ///         and will not continue until the number of active downloads has decreased below the limit.
-        ///     </para>
+        ///     The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
+        ///     and will not continue until the number of active downloads has decreased below the limit.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
@@ -1377,7 +1365,8 @@ namespace Soulseek
         ///     <paramref name="localFilename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
@@ -1393,7 +1382,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1433,19 +1422,13 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long?, long, int?, TransferOptions, CancellationToken)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long, long, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
         /// <remarks>
-        ///     <para>
-        ///         If <paramref name="size"/> is omitted, the size provided by the remote client is used. Transfers initiated
-        ///         without specifying a size are limited to 4gb or less due to a shortcoming of the SoulseekQt client.
-        ///     </para>
-        ///     <para>
-        ///         The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
-        ///         and will not continue until the number of active downloads has decreased below the limit.
-        ///     </para>
+        ///     The operation will be blocked if <see cref="SoulseekClientOptions.MaximumConcurrentDownloads"/> is exceeded,
+        ///     and will not continue until the number of active downloads has decreased below the limit.
         /// </remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="remoteFilename">The file to download, as reported by the remote user.</param>
@@ -1461,7 +1444,8 @@ namespace Soulseek
         ///     of whitespace.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero.
+        ///     Thrown when the specified <paramref name="size"/> or <paramref name="startOffset"/> is less than zero,
+        ///     or <paramref name="startOffset"/> exceeds <paramref name="size"/>.
         /// </exception>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the specified <paramref name="outputStreamFactory"/> is null.
@@ -1480,7 +1464,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size = null, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -3322,7 +3306,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<Transfer> DownloadToFileAsync(string username, string remoteFilename, string localFilename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToFileAsync(string username, string remoteFilename, string localFilename, long size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options = options.WithDisposalOptions(disposeOutputStreamOnCompletion: true);
 
@@ -3336,7 +3320,7 @@ namespace Soulseek
             return await DownloadToStreamAsync(username, remoteFilename, () => Task.FromResult((Stream)IOAdapter.GetFileStream(localFilename, fileMode, FileAccess.Write, FileShare.None)), size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options ??= new TransferOptions();
 
@@ -3425,20 +3409,43 @@ namespace Soulseek
 
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
-                    // the size of the remote file may have changed since it was sent in a search or browse response
-                    if (download.Size.HasValue && download.Size.Value != transferRequestAcknowledgement.FileSize)
+                    // if the sizes don't match there are two possible causes; 1) the file changed on disk and the size
+                    // we have is outdated for whatever reason, or 2) the size is over 2gb and the other client
+                    // experienced an integer overflow and returned 0. if it's the latter, we keep the size as is. otherwise
+                    // we either throw or take the remote size
+                    if (transferRequestAcknowledgement.FileSize != download.Size)
                     {
-                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
+                        if (options.SizeMismatchResolver is not null)
+                        {
+                            try
+                            {
+                                var resolvedSize = options.SizeMismatchResolver(new Transfer(download), transferRequestAcknowledgement.FileSize);
+
+                                if (resolvedSize < 0 || resolvedSize < download.StartOffset)
+                                {
+                                    throw new ArgumentOutOfRangeException(nameof(size), "Resolved transfer size out of range; must be greater than or equal to zero and greater than or equal to the requested start offset");
+                                }
+
+                                download.Size = resolvedSize;
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new TransferSizeMismatchException($"Transfer aborted: encountered exception while resolving a size mismatch between the expected size of {download.Size} and the remote size of {transferRequestAcknowledgement.FileSize}: {ex.Message}", download.Size, transferRequestAcknowledgement.FileSize, ex);
+                            }
+                        }
+                        else if (transferRequestAcknowledgement.FileSize == 0 && download.Size >= int.MaxValue)
+                        {
+                            // do nothing, keep the existing size. this is likely scenario 2 where the remote client experienced an integer overflow
+                        }
+                        else
+                        {
+                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size, transferRequestAcknowledgement.FileSize);
+                        }
                     }
 
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. fake a transition to
                     // queued for conststency
                     UpdateState(TransferStates.Queued | TransferStates.Remotely);
-
-                    // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
-                    // by the remote client will erroneously be reported as zero and the transfer will fail.
-                    download.Size ??= transferRequestAcknowledgement.FileSize;
-
                     UpdateState(TransferStates.Initializing);
 
                     // connect to the peer to retrieve the file; for these types of transfers, we must initiate the transfer connection.
@@ -3459,15 +3466,40 @@ namespace Soulseek
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
-                    // the size of the remote file may have changed since it was sent in a search or browse response
-                    if (download.Size.HasValue && download.Size.Value != transferStartRequest.FileSize)
+                    // if the sizes don't match there are two possible causes; 1) the file changed on disk and the size
+                    // we have is outdated for whatever reason, or 2) the size is over 2gb and the other client
+                    // experienced an integer overflow and returned 0. if it's the latter, we keep the size as is. otherwise
+                    // we either throw or take the remote size
+                    if (transferStartRequest.FileSize != download.Size)
                     {
-                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size.Value, transferStartRequest.FileSize);
+                        if (options.SizeMismatchResolver is not null)
+                        {
+                            try
+                            {
+                                var resolvedSize = options.SizeMismatchResolver(new Transfer(download), transferStartRequest.FileSize);
+
+                                if (resolvedSize < 0 || resolvedSize < download.StartOffset)
+                                {
+                                    throw new ArgumentOutOfRangeException(nameof(size), "Resolved transfer size out of range; must be greater than or equal to zero and greater than or equal to the requested start offset");
+                                }
+
+                                download.Size = resolvedSize;
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new TransferSizeMismatchException($"Transfer aborted: encountered exception while resolving a size mismatch between the expected size of {download.Size} and the remote size of {transferStartRequest.FileSize}: {ex.Message}", download.Size, transferStartRequest.FileSize, ex);
+                            }
+                        }
+                        else if (transferStartRequest.FileSize == 0 && download.Size >= int.MaxValue)
+                        {
+                            // do nothing, keep the existing size. this is likely scenario 2 where the remote client experienced an integer overflow
+                        }
+                        else
+                        {
+                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size, transferStartRequest.FileSize);
+                        }
                     }
 
-                    // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
-                    // by the remote client will erroneously be reported as zero and the transfer will fail.
-                    download.Size ??= transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
 
                     UpdateState(TransferStates.Initializing);
@@ -3484,7 +3516,7 @@ namespace Soulseek
                         .AwaitTransferConnectionAsync(download.Username, download.Filename, download.RemoteToken.Value, cancellationToken);
 
                     // initiate the connection
-                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size), cancellationToken).ConfigureAwait(false);
 
                     try
                     {
@@ -3572,7 +3604,7 @@ namespace Soulseek
                 var tokenBucket = DownloadTokenBucket;
 
                 var readTask = download.Connection.ReadAsync(
-                    length: download.Size.Value - download.StartOffset,
+                    length: download.Size - download.StartOffset,
                     outputStream: outputStream,
                     governor: async (requestedBytes, cancelToken) =>
                     {
@@ -4631,12 +4663,12 @@ namespace Soulseek
                 Task writeTask;
 
                 // don't try to write to the connection if the peer is re-requesting a file that's already complete
-                if (upload.Size.Value - upload.StartOffset > 0)
+                if (upload.Size - upload.StartOffset > 0)
                 {
                     var tokenBucket = UploadTokenBucket;
 
                     writeTask = upload.Connection.WriteAsync(
-                        length: upload.Size.Value - upload.StartOffset,
+                        length: upload.Size - upload.StartOffset,
                         inputStream: inputStream,
                         governor: async (requestedBytes, cancelToken) =>
                         {
