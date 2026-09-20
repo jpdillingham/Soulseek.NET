@@ -2067,7 +2067,7 @@ namespace Soulseek.Tests.Unit.Client
                 transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken>()))
                     .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
                 transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                    .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>(async (length, inputStream, governor, reporter, cancellationToken) =>
+                    .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>(async (length, inputStream, governor, reporter, cancellationToken) =>
                     {
                         await governor(size, governorToken);
                     });
