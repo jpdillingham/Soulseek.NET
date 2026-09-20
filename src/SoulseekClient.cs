@@ -3409,20 +3409,29 @@ namespace Soulseek
 
                 if (transferRequestAcknowledgement.IsAllowed)
                 {
-                    // the size of the remote file may have changed since it was sent in a search or browse response
-                    if (download.Size.HasValue && download.Size.Value != transferRequestAcknowledgement.FileSize)
+                    // if the sizes don't match there are two possible causes; 1) the file changed on disk and the size
+                    // we have is outdated for whatever reason, or 2) the size is over 2gb and the other client
+                    // experienced an integer overflow and returned 0. if it's the latter, we keep the size as is. otherwise
+                    // we either throw or take the remote size
+                    if (transferRequestAcknowledgement.FileSize != download.Size)
                     {
-                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size.Value, transferRequestAcknowledgement.FileSize);
+                        if (transferRequestAcknowledgement.FileSize == 0 && download.Size >= int.MaxValue)
+                        {
+                            // do nothing, keep the existing size. this is likely scenario 2 where the remote client experienced an integer overflow
+                        }
+                        else if (!options.NegotiateDownloadFileSize)
+                        {
+                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size, transferRequestAcknowledgement.FileSize);
+                        }
+                        else
+                        {
+                            download.Size = transferRequestAcknowledgement.FileSize;
+                        }
                     }
 
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. fake a transition to
                     // queued for conststency
                     UpdateState(TransferStates.Queued | TransferStates.Remotely);
-
-                    // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
-                    // by the remote client will erroneously be reported as zero and the transfer will fail.
-                    download.Size ??= transferRequestAcknowledgement.FileSize;
-
                     UpdateState(TransferStates.Initializing);
 
                     // connect to the peer to retrieve the file; for these types of transfers, we must initiate the transfer connection.
@@ -3443,15 +3452,26 @@ namespace Soulseek
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
-                    // the size of the remote file may have changed since it was sent in a search or browse response
-                    if (download.Size.HasValue && download.Size.Value != transferStartRequest.FileSize)
+                    // if the sizes don't match there are two possible causes; 1) the file changed on disk and the size
+                    // we have is outdated for whatever reason, or 2) the size is over 2gb and the other client
+                    // experienced an integer overflow and returned 0. if it's the latter, we keep the size as is. otherwise
+                    // we either throw or take the remote size
+                    if (transferStartRequest.FileSize != download.Size)
                     {
-                        throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size.Value, transferStartRequest.FileSize);
+                        if (transferStartRequest.FileSize == 0 && download.Size >= int.MaxValue)
+                        {
+                            // do nothing, keep the existing size. this is likely scenario 2 where the remote client experienced an integer overflow
+                        }
+                        else if (!options.NegotiateDownloadFileSize)
+                        {
+                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size, transferStartRequest.FileSize);
+                        }
+                        else
+                        {
+                            download.Size = transferStartRequest.FileSize;
+                        }
                     }
 
-                    // if size wasn't supplied, use the size provided by the remote client. for files over 4gb, the value provided
-                    // by the remote client will erroneously be reported as zero and the transfer will fail.
-                    download.Size ??= transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
 
                     UpdateState(TransferStates.Initializing);
@@ -3468,7 +3488,7 @@ namespace Soulseek
                         .AwaitTransferConnectionAsync(download.Username, download.Filename, download.RemoteToken.Value, cancellationToken);
 
                     // initiate the connection
-                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size ?? 0), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size), cancellationToken).ConfigureAwait(false);
 
                     try
                     {
@@ -3556,7 +3576,7 @@ namespace Soulseek
                 var tokenBucket = DownloadTokenBucket;
 
                 var readTask = download.Connection.ReadAsync(
-                    length: download.Size.Value - download.StartOffset,
+                    length: download.Size - download.StartOffset,
                     outputStream: outputStream,
                     governor: async (requestedBytes, cancelToken) =>
                     {
@@ -4615,12 +4635,12 @@ namespace Soulseek
                 Task writeTask;
 
                 // don't try to write to the connection if the peer is re-requesting a file that's already complete
-                if (upload.Size.Value - upload.StartOffset > 0)
+                if (upload.Size - upload.StartOffset > 0)
                 {
                     var tokenBucket = UploadTokenBucket;
 
                     writeTask = upload.Connection.WriteAsync(
-                        length: upload.Size.Value - upload.StartOffset,
+                        length: upload.Size - upload.StartOffset,
                         inputStream: inputStream,
                         governor: async (requestedBytes, cancelToken) =>
                         {
