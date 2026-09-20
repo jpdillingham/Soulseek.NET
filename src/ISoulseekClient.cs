@@ -585,7 +585,7 @@ namespace Soulseek
                 ///     Thrown when the remote size of the transfer is different from the specified size.
                 /// </exception>
                 /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-                Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+                Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
                 /// <summary>
                 ///     Asynchronously downloads the specified <paramref name="remoteFilename"/> from the specified
@@ -629,7 +629,7 @@ namespace Soulseek
                 ///     Thrown when the remote size of the transfer is different from the specified size.
                 /// </exception>
                 /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-                Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+                Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
                 /// <summary>
                 ///     Asynchronously removes the currently logged in user from the list of members in the specified private <paramref name="roomName"/>.
@@ -673,7 +673,7 @@ namespace Soulseek
                 ///     </para>
                 ///     <para>
                 ///         Functionally the same as
-                ///         <see cref="DownloadAsync(string, string, string, long, long, int?, TransferOptions, CancellationToken?)"/>,
+                ///         <see cref="DownloadAsync(string, string, string, long, long, int?, TransferOptions, CancellationToken)"/>,
                 ///         but returns the download Task as soon as the download has been remotely enqueued.
                 ///     </para>
                 /// </summary>
@@ -715,7 +715,7 @@ namespace Soulseek
                 ///     Thrown when the remote size of the transfer is different from the specified size.
                 /// </exception>
                 /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-                Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+                Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
                 /// <summary>
                 ///     <para>
@@ -725,7 +725,7 @@ namespace Soulseek
                 ///     </para>
                 ///     <para>
                 ///         Functionally the same as
-                ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long, long, int?, TransferOptions, CancellationToken?)"/>,
+                ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long, long, int?, TransferOptions, CancellationToken)"/>,
                 ///         but returns the download Task as soon as the download has been remotely enqueued.
                 ///     </para>
                 /// </summary>
@@ -767,7 +767,7 @@ namespace Soulseek
                 ///     Thrown when the remote size of the transfer is different from the specified size.
                 /// </exception>
                 /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-                Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+                Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default);
 
                 /// <summary>
                 ///     <para>

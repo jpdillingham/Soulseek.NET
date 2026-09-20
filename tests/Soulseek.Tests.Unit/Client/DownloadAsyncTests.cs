@@ -1346,7 +1346,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -1508,7 +1508,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -1566,7 +1566,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -1737,7 +1737,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -1806,7 +1806,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -3297,7 +3297,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -3517,7 +3517,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -3687,7 +3687,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -3756,7 +3756,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
