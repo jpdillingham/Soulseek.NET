@@ -48,7 +48,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.Connection);
             Assert.Null(d.IPEndPoint);
             Assert.Null(d.RemoteToken);
-            Assert.Null(d.Size);
+            Assert.Equal(0, d.Size);
             Assert.Equal(TransferStates.None, d.State);
             Assert.Equal(0, d.AverageSpeed);
             Assert.Equal(0, d.BytesTransferred);
