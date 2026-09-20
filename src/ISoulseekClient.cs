@@ -375,7 +375,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task AddHatedInterestAsync(string interest, CancellationToken? cancellationToken = null);
+        Task AddHatedInterestAsync(string interest, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="interest"/> to the list of the user's liked interests.
@@ -390,7 +390,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task AddLikedInterestAsync(string interest, CancellationToken? cancellationToken = null);
+        Task AddLikedInterestAsync(string interest, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the list of members in the specified private <paramref name="roomName"/>.
@@ -1139,7 +1139,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task RemoveHatedInterestAsync(string interest, CancellationToken? cancellationToken = null);
+        Task RemoveHatedInterestAsync(string interest, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously removes the specified <paramref name="interest"/> from the list of the user's liked interests.
@@ -1154,7 +1154,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task RemoveLikedInterestAsync(string interest, CancellationToken? cancellationToken = null);
+        Task RemoveLikedInterestAsync(string interest, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously removes the specified <paramref name="username"/> from the list of members in the specified private <paramref name="roomName"/>.

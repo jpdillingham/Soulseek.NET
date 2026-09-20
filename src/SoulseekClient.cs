@@ -690,7 +690,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task AddHatedInterestAsync(string interest, CancellationToken? cancellationToken = null)
+        public Task AddHatedInterestAsync(string interest, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(interest))
             {
@@ -702,7 +702,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to add a hated interest (currently: {State})");
             }
 
-            return AddHatedInterestInternalAsync(interest, cancellationToken ?? CancellationToken.None);
+            return AddHatedInterestInternalAsync(interest, cancellationToken);
         }
 
         /// <summary>
@@ -718,7 +718,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task AddLikedInterestAsync(string interest, CancellationToken? cancellationToken = null)
+        public Task AddLikedInterestAsync(string interest, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(interest))
             {
@@ -730,7 +730,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to add a liked interest (currently: {State})");
             }
 
-            return AddLikedInterestInternalAsync(interest, cancellationToken ?? CancellationToken.None);
+            return AddLikedInterestInternalAsync(interest, cancellationToken);
         }
 
         /// <summary>
@@ -2152,7 +2152,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task RemoveHatedInterestAsync(string interest, CancellationToken? cancellationToken = null)
+        public Task RemoveHatedInterestAsync(string interest, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(interest))
             {
@@ -2164,7 +2164,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to remove a hated interest (currently: {State})");
             }
 
-            return RemoveHatedInterestInternalAsync(interest, cancellationToken ?? CancellationToken.None);
+            return RemoveHatedInterestInternalAsync(interest, cancellationToken);
         }
 
         /// <summary>
@@ -2180,7 +2180,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task RemoveLikedInterestAsync(string interest, CancellationToken? cancellationToken = null)
+        public Task RemoveLikedInterestAsync(string interest, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(interest))
             {
@@ -2192,7 +2192,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to remove a liked interest (currently: {State})");
             }
 
-            return RemoveLikedInterestInternalAsync(interest, cancellationToken ?? CancellationToken.None);
+            return RemoveLikedInterestInternalAsync(interest, cancellationToken);
         }
 
         /// <summary>
