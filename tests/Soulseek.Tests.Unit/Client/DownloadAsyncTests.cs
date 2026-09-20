@@ -1095,7 +1095,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();
@@ -1233,7 +1233,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -2408,8 +2408,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
                     reporter(attempted, granted, actual);
                 });
@@ -2478,8 +2478,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
                     reporter(attempted, granted, actual);
                 });
@@ -2552,8 +2552,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
                     reporter(attempted, granted, actual);
                 });
@@ -2614,8 +2614,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>(async (length, inputStream, governor, reporter, cancellationToken) =>
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>(async (length, inputStream, governor, reporter, cancellationToken) =>
                 {
                     await governor(size, CancellationToken.None);
                 });
@@ -2738,13 +2738,13 @@ namespace Soulseek.Tests.Unit.Client
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // capture the cancellation token passed to read so we can ensure it is cancelled
-            CancellationToken? capturedToken = default;
+            CancellationToken capturedToken = default;
 
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
-                    capturedToken = cancellationToken.GetValueOrDefault();
+                    capturedToken = cancellationToken;
                 })
                 .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
@@ -2802,13 +2802,13 @@ namespace Soulseek.Tests.Unit.Client
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // capture the cancellation token passed to read so we can ensure it is cancelled
-            CancellationToken? capturedToken = default;
+            CancellationToken capturedToken = default;
 
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
-                    capturedToken = cancellationToken.GetValueOrDefault();
+                    capturedToken = cancellationToken;
                 })
                 .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
@@ -2851,7 +2851,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal("Operation cancelled", ex.Message);
 
                 // make sure the read is cancelled (this would hang if not, but still)
-                Assert.True(capturedToken.Value.IsCancellationRequested);
+                Assert.True(capturedToken.IsCancellationRequested);
             }
         }
 
@@ -2870,13 +2870,13 @@ namespace Soulseek.Tests.Unit.Client
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // capture the cancellation token passed to read so we can ensure it is cancelled
-            CancellationToken? capturedToken = default;
+            CancellationToken capturedToken = default;
 
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
-                    capturedToken = cancellationToken.GetValueOrDefault();
+                    capturedToken = cancellationToken;
                 })
                 .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
@@ -2923,7 +2923,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(thrownEx, ex.InnerException.InnerException);
 
                 // make sure the read is cancelled (this would hang if not, but still)
-                Assert.True(capturedToken.Value.IsCancellationRequested);
+                Assert.True(capturedToken.IsCancellationRequested);
             }
         }
 
@@ -2942,13 +2942,13 @@ namespace Soulseek.Tests.Unit.Client
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // capture the cancellation token passed to read so we can ensure it is cancelled
-            CancellationToken? capturedToken = default;
+            CancellationToken capturedToken = default;
 
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
-                    capturedToken = cancellationToken.GetValueOrDefault();
+                    capturedToken = cancellationToken;
                 })
                 .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
@@ -2998,7 +2998,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal("Download reported as failed by remote client", ex.InnerException.Message);
 
                 // make sure the read is cancelled (this would hang if not, but still)
-                Assert.True(capturedToken.Value.IsCancellationRequested);
+                Assert.True(capturedToken.IsCancellationRequested);
             }
         }
 
@@ -3017,13 +3017,13 @@ namespace Soulseek.Tests.Unit.Client
             var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // capture the cancellation token passed to read so we can ensure it is cancelled
-            CancellationToken? capturedToken = default;
+            CancellationToken capturedToken = default;
 
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>((length, inputStream, governor, reporter, cancellationToken) =>
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>((length, inputStream, governor, reporter, cancellationToken) =>
                 {
-                    capturedToken = cancellationToken.GetValueOrDefault();
+                    capturedToken = cancellationToken;
                 })
                 .Returns(tcs.Task); // this will hang the read indefinitely until it is cancelled when disconnected.  if this test hangs, this is why
 
@@ -3071,7 +3071,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(denialMessage, ex.Message);
 
                 // make sure the read is cancelled (this would hang if not, but still)
-                Assert.True(capturedToken.Value.IsCancellationRequested);
+                Assert.True(capturedToken.IsCancellationRequested);
             }
         }
 
@@ -3184,7 +3184,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -3459,7 +3459,7 @@ namespace Soulseek.Tests.Unit.Client
                     It.IsAny<Stream>(),
                     It.IsAny<Func<int, CancellationToken, Task<int>>>(),
                     It.IsAny<Action<int, int, int>>(),
-                    It.IsAny<CancellationToken?>()),
+                    It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -4712,8 +4712,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>(
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>(
                     (length, outputStream, governor, reporter, ct) => outputStream.Seek(size, SeekOrigin.Begin))
                 .Returns(Task.CompletedTask);
 
@@ -4781,8 +4781,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             // simulate ReadAsync writing (size - startOffset) bytes: seek the stream from startOffset to size
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>(
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>(
                     (length, outputStream, governor, reporter, ct) => outputStream.Seek(size, SeekOrigin.Begin))
                 .Returns(Task.CompletedTask);
 
@@ -4852,8 +4852,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             // simulate reading bytesReceivedBeforeFailure bytes before timing out
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
-                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken?>(
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
+                .Callback<long, Stream, Func<int, CancellationToken, Task<int>>, Action<int, int, int>, CancellationToken>(
                     (length, outputStream, governor, reporter, ct) => outputStream.Seek(startOffset + bytesReceivedBeforeFailure, SeekOrigin.Begin))
                 .Returns(Task.FromException(new TimeoutException()));
 
@@ -4971,7 +4971,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();
@@ -5028,7 +5028,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken?>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<int, CancellationToken, Task<int>>>(), It.IsAny<Action<int, int, int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();

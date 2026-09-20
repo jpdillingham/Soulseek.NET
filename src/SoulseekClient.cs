@@ -510,7 +510,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
-        /// <remarks>Add a user to the server watch list with <see cref="WatchUserAsync(string, CancellationToken?)"/>.</remarks>
+        /// <remarks>Add a user to the server watch list with <see cref="WatchUserAsync(string, CancellationToken)"/>.</remarks>
         public event EventHandler<UserStatus> UserStatusChanged;
 
         /// <summary>
@@ -630,23 +630,23 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="privateMessageId"/> is less than zero.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected and either or logged in or in the process of logging in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public virtual Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
+        public virtual Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken cancellationToken = default)
         {
             if (privateMessageId < 0)
             {
                 throw new ArgumentException("The private message ID must be greater than zero", nameof(privateMessageId));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || (!State.HasFlag(SoulseekClientStates.LoggingIn) && !State.HasFlag(SoulseekClientStates.LoggedIn)))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge private messages (currently: {State})");
             }
 
-            return AcknowledgePrivateMessageInternalAsync(privateMessageId, cancellationToken ?? CancellationToken.None);
+            return AcknowledgePrivateMessageInternalAsync(privateMessageId, cancellationToken);
         }
 
         /// <summary>
@@ -658,23 +658,23 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.
         /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected and either or logged in or in the process of logging in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public virtual Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken? cancellationToken = null)
+        public virtual Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken cancellationToken = default)
         {
             if (privilegeNotificationId < 0)
             {
                 throw new ArgumentException("The privilege notification ID must be greater than zero", nameof(privilegeNotificationId));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || (!State.HasFlag(SoulseekClientStates.LoggingIn) && !State.HasFlag(SoulseekClientStates.LoggedIn)))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge privilege notifications (currently: {State})");
             }
 
-            return AcknowledgePrivilegeNotificationInternalAsync(privilegeNotificationId, cancellationToken ?? CancellationToken.None);
+            return AcknowledgePrivilegeNotificationInternalAsync(privilegeNotificationId, cancellationToken);
         }
 
         /// <summary>
@@ -747,7 +747,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task AddPrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        public Task AddPrivateRoomMemberAsync(string roomName, string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -764,7 +764,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to add members to private rooms (currently: {State})");
             }
 
-            return AddPrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+            return AddPrivateRoomMemberInternalAsync(roomName, username, cancellationToken);
         }
 
         /// <summary>
@@ -781,7 +781,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task AddPrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        public Task AddPrivateRoomModeratorAsync(string roomName, string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -798,7 +798,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to add moderators to private rooms (currently: {State})");
             }
 
-            return AddPrivateRoomModeratorInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+            return AddPrivateRoomModeratorInternalAsync(roomName, username, cancellationToken);
         }
 
         /// <summary>
@@ -821,7 +821,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<BrowseResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<BrowseResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -835,7 +835,7 @@ namespace Soulseek
 
             options ??= new BrowseOptions();
 
-            return BrowseInternalAsync(username, options, cancellationToken ?? CancellationToken.None);
+            return BrowseInternalAsync(username, options, cancellationToken);
         }
 
         /// <summary>
@@ -851,7 +851,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null)
+        public Task ChangePasswordAsync(string password, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(password))
             {
@@ -863,7 +863,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in change a password (currently: {State})");
             }
 
-            return ChangePasswordInternalAsync(password, cancellationToken ?? CancellationToken.None);
+            return ChangePasswordInternalAsync(password, cancellationToken);
         }
 
         /// <summary>
@@ -884,9 +884,9 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null)
+        public Task ConnectAsync(string username, string password, CancellationToken cancellationToken = default)
         {
-            return ConnectAsync(DefaultAddress, DefaultPort, username, password, cancellationToken ?? CancellationToken.None);
+            return ConnectAsync(DefaultAddress, DefaultPort, username, password, cancellationToken);
         }
 
         /// <summary>
@@ -916,7 +916,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task ConnectAsync(string address, int port, string username, string password, CancellationToken? cancellationToken = null)
+        public Task ConnectAsync(string address, int port, string username, string password, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
@@ -981,7 +981,7 @@ namespace Soulseek
                 }
             }
 
-            return ConnectInternalAsync(address, new IPEndPoint(ipAddress, port), username, password, cancellationToken ?? CancellationToken.None);
+            return ConnectInternalAsync(address, new IPEndPoint(ipAddress, port), username, password, cancellationToken);
         }
 
         /// <summary>
@@ -1002,7 +1002,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task ConnectToUserAsync(string username, bool invalidateCache = false, CancellationToken? cancellationToken = null)
+        public Task ConnectToUserAsync(string username, bool invalidateCache = false, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1014,7 +1014,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to connect to other users (currently: {State})");
             }
 
-            return ConnectToUserInternalAsync(username, invalidateCache, cancellationToken ?? CancellationToken.None);
+            return ConnectToUserInternalAsync(username, invalidateCache, cancellationToken);
         }
 
         /// <summary>
@@ -1112,7 +1112,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1168,7 +1168,7 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return DownloadToFileAsync(username, remoteFilename, localFilename, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToFileAsync(username, remoteFilename, localFilename, size, startOffset, token.Value, options, cancellationToken);
         }
 
         /// <summary>
@@ -1213,7 +1213,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> DownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1269,7 +1269,7 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return DownloadToStreamAsync(username, remoteFilename, outputStreamFactory, size, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToStreamAsync(username, remoteFilename, outputStreamFactory, size, startOffset, token.Value, options, cancellationToken);
         }
 
         /// <summary>
@@ -1285,7 +1285,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task DropPrivateRoomMembershipAsync(string roomName, CancellationToken? cancellationToken = null)
+        public Task DropPrivateRoomMembershipAsync(string roomName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -1297,7 +1297,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to drop private room membership (currently: {State})");
             }
 
-            return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+            return DropPrivateRoomMembershipInternalAsync(roomName, cancellationToken);
         }
 
         /// <summary>
@@ -1313,7 +1313,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task DropPrivateRoomOwnershipAsync(string roomName, CancellationToken? cancellationToken = null)
+        public Task DropPrivateRoomOwnershipAsync(string roomName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -1325,7 +1325,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to drop private room ownership (currently: {State})");
             }
 
-            return DropPrivateRoomOwnershipInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+            return DropPrivateRoomOwnershipInternalAsync(roomName, cancellationToken);
         }
 
         /// <summary>
@@ -1340,7 +1340,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, string, long, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, string, long, long, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -1382,7 +1382,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, string localFilename, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1422,7 +1422,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long, long, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="DownloadAsync(string, string, Func{Task{Stream}}, long, long, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the download Task as soon as the download has been remotely enqueued.
         ///     </para>
         /// </summary>
@@ -1464,7 +1464,7 @@ namespace Soulseek
         ///     Thrown when the remote size of the transfer is different from the specified size.
         /// </exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueDownloadAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1504,7 +1504,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, string, int?, TransferOptions, CancellationToken?)"/>, but returns the
+        ///         <see cref="UploadAsync(string, string, string, int?, TransferOptions, CancellationToken)"/>, but returns the
         ///         upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
@@ -1533,7 +1533,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1561,7 +1561,7 @@ namespace Soulseek
         ///     </para>
         ///     <para>
         ///         Functionally the same as
-        ///         <see cref="UploadAsync(string, string, long, Func{long, Task{Stream}}, int?, TransferOptions, CancellationToken?)"/>,
+        ///         <see cref="UploadAsync(string, string, long, Func{long, Task{Stream}}, int?, TransferOptions, CancellationToken)"/>,
         ///         but returns the upload Task as soon as the upload has been locally enqueued.
         ///     </para>
         /// </summary>
@@ -1592,7 +1592,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Task<Transfer>> EnqueueUploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             var enqueuedTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -1629,7 +1629,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<Directory>> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<Directory>> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1648,7 +1648,7 @@ namespace Soulseek
 
             token ??= GetNextToken();
 
-            return GetDirectoryContentsInternalAsync(username, directoryName, token.Value, cancellationToken ?? CancellationToken.None);
+            return GetDirectoryContentsInternalAsync(username, directoryName, token.Value, cancellationToken);
         }
 
         /// <summary>
@@ -1668,7 +1668,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null)
+        public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1690,7 +1690,7 @@ namespace Soulseek
                 throw new TransferNotFoundException($"A download of {filename} from user {username} is not active");
             }
 
-            return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken ?? CancellationToken.None);
+            return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken);
         }
 
         /// <summary>
@@ -1713,7 +1713,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<int> GetPrivilegesAsync(CancellationToken? cancellationToken = null)
+        public async Task<int> GetPrivilegesAsync(CancellationToken cancellationToken = default)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -1745,7 +1745,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<RoomList> GetRoomListAsync(CancellationToken? cancellationToken = null)
+        public async Task<RoomList> GetRoomListAsync(CancellationToken cancellationToken = default)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -1755,7 +1755,7 @@ namespace Soulseek
             try
             {
                 var roomListWait = Waiter.Wait<RoomList>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new RoomListRequest(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new RoomListRequest(), cancellationToken).ConfigureAwait(false);
 
                 var response = await roomListWait.ConfigureAwait(false);
 
@@ -1781,7 +1781,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserEndPointException">Thrown when an exception is encountered during the operation.</exception>
-        public virtual Task<IPEndPoint> GetUserEndPointAsync(string username, CancellationToken? cancellationToken = null)
+        public virtual Task<IPEndPoint> GetUserEndPointAsync(string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1793,7 +1793,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user endpoint (currently: {State})");
             }
 
-            return GetUserEndPointInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return GetUserEndPointInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
@@ -1810,7 +1810,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserInfo> GetUserInfoAsync(string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1822,7 +1822,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user information (currently: {State})");
             }
 
-            return GetUserInfoInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return GetUserInfoInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
@@ -1838,7 +1838,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<bool> GetUserPrivilegedAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<bool> GetUserPrivilegedAsync(string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1850,7 +1850,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to check user privileges (currently: {State})");
             }
 
-            return GetUserPrivilegedInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return GetUserPrivilegedInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
@@ -1871,7 +1871,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserStatistics> GetUserStatisticsAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserStatistics> GetUserStatisticsAsync(string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1883,7 +1883,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user statistics (currently: {State})");
             }
 
-            return GetUserStatisticsInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return GetUserStatisticsInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
@@ -1900,7 +1900,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserStatus> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserStatus> GetUserStatusAsync(string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1912,7 +1912,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user status (currently: {State})");
             }
 
-            return GetUserStatusInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return GetUserStatusInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
@@ -1956,7 +1956,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task GrantUserPrivilegesAsync(string username, int days, CancellationToken? cancellationToken = null)
+        public Task GrantUserPrivilegesAsync(string username, int days, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1973,7 +1973,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to grant user privileges (currently: {State})");
             }
 
-            return GrantUserPrivilegesInternalAsync(username, days, cancellationToken ?? CancellationToken.None);
+            return GrantUserPrivilegesInternalAsync(username, days, cancellationToken);
         }
 
         /// <summary>
@@ -1993,7 +1993,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken? cancellationToken = null)
+        public Task<RoomData> JoinRoomAsync(string roomName, bool isPrivate = false, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -2005,7 +2005,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to join a chat room (currently: {State})");
             }
 
-            return JoinRoomInternalAsync(roomName, isPrivate, cancellationToken ?? CancellationToken.None);
+            return JoinRoomInternalAsync(roomName, isPrivate, cancellationToken);
         }
 
         /// <summary>
@@ -2023,7 +2023,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        public Task LeaveRoomAsync(string roomName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -2035,7 +2035,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to leave a chat room (currently: {State})");
             }
 
-            return LeaveRoomInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+            return LeaveRoomInternalAsync(roomName, cancellationToken);
         }
 
         /// <summary>
@@ -2048,7 +2048,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task<long> PingServerAsync(CancellationToken? cancellationToken = null)
+        public async Task<long> PingServerAsync(CancellationToken cancellationToken = default)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -2106,7 +2106,7 @@ namespace Soulseek
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="patch"/> is null.</exception>
         /// <exception cref="ListenException">Thrown when binding a listener to the specified address and/or port fails.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken? cancellationToken = null)
+        public Task<bool> ReconfigureOptionsAsync(SoulseekClientOptionsPatch patch, CancellationToken cancellationToken = default)
         {
             if (patch == null)
             {
@@ -2136,7 +2136,7 @@ namespace Soulseek
                 }
             }
 
-            return ReconfigureOptionsInternalAsync(patch, cancellationToken ?? CancellationToken.None);
+            return ReconfigureOptionsInternalAsync(patch, cancellationToken);
         }
 
         /// <summary>
@@ -2209,7 +2209,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task RemovePrivateRoomMemberAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        public Task RemovePrivateRoomMemberAsync(string roomName, string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -2226,7 +2226,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to remove users from private rooms (currently: {State})");
             }
 
-            return RemovePrivateRoomMemberInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+            return RemovePrivateRoomMemberInternalAsync(roomName, username, cancellationToken);
         }
 
         /// <summary>
@@ -2244,7 +2244,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task RemovePrivateRoomModeratorAsync(string roomName, string username, CancellationToken? cancellationToken = null)
+        public Task RemovePrivateRoomModeratorAsync(string roomName, string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -2261,7 +2261,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to remove moderators from private rooms (currently: {State})");
             }
 
-            return RemovePrivateRoomModeratorInternalAsync(roomName, username, cancellationToken ?? CancellationToken.None);
+            return RemovePrivateRoomModeratorInternalAsync(roomName, username, cancellationToken);
         }
 
         /// <summary>
@@ -2283,7 +2283,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<(Search Search, IReadOnlyCollection<SearchResponse> Responses)> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -2325,7 +2325,7 @@ namespace Soulseek
                 throw new ArgumentException("Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
             }
 
-            return SearchToCollectionAsync(query, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCollectionAsync(query, scope, token.Value, options, cancellationToken);
         }
 
         /// <summary>
@@ -2351,7 +2351,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseHandler, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Search> SearchAsync(SearchQuery query, Action<SearchResponse> responseHandler, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -2398,7 +2398,7 @@ namespace Soulseek
                 throw new ArgumentException("Search query must contain at least one non-exclusion term with length greater than 1", nameof(query));
             }
 
-            return SearchToCallbackAsync(query, responseHandler, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCallbackAsync(query, responseHandler, scope, token.Value, options, cancellationToken);
         }
 
         /// <summary>
@@ -2415,7 +2415,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null)
+        public Task SendPrivateMessageAsync(string username, string message, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -2432,7 +2432,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to send a private message (currently: {State})");
             }
 
-            return SendPrivateMessageInternalAsync(username, message, cancellationToken ?? CancellationToken.None);
+            return SendPrivateMessageInternalAsync(username, message, cancellationToken);
         }
 
         /// <summary>
@@ -2449,7 +2449,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null)
+        public Task SendRoomMessageAsync(string roomName, string message, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -2466,7 +2466,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to send a chat room message (currently: {State})");
             }
 
-            return SendRoomMessageInternalAsync(roomName, message, cancellationToken ?? CancellationToken.None);
+            return SendRoomMessageInternalAsync(roomName, message, cancellationToken);
         }
 
         /// <summary>
@@ -2482,7 +2482,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SendUploadSpeedAsync(int speed, CancellationToken? cancellationToken = null)
+        public Task SendUploadSpeedAsync(int speed, CancellationToken cancellationToken = default)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -2496,7 +2496,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SendUploadSpeedCommand(speed), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SendUploadSpeedCommand(speed), cancellationToken);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2518,7 +2518,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetRoomTickerAsync(string roomName, string message, CancellationToken? cancellationToken = null)
+        public Task SetRoomTickerAsync(string roomName, string message, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -2537,7 +2537,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetRoomTickerCommand(roomName, message), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetRoomTickerCommand(roomName, message), cancellationToken);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2559,7 +2559,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
+        public Task SetSharedCountsAsync(int directories, int files, CancellationToken cancellationToken = default)
         {
             if (directories < 0)
             {
@@ -2578,7 +2578,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetSharedCountsCommand(directories, files), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetSharedCountsCommand(directories, files), cancellationToken);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2596,7 +2596,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null)
+        public Task SetStatusAsync(UserPresence status, CancellationToken cancellationToken = default)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -2605,7 +2605,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetOnlineStatusCommand(status), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetOnlineStatusCommand(status), cancellationToken);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2622,7 +2622,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task StartPublicChatAsync(CancellationToken? cancellationToken = null)
+        public Task StartPublicChatAsync(CancellationToken cancellationToken = default)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -2631,7 +2631,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StartPublicChatCommand(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StartPublicChatCommand(), cancellationToken);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2648,7 +2648,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task StopPublicChatAsync(CancellationToken? cancellationToken = null)
+        public Task StopPublicChatAsync(CancellationToken cancellationToken = default)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -2657,7 +2657,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new StopPublicChatCommand(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new StopPublicChatCommand(), cancellationToken);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2682,7 +2682,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task UnwatchUserAsync(string username, CancellationToken? cancellationToken = null)
+        public Task UnwatchUserAsync(string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -2694,7 +2694,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
             }
 
-            return UnwatchUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return UnwatchUserInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
@@ -2727,7 +2727,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> UploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> UploadAsync(string username, string remoteFilename, string localFilename, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -2782,7 +2782,7 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return UploadFromFileAsync(username, remoteFilename, localFilename, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return UploadFromFileAsync(username, remoteFilename, localFilename, token.Value, options, cancellationToken);
         }
 
         /// <summary>
@@ -2817,7 +2817,7 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferRejectedException">Thrown when the transfer is rejected.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<Transfer> UploadAsync(string username, string remoteFilename, long size, Func<long, Task<Stream>> inputStreamFactory, int? token = null, TransferOptions options = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -2863,7 +2863,7 @@ namespace Soulseek
 
             options ??= new TransferOptions();
 
-            return UploadFromStreamAsync(username, remoteFilename, size, inputStreamFactory, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return UploadFromStreamAsync(username, remoteFilename, size, inputStreamFactory, token.Value, options, cancellationToken);
         }
 
         /// <summary>
@@ -2884,7 +2884,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserData> WatchUserAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserData> WatchUserAsync(string username, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -2896,7 +2896,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
             }
 
-            return WatchUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return WatchUserInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
