@@ -3415,17 +3415,17 @@ namespace Soulseek
                     // we either throw or take the remote size
                     if (transferRequestAcknowledgement.FileSize != download.Size)
                     {
-                        if (transferRequestAcknowledgement.FileSize == 0 && download.Size >= int.MaxValue)
+                        if (options.SizeMismatchResolver is not null)
+                        {
+                            download.Size = options.SizeMismatchResolver(new Transfer(download), transferRequestAcknowledgement.FileSize);
+                        }
+                        else if (transferRequestAcknowledgement.FileSize == 0 && download.Size >= int.MaxValue)
                         {
                             // do nothing, keep the existing size. this is likely scenario 2 where the remote client experienced an integer overflow
                         }
-                        else if (!options.NegotiateDownloadFileSize)
-                        {
-                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size, transferRequestAcknowledgement.FileSize);
-                        }
                         else
                         {
-                            download.Size = transferRequestAcknowledgement.FileSize;
+                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferRequestAcknowledgement.FileSize} does not match expected size {download.Size}", download.Size, transferRequestAcknowledgement.FileSize);
                         }
                     }
 
@@ -3458,17 +3458,17 @@ namespace Soulseek
                     // we either throw or take the remote size
                     if (transferStartRequest.FileSize != download.Size)
                     {
-                        if (transferStartRequest.FileSize == 0 && download.Size >= int.MaxValue)
+                        if (options.SizeMismatchResolver is not null)
+                        {
+                            download.Size = options.SizeMismatchResolver(new Transfer(download), transferStartRequest.FileSize);
+                        }
+                        else if (transferStartRequest.FileSize == 0 && download.Size >= int.MaxValue)
                         {
                             // do nothing, keep the existing size. this is likely scenario 2 where the remote client experienced an integer overflow
                         }
-                        else if (!options.NegotiateDownloadFileSize)
-                        {
-                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size, transferStartRequest.FileSize);
-                        }
                         else
                         {
-                            download.Size = transferStartRequest.FileSize;
+                            throw new TransferSizeMismatchException($"Transfer aborted: the remote size of {transferStartRequest.FileSize} does not match expected size {download.Size}", download.Size, transferStartRequest.FileSize);
                         }
                     }
 
