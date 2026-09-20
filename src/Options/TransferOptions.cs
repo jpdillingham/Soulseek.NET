@@ -53,6 +53,9 @@ namespace Soulseek
         ///     The delegate, accepting the number of bytes attempted, granted, and transferred for each chunk, used to report
         ///     transfer statistics.
         /// </param>
+        /// <param name="sizeMismatchResolver">
+        ///     The delegate used to resolve the transfer size to use if the local and remote file sizes disagree (downloads only).
+        /// </param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
@@ -68,10 +71,6 @@ namespace Soulseek
         /// <param name="disposeOutputStreamOnCompletion">
         ///     A value indicating whether the output stream should be closed upon transfer completion.
         /// </param>
-        /// <param name="negotiateDownloadFileSize">
-        ///     A value indicating whether the size of downloads should be negotiated with the remote client, or if the
-        ///     transfer should fail if the remote size differs from the local size.
-        /// </param>
         public TransferOptions(
             Func<Transfer, int, CancellationToken, Task<int>> governor = null,
             Action<(TransferStates PreviousState, Transfer Transfer)> stateChanged = null,
@@ -79,12 +78,12 @@ namespace Soulseek
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
             Action<Transfer, int, int, int> reporter = null,
+            Func<Transfer, long, long> sizeMismatchResolver = null,
             int maximumLingerTime = 3000,
             bool seekInputStreamAutomatically = true,
             bool seekOutputStreamAutomatically = true,
             bool disposeInputStreamOnCompletion = true,
-            bool disposeOutputStreamOnCompletion = true,
-            bool negotiateDownloadFileSize = true)
+            bool disposeOutputStreamOnCompletion = true)
         {
             SeekInputStreamAutomatically = seekInputStreamAutomatically;
             SeekOutputStreamAutomatically = seekOutputStreamAutomatically;
@@ -99,7 +98,7 @@ namespace Soulseek
             ProgressUpdated = progressUpdated;
             MaximumLingerTime = maximumLingerTime;
 
-            NegotiateDownloadFileSize = negotiateDownloadFileSize;
+            SizeMismatchResolver = sizeMismatchResolver;
         }
 
         /// <summary>
@@ -125,12 +124,6 @@ namespace Soulseek
         public int MaximumLingerTime { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether the size of downloads should be negotiated with the remote client, or if the
-        ///     transfer should fail if the remote size differs from the local size.
-        /// </summary>
-        public bool NegotiateDownloadFileSize { get; }
-
-        /// <summary>
         ///     Gets the delegate to invoke when the transfer receives data. (Default = no action).
         /// </summary>
         public Action<(long PreviousBytesTransferred, Transfer Transfer)> ProgressUpdated { get; }
@@ -152,6 +145,11 @@ namespace Soulseek
         ///     one is specified.
         /// </summary>
         public bool SeekOutputStreamAutomatically { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the transfer size to use if the local and remote file sizes disagree (downloads only).
+        /// </summary>
+        public Func<Transfer, long, long> SizeMismatchResolver { get; }
 
         /// <summary>
         ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
@@ -186,12 +184,12 @@ namespace Soulseek
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 reporter: Reporter,
+                sizeMismatchResolver: SizeMismatchResolver,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
-                disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion,
-                negotiateDownloadFileSize: NegotiateDownloadFileSize);
+                disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
         }
 
         /// <summary>
@@ -215,12 +213,12 @@ namespace Soulseek
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 reporter: Reporter,
+                sizeMismatchResolver: SizeMismatchResolver,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
                 seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
-                disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion,
-                negotiateDownloadFileSize: NegotiateDownloadFileSize);
+                disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);
         }
     }
 }
