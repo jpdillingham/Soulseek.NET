@@ -3306,7 +3306,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<Transfer> DownloadToFileAsync(string username, string remoteFilename, string localFilename, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToFileAsync(string username, string remoteFilename, string localFilename, long size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options = options.WithDisposalOptions(disposeOutputStreamOnCompletion: true);
 
@@ -3320,7 +3320,7 @@ namespace Soulseek
             return await DownloadToStreamAsync(username, remoteFilename, () => Task.FromResult((Stream)IOAdapter.GetFileStream(localFilename, fileMode, FileAccess.Write, FileShare.None)), size, startOffset, token, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long? size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<Transfer> DownloadToStreamAsync(string username, string remoteFilename, Func<Task<Stream>> outputStreamFactory, long size, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             options ??= new TransferOptions();
 
