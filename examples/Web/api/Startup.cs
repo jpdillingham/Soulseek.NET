@@ -498,6 +498,23 @@ namespace WebAPI
         /// <returns>A Task resolving an instance of Soulseek.Directory containing the contents of the requested directory.</returns>
         private Task<IEnumerable<Soulseek.Directory>> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
         {
+            if (string.IsNullOrWhiteSpace(SharedDirectory))
+            {
+                Console.WriteLine($"[FOLDER CONTENTS REJECTED] [{username}/{directory}] No shared directory is configured.");
+                throw new UnauthorizedAccessException("Directory not shared.");
+            }
+
+            // 1) the directory must start with the expected prefix. shared directory names are built from the shared
+            // directory with forward slashes replaced; see BrowseResponseResolver(). the trailing separator keeps a
+            // sibling like 'shared-other' from matching 'shared'.
+            var expectedPrefix = SharedDirectory.Replace("/", @"\").TrimEnd('\\') + @"\";
+
+            if (!directory.StartsWith(expectedPrefix) || directory.Split('\\', '/').Contains(".."))
+            {
+                Console.WriteLine($"[FOLDER CONTENTS REJECTED] [{username}/{directory}] Directory is outside of the shared directory.");
+                throw new UnauthorizedAccessException("Directory not shared.");
+            }
+
             static Soulseek.Directory MakeDirectory(string dir) => new Soulseek.Directory(
                 name: dir.Replace("/", @"\"),
                 fileList: System.IO.Directory.GetFiles(dir)
