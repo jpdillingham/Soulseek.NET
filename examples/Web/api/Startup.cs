@@ -601,6 +601,35 @@ namespace WebAPI
         private Task EnqueueDownloadAction(string username, IPEndPoint endpoint, string filename, ITransferTracker tracker)
         {
             _ = endpoint;
+
+            /*
+                make sure the external client is requesting a file that we intended to share. the requested file MUST:
+
+                1. not be null or whitespace
+                2. be within the shared directory (filename prefixed with directory path)
+                3. not contain path traversal ('..') segments, which is likely a malicious attack
+                4. have been indexed by the shared file cache (which likely meets 1-3 as well)
+            */
+            if (string.IsNullOrWhiteSpace(SharedDirectory))
+            {
+                Console.WriteLine($"[UPLOAD REJECTED] [{username}/{filename}] No shared directory is configured.");
+                throw new DownloadEnqueueException($"File not shared.");
+            }
+
+            var expectedPrefix = SharedDirectory.Replace("/", @"\").TrimEnd('\\') + @"\";
+
+            if (!filename.StartsWith(expectedPrefix) || filename.Split('\\', '/').Contains(".."))
+            {
+                Console.WriteLine($"[UPLOAD REJECTED] [{username}/{filename}] File is outside of the shared directory.");
+                throw new DownloadEnqueueException($"File not shared.");
+            }
+
+            if (!SharedFileCache.Contains(filename))
+            {
+                Console.WriteLine($"[UPLOAD REJECTED] [{username}/{filename}] File is not in the shared file cache.");
+                throw new DownloadEnqueueException($"File not shared.");
+            }
+
             var localFilename = filename.ToLocalOSPath();
             var fileInfo = new FileInfo(localFilename);
             var enqueuedTimestamp = DateTime.UtcNow;
