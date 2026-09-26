@@ -216,7 +216,7 @@ namespace Soulseek
                 do
                 {
                     // take the minimum of requested count or currentCount, deduct it from
-                    // CurrentCount (potentially zeroing the bucket), and return it
+                    // currentCount (potentially zeroing the bucket), and return it
                     current = Interlocked.Read(ref currentCount);
                     availableCount = Math.Min(current, count);
                 }
