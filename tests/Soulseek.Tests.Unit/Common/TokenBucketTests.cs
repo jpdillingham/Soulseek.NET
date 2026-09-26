@@ -623,7 +623,7 @@ namespace Soulseek.Tests.Unit
 
                 Assert.True(t.GetProperty<bool>("Disposed"));
                 Assert.True(clock.Enabled);
-                Assert.False(t.GetField<TaskCompletionSource<bool>>("waitForReset").Task.IsCompleted);
+                Assert.False(t.GetProperty<TaskCompletionSource<bool>>("Disposal").Task.IsCompleted);
             }
             finally
             {
@@ -692,6 +692,44 @@ namespace Soulseek.Tests.Unit
             var ex = Record.Exception(() => t.InvokeMethod("Reset"));
 
             Assert.Null(ex);
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Dispose faults the disposal task with ObjectDisposedException")]
+        public async Task Dispose_Faults_The_Disposal_Task_With_ObjectDisposedException()
+        {
+            var t = new TokenBucket(1, 100000);
+            var disposal = t.GetProperty<TaskCompletionSource<bool>>("Disposal");
+
+            Assert.False(disposal.Task.IsCompleted);
+
+            t.Dispose();
+
+            Assert.True(disposal.Task.IsFaulted);
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => disposal.Task);
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Dispose throws ObjectDisposedException to a request waiting for reset if the timer ticks after disposal")]
+        public async Task Dispose_Throws_ObjectDisposedException_To_A_Request_Waiting_For_Reset_If_The_Timer_Ticks_After_Disposal()
+        {
+            var t = new TokenBucket(1, 100000);
+
+            await t.GetAsync(1);
+
+            t.Dispose();
+
+            // a tick that was already in flight swaps in a new reset signal after disposal; nothing will ever complete it
+            t.InvokeMethod("Reset");
+
+            // simulate a request that passed the Disposed check before Dispose() ran, then captured the new reset signal
+            t.SetProperty("Disposed", false);
+
+            var task = t.GetAsync(1);
+            var completed = await Task.WhenAny(task, Task.Delay(1000));
+
+            Assert.Same(task, completed);
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => task);
         }
     }
 }

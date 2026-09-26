@@ -76,6 +76,7 @@ namespace Soulseek
         private System.Timers.Timer Clock { get; set; }
         private bool Disposed { get; set; }
         private SemaphoreSlim SyncRoot { get; } = new SemaphoreSlim(1, 1);
+        private TaskCompletionSource<bool> Disposal { get; } = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         /// <summary>
         ///     Disposes this instance.
@@ -167,8 +168,8 @@ namespace Soulseek
             {
                 if (disposing)
                 {
-                    Volatile.Read(ref waitForReset).TrySetException(new ObjectDisposedException(nameof(TokenBucket)));
                     Clock.Dispose();
+                    Disposal.TrySetException(new ObjectDisposedException(nameof(TokenBucket)));
                 }
 
                 Disposed = true;
@@ -201,7 +202,7 @@ namespace Soulseek
 
                     using (cancellationToken.Register(() => cancelled.TrySetResult(true)))
                     {
-                        var winner = await Task.WhenAny(currentWaitForReset.Task, cancelled.Task).ConfigureAwait(false);
+                        var winner = await Task.WhenAny(currentWaitForReset.Task, cancelled.Task, Disposal.Task).ConfigureAwait(false);
                         await winner.ConfigureAwait(false);
                     }
 
