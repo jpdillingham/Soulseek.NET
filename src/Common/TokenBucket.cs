@@ -101,7 +101,7 @@ namespace Soulseek
         /// <returns>A Task that completes when tokens have been provided.</returns>
         public Task<int> GetAsync(int count, CancellationToken cancellationToken = default)
         {
-            return GetInternalAsync(Math.Min(count, (int)Math.Min(int.MaxValue, Capacity)), cancellationToken);
+            return GetInternalAsync(Math.Min(Math.Max(count, 0), (int)Math.Min(int.MaxValue, Capacity)), cancellationToken);
         }
 
         /// <summary>
