@@ -119,7 +119,7 @@ namespace Soulseek
         /// <param name="count">The number of tokens to return.</param>
         public void Return(int count)
         {
-            CurrentCount += Math.Min(Math.Max(count, 0), Capacity);
+            CurrentCount = Math.Min(CurrentCount + Math.Min(Math.Max(count, 0), Capacity), Capacity * 2);
         }
 
         /// <summary>
