@@ -163,7 +163,15 @@ namespace Soulseek
                 // which is as close to a FIFO as .NET synchronization primitives will allow
                 if (CurrentCount == 0)
                 {
-                    await waitForReset.Task.ConfigureAwait(false);
+                    // wait for the reset or for cancellation, whichever comes first
+                    var cancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                    using (cancellationToken.Register(() => cancelled.TrySetResult(true)))
+                    {
+                        await Task.WhenAny(waitForReset.Task, cancelled.Task).ConfigureAwait(false);
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
 
                 // take the minimum of requested count or CurrentCount, deduct it from
