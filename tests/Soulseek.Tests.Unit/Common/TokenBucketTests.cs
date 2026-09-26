@@ -18,6 +18,8 @@
 namespace Soulseek.Tests.Unit
 {
     using System;
+    using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -77,7 +79,8 @@ namespace Soulseek.Tests.Unit
             {
                 Assert.Equal(count, t.Capacity);
                 Assert.Equal(interval, t.GetProperty<System.Timers.Timer>("Clock").Interval);
-                Assert.Equal(count, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(count, t.GetField<long>("currentCount"));
+                Assert.Equal(count, t.GetField<long>("currentCapacity"));
             }
         }
 
@@ -122,28 +125,26 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "SetCapacity")]
-        [Fact(DisplayName = "SetCapacity lowers the available count immediately if the new capacity is lower")]
-        public void SetCapacity_Lowers_The_Available_Count_Immediately_If_The_New_Capacity_Is_Lower()
+        [Fact(DisplayName = "SetCapacity does not change the active capacity until the next reset")]
+        public void SetCapacity_Does_Not_Change_The_Active_Capacity_Until_The_Next_Reset()
         {
             using (var t = new TokenBucket(100, 100000))
             {
                 t.SetCapacity(10);
 
-                Assert.Equal(10, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(100, t.GetField<long>("currentCapacity"));
             }
         }
 
         [Trait("Category", "SetCapacity")]
-        [Fact(DisplayName = "SetCapacity lowers an overfilled count to the new capacity")]
-        public void SetCapacity_Lowers_An_Overfilled_Count_To_The_New_Capacity()
+        [Fact(DisplayName = "SetCapacity does not change the available count until the next reset if the new capacity is lower")]
+        public void SetCapacity_Does_Not_Change_The_Available_Count_Until_The_Next_Reset_If_The_New_Capacity_Is_Lower()
         {
             using (var t = new TokenBucket(100, 100000))
             {
-                t.Return(100);
+                t.SetCapacity(10);
 
-                t.SetCapacity(100);
-
-                Assert.Equal(100, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(100, t.GetField<long>("currentCount"));
             }
         }
 
@@ -155,7 +156,7 @@ namespace Soulseek.Tests.Unit
             {
                 t.SetCapacity(1000);
 
-                Assert.Equal(100, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(100, t.GetField<long>("currentCount"));
             }
         }
 
@@ -169,7 +170,23 @@ namespace Soulseek.Tests.Unit
 
                 await Task.Delay(500);
 
-                Assert.Equal(1000, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(1000, t.GetField<long>("currentCapacity"));
+                Assert.Equal(1000, t.GetField<long>("currentCount"));
+            }
+        }
+
+        [Trait("Category", "SetCapacity")]
+        [Fact(DisplayName = "SetCapacity lowers the bucket to the new capacity on the next reset")]
+        public async Task SetCapacity_Lowers_The_Bucket_To_The_New_Capacity_On_The_Next_Reset()
+        {
+            using (var t = new TokenBucket(100, 50))
+            {
+                t.SetCapacity(10);
+
+                await Task.Delay(500);
+
+                Assert.Equal(10, t.GetField<long>("currentCapacity"));
+                Assert.Equal(10, t.GetField<long>("currentCount"));
             }
         }
 
@@ -181,7 +198,7 @@ namespace Soulseek.Tests.Unit
             {
                 await t.GetAsync(5);
 
-                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(5, t.GetField<long>("currentCount"));
             }
         }
 
@@ -192,10 +209,37 @@ namespace Soulseek.Tests.Unit
             using (var t = new TokenBucket(10, 10000))
             {
                 int tokens = 0;
-                var ex = await Record.ExceptionAsync(async() => tokens = await t.GetAsync(11));
+                var ex = await Record.ExceptionAsync(async () => tokens = await t.GetAsync(11));
 
                 Assert.Null(ex);
                 Assert.Equal(10, tokens);
+            }
+        }
+
+        [Trait("Category", "GetAsync")]
+        [Fact(DisplayName = "GetAsync returns int.MaxValue if capacity exceeds int.MaxValue")]
+        public async Task GetAsync_Returns_IntMaxValue_If_Capacity_Exceeds_IntMaxValue()
+        {
+            using (var t = new TokenBucket(int.MaxValue * 2L, 100000))
+            {
+                var granted = await t.GetAsync(int.MaxValue);
+
+                Assert.Equal(int.MaxValue, granted);
+                Assert.Equal((int.MaxValue * 2L) - int.MaxValue, t.GetField<long>("currentCount"));
+            }
+        }
+
+        [Trait("Category", "GetAsync")]
+        [Fact(DisplayName = "GetAsync uses the active capacity until the next reset")]
+        public async Task GetAsync_Uses_The_Active_Capacity_Until_The_Next_Reset()
+        {
+            using (var t = new TokenBucket(100, 100000))
+            {
+                t.SetCapacity(10);
+
+                var granted = await t.GetAsync(100);
+
+                Assert.Equal(100, granted);
             }
         }
 
@@ -227,26 +271,67 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "GetAsync")]
-        [Fact(DisplayName = "GetAsync with a negative count grants zero")]
-        public async Task GetAsync_With_A_Negative_Count_Grants_Zero()
+        [Fact(DisplayName = "GetAsync grants tokens after waiting for reset")]
+        public async Task GetAsync_Grants_Tokens_After_Waiting_For_Reset()
+        {
+            using (var t = new TokenBucket(5, 250))
+            {
+                await t.GetAsync(5);
+
+                var task = t.GetAsync(5);
+
+                Assert.False(task.IsCompleted);
+
+                var completed = await Task.WhenAny(task, Task.Delay(2000));
+
+                Assert.Same(task, completed);
+                Assert.Equal(5, await task);
+            }
+        }
+
+        [Trait("Category", "GetAsync")]
+        [Theory(DisplayName = "GetAsync with a zero or negative count grants zero")]
+        [InlineData(0)]
+        [InlineData(-5)]
+        [InlineData(int.MinValue)]
+        public async Task GetAsync_With_A_Zero_Or_Negative_Count_Grants_Zero(int count)
         {
             using (var t = new TokenBucket(100, 100000))
             {
-                var granted = await t.GetAsync(-5);
+                var granted = await t.GetAsync(count);
 
                 Assert.Equal(0, granted);
             }
         }
 
         [Trait("Category", "GetAsync")]
-        [Fact(DisplayName = "GetAsync with a negative count does not change the available count")]
-        public async Task GetAsync_With_A_Negative_Count_Does_Not_Change_The_Available_Count()
+        [Theory(DisplayName = "GetAsync with a zero or negative count does not change the available count")]
+        [InlineData(0)]
+        [InlineData(-5)]
+        public async Task GetAsync_With_A_Zero_Or_Negative_Count_Does_Not_Change_The_Available_Count(int count)
         {
             using (var t = new TokenBucket(100, 100000))
             {
-                await t.GetAsync(-5);
+                await t.GetAsync(count);
 
-                Assert.Equal(100, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(100, t.GetField<long>("currentCount"));
+            }
+        }
+
+        [Trait("Category", "GetAsync")]
+        [Theory(DisplayName = "GetAsync with a zero or negative count returns immediately if the bucket is empty")]
+        [InlineData(0)]
+        [InlineData(-5)]
+        public async Task GetAsync_With_A_Zero_Or_Negative_Count_Returns_Immediately_If_The_Bucket_Is_Empty(int count)
+        {
+            using (var t = new TokenBucket(1, 100000))
+            {
+                await t.GetAsync(1);
+
+                var task = t.GetAsync(count);
+
+                Assert.True(task.IsCompleted);
+                Assert.Equal(0, await task);
             }
         }
 
@@ -261,7 +346,21 @@ namespace Soulseek.Tests.Unit
                 var granted = await t.GetAsync(150);
 
                 Assert.Equal(100, granted);
-                Assert.Equal(100, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(100, t.GetField<long>("currentCount"));
+            }
+        }
+
+        [Trait("Category", "GetAsync")]
+        [Fact(DisplayName = "GetAsync throws OperationCanceledException given a cancelled token")]
+        public async Task GetAsync_Throws_OperationCanceledException_Given_A_Cancelled_Token()
+        {
+            using (var t = new TokenBucket(100, 100000))
+            using (var cts = new CancellationTokenSource())
+            {
+                await cts.CancelAsync();
+
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => t.GetAsync(1, cts.Token));
+                Assert.Equal(100, t.GetField<long>("currentCount"));
             }
         }
 
@@ -333,7 +432,7 @@ namespace Soulseek.Tests.Unit
                 var completed = await Task.WhenAny(other, Task.Delay(500));
 
                 Assert.NotSame(other, completed);
-                Assert.Equal(0, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(0, t.GetField<long>("currentCount"));
                 Assert.Equal(1, t.Capacity);
                 Assert.Same(reset, t.GetField<TaskCompletionSource<bool>>("waitForReset"));
                 Assert.False(reset.Task.IsCompleted);
@@ -341,18 +440,21 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Return")]
-        [Fact(DisplayName = "Return does not change count given negative")]
-        public async Task Return_Does_Not_Change_Count_Given_Negative()
+        [Theory(DisplayName = "Return does not change count given zero or negative")]
+        [InlineData(0)]
+        [InlineData(-5)]
+        [InlineData(int.MinValue)]
+        public async Task Return_Does_Not_Change_Count_Given_Zero_Or_Negative(int count)
         {
             using (var t = new TokenBucket(10, 1000000))
             {
                 await t.GetAsync(5);
 
-                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(5, t.GetField<long>("currentCount"));
 
-                t.Return(-5);
+                t.Return(count);
 
-                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(5, t.GetField<long>("currentCount"));
             }
         }
 
@@ -364,11 +466,11 @@ namespace Soulseek.Tests.Unit
             {
                 await t.GetAsync(5);
 
-                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(5, t.GetField<long>("currentCount"));
 
                 t.Return(50);
 
-                Assert.Equal(15, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(15, t.GetField<long>("currentCount"));
             }
         }
 
@@ -380,11 +482,11 @@ namespace Soulseek.Tests.Unit
             {
                 await t.GetAsync(5);
 
-                Assert.Equal(5, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(5, t.GetField<long>("currentCount"));
 
                 t.Return(5);
 
-                Assert.Equal(10, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(10, t.GetField<long>("currentCount"));
             }
         }
 
@@ -397,13 +499,28 @@ namespace Soulseek.Tests.Unit
                 // returned tokens are added on top of a full bucket, allowing a burst
                 t.Return(50);
 
-                Assert.Equal(150, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(150, t.GetField<long>("currentCount"));
 
                 // but the bucket never holds more than 2x capacity, no matter how many tokens are returned
                 t.Return(100);
                 t.Return(100);
 
-                Assert.Equal(200, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(200, t.GetField<long>("currentCount"));
+            }
+        }
+
+        [Trait("Category", "Return")]
+        [Fact(DisplayName = "Return uses the active capacity until the next reset")]
+        public void Return_Uses_The_Active_Capacity_Until_The_Next_Reset()
+        {
+            using (var t = new TokenBucket(100, 100000))
+            {
+                t.SetCapacity(10);
+
+                // with the new capacity (10) the count would be capped at 20; the active capacity (100) caps it at 200
+                t.Return(100);
+
+                Assert.Equal(200, t.GetField<long>("currentCount"));
             }
         }
 
@@ -439,8 +556,142 @@ namespace Soulseek.Tests.Unit
 
                 await Task.Delay(500);
 
-                Assert.Equal(100, t.GetProperty<long>("CurrentCount"));
+                Assert.Equal(100, t.GetField<long>("currentCount"));
             }
+        }
+
+        [Trait("Category", "Concurrency")]
+        [Fact(DisplayName = "Concurrent Return and GetAsync keep the count between 0 and 2x capacity")]
+        public async Task Concurrent_Return_And_GetAsync_Keep_The_Count_Between_0_And_2x_Capacity()
+        {
+            const int capacity = 1000000;
+            const int maxRequest = 100;
+
+            using (var t = new TokenBucket(capacity, 100000))
+            {
+                var outOfRange = 0;
+
+                // each worker returns and then takes a small amount, so the bucket never empties and no request waits for a
+                // reset. returns race each other and in-flight withdrawals, which exercises the compare-and-swap retries.
+                var workers = Enumerable.Range(0, Environment.ProcessorCount * 2).Select(_ => Task.Run(async () =>
+                {
+                    for (int i = 0; i < 20000; i++)
+                    {
+                        var request = 1 + (i % maxRequest);
+
+                        t.Return(request);
+                        var granted = await t.GetAsync(request);
+
+                        if (granted < 0 || granted > request)
+                        {
+                            Interlocked.Increment(ref outOfRange);
+                        }
+                    }
+                })).ToArray();
+
+                var all = Task.WhenAll(workers);
+                var completed = await Task.WhenAny(all, Task.Delay(60000));
+
+                Assert.Same(all, completed);
+                Assert.Equal(0, outOfRange);
+                Assert.InRange(t.GetField<long>("currentCount"), 0, capacity * 2);
+            }
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Dispose does not throw if called more than once")]
+        public void Dispose_Does_Not_Throw_If_Called_More_Than_Once()
+        {
+            var t = new TokenBucket(10, 100000);
+
+            t.Dispose();
+            var ex = Record.Exception(() => t.Dispose());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Dispose without disposing marks the bucket disposed without disposing the clock")]
+        public void Dispose_Without_Disposing_Marks_The_Bucket_Disposed_Without_Disposing_The_Clock()
+        {
+            var t = new TokenBucket(10, 100000);
+            var clock = t.GetProperty<System.Timers.Timer>("Clock");
+
+            try
+            {
+                t.InvokeMethod("Dispose", BindingFlags.NonPublic | BindingFlags.Instance, false);
+
+                Assert.True(t.GetProperty<bool>("Disposed"));
+                Assert.True(clock.Enabled);
+                Assert.False(t.GetField<TaskCompletionSource<bool>>("waitForReset").Task.IsCompleted);
+            }
+            finally
+            {
+                clock.Dispose();
+            }
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "GetAsync throws ObjectDisposedException if the bucket is disposed")]
+        public async Task GetAsync_Throws_ObjectDisposedException_If_The_Bucket_Is_Disposed()
+        {
+            var t = new TokenBucket(10, 100000);
+
+            t.Dispose();
+
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => t.GetAsync(1));
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Dispose throws ObjectDisposedException to a request waiting for reset")]
+        public async Task Dispose_Throws_ObjectDisposedException_To_A_Request_Waiting_For_Reset()
+        {
+            var t = new TokenBucket(1, 100000);
+
+            await t.GetAsync(1);
+
+            var task = t.GetAsync(1);
+
+            t.Dispose();
+
+            var completed = await Task.WhenAny(task, Task.Delay(1000));
+
+            Assert.Same(task, completed);
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => task);
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Dispose throws ObjectDisposedException to requests queued behind a request waiting for reset")]
+        public async Task Dispose_Throws_ObjectDisposedException_To_Requests_Queued_Behind_A_Request_Waiting_For_Reset()
+        {
+            var t = new TokenBucket(1, 100000);
+
+            await t.GetAsync(1);
+
+            var waiting = t.GetAsync(1);
+            var queued = new[] { t.GetAsync(1), t.GetAsync(1) };
+
+            t.Dispose();
+
+            var all = Task.WhenAll(queued.Prepend(waiting).Select(task => Record.ExceptionAsync(() => task)));
+            var completed = await Task.WhenAny(all, Task.Delay(1000));
+
+            Assert.Same(all, completed);
+            Assert.All(await all, ex => Assert.IsType<ObjectDisposedException>(ex));
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Reset does not throw if the bucket is disposed")]
+        public void Reset_Does_Not_Throw_If_The_Bucket_Is_Disposed()
+        {
+            var t = new TokenBucket(1, 100000);
+
+            t.Dispose();
+
+            // the timer can still fire once after it is disposed
+            var ex = Record.Exception(() => t.InvokeMethod("Reset"));
+
+            Assert.Null(ex);
         }
     }
 }
