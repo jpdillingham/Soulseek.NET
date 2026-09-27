@@ -1078,6 +1078,81 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GetPersonalRecommendations"), AutoData]
+        public void Handles_GetPersonalRecommendations(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
+        {
+            PersonalRecommendationsResponse result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<PersonalRecommendationsResponse>()))
+                .Callback<WaitKey, PersonalRecommendationsResponse>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetPersonalRecommendations)
+                .WriteInteger(recommendations.Count);
+
+            recommendations.ForEach(r => builder.WriteString(r.Recommendation).WriteInteger(r.Count));
+
+            builder.WriteInteger(unrecommendations.Count);
+
+            unrecommendations.ForEach(r => builder.WriteString(r.Unrecommendation).WriteInteger(r.Count));
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            Assert.Equal(recommendations, result.Recommendations);
+            Assert.Equal(unrecommendations, result.Unrecommendations);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GetGlobalRecommendations"), AutoData]
+        public void Handles_GetGlobalRecommendations(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
+        {
+            GlobalRecommendationsResponse result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GlobalRecommendationsResponse>()))
+                .Callback<WaitKey, GlobalRecommendationsResponse>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetGlobalRecommendations)
+                .WriteInteger(recommendations.Count);
+
+            recommendations.ForEach(r => builder.WriteString(r.Recommendation).WriteInteger(r.Count));
+
+            builder.WriteInteger(unrecommendations.Count);
+
+            unrecommendations.ForEach(r => builder.WriteString(r.Unrecommendation).WriteInteger(r.Count));
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            Assert.Equal(recommendations, result.Recommendations);
+            Assert.Equal(unrecommendations, result.Unrecommendations);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GetInterestRecommendations"), AutoData]
+        public void Handles_GetInterestRecommendations(string interest, List<(string Recommendation, int Count)> recommendations)
+        {
+            InterestRecommendationsResponse result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<InterestRecommendationsResponse>()))
+                .Callback<WaitKey, InterestRecommendationsResponse>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestRecommendations)
+                .WriteString(interest)
+                .WriteInteger(recommendations.Count);
+
+            recommendations.ForEach(r => builder.WriteString(r.Recommendation).WriteInteger(r.Count));
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            Assert.Equal(interest, result.Interest);
+            Assert.Equal(recommendations, result.Recommendations);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles NetInfo"), AutoData]
         public void Handles_NetInfo(List<(string Username, IPEndPoint IPEndPoint)> parents)
         {
