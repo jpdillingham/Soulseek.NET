@@ -437,6 +437,11 @@ namespace Soulseek.Messaging.Handlers
                         UserStatisticsChanged?.Invoke(this, stats);
                         break;
 
+                    case MessageCode.Server.GetUserInterests:
+                        var interests = UserInterestsResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, interests.Username), interests);
+                        break;
+
                     case MessageCode.Server.PrivateMessage:
                         var pm = PrivateMessageNotification.FromByteArray(message);
                         PrivateMessageReceived?.Invoke(this, new PrivateMessageReceivedEventArgs(pm));
