@@ -921,6 +921,31 @@ namespace Soulseek
         Task<RoomList> GetRoomListAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        ///     Asynchronously fetches the list of users similar to the current context, according to the specified
+        ///     <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type">The type of similarity to use to select users.</param>
+        /// <param name="interest">
+        ///     The interest for which to fetch similar users; required when <paramref name="type"/> is
+        ///     <see cref="SimilarUserType.Interest"/>, and disallowed otherwise.
+        /// </param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the collection of similar users and, if available,
+        ///     their similarity rating.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when <paramref name="type"/> is <see cref="SimilarUserType.Interest"/> and <paramref name="interest"/> is
+        ///     null, empty, or consists only of whitespace, or when <paramref name="type"/> is
+        ///     <see cref="SimilarUserType.Personal"/> and <paramref name="interest"/> is specified.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<IReadOnlyCollection<(string Username, int? Rating)>> GetSimilarUsersAsync(SimilarUserType type, string interest = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
         ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>
