@@ -1782,9 +1782,10 @@ namespace Soulseek
         ///     their similarity rating.
         /// </returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when <paramref name="type"/> is <see cref="SimilarUserType.Interest"/> and <paramref name="interest"/> is
-        ///     null, empty, or consists only of whitespace, or when <paramref name="type"/> is
-        ///     <see cref="SimilarUserType.Personal"/> and <paramref name="interest"/> is specified.
+        ///     Thrown when <paramref name="type"/> is not a defined <see cref="SimilarUserType"/>, when <paramref name="type"/>
+        ///     is <see cref="SimilarUserType.Interest"/> and <paramref name="interest"/> is null, empty, or consists only of
+        ///     whitespace, or when <paramref name="type"/> is <see cref="SimilarUserType.Personal"/> and
+        ///     <paramref name="interest"/> is specified.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
@@ -1792,6 +1793,11 @@ namespace Soulseek
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         public Task<IReadOnlyCollection<(string Username, int? Rating)>> GetSimilarUsersAsync(SimilarUserType type, string interest = null, CancellationToken cancellationToken = default)
         {
+            if (type != SimilarUserType.Interest && type != SimilarUserType.Personal)
+            {
+                throw new ArgumentException($"The specified similar user type '{type}' is not valid", nameof(type));
+            }
+
             if (type == SimilarUserType.Interest && string.IsNullOrWhiteSpace(interest))
             {
                 throw new ArgumentException($"The {type} similar user type requires a non-null, non-empty interest", nameof(interest));

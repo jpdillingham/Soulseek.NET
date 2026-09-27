@@ -935,9 +935,10 @@ namespace Soulseek
         ///     their similarity rating.
         /// </returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when <paramref name="type"/> is <see cref="SimilarUserType.Interest"/> and <paramref name="interest"/> is
-        ///     null, empty, or consists only of whitespace, or when <paramref name="type"/> is
-        ///     <see cref="SimilarUserType.Personal"/> and <paramref name="interest"/> is specified.
+        ///     Thrown when <paramref name="type"/> is not a defined <see cref="SimilarUserType"/>, when <paramref name="type"/>
+        ///     is <see cref="SimilarUserType.Interest"/> and <paramref name="interest"/> is null, empty, or consists only of
+        ///     whitespace, or when <paramref name="type"/> is <see cref="SimilarUserType.Personal"/> and
+        ///     <paramref name="interest"/> is specified.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>

@@ -31,6 +31,21 @@ namespace Soulseek.Tests.Unit.Client
     public class GetSimilarUsersAsyncTests
     {
         [Trait("Category", "GetSimilarUsersAsync")]
+        [Fact(DisplayName = "GetSimilarUsersAsync throws ArgumentException on undefined SimilarUserType")]
+        public async Task GetSimilarUsersAsync_Throws_ArgumentException_On_Undefined_SimilarUserType()
+        {
+            using (var s = new SoulseekClient(minorVersion: 9999))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.GetSimilarUsersAsync((SimilarUserType)(-1)));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetSimilarUsersAsync")]
         [Theory(DisplayName = "GetSimilarUsersAsync throws ArgumentException when Interest type is given without an interest")]
         [InlineData(null)]
         [InlineData(" ")]
