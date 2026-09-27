@@ -921,6 +921,38 @@ namespace Soulseek
         Task<RoomList> GetRoomListAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        ///     Asynchronously fetches the list of users with interests similar to those of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the collection of similar users and their
+        ///     similarity rating.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<IReadOnlyCollection<(string Username, int Rating)>> GetSimilarUsersAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///     Asynchronously fetches the list of users who share the specified <paramref name="interest"/>.
+        /// </summary>
+        /// <param name="interest">The interest for which to fetch similar users.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the interest and the collection of users who share
+        ///     it.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="interest"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<(string Interest, IReadOnlyCollection<string>)> GetInterestSimilarUsersAsync(string interest, CancellationToken cancellationToken = default);
+
+        /// <summary>
         ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>

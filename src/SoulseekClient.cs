@@ -1768,6 +1768,59 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously fetches the list of users with interests similar to those of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the collection of similar users and their
+        ///     similarity rating.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<IReadOnlyCollection<(string Username, int Rating)>> GetSimilarUsersAsync(CancellationToken cancellationToken = default)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch similar users (currently: {State})");
+            }
+
+            return GetPersonalSimilarUsersInternalAsync(cancellationToken);
+        }
+
+        /// <summary>
+        ///     Asynchronously fetches the list of users who share the specified <paramref name="interest"/>.
+        /// </summary>
+        /// <param name="interest">The interest for which to fetch similar users.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the interest and the collection of users who share
+        ///     it.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="interest"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<(string Interest, IReadOnlyCollection<string>)> GetInterestSimilarUsersAsync(string interest, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(interest))
+            {
+                throw new ArgumentException("The interest must not be a null or empty string, or one consisting only of whitespace", nameof(interest));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch similar users (currently: {State})");
+            }
+
+            return GetInterestSimilarUsersInternalAsync(interest, cancellationToken);
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>
@@ -3892,6 +3945,44 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new SoulseekClientException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<(string Interest, IReadOnlyCollection<string>)> GetInterestSimilarUsersInternalAsync(string interest, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.GetInterestSimilarUsers, interest);
+                var wait = Waiter.Wait<InterestSimilarUsersResponse>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new InterestSimilarUsersRequest(interest), cancellationToken).ConfigureAwait(false);
+
+                var response = await wait.ConfigureAwait(false);
+
+                return (response.Interest, response.Usernames);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to retrieve similar users for interest {interest}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<IReadOnlyCollection<(string Username, int Rating)>> GetPersonalSimilarUsersInternalAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.GetPersonalSimilarUsers);
+                var wait = Waiter.Wait<PersonalSimilarUsersResponse>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PersonalSimilarUsersRequest(), cancellationToken).ConfigureAwait(false);
+
+                var response = await wait.ConfigureAwait(false);
+
+                return response.Users;
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to retrieve personal similar users: {ex.Message}", ex);
             }
         }
 
