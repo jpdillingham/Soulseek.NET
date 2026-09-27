@@ -1,4 +1,4 @@
-// <copyright file="GetSimilarUsersAsyncTests.cs" company="JP Dillingham">
+// <copyright file="GetInterestSimilarUsersAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -28,35 +28,54 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Network;
     using Xunit;
 
-    public class GetSimilarUsersAsyncTests
+    public class GetInterestSimilarUsersAsyncTests
     {
-        [Trait("Category", "GetSimilarUsersAsync")]
-        [Theory(DisplayName = "GetSimilarUsersAsync throws InvalidOperationException if not connected and logged in")]
+        [Trait("Category", "GetInterestSimilarUsersAsync")]
+        [Theory(DisplayName = "GetInterestSimilarUsersAsync throws ArgumentException given null or whitespace interest")]
+        [InlineData(null)]
+        [InlineData(" ")]
+        [InlineData("\t")]
+        [InlineData("")]
+        public async Task GetInterestSimilarUsersAsync_Throws_ArgumentException_Given_Null_Or_Whitespace_Interest(string interest)
+        {
+            using (var s = new SoulseekClient(minorVersion: 9999))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.GetInterestSimilarUsersAsync(interest));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetInterestSimilarUsersAsync")]
+        [Theory(DisplayName = "GetInterestSimilarUsersAsync throws InvalidOperationException if not connected and logged in")]
         [InlineData(SoulseekClientStates.None)]
         [InlineData(SoulseekClientStates.Disconnected)]
         [InlineData(SoulseekClientStates.Connected)]
         [InlineData(SoulseekClientStates.LoggedIn)]
-        public async Task GetSimilarUsersAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
+        public async Task GetInterestSimilarUsersAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
         {
             using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", state);
 
-                var ex = await Record.ExceptionAsync(() => s.GetSimilarUsersAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetInterestSimilarUsersAsync("interest"));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
             }
         }
 
-        [Trait("Category", "GetSimilarUsersAsync")]
-        [Theory(DisplayName = "GetSimilarUsersAsync returns expected info"), AutoData]
-        public async Task GetSimilarUsersAsync_Returns_Expected_Info(List<(string Username, int Rating)> users)
+        [Trait("Category", "GetInterestSimilarUsersAsync")]
+        [Theory(DisplayName = "GetInterestSimilarUsersAsync returns expected info"), AutoData]
+        public async Task GetInterestSimilarUsersAsync_Returns_Expected_Info(string interest, List<string> usernames)
         {
-            var result = new PersonalSimilarUsersResponse(users);
+            var result = new InterestSimilarUsersResponse(interest, usernames);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PersonalSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<InterestSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -67,21 +86,21 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var similarUsers = await s.GetSimilarUsersAsync();
+                var similarUsers = await s.GetInterestSimilarUsersAsync(interest);
 
-                Assert.Equal(users.Select(u => (u.Username, (int?)u.Rating)), similarUsers);
+                Assert.Equal(usernames.Select(u => (u, (int?)null)), similarUsers);
             }
         }
 
-        [Trait("Category", "GetSimilarUsersAsync")]
-        [Theory(DisplayName = "GetSimilarUsersAsync uses given CancellationToken"), AutoData]
-        public async Task GetSimilarUsersAsync_Uses_Given_CancellationToken(List<(string Username, int Rating)> users)
+        [Trait("Category", "GetInterestSimilarUsersAsync")]
+        [Theory(DisplayName = "GetInterestSimilarUsersAsync uses given CancellationToken"), AutoData]
+        public async Task GetInterestSimilarUsersAsync_Uses_Given_CancellationToken(string interest, List<string> usernames)
         {
             var cancellationToken = new CancellationToken();
-            var result = new PersonalSimilarUsersResponse(users);
+            var result = new InterestSimilarUsersResponse(interest, usernames);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PersonalSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<InterestSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -92,20 +111,20 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                await s.GetSimilarUsersAsync(cancellationToken);
+                await s.GetInterestSimilarUsersAsync(interest, cancellationToken);
             }
 
             serverConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken));
         }
 
-        [Trait("Category", "GetSimilarUsersAsync")]
-        [Theory(DisplayName = "GetSimilarUsersAsync throws SoulseekClientException on throw"), AutoData]
-        public async Task GetSimilarUsersAsync_Throws_SoulseekClientException_On_Throw(List<(string Username, int Rating)> users)
+        [Trait("Category", "GetInterestSimilarUsersAsync")]
+        [Theory(DisplayName = "GetInterestSimilarUsersAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task GetInterestSimilarUsersAsync_Throws_SoulseekClientException_On_Throw(string interest, List<string> usernames)
         {
-            var result = new PersonalSimilarUsersResponse(users);
+            var result = new InterestSimilarUsersResponse(interest, usernames);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PersonalSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<InterestSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -116,7 +135,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.GetSimilarUsersAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetInterestSimilarUsersAsync(interest));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -124,14 +143,14 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "GetSimilarUsersAsync")]
-        [Theory(DisplayName = "GetSimilarUsersAsync throws TimeoutException on timeout"), AutoData]
-        public async Task GetSimilarUsersAsync_Throws_TimeoutException_On_Timeout(List<(string Username, int Rating)> users)
+        [Trait("Category", "GetInterestSimilarUsersAsync")]
+        [Theory(DisplayName = "GetInterestSimilarUsersAsync throws TimeoutException on timeout"), AutoData]
+        public async Task GetInterestSimilarUsersAsync_Throws_TimeoutException_On_Timeout(string interest, List<string> usernames)
         {
-            var result = new PersonalSimilarUsersResponse(users);
+            var result = new InterestSimilarUsersResponse(interest, usernames);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PersonalSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<InterestSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -142,21 +161,21 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.GetSimilarUsersAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetInterestSimilarUsersAsync(interest));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "GetSimilarUsersAsync")]
-        [Theory(DisplayName = "GetSimilarUsersAsync throws OperationCanceledException on cancellation"), AutoData]
-        public async Task GetSimilarUsersAsync_Throws_OperationCanceledException_On_Cancellation(List<(string Username, int Rating)> users)
+        [Trait("Category", "GetInterestSimilarUsersAsync")]
+        [Theory(DisplayName = "GetInterestSimilarUsersAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task GetInterestSimilarUsersAsync_Throws_OperationCanceledException_On_Cancellation(string interest, List<string> usernames)
         {
-            var result = new PersonalSimilarUsersResponse(users);
+            var result = new InterestSimilarUsersResponse(interest, usernames);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PersonalSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<InterestSimilarUsersResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -167,7 +186,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.GetSimilarUsersAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetInterestSimilarUsersAsync(interest));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
