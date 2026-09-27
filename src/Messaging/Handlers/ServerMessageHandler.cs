@@ -442,6 +442,16 @@ namespace Soulseek.Messaging.Handlers
                         SoulseekClient.Waiter.Complete(new WaitKey(code, interests.Username), interests);
                         break;
 
+                    case MessageCode.Server.GetPersonalSimilarUsers:
+                        var personalSimilarUsers = PersonalSimilarUsersResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), personalSimilarUsers);
+                        break;
+
+                    case MessageCode.Server.GetInterestSimilarUsers:
+                        var interestSimilarUsers = InterestSimilarUsersResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, interestSimilarUsers.Interest), interestSimilarUsers);
+                        break;
+
                     case MessageCode.Server.PrivateMessage:
                         var pm = PrivateMessageNotification.FromByteArray(message);
                         PrivateMessageReceived?.Invoke(this, new PrivateMessageReceivedEventArgs(pm));
