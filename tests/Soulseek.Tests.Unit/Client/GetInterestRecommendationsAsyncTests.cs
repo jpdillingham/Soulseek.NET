@@ -89,20 +89,22 @@ namespace Soulseek.Tests.Unit.Client
                 var (returnedInterest, recommended, notRecommended) = await s.GetInterestRecommendationsAsync(interest);
 
                 Assert.Equal(interest, returnedInterest);
-                Assert.Equal(recommendations, recommended.Select(r => (r.Interest, r.Count)));
+                Assert.Equal(recommendations.OrderByDescending(r => r.Count), recommended.Select(r => (r.Interest, r.Count)));
                 Assert.Empty(notRecommended);
             }
         }
 
         [Trait("Category", "GetInterestRecommendationsAsync")]
-        [Theory(DisplayName = "GetInterestRecommendationsAsync returns negative counts as not recommended"), AutoData]
-        public async Task GetInterestRecommendationsAsync_Returns_Negative_Counts_As_Not_Recommended(string interest)
+        [Theory(DisplayName = "GetInterestRecommendationsAsync splits and sorts recommendations"), AutoData]
+        public async Task GetInterestRecommendationsAsync_Splits_And_Sorts_Recommendations(string interest)
         {
             var recommendations = new List<(string Recommendation, int Count)>
             {
-                ("positive", 5),
+                ("low", 1),
                 ("zero", 0),
-                ("negative", -3),
+                ("high", 5),
+                ("slightly negative", -3),
+                ("very negative", -7),
             };
 
             var result = new InterestRecommendationsResponse(interest, recommendations);
@@ -121,8 +123,8 @@ namespace Soulseek.Tests.Unit.Client
 
                 var (_, recommended, notRecommended) = await s.GetInterestRecommendationsAsync(interest);
 
-                Assert.Equal(new[] { ("positive", 5), ("zero", 0) }, recommended.Select(r => (r.Interest, r.Count)));
-                Assert.Equal(new[] { ("negative", -3) }, notRecommended.Select(r => (r.Interest, r.Count)));
+                Assert.Equal(new[] { ("high", 5), ("low", 1) }, recommended.Select(r => (r.Interest, r.Count)));
+                Assert.Equal(new[] { ("very negative", -7), ("slightly negative", -3), ("zero", 0) }, notRecommended.Select(r => (r.Interest, r.Count)));
             }
         }
 

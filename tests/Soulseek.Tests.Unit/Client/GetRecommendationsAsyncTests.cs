@@ -50,9 +50,24 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetRecommendationsAsync")]
-        [Theory(DisplayName = "GetRecommendationsAsync returns expected info"), AutoData]
-        public async Task GetRecommendationsAsync_Returns_Expected_Info(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
+        [Fact(DisplayName = "GetRecommendationsAsync combines, splits, and sorts recommendations")]
+        public async Task GetRecommendationsAsync_Combines_Splits_And_Sorts_Recommendations()
         {
+            var recommendations = new List<(string Recommendation, int Count)>
+            {
+                ("low", 1),
+                ("high", 10),
+                ("negative in recommendations", -2),
+                ("zero", 0),
+            };
+
+            var unrecommendations = new List<(string Unrecommendation, int Count)>
+            {
+                ("very negative", -5),
+                ("positive in unrecommendations", 3),
+                ("slightly negative", -1),
+            };
+
             var result = new PersonalRecommendationsResponse(recommendations, unrecommendations);
 
             var waiter = new Mock<IWaiter>();
@@ -69,8 +84,8 @@ namespace Soulseek.Tests.Unit.Client
 
                 var (recommended, notRecommended) = await s.GetRecommendationsAsync();
 
-                Assert.Equal(recommendations, recommended.Select(r => (r.Interest, r.Count)));
-                Assert.Equal(unrecommendations, notRecommended.Select(r => (r.Interest, r.Count)));
+                Assert.Equal(new[] { ("high", 10), ("positive in unrecommendations", 3), ("low", 1) }, recommended.Select(r => (r.Interest, r.Count)));
+                Assert.Equal(new[] { ("very negative", -5), ("negative in recommendations", -2), ("slightly negative", -1), ("zero", 0) }, notRecommended.Select(r => (r.Interest, r.Count)));
             }
         }
 

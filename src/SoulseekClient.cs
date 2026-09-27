@@ -4030,8 +4030,12 @@ namespace Soulseek
 
                 var response = await wait.ConfigureAwait(false);
 
-                var recommended = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count)).ToList().AsReadOnly();
-                var notRecommended = response.Unrecommendations.Select(r => new Recommendation(r.Unrecommendation, r.Count)).ToList().AsReadOnly();
+                var recommendations = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count))
+                    .Concat(response.Unrecommendations.Select(r => new Recommendation(r.Unrecommendation, r.Count)))
+                    .ToList();
+
+                var recommended = recommendations.Where(r => r.Count > 0).OrderByDescending(r => r.Count).ToList().AsReadOnly();
+                var notRecommended = recommendations.Where(r => r.Count <= 0).OrderBy(r => r.Count).ToList().AsReadOnly();
 
                 return (recommended, notRecommended);
             }
@@ -4054,11 +4058,8 @@ namespace Soulseek
 
                 var recommendations = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count)).ToList();
 
-                // per the Nicotine+ docs, this count can be negative.  this code makes the assumption that a negative count
-                // here is intended to mean an 'unrecommendation'.  this might need to be adjusted to match the intent if
-                // this assumption is wrong.
-                var recommended = recommendations.Where(r => r.Count >= 0).ToList().AsReadOnly();
-                var notRecommended = recommendations.Where(r => r.Count < 0).ToList().AsReadOnly();
+                var recommended = recommendations.Where(r => r.Count > 0).OrderByDescending(r => r.Count).ToList().AsReadOnly();
+                var notRecommended = recommendations.Where(r => r.Count <= 0).OrderBy(r => r.Count).ToList().AsReadOnly();
 
                 return (response.Interest, recommended, notRecommended);
             }
@@ -4098,8 +4099,12 @@ namespace Soulseek
 
                 var response = await wait.ConfigureAwait(false);
 
-                var recommended = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count)).ToList().AsReadOnly();
-                var notRecommended = response.Unrecommendations.Select(r => new Recommendation(r.Unrecommendation, r.Count)).ToList().AsReadOnly();
+                var recommendations = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count))
+                    .Concat(response.Unrecommendations.Select(r => new Recommendation(r.Unrecommendation, r.Count)))
+                    .ToList();
+
+                var recommended = recommendations.Where(r => r.Count > 0).OrderByDescending(r => r.Count).ToList().AsReadOnly();
+                var notRecommended = recommendations.Where(r => r.Count <= 0).OrderBy(r => r.Count).ToList().AsReadOnly();
 
                 return (recommended, notRecommended);
             }
