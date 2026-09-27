@@ -1001,6 +1001,34 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GetUserInterests"), AutoData]
+        public void Handles_GetUserInterests(string username, List<string> likes, List<string> hates)
+        {
+            UserInterestsResponse result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserInterestsResponse>()))
+                .Callback<WaitKey, UserInterestsResponse>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetUserInterests)
+                .WriteString(username)
+                .WriteInteger(likes.Count);
+
+            likes.ForEach(like => builder.WriteString(like));
+
+            builder.WriteInteger(hates.Count);
+
+            hates.ForEach(hate => builder.WriteString(hate));
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            Assert.Equal(username, result.Username);
+            Assert.Equal(likes, result.Likes);
+            Assert.Equal(hates, result.Hates);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles NetInfo"), AutoData]
         public void Handles_NetInfo(List<(string Username, IPEndPoint IPEndPoint)> parents)
         {

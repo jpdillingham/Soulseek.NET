@@ -1826,6 +1826,34 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously fetches the interests of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user for which to fetch interests.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<UserInterests> GetUserInterestsAsync(string username, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user interests (currently: {State})");
+            }
+
+            return GetUserInterestsInternalAsync(username, cancellationToken);
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the status of the privileges of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The username of the user for which to fetch privileges.</param>
@@ -3983,6 +4011,25 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to retrieve information for user {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<UserInterests> GetUserInterestsInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.GetUserInterests, username);
+                var interestsWait = Waiter.Wait<UserInterestsResponse>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new UserInterestsRequest(username), cancellationToken).ConfigureAwait(false);
+
+                var response = await interestsWait.ConfigureAwait(false);
+
+                return new UserInterests(response.Username, response.Likes, response.Hates);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to retrieve interests for user {username}: {ex.Message}", ex);
             }
         }
 
