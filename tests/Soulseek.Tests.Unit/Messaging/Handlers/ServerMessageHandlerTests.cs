@@ -1029,6 +1029,55 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GetPersonalSimilarUsers"), AutoData]
+        public void Handles_GetPersonalSimilarUsers(List<(string Username, int Rating)> users)
+        {
+            PersonalSimilarUsersResponse result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<PersonalSimilarUsersResponse>()))
+                .Callback<WaitKey, PersonalSimilarUsersResponse>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetPersonalSimilarUsers)
+                .WriteInteger(users.Count);
+
+            users.ForEach(user =>
+            {
+                builder
+                    .WriteString(user.Username)
+                    .WriteInteger(user.Rating);
+            });
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            Assert.Equal(users, result.Users);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GetInterestSimilarUsers"), AutoData]
+        public void Handles_GetInterestSimilarUsers(string interest, List<string> usernames)
+        {
+            InterestSimilarUsersResponse result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<InterestSimilarUsersResponse>()))
+                .Callback<WaitKey, InterestSimilarUsersResponse>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GetInterestSimilarUsers)
+                .WriteString(interest)
+                .WriteInteger(usernames.Count);
+
+            usernames.ForEach(username => builder.WriteString(username));
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            Assert.Equal(interest, result.Interest);
+            Assert.Equal(usernames, result.Usernames);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles NetInfo"), AutoData]
         public void Handles_NetInfo(List<(string Username, IPEndPoint IPEndPoint)> parents)
         {
