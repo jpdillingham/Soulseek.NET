@@ -19,7 +19,6 @@ namespace Soulseek.Tests.Unit.Client
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -86,9 +85,10 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var similarUsers = await s.GetInterestSimilarUsersAsync(interest);
+                var (returnedInterest, similarUsers) = await s.GetInterestSimilarUsersAsync(interest);
 
-                Assert.Equal(usernames.Select(u => (u, (int?)null)), similarUsers);
+                Assert.Equal(interest, returnedInterest);
+                Assert.Equal(usernames, similarUsers);
             }
         }
 
