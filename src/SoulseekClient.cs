@@ -1694,6 +1694,57 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously fetches the list of recommended and not recommended interests across all users of the server,
+        ///     regardless of the interests of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the recommendations.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetGlobalRecommendationsAsync(CancellationToken cancellationToken = default)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch recommendations (currently: {State})");
+            }
+
+            return GetGlobalRecommendationsInternalAsync(cancellationToken);
+        }
+
+        /// <summary>
+        ///     Asynchronously fetches the list of recommended and not recommended interests related to the specified
+        ///     <paramref name="interest"/>.
+        /// </summary>
+        /// <param name="interest">The interest for which to fetch recommendations.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>
+        ///     The Task representing the asynchronous operation, including the interest and the recommendations related to it.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="interest"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<(string Interest, IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetInterestRecommendationsAsync(string interest, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(interest))
+            {
+                throw new ArgumentException("The interest must not be a null or empty string, or one consisting only of whitespace", nameof(interest));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch recommendations (currently: {State})");
+            }
+
+            return GetInterestRecommendationsInternalAsync(interest, cancellationToken);
+        }
+
+        /// <summary>
         ///     Gets the next token for use in client operations.
         /// </summary>
         /// <remarks>
@@ -1734,6 +1785,26 @@ namespace Soulseek
             {
                 throw new SoulseekClientException($"Failed to get privileges: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        ///     Asynchronously fetches the list of recommended and not recommended interests, based on the interests of the
+        ///     currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the recommendations.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetRecommendationsAsync(CancellationToken cancellationToken = default)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch recommendations (currently: {State})");
+            }
+
+            return GetPersonalRecommendationsInternalAsync(cancellationToken);
         }
 
         /// <summary>
@@ -3948,6 +4019,55 @@ namespace Soulseek
             }
         }
 
+        private async Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetGlobalRecommendationsInternalAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.GetGlobalRecommendations);
+                var wait = Waiter.Wait<GlobalRecommendationsResponse>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new GlobalRecommendationsRequest(), cancellationToken).ConfigureAwait(false);
+
+                var response = await wait.ConfigureAwait(false);
+
+                var recommended = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count)).ToList().AsReadOnly();
+                var notRecommended = response.Unrecommendations.Select(r => new Recommendation(r.Unrecommendation, r.Count)).ToList().AsReadOnly();
+
+                return (recommended, notRecommended);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to retrieve global recommendations: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<(string Interest, IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetInterestRecommendationsInternalAsync(string interest, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.GetInterestRecommendations, interest);
+                var wait = Waiter.Wait<InterestRecommendationsResponse>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new InterestRecommendationsRequest(interest), cancellationToken).ConfigureAwait(false);
+
+                var response = await wait.ConfigureAwait(false);
+
+                var recommendations = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count)).ToList();
+
+                // per the Nicotine+ docs, this count can be negative.  this code makes the assumption that a negative count
+                // here is intended to mean an 'unrecommendation'.  this might need to be adjusted to match the intent if
+                // this assumption is wrong.
+                var recommended = recommendations.Where(r => r.Count >= 0).ToList().AsReadOnly();
+                var notRecommended = recommendations.Where(r => r.Count < 0).ToList().AsReadOnly();
+
+                return (response.Interest, recommended, notRecommended);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to retrieve recommendations for interest {interest}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<(string Interest, IReadOnlyCollection<string>)> GetInterestSimilarUsersInternalAsync(string interest, CancellationToken cancellationToken)
         {
             try
@@ -3964,6 +4084,28 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new SoulseekClientException($"Failed to retrieve similar users for interest {interest}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetPersonalRecommendationsInternalAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.GetPersonalRecommendations);
+                var wait = Waiter.Wait<PersonalRecommendationsResponse>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new PersonalRecommendationsRequest(), cancellationToken).ConfigureAwait(false);
+
+                var response = await wait.ConfigureAwait(false);
+
+                var recommended = response.Recommendations.Select(r => new Recommendation(r.Recommendation, r.Count)).ToList().AsReadOnly();
+                var notRecommended = response.Unrecommendations.Select(r => new Recommendation(r.Unrecommendation, r.Count)).ToList().AsReadOnly();
+
+                return (recommended, notRecommended);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SoulseekClientException($"Failed to retrieve personal recommendations: {ex.Message}", ex);
             }
         }
 
