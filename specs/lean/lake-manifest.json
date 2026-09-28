@@ -1,0 +1,6 @@
+{"version": "1.2.0",
+ "packagesDir": ".lake/packages",
+ "packages": [],
+ "name": "Specs",
+ "lakeDir": ".lake",
+ "fixedToolchain": false}
