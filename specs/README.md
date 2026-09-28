@@ -1,3 +1,6 @@
+> [!WARNING]
+> This is pure AI slop, but it is helpful feedback about the correctness of critical pieces of infrastructure in the library.  Any steering that comes out of this verification is done with human hands and eyes.
+
 # Formal specifications
 
 This directory holds formal models of two concurrency-heavy classes, and a script that checks them.
