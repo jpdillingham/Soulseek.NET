@@ -1,10 +1,9 @@
 ﻿// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
-//     Copyright (c) JP Dillingham. All rights reserved.
+//     Copyright (c) JP Dillingham.
 //
 //     This program is free software: you can redistribute it and/or modify
 //     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+//     the Free Software Foundation, version 3.
 //
 //     This program is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,6 +12,13 @@
 //
 //     You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see https://www.gnu.org/licenses/.
+//
+//     This program is distributed with Additional Terms pursuant to Section 7
+//     of the GPLv3.  See the LICENSE file in the root directory of this
+//     project for the complete terms and conditions.
+//
+//     SPDX-FileCopyrightText: JP Dillingham
+//     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
 
 namespace Soulseek.Network
@@ -203,6 +209,7 @@ namespace Soulseek.Network
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
+        private bool Disposing { get; set; }
         private bool Enabled => SoulseekClient.Options.EnableDistributedNetwork;
         private string LastStatus { get; set; }
         private DateTime LastStatusTimestamp { get; set; }
@@ -231,6 +238,11 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddOrUpdateChildConnectionAsync(string username, IConnection incomingConnection)
         {
+            if (Disposing || Disposed)
+            {
+                throw new ObjectDisposedException(nameof(DistributedConnectionManager));
+            }
+
             var c = incomingConnection;
 
             if (!CanAcceptChildren)
@@ -406,7 +418,7 @@ namespace Soulseek.Network
                 {
                     Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
 
-                    (ParentConnection, ParentBranchLevel, ParentBranchRoot) = successfulConnections.First();
+                    (ParentConnection, ParentBranchLevel, ParentBranchRoot) = successfulConnections[0];
                     Diagnostic.Debug($"Selected {ParentConnection.Username} as the best connection; branch root: {ParentBranchRoot}, branch level: {ParentBranchLevel}");
 
                     ParentConnection.Disconnected += ParentConnection_Disconnected;
@@ -458,11 +470,9 @@ namespace Soulseek.Network
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken cancellationToken = default)
         {
-            cancellationToken ??= CancellationToken.None;
-
-            static async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken? cancellationToken)
+            static async Task Write(KeyValuePair<string, Lazy<Task<IMessageConnection>>> child, byte[] bytes, CancellationToken cancellationToken)
             {
                 IMessageConnection connection = default;
 
@@ -542,6 +552,11 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task GetOrAddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
+            if (Disposing || Disposed)
+            {
+                throw new ObjectDisposedException(nameof(DistributedConnectionManager));
+            }
+
             bool cached = true;
             var r = connectToPeerResponse;
 
@@ -683,15 +698,18 @@ namespace Soulseek.Network
 
             while (!ChildConnectionDictionary.IsEmpty)
             {
-                if (ChildConnectionDictionary.TryRemove(ChildConnectionDictionary.Keys.First(), out var value))
+                foreach (var key in ChildConnectionDictionary.Keys)
                 {
-                    try
+                    if (ChildConnectionDictionary.TryRemove(key, out var value))
                     {
-                        (await value.Value.ConfigureAwait(false))?.Dispose();
-                    }
-                    catch
-                    {
-                        // noop
+                        try
+                        {
+                            (await value.Value.ConfigureAwait(false))?.Dispose();
+                        }
+                        catch
+                        {
+                            // noop
+                        }
                     }
                 }
             }
@@ -734,14 +752,14 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
-        public async Task UpdateStatusAsync(CancellationToken? cancellationToken = null)
+        public async Task UpdateStatusAsync(CancellationToken cancellationToken = default)
         {
             if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
             {
                 return;
             }
 
-            await StatusSyncRoot.WaitAsync(cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+            await StatusSyncRoot.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -823,6 +841,8 @@ namespace Soulseek.Network
             {
                 if (disposing)
                 {
+                    Disposing = true;
+
                     WatchdogTimer.Dispose();
                     StatusDebounceTimer.Dispose();
 

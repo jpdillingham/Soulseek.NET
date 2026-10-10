@@ -48,7 +48,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Ensures Diagnostic given null")]
         public void Ensures_Diagnostic_Given_Null()
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 ListenerHandler l = default;
 
@@ -63,7 +63,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
         public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 DiagnosticEventArgs args = default;
 
@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
         public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 ListenerHandler l = new ListenerHandler(client);
 
@@ -107,15 +107,34 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on error"), AutoData]
+        public void Creates_Diagnostic_On_Error(IPEndPoint endpoint, string message)
+        {
+            var (handler, mocks) = GetFixture(endpoint);
+
+            mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()));
+
+            var exception = new Exception(message);
+
+            handler.HandleError(null, exception);
+
+            mocks.Diagnostic.Verify(
+                m => m.Warning(
+                    It.Is<string>(s => s.Contains("Failed to establish an incoming connection", StringComparison.InvariantCultureIgnoreCase) && s.Contains(message, StringComparison.InvariantCultureIgnoreCase)),
+                    exception),
+                Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on unknown connection"), AutoData]
         public void Creates_Diagnostic_On_Unknown_Connection(IPEndPoint endpoint)
         {
             var (handler, mocks) = GetFixture(endpoint);
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(5)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(1, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(1, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(1)));
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
@@ -132,7 +151,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (handler, mocks) = GetFixture(endpoint);
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
@@ -154,10 +173,10 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PeerInit(username, Constants.ConnectionType.Peer, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -172,7 +191,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (handler, mocks) = GetFixture(endpoint);
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
@@ -180,10 +199,10 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -201,9 +220,9 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             var dict = new ConcurrentDictionary<int, string>();
@@ -227,9 +246,9 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             var dict = new ConcurrentDictionary<int, string>();
@@ -253,10 +272,10 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PeerInit(username, Constants.ConnectionType.Peer, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -273,10 +292,10 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PeerInit(username, Constants.ConnectionType.Transfer, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -293,10 +312,10 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PeerInit(username, Constants.ConnectionType.Transfer, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             var newTransfer = new Mock<IConnection>();
@@ -322,10 +341,10 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PeerInit(username, Constants.ConnectionType.Transfer, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             var newTransfer = new Mock<IConnection>();
@@ -353,10 +372,10 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PeerInit(username, Constants.ConnectionType.Distributed, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
 
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -373,9 +392,9 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             var dict = new ConcurrentDictionary<int, string>();
@@ -399,9 +418,9 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             var dict = new ConcurrentDictionary<int, string>();
@@ -430,9 +449,9 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -454,9 +473,9 @@ namespace Soulseek.Tests.Unit.Network
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
 
-            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
-            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(messageBytes));
 
             handler.HandleConnection(null, mocks.Connection.Object);
@@ -481,7 +500,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions)
+                Client = new Mock<SoulseekClient>(9999, clientOptions)
                 {
                     CallBase = true,
                 };

@@ -1,10 +1,9 @@
 ﻿// <copyright file="ServerMessageHandler.cs" company="JP Dillingham">
-//     Copyright (c) JP Dillingham. All rights reserved.
+//     Copyright (c) JP Dillingham.
 //
 //     This program is free software: you can redistribute it and/or modify
 //     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+//     the Free Software Foundation, version 3.
 //
 //     This program is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,6 +12,13 @@
 //
 //     You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see https://www.gnu.org/licenses/.
+//
+//     This program is distributed with Additional Terms pursuant to Section 7
+//     of the GPLv3.  See the LICENSE file in the root directory of this
+//     project for the complete terms and conditions.
+//
+//     SPDX-FileCopyrightText: JP Dillingham
+//     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
 
 namespace Soulseek.Messaging.Handlers
@@ -429,6 +435,36 @@ namespace Soulseek.Messaging.Handlers
                         var stats = UserStatisticsResponseFactory.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, stats.Username), stats);
                         UserStatisticsChanged?.Invoke(this, stats);
+                        break;
+
+                    case MessageCode.Server.GetUserInterests:
+                        var interests = UserInterestsResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, interests.Username), interests);
+                        break;
+
+                    case MessageCode.Server.GetPersonalSimilarUsers:
+                        var personalSimilarUsers = PersonalSimilarUsersResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), personalSimilarUsers);
+                        break;
+
+                    case MessageCode.Server.GetInterestSimilarUsers:
+                        var interestSimilarUsers = InterestSimilarUsersResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, interestSimilarUsers.Interest), interestSimilarUsers);
+                        break;
+
+                    case MessageCode.Server.GetPersonalRecommendations:
+                        var personalRecommendations = PersonalRecommendationsResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), personalRecommendations);
+                        break;
+
+                    case MessageCode.Server.GetGlobalRecommendations:
+                        var globalRecommendations = GlobalRecommendationsResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), globalRecommendations);
+                        break;
+
+                    case MessageCode.Server.GetInterestRecommendations:
+                        var interestRecommendations = InterestRecommendationsResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, interestRecommendations.Interest), interestRecommendations);
                         break;
 
                     case MessageCode.Server.PrivateMessage:

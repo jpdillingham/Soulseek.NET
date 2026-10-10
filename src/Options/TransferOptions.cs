@@ -1,10 +1,9 @@
 ﻿// <copyright file="TransferOptions.cs" company="JP Dillingham">
-//     Copyright (c) JP Dillingham. All rights reserved.
+//     Copyright (c) JP Dillingham.
 //
 //     This program is free software: you can redistribute it and/or modify
 //     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+//     the Free Software Foundation, version 3.
 //
 //     This program is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,6 +12,13 @@
 //
 //     You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see https://www.gnu.org/licenses/.
+//
+//     This program is distributed with Additional Terms pursuant to Section 7
+//     of the GPLv3.  See the LICENSE file in the root directory of this
+//     project for the complete terms and conditions.
+//
+//     SPDX-FileCopyrightText: JP Dillingham
+//     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
 
 namespace Soulseek
@@ -51,11 +57,17 @@ namespace Soulseek
         /// <param name="diagnostic">
         ///     The delegate to invoke when a diagnostic message for the transfer is captured.
         /// </param>
+        /// <param name="sizeMismatchResolver">
+        ///     The delegate used to resolve the transfer size to use if the local and remote file sizes disagree (downloads only).
+        /// </param>
         /// <param name="maximumLingerTime">
         ///     The maximum linger time, in milliseconds, that a connection will attempt to cleanly close following a transfer.
         /// </param>
         /// <param name="seekInputStreamAutomatically">
         ///     A value indicating whether the input stream should be automatically seeked to the desired start offset, if one is specified.
+        /// </param>
+        /// <param name="seekOutputStreamAutomatically">
+        ///     A value indicating whether the output stream should be automatically seeked to the desired start offset, if one is specified.
         /// </param>
         /// <param name="disposeInputStreamOnCompletion">
         ///     A value indicating whether the input stream should be closed upon transfer completion.
@@ -71,12 +83,15 @@ namespace Soulseek
             Action<Transfer> slotReleased = null,
             Action<Transfer, int, int, int> reporter = null,
             Action<(DateTime timestamp, DiagnosticLevel Level, string Message, Exception exception)> diagnostic = null,
+            Func<Transfer, long, long> sizeMismatchResolver = null,
             int maximumLingerTime = 3000,
             bool seekInputStreamAutomatically = true,
+            bool seekOutputStreamAutomatically = true,
             bool disposeInputStreamOnCompletion = true,
             bool disposeOutputStreamOnCompletion = true)
         {
             SeekInputStreamAutomatically = seekInputStreamAutomatically;
+            SeekOutputStreamAutomatically = seekOutputStreamAutomatically;
             DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
@@ -88,6 +103,8 @@ namespace Soulseek
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
             MaximumLingerTime = maximumLingerTime;
+
+            SizeMismatchResolver = sizeMismatchResolver;
         }
 
         /// <summary>
@@ -135,6 +152,17 @@ namespace Soulseek
         public bool SeekInputStreamAutomatically { get; }
 
         /// <summary>
+        ///     Gets a value indicating whether the output stream should be automatically seeked to the desired start offset, if
+        ///     one is specified.
+        /// </summary>
+        public bool SeekOutputStreamAutomatically { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the transfer size to use if the local and remote file sizes disagree (downloads only).
+        /// </summary>
+        public Func<Transfer, long, long> SizeMismatchResolver { get; }
+
+        /// <summary>
         ///     Gets the delegate used to await a slot to start the transfer (uploads only). (Default = a delegate returning Task.CompletedTask).
         /// </summary>
         public Func<Transfer, CancellationToken, Task> SlotAwaiter { get; }
@@ -168,8 +196,10 @@ namespace Soulseek
                 slotReleased: SlotReleased,
                 reporter: Reporter,
                 diagnostic: Diagnostic,
+                sizeMismatchResolver: SizeMismatchResolver,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
+                seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: DisposeOutputStreamOnCompletion);
         }
@@ -196,8 +226,10 @@ namespace Soulseek
                 slotReleased: SlotReleased,
                 reporter: Reporter,
                 diagnostic: Diagnostic,
+                sizeMismatchResolver: SizeMismatchResolver,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
+                seekOutputStreamAutomatically: SeekOutputStreamAutomatically,
                 disposeInputStreamOnCompletion: disposeInputStreamOnCompletion ?? DisposeInputStreamOnCompletion,
                 disposeOutputStreamOnCompletion: disposeOutputStreamOnCompletion ?? DisposeOutputStreamOnCompletion);
         }

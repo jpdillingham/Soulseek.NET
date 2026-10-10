@@ -1,10 +1,9 @@
 ﻿// <copyright file="Connection.cs" company="JP Dillingham">
-//     Copyright (c) JP Dillingham. All rights reserved.
+//     Copyright (c) JP Dillingham.
 //
 //     This program is free software: you can redistribute it and/or modify
 //     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+//     the Free Software Foundation, version 3.
 //
 //     This program is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,6 +12,13 @@
 //
 //     You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see https://www.gnu.org/licenses/.
+//
+//     This program is distributed with Additional Terms pursuant to Section 7
+//     of the GPLv3.  See the LICENSE file in the root directory of this
+//     project for the complete terms and conditions.
+//
+//     SPDX-FileCopyrightText: JP Dillingham
+//     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
 
 namespace Soulseek.Network.Tcp
@@ -218,14 +224,12 @@ namespace Soulseek.Network.Tcp
         ///     Thrown when <paramref name="cancellationToken"/> cancellation is requested.
         /// </exception>
         /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
-        public async Task ConnectAsync(CancellationToken? cancellationToken = null)
+        public async Task ConnectAsync(CancellationToken cancellationToken = default)
         {
             if (State != ConnectionState.Pending && State != ConnectionState.Disconnected)
             {
                 throw new InvalidOperationException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
-
-            cancellationToken ??= CancellationToken.None;
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
             // that ends when the result is set programmatically. create another for cancellation via the externally provided token.
@@ -264,10 +268,10 @@ namespace Soulseek.Network.Tcp
                     // TCS. either the timeout or the external token can now cancel the operation.
 #if NETSTANDARD2_0
                     using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
-                    using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+                    using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
 #else
                     await using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
-                    await using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+                    await using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
 #endif
                     {
                         var completedTask = await Task.WhenAny(connectTask, timeoutTaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
@@ -278,7 +282,7 @@ namespace Soulseek.Network.Tcp
                         }
                         else if (completedTask == cancellationTaskCompletionSource.Task)
                         {
-                            throw new OperationCanceledException("Operation cancelled", cancellationToken.Value);
+                            throw new OperationCanceledException("Operation cancelled", cancellationToken);
                         }
 
                         if (connectTask.Exception?.InnerException != null)
@@ -372,7 +376,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
-        public Task<byte[]> ReadAsync(long length, CancellationToken? cancellationToken = null)
+        public Task<byte[]> ReadAsync(long length, CancellationToken cancellationToken = default)
         {
             if (length < 0)
             {
@@ -389,7 +393,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return ReadInternalAsync(length, cancellationToken ?? CancellationToken.None);
+            return ReadInternalAsync(length, cancellationToken);
         }
 
         /// <summary>
@@ -412,7 +416,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
-        public Task ReadAsync(long length, Stream outputStream, Func<int, CancellationToken, Task<int>> governor, Action<int, int, int> reporter = null, CancellationToken? cancellationToken = null)
+        public Task ReadAsync(long length, Stream outputStream, Func<int, CancellationToken, Task<int>> governor, Action<int, int, int> reporter = null, CancellationToken cancellationToken = default)
         {
             if (length < 0)
             {
@@ -439,7 +443,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return ReadInternalAsync(length, outputStream, governor ?? ((s, t) => Task.FromResult(int.MaxValue)), reporter, cancellationToken ?? CancellationToken.None);
+            return ReadInternalAsync(length, outputStream, governor ?? ((s, t) => Task.FromResult(int.MaxValue)), reporter, cancellationToken);
         }
 
         /// <summary>
@@ -448,9 +452,9 @@ namespace Soulseek.Network.Tcp
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The message describing the reason for the disconnect.</returns>
         /// <exception cref="Exception">Thrown when the connection is disconnected as the result of an Exception.</exception>
-        public Task<string> WaitForDisconnect(CancellationToken? cancellationToken = null)
+        public Task<string> WaitForDisconnect(CancellationToken cancellationToken = default)
         {
-            cancellationToken?.Register(() =>
+            cancellationToken.Register(() =>
                 Disconnect(exception: new OperationCanceledException("Operation cancelled")));
 
             return DisconnectTaskCompletionSource.Task;
@@ -469,7 +473,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        public Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null)
+        public Task WriteAsync(byte[] bytes, CancellationToken cancellationToken = default)
         {
             if (bytes == null || bytes.Length == 0)
             {
@@ -486,7 +490,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return WriteInternalAsync(bytes, cancellationToken ?? CancellationToken.None);
+            return WriteInternalAsync(bytes, cancellationToken);
         }
 
         /// <summary>
@@ -509,7 +513,7 @@ namespace Soulseek.Network.Tcp
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        public Task WriteAsync(long length, Stream inputStream, Func<int, CancellationToken, Task<int>> governor = null, Action<int, int, int> reporter = null, CancellationToken? cancellationToken = null)
+        public Task WriteAsync(long length, Stream inputStream, Func<int, CancellationToken, Task<int>> governor = null, Action<int, int, int> reporter = null, CancellationToken cancellationToken = default)
         {
             if (length <= 0)
             {
@@ -536,7 +540,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return WriteInternalAsync(length, inputStream, governor ?? ((s, t) => Task.FromResult(int.MaxValue)), reporter, cancellationToken ?? CancellationToken.None);
+            return WriteInternalAsync(length, inputStream, governor ?? ((s, t) => Task.FromResult(int.MaxValue)), reporter, cancellationToken);
         }
 
         /// <summary>
@@ -590,10 +594,11 @@ namespace Soulseek.Network.Tcp
                     InactivityTimer?.Dispose();
                     WatchdogTimer.Dispose();
                     Stream?.Dispose();
-                    TcpClient?.Dispose();
 
                     WriteSemaphore?.Dispose();
                     WriteQueueSemaphore?.Dispose();
+
+                    TcpClient?.Dispose();
                 }
 
                 Disposed = true;
@@ -717,7 +722,7 @@ namespace Soulseek.Network.Tcp
         {
             // a failure to allocate memory will throw, so we need to do it within the try/catch
             // declare and initialize it here so it's available in the finally block
-            byte[] buffer = Array.Empty<byte>();
+            byte[] buffer = default;
 
             // in the case of a bad (or failing) connection, it is possible for us to continue to write data, particularly
             // distributed search requests, to the connection for quite a while before the underlying socket figures out that it

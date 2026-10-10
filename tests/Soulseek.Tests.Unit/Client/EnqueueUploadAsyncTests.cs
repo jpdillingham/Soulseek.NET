@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit.Client
 {
     using System;
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Xunit;
@@ -32,7 +33,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("   ")]
         public async Task EnqueueUploadAsync_File_Throws_ArgumentException_Given_Bad_Username(string username)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -51,7 +52,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task EnqueueUploadAsync_Stream_Throws_ArgumentException_Given_Bad_Username(string username)
         {
             using (var stream = new MemoryStream())
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, "filename", 1, (_) => Task.FromResult((Stream)stream)));
 
@@ -65,11 +66,11 @@ namespace Soulseek.Tests.Unit.Client
         public async Task EnqueueUploadAsync_File_Returns_After_Upload_Enters_Queued_State(string username, string filename, int token)
         {
             using (var testFile = new TestFile())
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, filename, testFile.Path, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, filename, testFile.Path, token, new TransferOptions(), CancellationToken.None));
 
                 Assert.Null(ex);
             }
@@ -80,11 +81,11 @@ namespace Soulseek.Tests.Unit.Client
         public async Task EnqueueUploadAsync_Stream_Returns_After_Upload_Enters_Queued_State(string username, string filename, int token)
         {
             using (var stream = new MemoryStream())
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, filename, 1, (_) => Task.FromResult((Stream)stream), token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.EnqueueUploadAsync(username, filename, 1, (_) => Task.FromResult((Stream)stream), token, new TransferOptions(), CancellationToken.None));
 
                 Assert.Null(ex);
             }

@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Ensures Diagnostic given null")]
         public void Ensures_Diagnostic_Given_Null()
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 PeerConnectionManager c = default;
 
@@ -87,6 +87,119 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = Record.Exception(() => c.Dispose());
 
                 Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddOrUpdateMessageConnectionAsync throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task AddOrUpdateMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var incomingConn = GetConnectionMock(endpoint);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddOrUpdateMessageConnectionAsync throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task AddOrUpdateMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing_And_Disposed(string username, IPEndPoint endpoint)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var incomingConn = GetConnectionMock(endpoint);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddOrUpdateMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Throws_ObjectDisposedException_If_Disposing(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync CTPR throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Throws_ObjectDisposedException_If_Disposing_And_Disposed(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync throws ObjectDisposedException if disposing"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing(string username, IPEndPoint endpoint, int solicitationToken)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, endpoint, solicitationToken, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync throws ObjectDisposedException if disposing and disposed"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Throws_ObjectDisposedException_If_Disposing_And_Disposed(string username, IPEndPoint endpoint, int solicitationToken)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("Disposing", true);
+                manager.SetProperty("Disposed", true);
+
+                var ex = await Record.ExceptionAsync(() => manager.GetOrAddMessageConnectionAsync(username, endpoint, solicitationToken, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ObjectDisposedException>(ex);
             }
         }
 
@@ -149,7 +262,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -177,7 +290,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -208,8 +321,8 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
-                .Callback<long, CancellationToken?>((i, t) => conn.Raise(mock => mock.Disconnected += null, null, new ConnectionDisconnectedEventArgs("foo")))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
+                .Callback<long, CancellationToken>((i, t) => conn.Raise(mock => mock.Disconnected += null, null, new ConnectionDisconnectedEventArgs("foo")))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -233,13 +346,47 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync produces diagnostic with exception message on disconnect"), AutoData]
+        internal async Task AddTransferConnectionAsync_Produces_Diagnostic_With_Exception_Message_On_Disconnect(string username, IPEndPoint endpoint, int token)
+        {
+            var expectedEx = new Exception("foo");
+            var disconnectEx = new Exception("boom");
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
+                .Callback<long, CancellationToken>((i, t) => conn.Raise(mock => mock.Disconnected += null, null, new ConnectionDisconnectedEventArgs("message-not-used", disconnectEx)))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(username, token, incomingConn.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("disconnected") && s.ContainsInsensitive("boom"))), Times.Once);
+        }
+
+        [Trait("Category", "AddTransferConnectionAsync")]
         [Theory(DisplayName = "AddTransferConnectionAsync sets connection type to inbound direct"), AutoData]
         internal async Task AddTransferConnectionAsync_Sets_Connection_Type_To_Inbound_Direct(string username, IPEndPoint endpoint, int token)
         {
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -262,7 +409,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task AddTransferConnectionAsync_Produces_Expected_Diagnostic_On_Failure(string username, IPEndPoint endpoint, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromException<byte[]>(new Exception("foo")));
 
             var (manager, mocks) = GetFixture();
@@ -287,7 +434,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task AddTransferConnectionAsync_Throws_Expected_Exception_On_Failure(string username, IPEndPoint endpoint, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromException<byte[]>(new Exception("foo")));
 
             var (manager, mocks) = GetFixture();
@@ -316,7 +463,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -343,7 +490,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             conn.Setup(m => m.StartReadingContinuously())
@@ -376,7 +523,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -402,13 +549,13 @@ namespace Soulseek.Tests.Unit.Network
             var conn1 = GetMessageConnectionMock(username, endpoint);
             conn1.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn1.Setup(m => m.ReadAsync(4, null))
+            conn1.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var conn2 = GetMessageConnectionMock(username, endpoint);
             conn2.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn2.Setup(m => m.ReadAsync(4, null))
+            conn2.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -449,7 +596,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -480,7 +627,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -596,7 +743,7 @@ namespace Soulseek.Tests.Unit.Network
             var conn = GetMessageConnectionMock(username, endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -623,12 +770,12 @@ namespace Soulseek.Tests.Unit.Network
             byte[] actualBytes = Array.Empty<byte>();
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
-                .Callback<byte[], CancellationToken?>((b, c) => actualBytes = b);
-            conn.Setup(m => m.ReadAsync(4, null))
+                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -649,8 +796,8 @@ namespace Soulseek.Tests.Unit.Network
 
             Assert.Equal(expectedBytes, actualBytes);
 
-            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken?>()), Times.Once);
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
@@ -661,7 +808,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             var (manager, mocks) = GetFixture();
@@ -689,7 +836,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("disconnect")))
                 .Throws(expectedException);
 
@@ -711,13 +858,43 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync adds diagnostic with exception message on disconnect"), AutoData]
+        internal async Task GetTransferConnectionAsync_Adds_Diagnostic_With_Exception_Message_On_Disconnect(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token, false);
+            var expectedException = new Exception("foo");
+            var disconnectException = new Exception("boom");
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("message-not-used", disconnectException)))
+                .Throws(expectedException);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.GetTransferConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedException, ex.InnerException);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Transfer connection") && s.ContainsInsensitive("boom"))));
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
         [Theory(DisplayName = "GetTransferConnectionAsync CTPR sets type to inbound indirect"), AutoData]
         public async Task GetTransferConnectionAsync_CTPR_Sets_Type_To_Inbound_Indirect(string username, IPEndPoint endpoint, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token, false);
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ReadAsync(4, null))
+            conn.Setup(m => m.ReadAsync(4, CancellationToken.None))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
             var (manager, mocks) = GetFixture();
@@ -741,7 +918,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             var (manager, mocks) = GetFixture();
@@ -764,7 +941,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             var (manager, mocks) = GetFixture();
@@ -788,7 +965,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetTransferConnectionOutboundDirectAsync_Returns_Connection_If_Connect_Succeeds(IPEndPoint endpoint, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -808,7 +985,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetTransferConnectionOutboundDirectAsync_Adds_Diagnostic_On_Disconnect(IPEndPoint endpoint, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("disconnected")))
                 .Returns(Task.CompletedTask);
 
@@ -827,13 +1004,38 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync adds diagnostic with exception message on disconnect"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Adds_Diagnostic_With_Exception_Message_On_Disconnect(IPEndPoint endpoint, int token)
+        {
+            var disconnectException = new Exception("boom");
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("message-not-used", disconnectException)))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", endpoint, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Transfer connection") && s.ContainsInsensitive("boom"))));
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
         [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync sets connection type to Outbound Direct"), AutoData]
         internal async Task GetTransferConnectionOutboundDirectAsync_Sets_Connection_Type_To_Outbound_Direct(IPEndPoint endpoint, int token)
         {
             ConnectionTypes type = ConnectionTypes.None;
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.SetupSet(m => m.Type = It.IsAny<ConnectionTypes>())
                 .Callback<ConnectionTypes>(o => type = o);
@@ -859,7 +1061,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             var (manager, mocks) = GetFixture();
@@ -880,7 +1082,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetTransferConnectionOutboundIndirectAsync_Sends_ConnectToPeerRequest(IPEndPoint endpoint, string username, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -888,7 +1090,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -907,7 +1109,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -915,7 +1117,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             using (manager)
@@ -932,7 +1134,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetTransferConnectionOutboundIndirectAsync_Hands_Off_ITcpConnection(IPEndPoint endpoint, string username, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -940,7 +1142,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -957,7 +1159,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetTransferConnectionOutboundIndirectAsync_Sets_Connection_Type_To_Outbound_Indirect(IPEndPoint endpoint, string username, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -965,7 +1167,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -982,7 +1184,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetTransferConnectionOutboundIndirectAsync_Adds_And_Removes_From_PendingSolicitationDictionary(IPEndPoint endpoint, string username, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -994,8 +1196,8 @@ namespace Soulseek.Tests.Unit.Network
             {
                 List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
 
-                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
-                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .Callback<WaitKey, int?, CancellationToken>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
                     .Returns(Task.FromResult(conn.Object));
 
                 using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None))
@@ -1018,7 +1220,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -1026,7 +1228,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             using (manager)
@@ -1042,7 +1244,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetTransferConnectionOutboundIndirectAsync_Adds_Diagnostic_On_Disconnect(IPEndPoint endpoint, string username, int token)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -1053,7 +1255,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -1063,6 +1265,36 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("disconnected"))), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync adds diagnostic with exception message on disconnect"), AutoData]
+        internal async Task GetTransferConnectionOutboundIndirectAsync_Adds_Diagnostic_With_Exception_Message_On_Disconnect(IPEndPoint endpoint, string username, int token)
+        {
+            var disconnectException = new Exception("boom");
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("established"))))
+                .Callback(() => conn.Raise(m => m.Disconnected += null, new ConnectionDisconnectedEventArgs("message-not-used", disconnectException)));
+
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("boom"))), Times.Once);
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
@@ -1089,7 +1321,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1108,7 +1340,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetConnectionMock(dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var iendpoint = new IPEndPoint(ipAddress, indirectPort);
@@ -1126,7 +1358,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(indirect.Object));
 
             using (manager)
@@ -1145,7 +1377,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetConnectionMock(dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var iendpoint = new IPEndPoint(ipAddress, indirectPort);
@@ -1163,7 +1395,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1199,7 +1431,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1219,7 +1451,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetConnectionMock(dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var iendpoint = new IPEndPoint(ipAddress, indirectPort);
@@ -1237,7 +1469,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1256,9 +1488,9 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetConnectionMock(dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask); // succeeds
-            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionException());
 
             var iendpoint = new IPEndPoint(ipAddress, indirectPort);
@@ -1276,7 +1508,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1313,7 +1545,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1322,7 +1554,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(direct.Object, newConn);
                 Assert.Equal(ConnectionTypes.Direct, newConn.Type);
 
-                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
@@ -1350,7 +1582,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1359,7 +1591,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(direct.Object, newConn);
                 Assert.Equal(ConnectionTypes.Direct, newConn.Type);
 
-                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(BitConverter.GetBytes(token))), It.IsAny<CancellationToken?>()), Times.Once);
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(BitConverter.GetBytes(token))), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
@@ -1518,7 +1750,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedEx = new Exception("foo");
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -1563,7 +1795,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedEx = new Exception("foo");
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -1584,7 +1816,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetMessageConnectionOutboundIndirectAsync_Sends_ConnectToPeerRequest(IPEndPoint endpoint, string username, int solicitationToken)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
@@ -1594,7 +1826,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -1613,7 +1845,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
@@ -1623,7 +1855,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             using (manager)
@@ -1640,7 +1872,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetMessageConnectionOutboundIndirectAsync_Hands_Off_ITcpConnection(IPEndPoint endpoint, string username, int solicitationToken)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
@@ -1650,7 +1882,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -1667,7 +1899,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetMessageConnectionOutboundIndirectAsync_Sets_Connection_Context_To_Indirect(IPEndPoint endpoint, string username, int solicitationToken)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
@@ -1677,7 +1909,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -1694,7 +1926,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetMessageConnectionOutboundIndirectAsync_Adds_And_Removes_From_PendingSolicitationDictionary(IPEndPoint endpoint, string username, int solicitationToken)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
@@ -1708,8 +1940,8 @@ namespace Soulseek.Tests.Unit.Network
             {
                 List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
 
-                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
-                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .Callback<WaitKey, int?, CancellationToken>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
                     .Returns(Task.FromResult(conn.Object));
 
                 using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, solicitationToken, CancellationToken.None))
@@ -1730,7 +1962,7 @@ namespace Soulseek.Tests.Unit.Network
         internal async Task GetMessageConnectionOutboundIndirectAsync_Does_Not_Call_StartReadingContinuously(IPEndPoint endpoint, string username, int solicitationToken)
         {
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
@@ -1744,8 +1976,8 @@ namespace Soulseek.Tests.Unit.Network
             {
                 List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
 
-                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
-                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .Callback<WaitKey, int?, CancellationToken>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
                     .Returns(Task.FromResult(conn.Object));
 
                 using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, solicitationToken, CancellationToken.None))
@@ -1764,7 +1996,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedException = new Exception("foo");
 
             var conn = GetConnectionMock(endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msgConn = GetMessageConnectionMock(username, endpoint);
@@ -1774,7 +2006,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(expectedException);
 
             using (manager)
@@ -1817,9 +2049,9 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -1849,9 +2081,9 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -1876,7 +2108,7 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -1904,9 +2136,9 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -1934,9 +2166,9 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -1949,7 +2181,7 @@ namespace Soulseek.Tests.Unit.Network
                 (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
             }
 
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(expectedMessage)), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(expectedMessage)), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
@@ -1959,9 +2191,9 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -1989,7 +2221,7 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception("foo")));
 
             var (manager, mocks) = GetFixture();
@@ -2022,7 +2254,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(ConnectionTypes.Direct);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Callback(() =>
                 {
                     var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
@@ -2059,7 +2291,7 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception("foo")));
 
             var (manager, mocks) = GetFixture();
@@ -2085,7 +2317,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedEx = new Exception("foo");
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(expectedEx));
 
             var (manager, mocks) = GetFixture();
@@ -2110,9 +2342,9 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -2169,9 +2401,9 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, endpoint, token, false);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var (manager, mocks) = GetFixture();
@@ -2234,7 +2466,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.Is<WaitKey>(k => k.TokenParts.Contains(Constants.WaitKey.SolicitedPeerConnection)), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.Is<WaitKey>(k => k.TokenParts.Contains(Constants.WaitKey.SolicitedPeerConnection)), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2253,7 +2485,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var iendpoint = new IPEndPoint(ipAddress, indirectPort);
@@ -2277,7 +2509,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(incomingIndirect.Object));
 
             using (manager)
@@ -2296,7 +2528,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var (manager, mocks) = GetFixture();
@@ -2307,7 +2539,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, dendpoint, It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2343,7 +2575,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             List<string> diagnostics = new List<string>();
@@ -2386,7 +2618,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2438,7 +2670,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new ConnectionException()));
 
             var iendpoint = new IPEndPoint(ipAddress, indirectPort);
@@ -2456,7 +2688,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((IConnection)indirect.Object));
 
             using (manager)
@@ -2474,9 +2706,9 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionException());
 
             var (manager, mocks) = GetFixture();
@@ -2487,7 +2719,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, dendpoint, It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2512,9 +2744,9 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(exception);
 
             var (manager, mocks) = GetFixture();
@@ -2525,7 +2757,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, dendpoint, It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2546,7 +2778,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var (manager, mocks) = GetFixture();
@@ -2557,7 +2789,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, dendpoint, It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2580,7 +2812,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var (manager, mocks) = GetFixture();
@@ -2591,7 +2823,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, dendpoint, It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2612,7 +2844,7 @@ namespace Soulseek.Tests.Unit.Network
             var direct = GetMessageConnectionMock(username, dendpoint);
             direct.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Direct);
-            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var (manager, mocks) = GetFixture();
@@ -2623,7 +2855,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, dendpoint, It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2667,7 +2899,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -2676,7 +2908,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(direct.Object, newConn);
                 Assert.Equal(ConnectionTypes.Direct, newConn.Type);
 
-                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(o => o.Matches(peerInit)), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
@@ -2796,10 +3028,10 @@ namespace Soulseek.Tests.Unit.Network
             var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
             var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -2818,10 +3050,10 @@ namespace Soulseek.Tests.Unit.Network
             var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
             var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
             using (manager)
@@ -2845,10 +3077,10 @@ namespace Soulseek.Tests.Unit.Network
             var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
             var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -2871,10 +3103,10 @@ namespace Soulseek.Tests.Unit.Network
             var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
             var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
             using (manager)
@@ -2941,7 +3173,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Diagnostic raises DiagnosticGenerated")]
         internal void Diagnostic_Raises_DiagnosticGenerated()
         {
-            using (var client = new SoulseekClient())
+            using (var client = new SoulseekClient(minorVersion: 9999))
             using (var manager = new PeerConnectionManager(client))
             {
                 bool fired = false;
@@ -2958,7 +3190,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Diagnostic does not throw if DiagnosticGenerated not subscribed")]
         internal void Diagnostic_Does_Not_Throw_If_DiagnosticGenerated_Not_Subscribed()
         {
-            using (var client = new SoulseekClient())
+            using (var client = new SoulseekClient(minorVersion: 9999))
             using (var manager = new PeerConnectionManager(client))
             {
                 var diag = manager.GetProperty<IDiagnosticFactory>("Diagnostic");
@@ -3007,7 +3239,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions)
+                Client = new Mock<SoulseekClient>(9999, clientOptions)
                 {
                     CallBase = true,
                 };

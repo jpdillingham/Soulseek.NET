@@ -32,7 +32,7 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws ArgumentException when ID is less than 0")]
         public async Task AcknowledgePrivilegeNotificationAsync_Throws_ArgumentException_When_ID_Is_Less_Than_0()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivilegeNotificationAsync(-1));
 
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws InvalidOperationException when not connected")]
         public async Task AcknowledgePrivilegeNotificationAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivilegeNotificationAsync(1));
 
@@ -55,10 +55,10 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
-        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws InvalidOperationException when not logged in")]
-        public async Task AcknowledgePrivilegeNotificationAsync_Throws_InvalidOperationException_When_Not_Logged_In()
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws InvalidOperationException when not logged in or logging in")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Throws_InvalidOperationException_When_Not_Logged_In_Or_Logging_In()
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -70,20 +70,60 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
-        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync does not throw when write does not throw")]
-        public async Task AcknowledgePrivilegeNotificationAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync does not throw when connected and logging in")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Does_Not_Throw_When_Connected_And_Logging_In()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggingIn);
+
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivilegeNotificationAsync(1));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync does not throw when connected and logged in")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Does_Not_Throw_When_Connected_And_Logged_In()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivilegeNotificationAsync(1));
 
                 Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync does not throw when write does not throw")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.AcknowledgePrivilegeNotificationAsync(1));
+
+                Assert.Null(ex);
+
+                conn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
@@ -95,7 +135,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -115,7 +155,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -134,7 +174,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 

@@ -97,7 +97,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             var msg = new MessageBuilder()
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises DiagnosticGenerated on diagnostic"), AutoData]
         public void Raises_DiagnosticGenerated_On_Diagnostic(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 DiagnosticEventArgs args = default;
 
@@ -139,7 +139,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Does not throw raising DiagnosticGenerated if no handlers bound"), AutoData]
         public void Does_Not_Throw_Raising_DiagnosticGenerated_If_No_Handlers_Bound(string message)
         {
-            using (var client = new SoulseekClient(options: null))
+            using (var client = new SoulseekClient(minorVersion: 9999, options: null))
             {
                 DistributedMessageHandler l = new DistributedMessageHandler(client);
 
@@ -255,7 +255,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -280,7 +280,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(conn.Object, message);
 
             mocks.DistributedConnectionManager
-                .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
+                .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -359,7 +359,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
             var (handler, mocks) = GetFixture(options);
 
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
 
             var endpoint = new IPEndPoint(IPAddress.None, 0);
@@ -374,10 +374,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-            peerConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), null), Times.Never);
+            peerConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), CancellationToken.None), Times.Never);
         }
 
         [Trait("Category", "Message")]
@@ -394,7 +394,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var endpoint = new IPEndPoint(IPAddress.None, 0);
 
-            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(endpoint));
 
             var peerConn = new Mock<IMessageConnection>();
@@ -407,10 +407,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-            peerConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), null), Times.Never);
+            peerConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), CancellationToken.None), Times.Never);
         }
 
         [Trait("Category", "Message")]
@@ -446,7 +446,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleChildMessageRead(conn.Object, message);
 
-            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "HandleChildMessageRead")]
@@ -464,7 +464,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleChildMessageRead(conn.Object, new MessageEventArgs(message));
 
-            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<IOutgoingMessage>(msg => msg.ToByteArray().Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "HandleChildMessageRead")]
@@ -495,7 +495,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Returns(token);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception()));
 
             var message = new DistributedPingRequest().ToByteArray();
@@ -570,8 +570,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "HandleEmbeddedMessage")]
-        [Theory(DisplayName = "HandleEmbeddedMessage broadcasts search request unchanged"), AutoData]
-        public void HandleEmbeddedMessage_Broadcasts_Search_Request_Unchanged(string username, int token, string query)
+        [Theory(DisplayName = "HandleEmbeddedMessage broadcasts unwrapped search request"), AutoData]
+        public void HandleEmbeddedMessage_Broadcasts_Unwrapped_Search_Request(string username, int token, string query)
         {
             var (handler, mocks) = GetFixture();
 
@@ -584,9 +584,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(query)
                 .Build();
 
+            var expected = EmbeddedMessage.FromByteArray(message).DistributedMessage;
+
             handler.HandleEmbeddedMessage(message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(expected, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "HandleEmbeddedMessage")]
@@ -658,7 +660,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions)
+                Client = new Mock<SoulseekClient>(9999, clientOptions)
                 {
                     CallBase = true,
                 };

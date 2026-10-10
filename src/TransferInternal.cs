@@ -1,10 +1,9 @@
 ﻿// <copyright file="TransferInternal.cs" company="JP Dillingham">
-//     Copyright (c) JP Dillingham. All rights reserved.
+//     Copyright (c) JP Dillingham.
 //
 //     This program is free software: you can redistribute it and/or modify
 //     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
+//     the Free Software Foundation, version 3.
 //
 //     This program is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,12 +12,20 @@
 //
 //     You should have received a copy of the GNU General Public License
 //     along with this program.  If not, see https://www.gnu.org/licenses/.
+//
+//     This program is distributed with Additional Terms pursuant to Section 7
+//     of the GPLv3.  See the LICENSE file in the root directory of this
+//     project for the complete terms and conditions.
+//
+//     SPDX-FileCopyrightText: JP Dillingham
+//     SPDX-License-Identifier: GPL-3.0-only
 // </copyright>
 
 namespace Soulseek
 {
     using System;
     using System.Net;
+    using System.Threading.Tasks;
     using Soulseek.Network.Tcp;
 
     /// <summary>
@@ -62,7 +69,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of remaining bytes to be transferred.
         /// </summary>
-        public long BytesRemaining => (Size ?? 0) - BytesTransferred;
+        public long BytesRemaining => Size - BytesTransferred;
 
         /// <summary>
         ///     Gets the total number of bytes transferred.
@@ -88,7 +95,10 @@ namespace Soulseek
         /// <summary>
         ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
-        public DateTime? EndTime { get; private set; }
+        /// <remarks>
+        ///     Should ONLY be set when the State transitions into Completed.
+        /// </remarks>
+        public DateTime? EndTime { get; private set; } = null;
 
         /// <summary>
         ///     Gets or sets the <see cref="Exception"/> that caused the failure of the transfer, if applicable.
@@ -113,7 +123,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
-        public double PercentComplete => Size.HasValue ? (BytesTransferred / (double)Size) * 100 : 0;
+        public double PercentComplete => Size > 0 ? (BytesTransferred / (double)Size) * 100 : 0;
 
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.
@@ -128,7 +138,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the size of the file to be transferred, in bytes.
         /// </summary>
-        public long? Size { get; set; }
+        public long Size { get; set; }
 
         /// <summary>
         ///     Gets or sets the start offset of the transfer, in bytes.
@@ -153,6 +163,10 @@ namespace Soulseek
         /// <summary>
         ///     Gets the UTC time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
+        /// <remarks>
+        ///     Should ONLY be set when the State transitions into InProgress, or if it transitions into Completed
+        ///     without having first transitioned into InProgress.
+        /// </remarks>
         public DateTime? StartTime { get; private set; }
 
         /// <summary>
@@ -167,17 +181,28 @@ namespace Soulseek
 
             set
             {
-                if (!state.HasFlag(TransferStates.InProgress) && value.HasFlag(TransferStates.InProgress))
+                var time = DateTime.UtcNow;
+
+                if (value.HasFlag(TransferStates.InProgress) && !StartTime.HasValue)
                 {
-                    StartTime = DateTime.UtcNow;
-                    EndTime = null;
+                    StartTime = time;
                 }
-                else if (!state.HasFlag(TransferStates.Completed) && value.HasFlag(TransferStates.Completed))
+                else if (value.HasFlag(TransferStates.Completed) && !EndTime.HasValue)
                 {
-                    EndTime = DateTime.UtcNow;
+                    EndTime = time;
+
+                    // in case the transfer never transitioned into InProgress, set StartTime too
+                    StartTime ??= time;
                 }
 
                 state = value;
+
+                // ensure the average is calculated properly when the transfer ends, regardless of whether
+                // an outside caller is calling UpdateProgress (as they should?)
+                if (state.HasFlag(TransferStates.Completed))
+                {
+                    UpdateProgress(BytesTransferred);
+                }
             }
         }
 
@@ -197,6 +222,11 @@ namespace Soulseek
         public WaitKey WaitKey { get; }
 
         /// <summary>
+        ///     Gets the task completion source used to end the transfer if/when the remote client reports that it has failed or been rejected.
+        /// </summary>
+        public TaskCompletionSource<bool> RemoteTaskCompletionSource { get; } = new TaskCompletionSource<bool>();
+
+        /// <summary>
         ///     Updates the transfer progress.
         /// </summary>
         /// <param name="bytesTransferred">The total number of bytes transferred.</param>
@@ -204,26 +234,54 @@ namespace Soulseek
         {
             BytesTransferred = bytesTransferred;
 
-            var ts = DateTime.UtcNow - (lastProgressTime ?? (StartTime ?? DateTime.UtcNow));
+            // that's odd! the transfer hasn't transitioned into InProgress yet. just ignore it..
+            if (!StartTime.HasValue)
+            {
+                return;
+            }
 
-            // only recompute the average speed if enough time has passed since the last computation, and if the transfer is still
-            // in progress. use a moving average to account for ramp-up and variation.
-            if (ts.TotalMilliseconds >= progressUpdateLimit && !State.HasFlag(TransferStates.Completed))
+            // if the state is Completed, we're guaranteed to have both StartTime and EndTime
+            // it's possible that StartTime = EndTime, and if that's the case, substitute 1ms for the duration
+            if (State.HasFlag(TransferStates.Completed))
+            {
+                var duration = Math.Max(1, (EndTime.Value - StartTime.Value).TotalMilliseconds) / 1000d;
+                var totalSpeed = (BytesTransferred - StartOffset) / duration;
+                AverageSpeed = totalSpeed;
+
+                return;
+            }
+
+            // if we've transferred all of the data but not yet transitioned into Completed, we won't have an EndTime
+            // yet, so we'll have to use the current time; the transition to Completed will happen soon!
+            if (BytesTransferred >= Size)
+            {
+                var duration = Math.Max(1, (DateTime.UtcNow - StartTime.Value).TotalMilliseconds) / 1000d;
+                var totalSpeed = (BytesTransferred - StartOffset) / duration;
+                AverageSpeed = totalSpeed;
+
+                return;
+            }
+
+            /*
+                for all other updates, we want to use a moving average, and for that to work well we need to throttle
+                it a bit and only update once per second so the math works
+
+                we keep track of the last update, and if it hasn't been at least `progressUpdateLimit` ms since the last
+                update, we'll do nothing.
+
+                this means that AverageSpeed will be zero until at least `progressUpdateLimit` ms after the start of the
+                transfer! and this is why we have special cases above for when the transfer is complete; otherwise very
+                fast transfers will have an average speed of 0.
+            */
+            var ts = DateTime.UtcNow - (lastProgressTime ?? StartTime.Value);
+
+            if (ts.TotalMilliseconds >= progressUpdateLimit)
             {
                 var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
                 lastProgressTime = DateTime.UtcNow;
                 lastProgressBytes = BytesTransferred;
-            }
-
-            // once the transfer is complete, compute the actual average speed from total duration and transfer size
-            if (State.HasFlag(TransferStates.Completed))
-            {
-                var start = StartTime ?? EndTime.Value.AddMilliseconds(-1);
-                var duration = (EndTime.Value - start).TotalMilliseconds / 1000d;
-                var totalSpeed = (BytesTransferred - StartOffset) / duration;
-                AverageSpeed = totalSpeed;
             }
         }
     }

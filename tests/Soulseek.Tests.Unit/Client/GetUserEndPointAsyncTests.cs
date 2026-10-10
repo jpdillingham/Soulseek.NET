@@ -38,7 +38,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("")]
         public async Task GetUserEndPointAsync_Throws_ArgumentException_On_Null_Username(string username)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(SoulseekClientStates.LoggedIn)]
         public async Task GetUserEndPointAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
         {
-            using (var s = new SoulseekClient())
+            using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", state);
 
@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
-            using (var s = new SoulseekClient(waiter: waiter.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -95,7 +95,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
-            using (var s = new SoulseekClient(waiter: waiter.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
-            using (var s = new SoulseekClient(waiter: waiter.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -134,10 +134,10 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("0.0.0.0"), 0)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -157,10 +157,10 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -179,7 +179,7 @@ namespace Soulseek.Tests.Unit.Client
             cache.Setup(m => m.TryGet(username, out endpoint))
                 .Returns(true);
 
-            using (var s = new SoulseekClient(new SoulseekClientOptions(userEndPointCache: cache.Object)))
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(userEndPointCache: cache.Object)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -200,7 +200,7 @@ namespace Soulseek.Tests.Unit.Client
 
             using (var sem = new SemaphoreSlim(1, 1))
             {
-                using (var s = new SoulseekClient(new SoulseekClientOptions(userEndPointCache: cache.Object)))
+                using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(userEndPointCache: cache.Object)))
                 {
                     var semaphores = s.GetProperty<ConcurrentDictionary<string, SemaphoreSlim>>("UserEndPointSemaphores");
                     semaphores.TryAdd(username, sem);
@@ -239,14 +239,14 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var cache = new Mock<IUserEndPointCache>();
             cache.Setup(m => m.TryGet(username, out endpoint))
                 .Returns(false);
 
-            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(userEndPointCache: cache.Object)))
+            using (var s = new SoulseekClient(minorVersion: 9999, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(userEndPointCache: cache.Object)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -268,7 +268,7 @@ namespace Soulseek.Tests.Unit.Client
             cache.Setup(m => m.TryGet(username, out endpoint))
                 .Throws(exception);
 
-            using (var s = new SoulseekClient(new SoulseekClientOptions(userEndPointCache: cache.Object)))
+            using (var s = new SoulseekClient(minorVersion: 9999, new SoulseekClientOptions(userEndPointCache: cache.Object)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
