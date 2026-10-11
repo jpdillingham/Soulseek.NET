@@ -1,4 +1,4 @@
-// <copyright file="GetRecommendationsAsyncTests.cs" company="JP Dillingham">
+// <copyright file="GetPersonalRecommendationsAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify
@@ -28,30 +28,30 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Network;
     using Xunit;
 
-    public class GetRecommendationsAsyncTests
+    public class GetPersonalRecommendationsAsyncTests
     {
-        [Trait("Category", "GetRecommendationsAsync")]
-        [Theory(DisplayName = "GetRecommendationsAsync throws InvalidOperationException if not connected and logged in")]
+        [Trait("Category", "GetPersonalRecommendationsAsync")]
+        [Theory(DisplayName = "GetPersonalRecommendationsAsync throws InvalidOperationException if not connected and logged in")]
         [InlineData(SoulseekClientStates.None)]
         [InlineData(SoulseekClientStates.Disconnected)]
         [InlineData(SoulseekClientStates.Connected)]
         [InlineData(SoulseekClientStates.LoggedIn)]
-        public async Task GetRecommendationsAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
+        public async Task GetPersonalRecommendationsAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
         {
             using (var s = new SoulseekClient(minorVersion: 9999))
             {
                 s.SetProperty("State", state);
 
-                var ex = await Record.ExceptionAsync(() => s.GetRecommendationsAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPersonalRecommendationsAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
             }
         }
 
-        [Trait("Category", "GetRecommendationsAsync")]
-        [Fact(DisplayName = "GetRecommendationsAsync combines, splits, and sorts recommendations")]
-        public async Task GetRecommendationsAsync_Combines_Splits_And_Sorts_Recommendations()
+        [Trait("Category", "GetPersonalRecommendationsAsync")]
+        [Fact(DisplayName = "GetPersonalRecommendationsAsync combines, splits, and sorts recommendations")]
+        public async Task GetPersonalRecommendationsAsync_Combines_Splits_And_Sorts_Recommendations()
         {
             var recommendations = new List<(string Recommendation, int Count)>
             {
@@ -82,16 +82,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var (recommended, notRecommended) = await s.GetRecommendationsAsync();
+                var (recommended, notRecommended) = await s.GetPersonalRecommendationsAsync();
 
                 Assert.Equal(new[] { ("high", 10), ("positive in unrecommendations", 3), ("low", 1) }, recommended.Select(r => (r.Interest, r.Count)));
                 Assert.Equal(new[] { ("very negative", -5), ("negative in recommendations", -2), ("slightly negative", -1), ("zero", 0) }, notRecommended.Select(r => (r.Interest, r.Count)));
             }
         }
 
-        [Trait("Category", "GetRecommendationsAsync")]
-        [Theory(DisplayName = "GetRecommendationsAsync uses given CancellationToken"), AutoData]
-        public async Task GetRecommendationsAsync_Uses_Given_CancellationToken(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
+        [Trait("Category", "GetPersonalRecommendationsAsync")]
+        [Theory(DisplayName = "GetPersonalRecommendationsAsync uses given CancellationToken"), AutoData]
+        public async Task GetPersonalRecommendationsAsync_Uses_Given_CancellationToken(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
         {
             var cancellationToken = new CancellationToken();
             var result = new PersonalRecommendationsResponse(recommendations, unrecommendations);
@@ -108,15 +108,15 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                await s.GetRecommendationsAsync(cancellationToken);
+                await s.GetPersonalRecommendationsAsync(cancellationToken);
             }
 
             serverConn.Verify(m => m.WriteAsync(It.IsAny<IOutgoingMessage>(), cancellationToken));
         }
 
-        [Trait("Category", "GetRecommendationsAsync")]
-        [Theory(DisplayName = "GetRecommendationsAsync throws SoulseekClientException on throw"), AutoData]
-        public async Task GetRecommendationsAsync_Throws_SoulseekClientException_On_Throw(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
+        [Trait("Category", "GetPersonalRecommendationsAsync")]
+        [Theory(DisplayName = "GetPersonalRecommendationsAsync throws SoulseekClientException on throw"), AutoData]
+        public async Task GetPersonalRecommendationsAsync_Throws_SoulseekClientException_On_Throw(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
         {
             var result = new PersonalRecommendationsResponse(recommendations, unrecommendations);
 
@@ -132,7 +132,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.GetRecommendationsAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPersonalRecommendationsAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<SoulseekClientException>(ex);
@@ -140,9 +140,9 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "GetRecommendationsAsync")]
-        [Theory(DisplayName = "GetRecommendationsAsync throws TimeoutException on timeout"), AutoData]
-        public async Task GetRecommendationsAsync_Throws_TimeoutException_On_Timeout(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
+        [Trait("Category", "GetPersonalRecommendationsAsync")]
+        [Theory(DisplayName = "GetPersonalRecommendationsAsync throws TimeoutException on timeout"), AutoData]
+        public async Task GetPersonalRecommendationsAsync_Throws_TimeoutException_On_Timeout(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
         {
             var result = new PersonalRecommendationsResponse(recommendations, unrecommendations);
 
@@ -158,16 +158,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.GetRecommendationsAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPersonalRecommendationsAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "GetRecommendationsAsync")]
-        [Theory(DisplayName = "GetRecommendationsAsync throws OperationCanceledException on cancellation"), AutoData]
-        public async Task GetRecommendationsAsync_Throws_OperationCanceledException_On_Cancellation(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
+        [Trait("Category", "GetPersonalRecommendationsAsync")]
+        [Theory(DisplayName = "GetPersonalRecommendationsAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task GetPersonalRecommendationsAsync_Throws_OperationCanceledException_On_Cancellation(List<(string Recommendation, int Count)> recommendations, List<(string Unrecommendation, int Count)> unrecommendations)
         {
             var result = new PersonalRecommendationsResponse(recommendations, unrecommendations);
 
@@ -183,7 +183,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.GetRecommendationsAsync());
+                var ex = await Record.ExceptionAsync(() => s.GetPersonalRecommendationsAsync());
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

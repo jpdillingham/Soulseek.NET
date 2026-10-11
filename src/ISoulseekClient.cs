@@ -949,7 +949,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetRecommendationsAsync(CancellationToken cancellationToken = default);
+        Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetPersonalRecommendationsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the list of chat rooms on the server.
