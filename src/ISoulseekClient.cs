@@ -918,6 +918,19 @@ namespace Soulseek
         Task<(string Interest, IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetInterestRecommendationsAsync(string interest, CancellationToken cancellationToken = default);
 
         /// <summary>
+        ///     Asynchronously fetches the interests of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the username of the current user is not yet known, or when the client is not connected or logged in.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<UserInterests> GetInterestsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         ///     Asynchronously fetches the list of users who share the specified <paramref name="interest"/>.
         /// </summary>
         /// <param name="interest">The interest for which to fetch similar users.</param>
