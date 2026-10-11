@@ -21,6 +21,8 @@ namespace Soulseek.Tests.Unit.Options
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
+    using Soulseek.Diagnostics;
+
     using Xunit;
 
     public class TransferOptionsTests
@@ -38,6 +40,7 @@ namespace Soulseek.Tests.Unit.Options
             Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
             Action<Transfer, int, int, int> reporter,
+            Action<(DateTime timestamp, DiagnosticLevel Level, string Message, Exception exception)> diagnostic,
             Func<Transfer, long, long> sizeMismatchResolver,
             Action<Transfer> slotReleased)
         {
@@ -48,6 +51,7 @@ namespace Soulseek.Tests.Unit.Options
                 acquireSlot,
                 slotReleased,
                 reporter,
+                diagnostic,
                 sizeMismatchResolver,
                 maximumLingerTime,
                 seekInput,
@@ -66,6 +70,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
             Assert.Equal(reporter, o.Reporter);
+            Assert.Equal(diagnostic, o.Diagnostic);
             Assert.Equal(sizeMismatchResolver, o.SizeMismatchResolver);
         }
 
@@ -88,6 +93,8 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Null(o.StateChanged);
             Assert.Null(o.ProgressUpdated);
             Assert.Null(o.SlotReleased);
+            Assert.Null(o.Reporter);
+            Assert.Null(o.Diagnostic);
             Assert.Null(o.SizeMismatchResolver);
         }
 
@@ -103,7 +110,8 @@ namespace Soulseek.Tests.Unit.Options
             int maximumLingerTime,
             Action<(long PreviousBytesTransferred, Transfer Transfer)> progressUpdated,
             Func<Transfer, CancellationToken, Task> acquireSlot,
-            Action<Transfer> slotReleased)
+            Action<Transfer> slotReleased,
+            Action<(DateTime timestamp, DiagnosticLevel Level, string Message, Exception exception)> diagnostic)
         {
             var n = new TransferOptions(
                 governor: governor,
@@ -111,6 +119,7 @@ namespace Soulseek.Tests.Unit.Options
                 progressUpdated: progressUpdated,
                 slotAwaiter: acquireSlot,
                 slotReleased: slotReleased,
+                diagnostic: diagnostic,
                 maximumLingerTime: maximumLingerTime,
                 seekInputStreamAutomatically: seekInput,
                 disposeInputStreamOnCompletion: disposeInput,
@@ -127,6 +136,7 @@ namespace Soulseek.Tests.Unit.Options
             Assert.Equal(maximumLingerTime, o.MaximumLingerTime);
             Assert.Equal(acquireSlot, o.SlotAwaiter);
             Assert.Equal(slotReleased, o.SlotReleased);
+            Assert.Equal(diagnostic, o.Diagnostic);
             Assert.Equal(sizeMismatchResolver, o.SizeMismatchResolver);
 
             Assert.NotEqual(stateChanged, o.StateChanged);
