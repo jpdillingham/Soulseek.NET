@@ -929,17 +929,6 @@ namespace Soulseek
         int GetNextToken();
 
         /// <summary>
-        ///     Asynchronously fetches the number of remaining days of privileges of the currently logged in user.
-        /// </summary>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        Task<int> GetPrivilegesAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
         ///     Asynchronously fetches the list of recommended and not recommended interests, based on the interests of the
         ///     currently logged in user.
         /// </summary>
@@ -950,6 +939,17 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
         Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetPersonalRecommendationsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///     Asynchronously fetches the number of remaining days of privileges of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        Task<int> GetPrivilegesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         ///     Asynchronously fetches the list of chat rooms on the server.

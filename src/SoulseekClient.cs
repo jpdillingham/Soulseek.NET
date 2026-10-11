@@ -1756,6 +1756,26 @@ namespace Soulseek
         public virtual int GetNextToken() => TokenFactory.NextToken();
 
         /// <summary>
+        ///     Asynchronously fetches the list of recommended and not recommended interests, based on the interests of the
+        ///     currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the recommendations.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetPersonalRecommendationsAsync(CancellationToken cancellationToken = default)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch recommendations (currently: {State})");
+            }
+
+            return GetPersonalRecommendationsInternalAsync(cancellationToken);
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the number of remaining days of privileges of the currently logged in user.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -1785,26 +1805,6 @@ namespace Soulseek
             {
                 throw new SoulseekClientException($"Failed to get privileges: {ex.Message}", ex);
             }
-        }
-
-        /// <summary>
-        ///     Asynchronously fetches the list of recommended and not recommended interests, based on the interests of the
-        ///     currently logged in user.
-        /// </summary>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation, including the recommendations.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="SoulseekClientException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<(IReadOnlyCollection<Recommendation> Recommended, IReadOnlyCollection<Recommendation> NotRecommended)> GetPersonalRecommendationsAsync(CancellationToken cancellationToken = default)
-        {
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch recommendations (currently: {State})");
-            }
-
-            return GetPersonalRecommendationsInternalAsync(cancellationToken);
         }
 
         /// <summary>
