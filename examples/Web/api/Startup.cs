@@ -49,6 +49,8 @@ namespace WebAPI
         internal static int RoomMessageLimit { get; set; }
         internal static int ReadBufferSize { get; set; }
         internal static int WriteBufferSize { get; set; }
+        internal static string Server { get; set; }
+        internal static int Port { get; set; }
 
         internal static SymmetricSecurityKey JwtSigningKey { get; set; }
 
@@ -81,6 +83,9 @@ namespace WebAPI
             RoomMessageLimit = Configuration.GetValue<int>("ROOM_MESSAGE_LIMIT", 250);
             ReadBufferSize = Configuration.GetValue<int>("READ_BUFFER_SIZE", 16384);
             WriteBufferSize = Configuration.GetValue<int>("WRITE_BUFFER_SIZE", 16384);
+
+            Server = Configuration.GetValue<string>("SERVER", "server.slsknet.org");
+            Port = Configuration.GetValue<int>("PORT", 2242);
 
             EnableDistributedNetwork = false;
 
@@ -445,7 +450,7 @@ namespace WebAPI
 
             Task.Run(async () =>
             {
-                await Client.ConnectAsync(Username, Password);
+                await Client.ConnectAsync(Server, Port, Username, Password);
                 CurrentReconnectAttempts = 0;
             }).GetAwaiter().GetResult();
 
