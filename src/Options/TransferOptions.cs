@@ -26,6 +26,7 @@ namespace Soulseek
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Diagnostics;
 
     /// <summary>
     ///     Options for transfer operations.
@@ -53,6 +54,9 @@ namespace Soulseek
         ///     The delegate, accepting the number of bytes attempted, granted, and transferred for each chunk, used to report
         ///     transfer statistics.
         /// </param>
+        /// <param name="diagnostic">
+        ///     The delegate to invoke when a diagnostic message for the transfer is captured.
+        /// </param>
         /// <param name="sizeMismatchResolver">
         ///     The delegate used to resolve the transfer size to use if the local and remote file sizes disagree (downloads only).
         /// </param>
@@ -78,6 +82,7 @@ namespace Soulseek
             Func<Transfer, CancellationToken, Task> slotAwaiter = null,
             Action<Transfer> slotReleased = null,
             Action<Transfer, int, int, int> reporter = null,
+            Action<(DateTime timestamp, DiagnosticLevel Level, string Message, Exception exception)> diagnostic = null,
             Func<Transfer, long, long> sizeMismatchResolver = null,
             int maximumLingerTime = 3000,
             bool seekInputStreamAutomatically = true,
@@ -93,6 +98,7 @@ namespace Soulseek
             SlotAwaiter = slotAwaiter ?? defaultSlotAwaiter;
             SlotReleased = slotReleased;
             Reporter = reporter;
+            Diagnostic = diagnostic;
 
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
@@ -100,6 +106,11 @@ namespace Soulseek
 
             SizeMismatchResolver = sizeMismatchResolver;
         }
+
+        /// <summary>
+        ///     Gets the delegate to invoke when a diagnostic message for the transfer is captured.
+        /// </summary>
+        public Action<(DateTime Timestamp, DiagnosticLevel Level, string Message, Exception Exception)> Diagnostic { get; }
 
         /// <summary>
         ///     Gets a value indicating whether input streams should be closed upon transfer completion. (Default = false).
@@ -184,6 +195,7 @@ namespace Soulseek
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 reporter: Reporter,
+                diagnostic: Diagnostic,
                 sizeMismatchResolver: SizeMismatchResolver,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
@@ -213,6 +225,7 @@ namespace Soulseek
                 slotAwaiter: SlotAwaiter,
                 slotReleased: SlotReleased,
                 reporter: Reporter,
+                diagnostic: Diagnostic,
                 sizeMismatchResolver: SizeMismatchResolver,
                 maximumLingerTime: MaximumLingerTime,
                 seekInputStreamAutomatically: SeekInputStreamAutomatically,
