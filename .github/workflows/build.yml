@@ -1,9 +1,17 @@
 name: build
 
+# pull request   -> build, test, sonar
+# push to master -> build, test, sonar, publish a prerelease package to GitHub Packages
+# tag x.y.z      -> build, test, publish to GitHub Packages and nuget.org, attach binaries to the GitHub release
+
 on:
   push:
     branches: [ master ]
+    tags: [ '[0-9]+.[0-9]+.[0-9]+' ]
   pull_request:
+
+permissions:
+  contents: read
 
 env:
   TEST_ATTEMPTS: 3
@@ -12,6 +20,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Check required secrets
         env:
@@ -42,15 +52,35 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # tags build the tagged version; everything else builds a prerelease of the next patch version, e.g.
+      # 10.0.3-pre.142.g1a2b3c4 (the 'g' keeps the identifier valid SemVer if the SHA is all digits with a leading 0)
+      - name: Set version
+        id: version
+        run: |
+          if [[ $GITHUB_REF = refs/tags/* ]]; then
+            version="${GITHUB_REF_NAME}"
+          else
+            tag=$(git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*')
+            IFS=. read -r major minor patch <<< "${tag}"
+            version="${major}.${minor}.$((patch + 1))-pre.${GITHUB_RUN_NUMBER}.g$(git rev-parse --short=7 HEAD)"
+          fi
+
+          echo "version: ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      # Sonar steps are skipped on tag builds; the tagged commit has already been analyzed on master
       - uses: actions/setup-java@v4 # required by sonarscanner
+        if: "!startsWith(github.ref, 'refs/tags/')"
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Install dotnet-sonarscanner
+        if: "!startsWith(github.ref, 'refs/tags/')"
         run: dotnet tool install --global dotnet-sonarscanner --version 11.2.1
 
       - name: Begin Sonar analysis
+        if: "!startsWith(github.ref, 'refs/tags/')"
         env:
           TOKEN_SONARCLOUD: ${{ secrets.TOKEN_SONARCLOUD }}
         run: |
@@ -78,7 +108,7 @@ jobs:
             /d:sonar.token="${TOKEN_SONARCLOUD}"
 
       - name: Build
-        run: bash ./bin/build
+        run: bash ./bin/build --version ${{ steps.version.outputs.version }}
 
       - name: Test
         env:
@@ -103,6 +133,7 @@ jobs:
           exit 1
 
       - name: End Sonar analysis
+        if: "!startsWith(github.ref, 'refs/tags/')"
         env:
           TOKEN_SONARCLOUD: ${{ secrets.TOKEN_SONARCLOUD }}
         run: |
@@ -115,3 +146,110 @@ jobs:
           token: ${{ secrets.TOKEN_CODECOV_SOULSEEKNET }}
           files: tests/opencover.xml
           fail_ci_if_error: true
+
+      # the library multi-targets, so the dll, pdb, and xml for each target framework are suffixed with it to keep
+      # release asset names unique
+      - name: Stage artifacts
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p dist
+
+          cp src/bin/Release/Soulseek.*.nupkg src/bin/Release/Soulseek.*.snupkg dist/
+
+          for dir in src/bin/Release/netstandard*/; do
+            tfm=$(basename "${dir}")
+            cp "${dir}Soulseek.dll" "dist/Soulseek-${VERSION}-${tfm}.dll"
+            cp "${dir}Soulseek.pdb" "dist/Soulseek-${VERSION}-${tfm}.pdb"
+            cp "${dir}Soulseek.xml" "dist/Soulseek-${VERSION}-${tfm}.xml"
+          done
+
+          ls -l dist
+
+      - name: Upload artifacts
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: Soulseek.NET-${{ steps.version.outputs.version }}
+          path: dist
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      packages: write     # push to GitHub Packages
+      id-token: write     # OIDC token for build attestation and nuget.org trusted publishing
+      attestations: write # store build attestations on the repository
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Soulseek.NET-${{ env.VERSION }}
+          path: dist
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            dist/*.dll
+            dist/*.nupkg
+            dist/*.snupkg
+
+      # GitHub Packages doesn't support OIDC; the job's GITHUB_TOKEN is used instead, so no long-lived secret is needed.
+      # it also doesn't support symbol packages, so the .snupkg is skipped
+      - name: Push to GitHub Packages
+        run: |
+          dotnet nuget push "dist/Soulseek.${VERSION}.nupkg" \
+            --source "https://nuget.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/index.json" \
+            --api-key "${{ secrets.GITHUB_TOKEN }}" \
+            --no-symbols \
+            --skip-duplicate
+
+      # trusted publishing: exchange the job's OIDC token for a short-lived, single-use nuget.org API key
+      - name: Log in to nuget.org
+        if: startsWith(github.ref, 'refs/tags/')
+        id: nuget
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # the .snupkg alongside the .nupkg is pushed to the nuget.org symbol server automatically
+      - name: Push to nuget.org
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          dotnet nuget push "dist/Soulseek.${VERSION}.nupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}" \
+            --skip-duplicate
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [ build, publish ]
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write # upload release assets
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Soulseek.NET-${{ needs.build.outputs.version }}
+          path: dist
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

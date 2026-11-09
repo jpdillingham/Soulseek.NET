@@ -1,5 +1,30 @@
 #!/bin/bash
 set -e
 
+build_args=()
+
+while test $# -gt 0; do
+  case "$1" in
+    -h|--help)
+      echo 'options:'
+      echo '-h, --help              show help'
+      echo '--version <version>     override the version set in Soulseek.csproj'
+      exit 0
+      ;;
+    --version)
+      if [ -z "$2" ]; then
+        echo '--version requires a value'
+        exit 1
+      fi
+      build_args+=("-p:Version=$2")
+      shift 2
+      ;;
+    *)
+      echo "unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
 dotnet restore
-dotnet build --no-restore --no-incremental --configuration Release
+dotnet build --no-restore --no-incremental --configuration Release "${build_args[@]}"
